@@ -434,6 +434,100 @@ async def get_payment_status(session_id: str, current_user: dict = Depends(get_c
         raise HTTPException(status_code=500, detail="Unable to fetch payment status")
 
 
+# ─── Read-only checkout confirmation (Step 4 / P0-6) ───────────────────
+#
+# Problem this solves: /upgrade/success?session_id=... used to fire GA4
+# `purchase` and `biqc_subscription_activated` events unconditionally based
+# on the URL alone. An authenticated user could navigate to
+# /upgrade/success?session_id=FAKE and trigger fake conversion events,
+# polluting conversion data and potentially corrupting Google Ads bidding.
+#
+# This endpoint lets the frontend ask the server "is this session real,
+# paid, and mine?" before firing any analytics event. It is deliberately
+# read-only — tier upgrades flow through the webhook, not through this
+# endpoint — so there is zero risk that a forged session_id can grant
+# access.
+@router.get("/stripe/checkout/{session_id}/confirm")
+async def confirm_checkout_session(
+    session_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Server-side confirmation that a Stripe Checkout session is paid
+    and belongs to the authenticated user.
+
+    Return shape (always 200 on a valid, owned session):
+      {
+        "confirmed": bool,          # True iff Stripe says 'paid' / 'no_payment_required'
+        "session_id": str,
+        "payment_status": str,      # 'paid' | 'unpaid' | 'no_payment_required'
+        "status": str,              # 'complete' | 'open' | 'expired'
+        "amount_total": int | None, # integer cents
+        "currency": str | None,
+        "tier": str | None,
+        "plan_name": str | None,
+      }
+
+    Error responses:
+      - 403  session exists but belongs to a different user, or carries no
+             user_id in metadata (we never leak whether it exists).
+      - 404  Stripe reports the session does not exist.
+      - 502  Stripe is reachable but returned an unexpected error.
+      - 503  Stripe is not configured on this instance.
+    """
+    if not STRIPE_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured")
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except stripe.error.InvalidRequestError:
+        # Invalid session_id — Stripe didn't find it. Don't leak internals.
+        raise HTTPException(status_code=404, detail="Checkout session not found")
+    except stripe.error.StripeError as exc:
+        logger.error("Stripe session retrieve failed for %s: %s", session_id, exc)
+        raise HTTPException(status_code=502, detail="Stripe unreachable")
+    except Exception as exc:  # pragma: no cover — defensive
+        logger.error("Unexpected error retrieving session %s: %s", session_id, exc)
+        raise HTTPException(status_code=502, detail="Stripe unreachable")
+
+    metadata = getattr(session, "metadata", None) or {}
+    # Normalise to plain dict — Stripe SDK objects subclass dict but callers
+    # sometimes mock them as plain dicts, so supporting both keeps tests sane.
+    metadata = dict(metadata) if metadata else {}
+    session_user_id = metadata.get("user_id")
+
+    if not session_user_id or session_user_id != current_user.get("id"):
+        # Same response for "not yours" and "no user_id metadata": never leak
+        # whether an arbitrary session_id resolves. A hostile client that
+        # scraped a session_id from elsewhere gets 403, not useful info.
+        raise HTTPException(status_code=403, detail="Forbidden checkout session")
+
+    payment_status = str(getattr(session, "payment_status", "") or "")
+    # 'no_payment_required' covers 100%-off trials and fully-discounted
+    # plans — Stripe still marks the session as complete without a PI.
+    confirmed = payment_status in {"paid", "no_payment_required"}
+
+    tier_key = metadata.get("tier") or ""
+    plan_name: Optional[str] = None
+    plan = PLANS.get(tier_key) if tier_key else None
+    if plan is None:
+        plan_key = metadata.get("pricing_plan_key") or ""
+        if plan_key:
+            plan = PLANS.get(plan_key)
+    if plan is not None:
+        plan_name = plan.get("name")
+
+    return {
+        "confirmed": confirmed,
+        "session_id": getattr(session, "id", session_id),
+        "payment_status": payment_status,
+        "status": str(getattr(session, "status", "") or ""),
+        "amount_total": getattr(session, "amount_total", None),
+        "currency": getattr(session, "currency", None),
+        "tier": tier_key or None,
+        "plan_name": plan_name,
+    }
+
+
 @router.post("/stripe/portal-session")
 @router.post("/billing/portal")  # convenience alias
 async def create_portal_session(request: Request, current_user: dict = Depends(get_current_user)):

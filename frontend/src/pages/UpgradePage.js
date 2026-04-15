@@ -14,25 +14,72 @@ export default function UpgradePage({ success = false }) {
   const [selectedTier, setSelectedTier] = useState('starter');
   const purchaseTracked = useRef(false);
 
-  // Fire GA4 purchase conversion event on successful checkout return
+  // Fire GA4 purchase conversion event on successful checkout return —
+  // ONLY after the server confirms the Stripe session is real, paid, and
+  // owned by this user. Without this gate an authenticated attacker could
+  // hit /upgrade/success?session_id=FAKE and forge `purchase` events in
+  // GA4, poisoning Google Ads conversion data.
   useEffect(() => {
-    if (success && !purchaseTracked.current) {
+    if (!success || purchaseTracked.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    const planId = params.get('plan') || 'starter';
+
+    // No session_id in URL — nothing to confirm. Skip the fire rather than
+    // tagging an inaccurate conversion.
+    if (!sessionId) {
       purchaseTracked.current = true;
-      const params = new URLSearchParams(window.location.search);
-      const sessionId = params.get('session_id');
-      const planId = params.get('plan') || 'starter';
-      const tier = PRICING_TIERS.find((t) => t.id === planId) || PRICING_TIERS.find((t) => t.id === 'starter');
-      trackGoogleTagEvent('purchase', {
-        transaction_id: sessionId || `biqc_${Date.now()}`,
-        value: tier?.priceNum || 0,
-        currency: 'AUD',
-        items: [{ item_name: tier?.name || 'BIQc Subscription', item_category: 'subscription' }],
-      });
-      trackGoogleTagEvent('biqc_subscription_activated', {
-        plan: planId,
-        source: 'stripe_checkout',
-      });
+      return;
     }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiClient.get(
+          `/stripe/checkout/${encodeURIComponent(sessionId)}/confirm`
+        );
+        if (cancelled) return;
+        const payload = res?.data || {};
+        if (!payload.confirmed) {
+          // Stripe says not paid (yet) or ownership mismatch — do not fire.
+          purchaseTracked.current = true;
+          return;
+        }
+
+        purchaseTracked.current = true;
+        const tierFromConfig =
+          PRICING_TIERS.find((t) => t.id === (payload.tier || planId)) ||
+          PRICING_TIERS.find((t) => t.id === 'starter');
+        const valueDollars =
+          typeof payload.amount_total === 'number' && payload.amount_total > 0
+            ? payload.amount_total / 100
+            : tierFromConfig?.priceNum || 0;
+        const currency = (payload.currency || 'AUD').toUpperCase();
+
+        trackGoogleTagEvent('purchase', {
+          transaction_id: payload.session_id || sessionId,
+          value: valueDollars,
+          currency,
+          items: [
+            {
+              item_name: payload.plan_name || tierFromConfig?.name || 'BIQc Subscription',
+              item_category: 'subscription',
+            },
+          ],
+        });
+        trackGoogleTagEvent('biqc_subscription_activated', {
+          plan: payload.tier || planId,
+          source: 'stripe_checkout',
+        });
+      } catch {
+        // Swallow — a failed confirmation must never trigger a fake fire.
+        if (!cancelled) purchaseTracked.current = true;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [success]);
 
   const handleUpgrade = async () => {
