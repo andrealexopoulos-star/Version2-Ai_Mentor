@@ -1,4 +1,6 @@
 """BIQc LLM Router — direct multi-provider routing + Trinity orchestration."""
+from __future__ import annotations  # enables `str | None` etc. on Python 3.9
+
 import asyncio
 import os
 import logging
@@ -8,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 # Token metering — lazy import to avoid circular deps at module load
 _token_metering = None
+_budget_enforcer = None
 
 def _get_metering():
     global _token_metering
@@ -19,6 +22,52 @@ def _get_metering():
             logger.debug("[LLM Router] token_metering not available: %s", exc)
             _token_metering = False  # sentinel: tried and failed
     return _token_metering if _token_metering else None
+
+
+def _get_budget_enforcer():
+    """Lazy-load the free-tier 402 hard-stop (Step 9 / P1-6).
+
+    Kept separate from _get_metering so unit tests can patch one without
+    the other, and so a failure to import the enforcer never cascades to
+    the recorder (and vice versa).
+    """
+    global _budget_enforcer
+    if _budget_enforcer is None:
+        try:
+            from middleware.token_metering import enforce_free_tier_budget
+            _budget_enforcer = enforce_free_tier_budget
+        except Exception as exc:
+            logger.debug("[LLM Router] budget enforcer not available: %s", exc)
+            _budget_enforcer = False  # sentinel: tried and failed
+    return _budget_enforcer if _budget_enforcer else None
+
+
+async def _check_budget_or_raise(user_id: str | None, tier: str | None):
+    """Free-tier hard-stop before any LLM round-trip (Step 9 / P1-6).
+
+    Invoked from the top of every public llm_chat / llm_trinity_chat /
+    llm_chat_with_usage call so the 402 fires BEFORE we pay OpenAI /
+    Anthropic / Google for a request whose result the user has no quota
+    left to receive.
+
+    Propagates HTTPException from enforce_free_tier_budget unchanged so
+    the FastAPI handler returns the 402 with the upgrade-CTA payload.
+    Anonymous calls and missing enforcer short-circuit. DB/service errors
+    inside the enforcer fail open (enforcer handles its own try/except).
+    """
+    if not user_id:
+        return
+    enforcer = _get_budget_enforcer()
+    if enforcer is None:
+        return
+    try:
+        from routes.deps import get_sb
+        sb = get_sb()
+    except Exception as exc:
+        logger.debug("[LLM Router] budget check skipped (sb unavailable): %s", exc)
+        return
+    # No try/except around the enforcer — HTTPException MUST propagate.
+    enforcer(sb, user_id, tier)
 
 
 async def _record_usage(user_id: str | None, model: str, input_tokens: int, output_tokens: int, feature: str = "llm_call", tier: str | None = None):
@@ -184,6 +233,10 @@ async def llm_chat(
     user_id: str = None,
     tier: str = None,
 ) -> str:
+    # Step 9 / P1-6 — free-tier 402 hard-stop fires BEFORE the provider call
+    # so we don't pay for a response the caller has no quota to receive.
+    await _check_budget_or_raise(user_id, tier)
+
     cfg = _get_route(route)
     model = model or cfg["model"]
     temperature = temperature if temperature is not None else cfg.get("temperature", 0.6)
@@ -256,6 +309,11 @@ async def llm_trinity_chat(
     tier: str = None,
 ) -> str:
     """Parallel OpenAI + Gemini + Anthropic analysis with synthesis."""
+    # Step 9 / P1-6 — Trinity is the most expensive call path (3 providers
+    # in parallel + a synthesis pass). If the free-tier enforcer fires
+    # anywhere it should fire here first.
+    await _check_budget_or_raise(user_id, tier)
+
     tasks = []
     labels = []
     models_used = []
@@ -384,6 +442,11 @@ async def llm_chat_with_usage(
     user_id: str = None,
     tier: str = None,
 ) -> tuple:
+    # Step 9 / P1-6 — mirror of the llm_chat guard. llm_chat_with_usage is
+    # used by callers that need raw token counts for post-processing (e.g.
+    # calibration scoring); same cost-containment applies.
+    await _check_budget_or_raise(user_id, tier)
+
     cfg = _get_route(route)
     model = model or cfg["model"]
     temperature = temperature if temperature is not None else cfg.get("temperature", 0.6)

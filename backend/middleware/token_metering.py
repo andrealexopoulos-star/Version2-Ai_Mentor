@@ -13,6 +13,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
+from fastapi import HTTPException
+
 logger = logging.getLogger(__name__)
 
 # ─── Tier Token Allocations (monthly) ──────────────────────────────────────────
@@ -375,3 +377,117 @@ def check_token_budget(sb, user_id: str, tier: str | None = None) -> dict:
         "overage_output": overage_out,
         "tier": alloc.get("tier", effective_tier),
     }
+
+
+# ─── Free-tier hard-stop (Step 9 / P1-6) ───────────────────────────────────────
+
+# Static copy for the 402 response. Kept out of detail-dict literal so callers
+# (and tests) can inspect the exact wording. Frontend keys off `error` to
+# choose the upgrade CTA component — the `message` is the human string shown
+# inline while the CTA is loading.
+FREE_TIER_QUOTA_EXHAUSTED_ERROR = "free_tier_quota_exhausted"
+FREE_TIER_QUOTA_EXHAUSTED_MESSAGE = (
+    "You have used your free monthly AI allowance. "
+    "Upgrade to Starter to keep going — or wait until the next calendar month."
+)
+FREE_TIER_UPGRADE_URL = "/upgrade"
+
+
+def enforce_free_tier_budget(sb, user_id: str, tier: str | None) -> None:
+    """Hard-stop free-tier users at 100% of the monthly token allocation.
+
+    Step 9 / P1-6 — before Step 9 the only quota gate on free was per-feature
+    *call count* (80 soundboard/mo, 40 war-room/mo) enforced in
+    routes.deps.check_rate_limit. That left a cost hole: a single free user
+    can stay inside their call budget but fire pathologically long prompts,
+    burning through the 150K input / 75K output token allocation on
+    gpt-5.4-pro (~AUD $3.50 / 1M input tokens) and costing BIQc real money
+    until the next calendar rollover.
+
+    This enforcer closes the hole at the LLM-router chokepoint. It raises
+    HTTPException 402 (Payment Required) with `{error, message, upgrade_url,
+    used, allocated}` so the frontend can render a conversion CTA and the
+    backend stops before paying for another provider round-trip.
+
+    Design notes:
+      - Free tier only. Paid tiers (starter/pro/business/enterprise/
+        custom_build/super_admin) short-circuit — their cost is covered by
+        revenue and overage is tracked for reconciliation rather than blocked.
+      - Fail-open on DB outages. If the allocation lookup errors, we allow
+        the call through rather than 500ing — free-tier cost containment is
+        important but not worth a full outage if Supabase blips.
+      - 100% is the threshold. Exactly-at-cap blocks; one-token-under does
+        not. Simpler for the frontend to explain ("You've used all 150K")
+        than a fractional soft-warning.
+      - Either dimension exhausted triggers the stop. Input and output are
+        separately metered because their $/token costs differ by 4-5x — we
+        can't let either go unbounded.
+    """
+    # routes.deps._normalize_subscription_tier and our _normalize_tier both
+    # flatten aliases (growth/foundation → starter, custom → custom_build,
+    # superadmin → super_admin, None/unknown → free) so either input form
+    # works. Keep normalisation inside this function so callers don't have to
+    # pre-normalise.
+    normalized = _normalize_tier(tier)
+    if normalized != "free":
+        return  # paid tiers are not hard-stopped at this gate
+
+    if not user_id:
+        # No user context (admin task, background job, health probe) — do not
+        # attempt to allocate or block. Anonymous LLM use is already blocked
+        # upstream by auth.
+        return
+
+    try:
+        alloc = get_or_create_allocation(sb, user_id, "free")
+    except Exception as exc:
+        logger.warning(
+            "[TokenMetering] enforce_free_tier_budget: allocation lookup failed "
+            "for user %s: %s — failing open.",
+            str(user_id)[:8], exc,
+        )
+        return
+
+    if alloc is None:
+        # get_or_create_allocation already logged; treat as fail-open.
+        return
+
+    try:
+        input_used = int(alloc.get("input_used", 0) or 0)
+        output_used = int(alloc.get("output_used", 0) or 0)
+        input_allocated = int(alloc.get("input_allocated", 0) or 0)
+        output_allocated = int(alloc.get("output_allocated", 0) or 0)
+    except (TypeError, ValueError) as exc:
+        logger.warning(
+            "[TokenMetering] enforce_free_tier_budget: malformed allocation "
+            "row for user %s: %s — failing open.",
+            str(user_id)[:8], exc,
+        )
+        return
+
+    # Negative allocation == unlimited (super_admin fallback row). Skip.
+    input_exhausted = input_allocated >= 0 and input_used >= input_allocated
+    output_exhausted = output_allocated >= 0 and output_used >= output_allocated
+
+    if not (input_exhausted or output_exhausted):
+        return
+
+    logger.info(
+        "[TokenMetering] free-tier hard-stop fired for user %s "
+        "(input %d/%d, output %d/%d)",
+        str(user_id)[:8], input_used, input_allocated, output_used, output_allocated,
+    )
+    raise HTTPException(
+        status_code=402,
+        detail={
+            "error": FREE_TIER_QUOTA_EXHAUSTED_ERROR,
+            "message": FREE_TIER_QUOTA_EXHAUSTED_MESSAGE,
+            "upgrade_url": FREE_TIER_UPGRADE_URL,
+            "tier": "free",
+            "input_used": input_used,
+            "input_allocated": input_allocated,
+            "output_used": output_used,
+            "output_allocated": output_allocated,
+            "dimension_exhausted": "input" if input_exhausted else "output",
+        },
+    )
