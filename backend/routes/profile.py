@@ -1358,7 +1358,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
         if db_oac:
             prompt = db_oac
         else:
-            prompt = f"""You are the Ops Advisory Centre (OAC) for The Strategy Squad.
+            prompt = f"""You are the Ops Advisory Centre (OAC) for BIQc.
 Your job: produce deeply customised operational recommendations that are SPECIFIC to this business and NOT generic.
 
 Business name: {biz_name}

@@ -98,7 +98,7 @@ const TermsAndConditions = () => {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-red-800 font-semibold mb-2">IMPORTANT DISCLAIMER</p>
                   <p className="text-red-700 text-sm">
-                    THE STRATEGY SQUAD PROVIDES GENERAL INFORMATION AND EDUCATIONAL CONTENT ONLY. 
+                    BIQc PROVIDES GENERAL INFORMATION AND EDUCATIONAL CONTENT ONLY. 
                     THE SERVICE DOES NOT CONSTITUTE AND SHOULD NOT BE CONSTRUED AS:
                   </p>
                   <ul className="text-red-700 text-sm mt-2 list-disc pl-5 space-y-1">
