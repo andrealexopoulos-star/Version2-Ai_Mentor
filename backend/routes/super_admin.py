@@ -470,3 +470,83 @@ async def trigger_stripe_reconcile(current_user: dict = Depends(get_current_user
             status_code=502,
             detail=f"Stripe reconcile failed: {type(exc).__name__}: {exc}",
         )
+
+
+# ═══ AI PRICING GAP DAILY ALERT (Step 15 / P1-11) ════════════════════
+#
+# Queries v_ai_pricing_gaps and emails ops via Resend if any rows exist.
+# Triggered daily by an Azure Logic App timer hitting this endpoint. The
+# underlying job is an async function because the Resend call runs
+# through httpx.AsyncClient; the endpoint awaits it directly.
+#
+# Failure semantics match stripe/reconcile:
+#   • Resend outage → logged + surfaced in response, 200 still returned
+#     (the GAP DATA itself is valuable even if email send failed)
+#   • Supabase RPC outage → 502 (Bad Gateway) so the Logic App retries
+#
+# The run_summary dict mirrors what jobs/stripe_reconcile.py returns so
+# dashboards and audit rows can be deduped on run_id.
+
+@router.post("/admin/cost/pricing-gaps/alert")
+async def trigger_pricing_gap_alert(
+    force_send: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
+    """Run the daily AI pricing gap alert and return a summary.
+
+    Super-admin only. Intended to be invoked daily (08:00 UTC Mon–Fri)
+    by an Azure Logic App / Cloud Scheduler timer with an admin bearer.
+
+    Query params
+    ------------
+    force_send : bool, default False
+        When True, send the alert email even if the gap list is empty.
+        Used by ops to smoke-test the Resend pipeline end-to-end.
+
+    Returns
+    -------
+    JSON with run_id, started_at / finished_at, gap_count, gaps[],
+    email_sent (bool), and optional email_error / skipped_reason.
+    HTTP 200 even when Resend errored — the gap data itself is the
+    payload the dashboard consumes.
+
+    Raises
+    ------
+    502 when the Supabase RPC is unreachable — that's the only failure
+    mode that invalidates the whole run.
+    """
+    _require_super_admin(current_user)
+    try:
+        from jobs.ai_pricing_gap_alert import run_pricing_gap_alert
+        sb = _get_service_client()
+        summary = await run_pricing_gap_alert(sb, force_send=bool(force_send))
+        # Audit row mirrors the stripe_reconcile_run pattern so ops can
+        # see both runs side-by-side in admin_actions history.
+        try:
+            sb.table("admin_actions").insert({
+                "admin_user_id": current_user.get("id"),
+                "action_type": "ai_pricing_gap_alert_run",
+                "new_value": {
+                    "run_id": summary.get("run_id"),
+                    "gap_count": summary.get("gap_count"),
+                    "email_sent": summary.get("email_sent"),
+                    "skipped_reason": summary.get("skipped_reason"),
+                },
+            }).execute()
+        except Exception as audit_exc:  # pragma: no cover
+            logger.warning("[PricingGapAlert] audit insert failed: %s", audit_exc)
+        # If the RPC itself errored, surface as 502 so the Logic App retries.
+        if summary.get("error"):
+            raise HTTPException(
+                status_code=502,
+                detail=f"Pricing gap RPC failed: {summary['error']}",
+            )
+        return summary
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("[PricingGapAlert] run failed: %s", exc, exc_info=True)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Pricing gap alert failed: {type(exc).__name__}: {exc}",
+        )
