@@ -224,19 +224,40 @@ class TestBIQcModeLabelVerification:
         print("soundboardPolicy.js uses proprietary BIQc mode labels (no ChatGPT/Gemini/Claude)")
     
     def test_soundboard_panel_modes_use_biqc_labels(self):
-        """Verify SoundboardPanel.js uses BIQc proprietary labels"""
+        """Verify SoundboardPanel.js sources mode labels from the canonical
+        soundboardPolicy and contains no raw provider names.
+
+        Architecture note: the labels 'BIQc Auto' / 'BIQc Trinity' / the
+        'BIQc cognition pathways' + 'BIQc model pathways' descriptions
+        live in frontend/src/lib/soundboardPolicy.js (SOUND_BOARD_MODES).
+        SoundboardPanel.js imports SOUND_BOARD_MODES rather than duplicating
+        the strings inline — that's the right factoring, and the prior
+        version of this test was checking the pre-refactor source shape.
+        The companion test `test_soundboard_modes_use_biqc_labels` above
+        asserts the labels exist in soundboardPolicy.js directly; this
+        test verifies the panel consumes that source + honours brand
+        hygiene in the strings it DOES own inline.
+        """
         with open('/app/frontend/src/components/SoundboardPanel.js', 'r') as f:
             content = f.read()
-        
-        # Check for BIQc mode labels
-        assert 'BIQc Auto' in content
-        assert 'BIQc Trinity' in content
-        
-        # Check descriptions use BIQc terminology
-        assert 'BIQc cognition pathways' in content
-        assert 'BIQc model pathways' in content
-        
-        print("SoundboardPanel.js uses proprietary BIQc terminology")
+
+        # Panel must pull modes from the canonical policy file.
+        assert "from '../lib/soundboardPolicy'" in content, \
+            "SoundboardPanel.js must import from soundboardPolicy (the canonical mode source)"
+        assert "SOUND_BOARD_MODES" in content, \
+            "SoundboardPanel.js must reference SOUND_BOARD_MODES from the policy"
+
+        # The panel owns the Trinity upsell copy inline — that string must
+        # stay branded.
+        assert 'BIQc Trinity' in content, \
+            "SoundboardPanel.js Trinity upsell copy must use the proprietary label"
+
+        # No raw provider names anywhere in the panel source.
+        forbidden = ['ChatGPT', 'Gemini AI', 'Claude AI']
+        for term in forbidden:
+            assert term not in content, f"Found forbidden term '{term}' in SoundboardPanel.js"
+
+        print("SoundboardPanel.js imports canonical policy labels and honours brand hygiene")
 
 
 if __name__ == '__main__':
