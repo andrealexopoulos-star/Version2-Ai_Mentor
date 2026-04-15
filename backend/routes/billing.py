@@ -4,18 +4,147 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timezone
-from typing import Any, Dict, List
+from calendar import monthrange
+from datetime import date, datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
 logger = logging.getLogger(__name__)
 
-from routes.deps import get_current_user, get_sb
+from routes.deps import (
+    TIER_RATE_LIMIT_DEFAULTS,
+    _normalize_subscription_tier,
+    get_current_user,
+    get_sb,
+)
 from routes.integrations import get_accounting_summary
 
 
 router = APIRouter()
+
+
+# ─── Usage summary for /billing/overview ───────────────────────────
+#
+# Maps the four internal rate-limit features to the three meters the
+# current BillingPage.js UI renders. We keep both the rich `features`
+# breakdown (so a future UI can show all four features separately) and
+# the legacy flat keys (ai_queries_*, boardroom_*, exports_*) so the
+# shipped frontend renders real numbers without a frontend deploy.
+#
+# `exports` has no matching rate-limit feature yet. Until we instrument
+# snapshot / report exports we report used=0 and limit=None; the
+# frontend treats limit=None as "no cap" (see BillingPage.js change).
+_LEGACY_FEATURE_MAP = {
+    "ai_queries": "soundboard_daily",
+    "boardroom":  "boardroom_diagnosis",
+}
+
+
+def _month_start_and_reset(today: Optional[date] = None) -> tuple[str, str]:
+    """Return (month_start_iso_date, period_reset_iso_date) for today.
+
+    month_start is the first day of the current calendar month — the
+    ai_usage_log aggregation window. period_reset is midnight on the
+    first day of the NEXT month, which is when the monthly counters
+    naturally reset (independent of subscription renewal date).
+    """
+    today = today or datetime.now(timezone.utc).date()
+    month_start = today.replace(day=1)
+    if today.month == 12:
+        next_month = date(today.year + 1, 1, 1)
+    else:
+        next_month = date(today.year, today.month + 1, 1)
+    return month_start.isoformat(), next_month.isoformat()
+
+
+def _safe_usage_summary(sb, user_id: str, subscription_tier: Optional[str]) -> Dict[str, Any]:
+    """Aggregate ai_usage_log counts for the current month and pair them
+    with the tier-level monthly limits from TIER_RATE_LIMIT_DEFAULTS.
+
+    Returns a dict with BOTH the rich `features` shape (used by future
+    UIs) and flat legacy keys the shipped BillingPage reads today.
+
+    Wrapped in a try/except so a Supabase hiccup degrades to `null`-ish
+    numbers rather than breaking the whole /billing/overview response —
+    usage is supplementary, not load-bearing.
+    """
+    tier = _normalize_subscription_tier(subscription_tier)
+    tier_limits = TIER_RATE_LIMIT_DEFAULTS.get(tier) or TIER_RATE_LIMIT_DEFAULTS["free"]
+
+    month_start_iso, period_reset_iso = _month_start_and_reset()
+
+    counts: Dict[str, int] = {feature: 0 for feature in tier_limits.keys()}
+    try:
+        res = (
+            sb.table("ai_usage_log")
+            .select("feature,count,date")
+            .eq("user_id", user_id)
+            .gte("date", month_start_iso)
+            .execute()
+        )
+        for row in (res.data or []):
+            feature = row.get("feature")
+            if feature in counts:
+                counts[feature] += int(row.get("count") or 0)
+    except Exception as exc:  # pragma: no cover — best-effort counter
+        logger.warning("ai_usage_log aggregation failed for %s: %s", user_id, exc)
+
+    def _feature_entry(feature_key: str) -> Dict[str, Any]:
+        limit = int((tier_limits.get(feature_key) or {}).get("monthly_limit") or 0)
+        unlimited = limit < 0
+        return {
+            "used": counts.get(feature_key, 0),
+            # Frontend can render null as "∞"; -1 is only an internal marker.
+            "limit": None if unlimited else limit,
+            "unlimited": unlimited,
+        }
+
+    features = {
+        "soundboard": _feature_entry("soundboard_daily"),
+        "trinity":    _feature_entry("trinity_daily"),
+        "boardroom":  _feature_entry("boardroom_diagnosis"),
+        "war_room":   _feature_entry("war_room_ask"),
+    }
+
+    # Legacy flat keys so the shipped BillingPage.js works without deploy.
+    summary: Dict[str, Any] = {
+        "tier": tier,
+        "month_start": month_start_iso,
+        "period_reset": period_reset_iso,
+        "features": features,
+        "exports_used": 0,     # not yet instrumented; see _LEGACY_FEATURE_MAP docstring
+        "exports_limit": None,
+    }
+    for legacy_key, feature_key in _LEGACY_FEATURE_MAP.items():
+        entry = _feature_entry(feature_key)
+        summary[f"{legacy_key}_used"] = entry["used"]
+        summary[f"{legacy_key}_limit"] = entry["limit"]
+    return summary
+
+
+def _safe_user_subscription_state(sb, user_id: str) -> Dict[str, Any]:
+    """Return a slim users row with tier + lifecycle fields or {} on error.
+
+    Gives /billing/overview a single source of truth for tier naming and
+    subscription status without re-reading ai_usage_log for tier.
+    """
+    try:
+        res = (
+            sb.table("users")
+            .select(
+                "subscription_tier,subscription_status,current_period_end,"
+                "past_due_since,trial_ends_at,stripe_customer_id"
+            )
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
+        rows = (res.data or []) if res is not None else []
+        return (rows[0] or {}) if rows else {}
+    except Exception as exc:  # pragma: no cover — lifecycle columns shipped in migration 096
+        logger.warning("users lifecycle lookup failed for %s: %s", user_id, exc)
+        return {}
 
 
 def _parse_due_date(raw_value: Any):
@@ -127,6 +256,21 @@ async def get_billing_overview(current_user: dict = Depends(get_current_user)):
             "stripe_providers": [row.get("provider") for row in stripe_integrations if row.get("provider")],
         }
 
+        # Real usage + subscription lifecycle (Step 3 / P1-1). The usage
+        # summary feeds the three progress meters on BillingPage.js that
+        # were shipped rendering "-- / --" because the endpoint never
+        # populated an `usage` key.
+        sb = get_sb()
+        user_state = _safe_user_subscription_state(sb, user_id)
+        usage_summary = _safe_usage_summary(sb, user_id, user_state.get("subscription_tier"))
+        subscription_block = {
+            "tier": usage_summary["tier"],
+            "status": user_state.get("subscription_status"),
+            "current_period_end": user_state.get("current_period_end"),
+            "past_due_since": user_state.get("past_due_since"),
+            "trial_ends_at": user_state.get("trial_ends_at"),
+        }
+
         return {
             "ok": True,
             "billing_connectors": billing_connectors,
@@ -138,6 +282,8 @@ async def get_billing_overview(current_user: dict = Depends(get_current_user)):
                 "currency": (paid_rows[0].get("currency") if paid_rows else "aud"),
             },
             "supplier_summary": supplier_summary,
+            "subscription": subscription_block,
+            "usage": usage_summary,
             "recent_charges": payment_rows[:10],
             "recent_supplier_invoices": (
                 [

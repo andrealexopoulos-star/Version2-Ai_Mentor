@@ -314,29 +314,40 @@ const BillingPage = () => {
           <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Usage This Period</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: 'AI Queries', used: overview?.usage?.ai_queries_used ?? 0, limit: overview?.usage?.ai_queries_limit ?? 500 },
-              { label: 'BoardRoom Sessions', used: overview?.usage?.boardroom_used ?? 0, limit: overview?.usage?.boardroom_limit ?? 30 },
-              { label: 'Report Exports', used: overview?.usage?.exports_used ?? 0, limit: overview?.usage?.exports_limit ?? 20 },
+              { label: 'AI Queries', used: overview?.usage?.ai_queries_used ?? 0, limit: overview?.usage?.ai_queries_limit },
+              { label: 'BoardRoom Sessions', used: overview?.usage?.boardroom_used ?? 0, limit: overview?.usage?.boardroom_limit },
+              { label: 'Report Exports', used: overview?.usage?.exports_used ?? 0, limit: overview?.usage?.exports_limit },
             ].map(m => {
               const hasData = overview?.usage != null;
-              const displayUsed = hasData ? m.used : '--';
-              const displayLimit = hasData ? m.limit : '--';
-              const pct = (hasData && m.limit > 0) ? Math.min((m.used / m.limit) * 100, 100) : 0;
-              const color = hasData ? meterColor(m.used, m.limit) : 'var(--border)';
+              // limit === null means unlimited (enterprise / super_admin) or
+              // "not instrumented yet" (exports). Either way, don't render a
+              // misleading progress bar — show "∞" so the user can tell a
+              // real cap isn't being enforced.
+              const unlimited = hasData && (m.limit === null || m.limit === undefined);
+              const noData = !hasData;
+              const displayUsed = noData ? '--' : m.used;
+              const displayLimit = noData ? '--' : (unlimited ? '\u221E' : m.limit);
+              const pct = (hasData && !unlimited && m.limit > 0) ? Math.min((m.used / m.limit) * 100, 100) : 0;
+              const showBar = hasData && !unlimited && m.limit > 0;
+              const color = hasData && !unlimited ? meterColor(m.used, m.limit) : 'var(--border)';
               const resetDate = overview?.usage?.period_reset || overview?.subscription?.current_period_end || null;
-              const remaining = hasData ? (m.limit - m.used) : '--';
+              const remaining = noData ? '--' : (unlimited ? '\u221E' : (m.limit - m.used));
               return (
                 <Panel key={m.label}>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-semibold" style={{ color: 'var(--ink-display)' }}>{m.label}</span>
                     <span className="text-xs" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-secondary)' }}>{displayUsed} / {displayLimit}</span>
                   </div>
-                  <div className="rounded-full mb-2 overflow-hidden" style={{ height: '8px', background: 'var(--surface-2)' }}>
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct}%`, background: color, transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
-                    />
-                  </div>
+                  {showBar ? (
+                    <div className="rounded-full mb-2 overflow-hidden" style={{ height: '8px', background: 'var(--surface-2)' }}>
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${pct}%`, background: color, transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="rounded-full mb-2" style={{ height: '8px', background: 'var(--surface-2)' }} />
+                  )}
                   <span className="text-xs" style={{ color: 'var(--ink-muted)' }}>
                     {resetDate ? `Resets ${resetDate}` : 'Resets next billing cycle'} · {remaining} remaining
                   </span>
