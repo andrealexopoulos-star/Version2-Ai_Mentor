@@ -376,7 +376,7 @@ const DashboardLayout = ({ children }) => {
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: `var(--biqc-bg, ${colors.bg})`, color: `var(--biqc-text, ${colors.text})` }}>
       {/* ═══ TOP BAR ═══ */}
-      <header className="fixed top-0 left-0 right-0 h-[60px] px-4 lg:px-6 flex items-center justify-between" style={{ background: 'var(--biqc-topbar-bg, rgba(11, 17, 32, 0.88))', backdropFilter: 'saturate(180%) blur(16px)', WebkitBackdropFilter: 'saturate(180%) blur(16px)', borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
+      <header className="fixed top-0 left-0 right-0 h-[60px] px-4 lg:px-6 flex items-center justify-between" style={{ background: 'var(--biqc-sidebar-bg, #0A1018)', backdropFilter: 'saturate(180%) blur(16px)', WebkitBackdropFilter: 'saturate(180%) blur(16px)', borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
         <div className="flex items-center gap-3">
           <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
             {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -782,7 +782,7 @@ const DashboardLayout = ({ children }) => {
             fontSize: 13,
           }}
         >
-          <span style={{ color: 'white', fontWeight: 500 }}>
+          <span style={{ color: 'white', fontWeight: 500, flex: 1, textAlign: 'center' }}>
             You are on a free trial of Professional — {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining.
           </span>
           <button

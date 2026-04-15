@@ -216,8 +216,14 @@ const OnboardingWizard = () => {
       await apiClient.post('/onboarding/complete');
       markOnboardingComplete();
       trackActivationStep('onboarding_complete', { entrypoint: 'onboarding_wizard' });
-      toast.success('Profile completed! Start your first Ask BIQc briefing.');
-      navigate('/soundboard', { replace: true, state: { fromOnboarding: true, firstValuePath: true } });
+      toast.success('Profile complete — running your Deep Scan now.');
+      // Chain into ForensicCalibration so the Deep Scan
+      // (POST /enrichment/website?action=scan) actually fires and populates
+      // business_dna_enrichment. Without this, Market & Position / Benchmark
+      // pages stay empty because the lightweight /website/enrich used earlier
+      // in this wizard only extracts title/description — it does not produce
+      // the full enrichment payload those pages depend on.
+      navigate('/market/calibration', { replace: true, state: { fromOnboarding: true } });
     } catch (error) {
       toast.error('Failed to complete setup');
       console.error('Onboarding completion error:', error);
