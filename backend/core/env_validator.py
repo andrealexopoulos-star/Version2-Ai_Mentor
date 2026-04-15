@@ -15,27 +15,40 @@ from typing import Iterable
 logger = logging.getLogger(__name__)
 
 # ─── Env-var groups ────────────────────────────────────────────────
-# Required-in-production env vars. Absence in production → raise.
+# HARD-required in production — missing these = the service cannot function
+# at all (can't sign JWTs, can't reach Supabase, can't call OpenAI). Absence
+# raises EnvValidationError and halts startup.
 PROD_REQUIRED: tuple[str, ...] = (
     "JWT_SECRET_KEY",
     "SUPABASE_URL",
     "SUPABASE_SERVICE_ROLE_KEY",
-    "STRIPE_API_KEY",
-    "STRIPE_WEBHOOK_SECRET",
     "OPENAI_API_KEY",
-    "RESEND_API_KEY",
-    "RESEND_FROM_EMAIL",
-    "BIQC_ADMIN_NOTIFICATION_EMAIL",
 )
 
 # Required-in-production env vars where EITHER form is acceptable.
-# Pair = (primary, alternatives...). Satisfied if ANY are set.
-PROD_REQUIRED_GROUPS: tuple[tuple[str, ...], ...] = (
-    ("REDIS_URL", "AZURE_REDIS_HOST"),
-)
+# Currently none are hard-required at boot. Redis is resilient — absence
+# degrades to in-memory rate limits + local worker and is warned on.
+PROD_REQUIRED_GROUPS: tuple[tuple[str, ...], ...] = ()
 
-# Warn-only in production (non-fatal). Absence degrades UX but not boots.
+# Warn-only in production (non-fatal). Absence degrades UX but the service
+# still boots and serves requests.
+#
+# NOTE: STRIPE_*, RESEND_*, and BIQC_ADMIN_NOTIFICATION_EMAIL are warn-only
+# because:
+#   • Stripe: /healthz, /advisor, /boardroom, /soundboard, /api/auth all work
+#     without Stripe. Checkout endpoints will error with a clear message at
+#     request-time rather than taking down the whole service.
+#   • Resend + admin email: contact form gracefully logs instead of emailing
+#     when unset. Not worth blocking the whole platform for.
+#   • Redis: worker + rate-limit fall back to in-memory behaviour.
 PROD_WARN_ONLY: tuple[str, ...] = (
+    "STRIPE_API_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "RESEND_API_KEY",
+    "RESEND_FROM_EMAIL",
+    "BIQC_ADMIN_NOTIFICATION_EMAIL",
+    "REDIS_URL",
+    "AZURE_REDIS_HOST",
     "REACT_APP_RECAPTCHA_SITE_KEY",
     "GOOGLE_API_KEY",
     "ANTHROPIC_API_KEY",
@@ -95,10 +108,15 @@ def _collect_missing_groups(groups: Iterable[tuple[str, ...]]) -> list[str]:
 
 
 def _stripe_api_key_issue() -> str | None:
-    """Return a human error string if the Stripe API key looks wrong in prod."""
+    """Return a warning string if the Stripe API key looks wrong in prod.
+
+    This is WARN-only — the service still boots with a test or missing key.
+    Stripe endpoints will surface request-level errors at checkout time
+    rather than dragging the whole platform down.
+    """
     key = (os.environ.get("STRIPE_API_KEY") or "").strip()
     if not key:
-        return None  # covered by PROD_REQUIRED missing check
+        return None  # covered by missing-var warning
     if is_production() and key.startswith("sk_test_"):
         return (
             "STRIPE_API_KEY is a TEST key (sk_test_…) but ENVIRONMENT=production. "
@@ -144,19 +162,21 @@ def validate_env_or_raise() -> dict:
     stripe_issue = _stripe_api_key_issue()
     placeholder_price_ids = _stripe_price_placeholders()
 
+    # HARD errors — boot-critical vars only. Everything else becomes a warning.
     if missing_required:
         errors.append(f"Missing required env vars: {missing_required}")
     if missing_groups:
         errors.append(f"Missing env var (one of each group required): {missing_groups}")
+
+    # Warnings — non-boot-critical. Platform runs but certain features degraded.
     if stripe_issue:
-        errors.append(stripe_issue)
+        warnings.append(stripe_issue)
     if placeholder_price_ids:
-        errors.append(
+        warnings.append(
             "Stripe price IDs look like placeholders and must be replaced with "
-            "real Stripe price IDs before production: "
+            "real Stripe price IDs before accepting payments: "
             + ", ".join(placeholder_price_ids)
         )
-
     if missing_warn:
         warnings.append(f"Missing optional env vars: {missing_warn}")
 

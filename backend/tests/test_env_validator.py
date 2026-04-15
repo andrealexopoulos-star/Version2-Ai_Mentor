@@ -2,11 +2,20 @@
 
 These tests mutate os.environ via monkeypatch and never hit the network
 or Supabase. They cover:
-  - production: missing required var raises
-  - production: sk_test_ Stripe key raises
-  - production: placeholder Stripe price ID raises
+  - production: missing HARD-required var raises (JWT/Supabase/OpenAI only)
+  - production: missing warn-only var (Stripe/Resend/Redis) warns, never raises
+  - production: sk_test_ Stripe key warns (not fatal — platform still boots)
+  - production: placeholder Stripe price ID warns (not fatal)
   - dev: missing required var only warns
   - happy path: all vars present → ok
+
+Background: we previously hard-required Stripe + Resend + admin email +
+Redis + webhook secret. That caused the 2026-04-15 production outage because
+those vars weren't set in Azure App Service. The platform doesn't need
+Stripe/Resend/Redis to serve /health, /advisor, /soundboard, etc. — it only
+needs them when a user actually tries to check out / send email / enqueue a
+job. Those features now surface a 503 at request time rather than dragging
+down the whole service.
 """
 from __future__ import annotations
 
@@ -80,44 +89,64 @@ def test_prod_missing_required_var_raises(monkeypatch, missing_var):
     assert missing_var in str(exc.value)
 
 
-def test_prod_missing_redis_group_raises(monkeypatch):
+def test_prod_missing_redis_does_not_raise(monkeypatch):
+    """Redis is warn-only — absence falls back to in-memory worker + rate limits."""
     _set_minimum_prod_env(monkeypatch)
     monkeypatch.delenv("REDIS_URL", raising=False)
     monkeypatch.delenv("AZURE_REDIS_HOST", raising=False)
-    with pytest.raises(EnvValidationError) as exc:
-        validate_env_or_raise()
-    assert "REDIS_URL" in str(exc.value)
+    report = validate_env_or_raise()
+    assert report["ok"] is True
+    assert any("REDIS_URL" in w for w in report["warnings"])
 
 
-def test_prod_redis_group_satisfied_by_azure_host(monkeypatch):
+def test_prod_missing_stripe_warns_does_not_raise(monkeypatch):
+    """Stripe is warn-only — checkout endpoints will 503 at request time
+    rather than blocking the whole service from booting."""
     _set_minimum_prod_env(monkeypatch)
-    monkeypatch.delenv("REDIS_URL", raising=False)
-    monkeypatch.setenv("AZURE_REDIS_HOST", "my-cache.redis.cache.windows.net")
+    monkeypatch.delenv("STRIPE_API_KEY", raising=False)
+    monkeypatch.delenv("STRIPE_WEBHOOK_SECRET", raising=False)
+    report = validate_env_or_raise()
+    assert report["ok"] is True
+    assert any("STRIPE_API_KEY" in w for w in report["warnings"])
+
+
+def test_prod_missing_resend_warns_does_not_raise(monkeypatch):
+    """Resend is warn-only — contact form degrades to log-only rather than
+    blocking the whole service from booting."""
+    _set_minimum_prod_env(monkeypatch)
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    monkeypatch.delenv("RESEND_FROM_EMAIL", raising=False)
+    monkeypatch.delenv("BIQC_ADMIN_NOTIFICATION_EMAIL", raising=False)
     report = validate_env_or_raise()
     assert report["ok"] is True
 
 
-# ─── Stripe hardening ──────────────────────────────────────────────
+# ─── Stripe warnings (non-fatal) ───────────────────────────────────
 
-def test_prod_sk_test_stripe_key_rejected(monkeypatch):
+def test_prod_sk_test_stripe_key_warns(monkeypatch):
+    """sk_test_ in production is a warning, not a hard fail — the service
+    still boots so /health, /advisor, /soundboard all work while the key
+    gets rotated."""
     _set_minimum_prod_env(monkeypatch)
     monkeypatch.setenv("STRIPE_API_KEY", "sk_test_123")
-    with pytest.raises(EnvValidationError) as exc:
-        validate_env_or_raise()
-    assert "TEST key" in str(exc.value)
+    report = validate_env_or_raise()
+    assert report["ok"] is True
+    assert any("TEST key" in w for w in report["warnings"])
 
 
-def test_prod_placeholder_price_id_rejected(monkeypatch):
+def test_prod_placeholder_price_id_warns(monkeypatch):
+    """Placeholder price IDs in production are a warning — Stripe checkout
+    will surface the real error at request time when the price lookup fails."""
     _set_minimum_prod_env(monkeypatch)
     monkeypatch.setenv(
         "REACT_APP_STRIPE_STARTER_PRICE_ID", "price_biqc_growth_69",
     )
-    with pytest.raises(EnvValidationError) as exc:
-        validate_env_or_raise()
-    assert "placeholders" in str(exc.value)
+    report = validate_env_or_raise()
+    assert report["ok"] is True
+    assert any("placeholders" in w for w in report["warnings"])
 
 
-def test_prod_multiple_placeholder_price_ids_rejected(monkeypatch):
+def test_prod_multiple_placeholder_price_ids_warns(monkeypatch):
     _set_minimum_prod_env(monkeypatch)
     monkeypatch.setenv(
         "REACT_APP_STRIPE_PRO_PRICE_ID", "price_biqc_professional_199",
@@ -125,11 +154,11 @@ def test_prod_multiple_placeholder_price_ids_rejected(monkeypatch):
     monkeypatch.setenv(
         "REACT_APP_STRIPE_BUSINESS_PRICE_ID", "price_placeholder_business",
     )
-    with pytest.raises(EnvValidationError) as exc:
-        validate_env_or_raise()
-    msg = str(exc.value)
-    assert "REACT_APP_STRIPE_PRO_PRICE_ID" in msg
-    assert "REACT_APP_STRIPE_BUSINESS_PRICE_ID" in msg
+    report = validate_env_or_raise()
+    assert report["ok"] is True
+    all_warnings = " ".join(report["warnings"])
+    assert "REACT_APP_STRIPE_PRO_PRICE_ID" in all_warnings
+    assert "REACT_APP_STRIPE_BUSINESS_PRICE_ID" in all_warnings
 
 
 # ─── Non-production behaviour ──────────────────────────────────────
