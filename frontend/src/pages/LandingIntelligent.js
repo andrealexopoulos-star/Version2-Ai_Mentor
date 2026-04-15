@@ -364,9 +364,10 @@ const LandingIntelligent = () => {
   ];
 
   const pricingTiers = [
-    { name: 'The Pulse', price: '149', tagline: 'Sentinel monitoring', features: ['24/7 Sentinel Monitoring','Risk & anomaly alerts','Business DNA profile','Weekly intelligence briefing','Email & calendar integration','1 user seat'], cta: 'Get started', highlight: false },
-    { name: 'The Strategist', price: '1,950', tagline: 'Advisory calibration', features: ['Everything in The Pulse','Full BIQc Intelligence Matrix','Monthly Advisory Calibration','CRM & accounting integration','Board-ready intelligence memos','Up to 5 user seats'], cta: 'Get started', highlight: true },
-    { name: 'The Sovereign', price: '5,500', tagline: 'Full sentinel integration', features: ['Everything in The Strategist','Weekly Force Memo Execution','Daily mentoring sessions','Custom integration pipeline','Dedicated advisor','Unlimited seats'], cta: 'Contact sales', highlight: false },
+    { name: 'Growth', price: '69', tagline: 'Foundation operating package', features: ['BIQc Foundation package','Exposure Scan','Marketing Auto','Reports & SOP Generator','Revenue & Operations','Up to 5 integrations'], cta: 'Get started', highlight: false },
+    { name: 'Professional', price: '199', tagline: 'Scale operating intelligence', features: ['Everything in Growth','Higher request & automation limits','Priority model routing','Advanced reporting cadence','Expanded connector allowance','War Room & Boardroom'], cta: 'Get started', highlight: true },
+    { name: 'Business', price: '349', tagline: 'Full-scale operating intelligence', features: ['Everything in Professional','All premium AI model access','15M input + 6M output tokens/month','Risk & compliance modules','Team collaboration (5 seats)','Dedicated onboarding'], cta: 'Get started', highlight: false },
+    { name: 'Enterprise', price: 'Custom', tagline: 'Governed enterprise control', features: ['Everything in Business','Enterprise governance controls','Dedicated reliability & support','Unlimited usage allowances','Executive rollout & enablement','Custom Build available'], cta: 'Contact sales', highlight: false },
   ];
 
   return (
@@ -597,7 +598,7 @@ const LandingIntelligent = () => {
             <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-3 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Intelligence at every scale</h2>
             <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-ui)' }}>All prices in AUD. Cancel anytime. 14-day free trial on The Pulse.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {pricingTiers.map((tier, i) => (
               <div key={i} className={`rounded-2xl p-5 sm:p-7 flex flex-col transition-all hover:-translate-y-1 duration-300 ${tier.highlight ? 'sm:col-span-2 md:col-span-1' : ''}`} style={{ background: tier.highlight ? '#0F1720' : 'white', border: tier.highlight ? 'none' : '1px solid rgba(180,195,215,0.35)', boxShadow: tier.highlight ? '0 8px 40px rgba(0,0,0,0.2)' : '0 2px 12px rgba(100,120,160,0.06)', position: 'relative', order: tier.highlight ? -1 : 'unset' }}>
                 {tier.highlight && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white" style={{ background: '#E85D00', fontFamily: 'var(--font-mono)' }}>Recommended</div>}

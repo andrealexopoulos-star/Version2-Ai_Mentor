@@ -19,7 +19,7 @@ const FEATURE_LABELS = {
 };
 
 // Checkout-visible plans: paid tiers that can be self-served.
-const PLANS = PRICING_TIERS.filter((t) => ['starter', 'pro', 'enterprise'].includes(t.id));
+const PLANS = PRICING_TIERS.filter((t) => ['starter', 'pro', 'business', 'enterprise'].includes(t.id));
 
 const SubscribePage = () => {
   const { user, refreshSession } = useSupabaseAuth();
@@ -32,7 +32,7 @@ const SubscribePage = () => {
   const section = searchParams.get('section') || '';
   const featureLabel = FEATURE_LABELS[from] || (from ? from.replace(/\//g, '').replace(/-/g, ' ') : '');
   const currentTier = resolveTier(user);
-  const foundationUnlocked = ['starter', 'pro', 'enterprise', 'custom_build', 'super_admin'].includes(currentTier);
+  const foundationUnlocked = ['starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin'].includes(currentTier);
   const groupedWaitlist = useMemo(() => {
     const map = new Map();
     WAITLIST_FEATURES.forEach((feature) => {

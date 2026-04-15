@@ -55,6 +55,13 @@ PLANS = {
         "tier": "pro",
         "interval": "month",
     },
+    "business": {
+        "amount": 34900,
+        "currency": "aud",
+        "name": "BIQc Business",
+        "tier": "business",
+        "interval": "month",
+    },
     "enterprise": {
         "amount": 0,
         "currency": "aud",

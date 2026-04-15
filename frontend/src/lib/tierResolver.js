@@ -6,9 +6,9 @@
 import { getRouteAccess } from '../config/routeAccessConfig';
 import { MASTER_ADMIN_EMAIL as SUPER_ADMIN_EMAIL, isPrivilegedUser } from './privilegedUser';
 
-// Canonical tiers: free + 3 paid + custom build + super_admin.
-const TIERS = ['free', 'starter', 'pro', 'enterprise', 'custom_build', 'super_admin'];
-export const TIER_RANK = { free: 0, starter: 1, pro: 2, enterprise: 3, custom_build: 4, super_admin: 99 };
+// Canonical tiers: free + 4 paid + custom build + super_admin.
+const TIERS = ['free', 'starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin'];
+export const TIER_RANK = { free: 0, starter: 1, pro: 2, business: 3, enterprise: 4, custom_build: 5, super_admin: 99 };
 // Legacy tier names still resolve to paid rank for compatibility.
 const LEGACY_PAID_RANK = 1;
 function rankForTier(tier) {
@@ -49,6 +49,7 @@ export function resolveTier(user) {
   const raw = (user.subscription_tier || user.tier || 'free').toLowerCase().trim();
   if (['super_admin', 'superadmin'].includes(raw)) return 'super_admin';
   if (['enterprise', 'custom_build', 'custom'].includes(raw)) return 'enterprise';
+  if (raw === 'business') return 'business';
   if (['pro', 'professional'].includes(raw)) return 'pro';
   if (['starter', 'foundation', 'growth'].includes(raw)) return 'starter';
   if (['trial'].includes(raw)) return 'free';

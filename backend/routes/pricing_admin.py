@@ -21,7 +21,7 @@ PLAN_KEY_ALIASES = {
     "professional": "pro",
     "custom": "custom_build",
 }
-ALLOWED_PLAN_KEYS = {"free", "starter", "pro", "enterprise", "custom_build"}
+ALLOWED_PLAN_KEYS = {"free", "starter", "pro", "business", "enterprise", "custom_build"}
 
 
 def _now_iso() -> str:

@@ -5,6 +5,7 @@ export const TIERS = {
   free: { id: 'free', label: 'Free', price: 0, color: '#64748B' },
   starter: { id: 'starter', label: 'Growth', price: 69, color: '#E85D00' },
   pro: { id: 'pro', label: 'Professional', price: 199, color: '#3B82F6' },
+  business: { id: 'business', label: 'Business', price: 349, color: '#F59E0B' },
   enterprise: { id: 'enterprise', label: 'Enterprise', price: null, color: '#8B5CF6' },
   custom_build: { id: 'custom_build', label: 'Custom Build', price: null, color: '#10B981' },
   admin: { id: 'admin', label: 'Admin', price: null, color: '#7C3AED' },
@@ -13,6 +14,7 @@ export const TIERS = {
 export const STRIPE_PRICES = {
   starter_monthly: process.env.REACT_APP_STRIPE_STARTER_PRICE_ID || 'price_biqc_growth_69',
   pro_monthly: process.env.REACT_APP_STRIPE_PRO_PRICE_ID || 'price_biqc_professional_199',
+  business_monthly: process.env.REACT_APP_STRIPE_BUSINESS_PRICE_ID || 'price_biqc_business_349',
   enterprise_monthly: process.env.REACT_APP_STRIPE_ENTERPRISE_PRICE_ID || '',
 };
 
@@ -70,8 +72,18 @@ export const TIER_FEATURES = {
     'Advanced reporting schedules',
     'Expanded connector allowance',
   ],
+  business: [
+    'Everything in Professional',
+    'All premium model access (Claude, GPT-5.4)',
+    '15M input + 6M output tokens/month',
+    'Advanced risk & compliance modules',
+    'Priority model routing',
+    'Up to 15 integrations',
+    'Team collaboration (up to 5 seats)',
+    'Dedicated onboarding session',
+  ],
   enterprise: [
-    'Everything in Pro',
+    'Everything in Business',
     'Enterprise governance controls',
     'Dedicated reliability controls',
     'Priority support and onboarding',

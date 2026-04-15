@@ -66,6 +66,25 @@ export const PRICING_TIERS = [
     ],
   },
   {
+    id: 'business',
+    name: 'Business',
+    subtitle: 'Full-scale operating intelligence',
+    price: '$349',
+    priceNum: 349,
+    period: '/month',
+    color: '#F59E0B',
+    features: [
+      'Everything in Professional',
+      'All premium model access (Claude, GPT-5.4)',
+      '15M input + 6M output tokens/month',
+      'Advanced risk & compliance modules',
+      'Priority model routing',
+      'Up to 15 integrations',
+      'Team collaboration (up to 5 seats)',
+      'Dedicated onboarding session',
+    ],
+  },
+  {
     id: 'enterprise',
     name: 'Enterprise',
     subtitle: 'Governed enterprise control',
@@ -74,7 +93,7 @@ export const PRICING_TIERS = [
     period: '',
     color: '#8B5CF6',
     features: [
-      'Everything in Pro',
+      'Everything in Business',
       'Enterprise governance controls',
       'Higher reliability and support commitments',
       'Expanded organizational limits',
@@ -104,8 +123,9 @@ export const getTierByPlanId = (id) => {
   if (id === 'super_admin') return PRICING_TIERS.find((tier) => tier.id === 'enterprise') || PRICING_TIERS[2];
   if (id === 'starter' || id === 'foundation' || id === 'growth') return PRICING_TIERS.find((tier) => tier.id === 'starter') || PRICING_TIERS[1];
   if (id === 'professional' || id === 'pro') return PRICING_TIERS.find((tier) => tier.id === 'pro') || PRICING_TIERS[2];
-  if (id === 'enterprise') return PRICING_TIERS.find((tier) => tier.id === 'enterprise') || PRICING_TIERS[3];
-  if (id === 'custom' || id === 'custom_build') return PRICING_TIERS.find((tier) => tier.id === 'custom_build') || PRICING_TIERS[4];
+  if (id === 'business') return PRICING_TIERS.find((tier) => tier.id === 'business') || PRICING_TIERS[3];
+  if (id === 'enterprise') return PRICING_TIERS.find((tier) => tier.id === 'enterprise') || PRICING_TIERS[4];
+  if (id === 'custom' || id === 'custom_build') return PRICING_TIERS.find((tier) => tier.id === 'custom_build') || PRICING_TIERS[5];
   return PRICING_TIERS.find((tier) => tier.id === id) || PRICING_TIERS[0];
 };
 

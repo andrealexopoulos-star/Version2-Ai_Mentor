@@ -5,8 +5,8 @@ import { Shield, CheckCircle2, Users, Key, UserX, Edit, Eye, AlertTriangle, Load
 import { fontFamily } from '../design-system/tokens';
 
 
-const TIER_COLORS = { free: '#64748B', starter: '#E85D00', professional: '#E85D00', growth: '#E85D00', enterprise: '#E85D00', super_admin: '#EF4444' };
-const TIER_LABELS = { free: 'Free', starter: 'BIQc Foundation $349', professional: 'BIQc Foundation $349', growth: 'BIQc Foundation $349', enterprise: 'BIQc Foundation $349', super_admin: 'Super Admin' };
+const TIER_COLORS = { free: '#64748B', starter: '#E85D00', pro: '#3B82F6', professional: '#3B82F6', growth: '#E85D00', business: '#F59E0B', enterprise: '#8B5CF6', super_admin: '#EF4444' };
+const TIER_LABELS = { free: 'Free', starter: 'Growth $69', pro: 'Professional $199', professional: 'Professional $199', growth: 'Growth $69', business: 'Business $349', enterprise: 'Enterprise', super_admin: 'Super Admin' };
 
 const SupportConsolePage = () => {
   const [admin, setAdmin] = useState(null);

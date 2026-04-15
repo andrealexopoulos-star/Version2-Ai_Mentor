@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from collections import defaultdict, deque
 from threading import Lock
 from auth_supabase import MASTER_ADMIN_EMAIL
+from core.config import _get_rate_limit_redis, _redis_sliding_window_check
 
 logger = logging.getLogger("server")
 security = HTTPBearer(auto_error=False)
@@ -90,7 +91,7 @@ AI_MODELS = {
 AI_MODEL = AI_MODELS["default"]
 AI_MODEL_ADVANCED = AI_MODELS["snapshot_primary"]
 
-# ─── Rate Limits — FREE vs single PAID tier (starter) ─────────────────────────
+# ─── Rate Limits — per-tier feature limits ─────────────────────────────────────
 TIER_LIMITS = {
     "free": {
         "soundboard_daily":    10,
@@ -106,6 +107,27 @@ TIER_LIMITS = {
         "reports_monthly":     -1,
         "trinity_daily":       -1,
     },
+    "pro": {
+        "soundboard_daily":    -1,
+        "snapshots_daily":     -1,
+        "sop_monthly":         -1,
+        "reports_monthly":     -1,
+        "trinity_daily":       -1,
+    },
+    "business": {
+        "soundboard_daily":    -1,
+        "snapshots_daily":     -1,
+        "sop_monthly":         -1,
+        "reports_monthly":     -1,
+        "trinity_daily":       -1,
+    },
+    "enterprise": {
+        "soundboard_daily":    -1,
+        "snapshots_daily":     -1,
+        "sop_monthly":         -1,
+        "reports_monthly":     -1,
+        "trinity_daily":       -1,
+    },
 }
 
 RATE_LIMIT_FEATURE_LABELS = {
@@ -115,7 +137,7 @@ RATE_LIMIT_FEATURE_LABELS = {
     "war_room_ask": "War Room Ask",
 }
 
-# Single paid tier: generous limits for starter (BIQc Foundation)
+# Per-tier rate limits — token-aligned allocations
 TIER_RATE_LIMIT_DEFAULTS = {
     "free": {
         "soundboard_daily": {"monthly_limit": 80, "burst_limit": 4, "burst_window_seconds": 300},
@@ -129,31 +151,47 @@ TIER_RATE_LIMIT_DEFAULTS = {
         "boardroom_diagnosis": {"monthly_limit": 320, "burst_limit": 16, "burst_window_seconds": 300},
         "war_room_ask": {"monthly_limit": 700, "burst_limit": 18, "burst_window_seconds": 300},
     },
+    "pro": {
+        "soundboard_daily": {"monthly_limit": 1800, "burst_limit": 24, "burst_window_seconds": 300},
+        "trinity_daily": {"monthly_limit": 360, "burst_limit": 14, "burst_window_seconds": 300},
+        "boardroom_diagnosis": {"monthly_limit": 600, "burst_limit": 20, "burst_window_seconds": 300},
+        "war_room_ask": {"monthly_limit": 1200, "burst_limit": 24, "burst_window_seconds": 300},
+    },
+    "business": {
+        "soundboard_daily": {"monthly_limit": 3600, "burst_limit": 30, "burst_window_seconds": 300},
+        "trinity_daily": {"monthly_limit": 720, "burst_limit": 20, "burst_window_seconds": 300},
+        "boardroom_diagnosis": {"monthly_limit": 1200, "burst_limit": 30, "burst_window_seconds": 300},
+        "war_room_ask": {"monthly_limit": 2400, "burst_limit": 30, "burst_window_seconds": 300},
+    },
+    "enterprise": {
+        "soundboard_daily": {"monthly_limit": -1, "burst_limit": 40, "burst_window_seconds": 300},
+        "trinity_daily": {"monthly_limit": -1, "burst_limit": 30, "burst_window_seconds": 300},
+        "boardroom_diagnosis": {"monthly_limit": -1, "burst_limit": 40, "burst_window_seconds": 300},
+        "war_room_ask": {"monthly_limit": -1, "burst_limit": 40, "burst_window_seconds": 300},
+    },
     "super_admin": {
         feature: {"monthly_limit": -1, "burst_limit": -1, "burst_window_seconds": 300}
         for feature in RATE_LIMIT_FEATURE_LABELS
     },
 }
 
-RATE_LIMIT_BURSTS = defaultdict(deque)
+RATE_LIMIT_BURSTS = defaultdict(deque)  # in-memory fallback
 RATE_LIMIT_BURSTS_LOCK = Lock()
+RATE_LIMIT_BURST_REDIS_PREFIX = "biqc-ratelimit:burst:"
 
 
 def _normalize_subscription_tier(tier: str | None) -> str:
-    """Normalize DB subscription_tier to free | starter | super_admin. Single paid tier = starter."""
+    """Normalize DB subscription_tier to canonical tier name."""
     tier_value = (tier or "free").lower().strip()
     if tier_value in ("superadmin", "super_admin"):
         return "super_admin"
-    if tier_value in (
-        "foundation",
-        "growth",
-        "starter",
-        "professional",
-        "pro",
-        "enterprise",
-        "custom",
-        "custom_build",
-    ):
+    if tier_value in ("enterprise", "custom", "custom_build"):
+        return "enterprise"
+    if tier_value == "business":
+        return "business"
+    if tier_value in ("professional", "pro"):
+        return "pro"
+    if tier_value in ("foundation", "growth", "starter"):
         return "starter"
     return tier_value if tier_value in TIER_RATE_LIMIT_DEFAULTS else "free"
 
@@ -235,22 +273,50 @@ async def check_rate_limit(user_id: str, feature: str, sb=None) -> bool:
         now = datetime.now(timezone.utc).timestamp()
         bucket_key = f"{user_id}:{feature}"
         if burst_limit > 0:
-            with RATE_LIMIT_BURSTS_LOCK:
-                bucket = RATE_LIMIT_BURSTS[bucket_key]
-                while bucket and bucket[0] <= now - burst_window:
-                    bucket.popleft()
-                if len(bucket) >= burst_limit:
-                    retry_after = max(1, int(burst_window - (now - bucket[0])))
-                    raise HTTPException(
-                        status_code=429,
-                        detail=f"{feature_label} is moving too fast right now. Please wait {retry_after} seconds before trying again.",
-                        headers={
-                            "Retry-After": str(retry_after),
-                            "X-RateLimit-Limit": str(burst_limit),
-                            "X-RateLimit-Window": str(burst_window),
-                        },
+            # --- Try Redis first (shared across instances, survives deploys) ---
+            redis_client = _get_rate_limit_redis()
+            used_redis = False
+            if redis_client is not None:
+                try:
+                    redis_key = f"{RATE_LIMIT_BURST_REDIS_PREFIX}{bucket_key}"
+                    allowed, _count, oldest_ts = await _redis_sliding_window_check(
+                        redis_client, redis_key, burst_window, burst_limit, now,
                     )
-                bucket.append(now)
+                    if not allowed:
+                        retry_after = max(1, int(burst_window - (now - oldest_ts))) if oldest_ts else burst_window
+                        raise HTTPException(
+                            status_code=429,
+                            detail=f"{feature_label} is moving too fast right now. Please wait {retry_after} seconds before trying again.",
+                            headers={
+                                "Retry-After": str(retry_after),
+                                "X-RateLimit-Limit": str(burst_limit),
+                                "X-RateLimit-Window": str(burst_window),
+                            },
+                        )
+                    used_redis = True
+                except HTTPException:
+                    raise
+                except Exception as exc:
+                    logger.debug("Redis burst rate-limit unavailable, falling back to in-memory: %s", exc)
+
+            # --- In-memory fallback ---
+            if not used_redis:
+                with RATE_LIMIT_BURSTS_LOCK:
+                    bucket = RATE_LIMIT_BURSTS[bucket_key]
+                    while bucket and bucket[0] <= now - burst_window:
+                        bucket.popleft()
+                    if len(bucket) >= burst_limit:
+                        retry_after = max(1, int(burst_window - (now - bucket[0])))
+                        raise HTTPException(
+                            status_code=429,
+                            detail=f"{feature_label} is moving too fast right now. Please wait {retry_after} seconds before trying again.",
+                            headers={
+                                "Retry-After": str(retry_after),
+                                "X-RateLimit-Limit": str(burst_limit),
+                                "X-RateLimit-Window": str(burst_window),
+                            },
+                        )
+                    bucket.append(now)
 
         current = int(state.get("monthly_usage", {}).get(feature, 0))
         if current >= monthly_limit:

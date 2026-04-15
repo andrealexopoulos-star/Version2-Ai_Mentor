@@ -213,7 +213,6 @@ async def workers_health():
 @router.get("/warmup")
 async def warmup_edge_functions():
     """Ping Supabase Edge Functions to prevent cold starts. Called by cron or frontend."""
-    _require_non_production()
     import httpx
     supabase_url = os.environ.get("SUPABASE_URL", "")
     service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")

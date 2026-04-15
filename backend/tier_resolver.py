@@ -21,14 +21,15 @@ logger = logging.getLogger(__name__)
 SUPER_ADMIN_EMAIL = MASTER_ADMIN_EMAIL
 
 # ═══ TIER DEFINITIONS — free + 3 paid + custom build + super_admin ═══
-TIERS = ['free', 'starter', 'pro', 'enterprise', 'custom_build', 'super_admin']
+TIERS = ['free', 'starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin']
 
 BRAIN_METRIC_LIMITS = {
     'free': 10,
     'starter': 50,
     'pro': 75,
-    'enterprise': 100,
-    'custom_build': 120,
+    'business': 100,
+    'enterprise': 120,
+    'custom_build': 150,
     'super_admin': 200,
 }
 
@@ -36,6 +37,7 @@ BRAIN_PLAN_LABELS = {
     'free': 'Free',
     'starter': 'Starter',
     'pro': 'Pro',
+    'business': 'Business',
     'enterprise': 'Enterprise',
     'custom_build': 'Custom Build',
     'super_admin': 'Enterprise',
@@ -201,6 +203,8 @@ def resolve_tier(user: dict) -> str:
         return 'starter'
     if db_tier in {'professional', 'pro'}:
         return 'pro'
+    if db_tier == 'business':
+        return 'business'
     if db_tier in {'enterprise'}:
         return 'enterprise'
     if db_tier in {'custom', 'custom_build'}:
@@ -216,8 +220,10 @@ def tier_rank(tier: str) -> int:
     if tier == 'super_admin':
         return 99
     if tier in ('custom_build', 'custom'):
-        return 4
+        return 5
     if tier == 'enterprise':
+        return 4
+    if tier == 'business':
         return 3
     if tier in ('pro', 'professional'):
         return 2

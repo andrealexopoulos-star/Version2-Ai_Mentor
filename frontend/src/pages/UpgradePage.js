@@ -128,12 +128,12 @@ export default function UpgradePage({ success = false }) {
             Unlock <em style={{ fontStyle: 'italic', color: '#E85D00' }}>everything</em>.
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
-            Choose Starter, Pro, or Enterprise based on required depth. Custom Build is available for contracted integrations and entitlements.
+            Choose Growth, Pro, Business, or Enterprise based on required depth. Custom Build is available for contracted integrations and entitlements.
           </p>
         </div>
 
-        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3">
-          {PRICING_TIERS.filter((tier) => ['starter', 'pro', 'enterprise'].includes(tier.id)).map((tier) => (
+        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-4">
+          {PRICING_TIERS.filter((tier) => ['starter', 'pro', 'business', 'enterprise'].includes(tier.id)).map((tier) => (
             <button
               key={tier.id}
               onClick={() => setSelectedTier(tier.id)}

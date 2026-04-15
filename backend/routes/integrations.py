@@ -617,7 +617,7 @@ async def create_merge_link_token(
         raise HTTPException(status_code=503, detail="Integration service not configured. Please contact support.")
     
     user_id = current_user["id"]
-    user_email = current_user.get("email", "user@biqc.com")
+    user_email = current_user.get("email", "support@biqc.ai")
     company_name = current_user.get("company_name") or current_user.get("business_name")
     
     # Get or create workspace for user (with fallback to user_id)

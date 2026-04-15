@@ -6,6 +6,35 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+# Token metering — lazy import to avoid circular deps at module load
+_token_metering = None
+
+def _get_metering():
+    global _token_metering
+    if _token_metering is None:
+        try:
+            from middleware.token_metering import record_token_usage
+            _token_metering = record_token_usage
+        except Exception as exc:
+            logger.debug("[LLM Router] token_metering not available: %s", exc)
+            _token_metering = False  # sentinel: tried and failed
+    return _token_metering if _token_metering else None
+
+
+async def _record_usage(user_id: str | None, model: str, input_tokens: int, output_tokens: int, feature: str = "llm_call", tier: str | None = None):
+    """Fire-and-forget token recording. Never blocks or raises."""
+    if not user_id or (input_tokens <= 0 and output_tokens <= 0):
+        return
+    metering_fn = _get_metering()
+    if metering_fn is None:
+        return
+    try:
+        from routes.deps import get_sb
+        sb = get_sb()
+        metering_fn(sb, user_id, model, input_tokens, output_tokens, feature=feature, tier=tier)
+    except Exception as exc:
+        logger.debug("[LLM Router] token recording failed (non-fatal): %s", exc)
+
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
@@ -74,7 +103,7 @@ async def _openai_chat(*, model: str, system_message: str, user_message: str, me
         return data["choices"][0]["message"]["content"], data.get("usage", {})
 
 
-async def _gemini_chat(*, model: str, system_message: str, user_message: str, messages: list | None, temperature: float, max_tokens: int, timeout: float, api_key: str) -> str:
+async def _gemini_chat(*, model: str, system_message: str, user_message: str, messages: list | None, temperature: float, max_tokens: int, timeout: float, api_key: str) -> tuple[str, dict]:
     model_id = str(model or GEMINI_MODEL_PRO)
     if model_id.startswith("models/"):
         model_id = model_id.split("/", 1)[1]
@@ -88,10 +117,18 @@ async def _gemini_chat(*, model: str, system_message: str, user_message: str, me
         resp = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
         resp.raise_for_status()
         data = resp.json()
-        return (((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or [{}])[0].get("text", "")
+        text = (((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or [{}])[0].get("text", "")
+        # Extract usage metadata from Gemini response
+        usage_meta = data.get("usageMetadata") or {}
+        usage = {
+            "prompt_tokens": usage_meta.get("promptTokenCount", 0),
+            "completion_tokens": usage_meta.get("candidatesTokenCount", 0),
+            "total_tokens": usage_meta.get("totalTokenCount", 0),
+        }
+        return text, usage
 
 
-async def _anthropic_chat(*, model: str, system_message: str, user_message: str, messages: list | None, temperature: float, max_tokens: int, timeout: float, api_key: str) -> str:
+async def _anthropic_chat(*, model: str, system_message: str, user_message: str, messages: list | None, temperature: float, max_tokens: int, timeout: float, api_key: str) -> tuple[str, dict]:
     conversation = []
     for msg in (messages or []):
         role = msg.get("role", "user")
@@ -122,9 +159,17 @@ async def _anthropic_chat(*, model: str, system_message: str, user_message: str,
         resp.raise_for_status()
         data = resp.json()
         content = data.get("content") or []
+        text = ""
         if content and isinstance(content[0], dict):
-            return content[0].get("text", "")
-        return ""
+            text = content[0].get("text", "")
+        # Extract usage from Anthropic response
+        usage_raw = data.get("usage") or {}
+        usage = {
+            "prompt_tokens": usage_raw.get("input_tokens", 0),
+            "completion_tokens": usage_raw.get("output_tokens", 0),
+            "total_tokens": usage_raw.get("input_tokens", 0) + usage_raw.get("output_tokens", 0),
+        }
+        return text, usage
 
 
 async def llm_chat(
@@ -136,6 +181,8 @@ async def llm_chat(
     max_tokens: int = None,
     api_key: str = None,
     route: str = None,
+    user_id: str = None,
+    tier: str = None,
 ) -> str:
     cfg = _get_route(route)
     model = model or cfg["model"]
@@ -143,13 +190,14 @@ async def llm_chat(
     max_tokens = max_tokens or cfg.get("max_tokens", 1700)
     timeout = cfg.get("timeout", 60)
     provider = cfg.get("provider") or _provider_for_model(model)
+    feature = route or "llm_call"
 
     if provider == "anthropic" or _provider_for_model(model) == "anthropic":
         key = os.environ.get("ANTHROPIC_API_KEY") or ANTHROPIC_API_KEY
         if not key:
             logger.warning("ANTHROPIC_API_KEY missing; falling back to OpenAI for llm_chat")
         else:
-            return await _anthropic_chat(
+            content, usage = await _anthropic_chat(
                 model=model,
                 system_message=system_message,
                 user_message=user_message,
@@ -159,13 +207,15 @@ async def llm_chat(
                 timeout=timeout,
                 api_key=key,
             )
+            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
+            return content
 
     if provider == "google" or _provider_for_model(model) == "google":
         key = os.environ.get("GOOGLE_API_KEY") or GOOGLE_API_KEY
         if not key:
             logger.warning("GOOGLE_API_KEY missing; falling back to OpenAI for llm_chat")
         else:
-            return await _gemini_chat(
+            content, usage = await _gemini_chat(
                 model=model,
                 system_message=system_message,
                 user_message=user_message,
@@ -175,11 +225,13 @@ async def llm_chat(
                 timeout=timeout,
                 api_key=key,
             )
+            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
+            return content
 
     key = api_key or os.environ.get("OPENAI_API_KEY") or OPENAI_API_KEY
     if not key:
         raise ValueError("OPENAI_API_KEY not configured")
-    content, _usage = await _openai_chat(
+    content, usage = await _openai_chat(
         model=model,
         system_message=system_message,
         user_message=user_message,
@@ -189,6 +241,7 @@ async def llm_chat(
         timeout=timeout,
         api_key=key,
     )
+    await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
     return content
 
 
@@ -199,13 +252,17 @@ async def llm_trinity_chat(
     temperature: float = 0.45,
     max_tokens: int = 1800,
     timeout: float = 75,
+    user_id: str = None,
+    tier: str = None,
 ) -> str:
     """Parallel OpenAI + Gemini + Anthropic analysis with synthesis."""
     tasks = []
     labels = []
+    models_used = []
 
     if OPENAI_API_KEY:
         labels.append("openai")
+        models_used.append(OPENAI_MODEL_DEEP)
         tasks.append(_openai_chat(
             model=OPENAI_MODEL_DEEP,
             system_message=system_message,
@@ -218,6 +275,7 @@ async def llm_trinity_chat(
         ))
     if GOOGLE_API_KEY:
         labels.append("google")
+        models_used.append(GEMINI_MODEL_PRO)
         tasks.append(_gemini_chat(
             model=GEMINI_MODEL_PRO,
             system_message=system_message,
@@ -230,6 +288,7 @@ async def llm_trinity_chat(
         ))
     if ANTHROPIC_API_KEY:
         labels.append("anthropic")
+        models_used.append(ANTHROPIC_MODEL_OPUS)
         tasks.append(_anthropic_chat(
             model=ANTHROPIC_MODEL_OPUS,
             system_message=system_message,
@@ -246,11 +305,16 @@ async def llm_trinity_chat(
 
     raw_results = await asyncio.gather(*tasks, return_exceptions=True)
     candidates = []
-    for label, result in zip(labels, raw_results):
+    for label, model_name, result in zip(labels, models_used, raw_results):
         if isinstance(result, Exception):
             logger.warning(f"[Trinity] {label} candidate failed: {result}")
             continue
-        text = result[0] if label == "openai" and isinstance(result, tuple) else result
+        # All providers now return (text, usage) tuples
+        if isinstance(result, tuple):
+            text, usage = result
+            await _record_usage(user_id, model_name, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_candidate", tier=tier)
+        else:
+            text = result
         if text:
             candidates.append((label, str(text).strip()))
 
@@ -267,7 +331,7 @@ async def llm_trinity_chat(
     synthesis_user = "\n\n".join([f"[{label}]\n{text[:2600]}" for label, text in candidates])
 
     if OPENAI_API_KEY:
-        fused, _ = await _openai_chat(
+        fused, usage = await _openai_chat(
             model=OPENAI_MODEL_NORMAL,
             system_message=synthesis_system,
             user_message=synthesis_user,
@@ -277,10 +341,11 @@ async def llm_trinity_chat(
             timeout=timeout,
             api_key=OPENAI_API_KEY,
         )
+        await _record_usage(user_id, OPENAI_MODEL_NORMAL, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier)
         return fused
 
     if ANTHROPIC_API_KEY:
-        return await _anthropic_chat(
+        content, usage = await _anthropic_chat(
             model=ANTHROPIC_MODEL_SONNET,
             system_message=synthesis_system,
             user_message=synthesis_user,
@@ -290,8 +355,10 @@ async def llm_trinity_chat(
             timeout=timeout,
             api_key=ANTHROPIC_API_KEY,
         )
+        await _record_usage(user_id, ANTHROPIC_MODEL_SONNET, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier)
+        return content
 
-    return await _gemini_chat(
+    content, usage = await _gemini_chat(
         model=GEMINI_MODEL_PRO,
         system_message=synthesis_system,
         user_message=synthesis_user,
@@ -301,6 +368,8 @@ async def llm_trinity_chat(
         timeout=timeout,
         api_key=GOOGLE_API_KEY,
     )
+    await _record_usage(user_id, GEMINI_MODEL_PRO, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier)
+    return content
 
 
 async def llm_chat_with_usage(
@@ -312,12 +381,15 @@ async def llm_chat_with_usage(
     max_tokens: int = None,
     api_key: str = None,
     route: str = None,
+    user_id: str = None,
+    tier: str = None,
 ) -> tuple:
     cfg = _get_route(route)
     model = model or cfg["model"]
     temperature = temperature if temperature is not None else cfg.get("temperature", 0.6)
     max_tokens = max_tokens or cfg.get("max_tokens", 1700)
     timeout = cfg.get("timeout", 60)
+    feature = route or "llm_call"
 
     provider = _provider_for_model(model)
     if provider == "openai":
@@ -334,8 +406,42 @@ async def llm_chat_with_usage(
             timeout=timeout,
             api_key=key,
         )
+        await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
         return content, usage
 
+    if provider == "anthropic":
+        key = api_key or ANTHROPIC_API_KEY
+        if key:
+            content, usage = await _anthropic_chat(
+                model=model,
+                system_message=system_message,
+                user_message=user_message,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=timeout,
+                api_key=key,
+            )
+            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
+            return content, usage
+
+    if provider == "google":
+        key = api_key or GOOGLE_API_KEY
+        if key:
+            content, usage = await _gemini_chat(
+                model=model,
+                system_message=system_message,
+                user_message=user_message,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=timeout,
+                api_key=key,
+            )
+            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
+            return content, usage
+
+    # Fallback via llm_chat (metering handled inside llm_chat)
     content = await llm_chat(
         system_message=system_message,
         user_message=user_message,
@@ -345,6 +451,8 @@ async def llm_chat_with_usage(
         max_tokens=max_tokens,
         api_key=api_key,
         route=route,
+        user_id=user_id,
+        tier=tier,
     )
     return content, {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 

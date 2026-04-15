@@ -19,6 +19,46 @@ from authlib.integrations.starlette_client import OAuth
 
 logger = logging.getLogger(__name__)
 
+
+# ==================== REDIS RATE-LIMIT HELPERS ====================
+
+def _get_rate_limit_redis():
+    """Return the shared async Redis client for rate limiting, or None."""
+    try:
+        from biqc_jobs import get_redis
+        return get_redis()
+    except Exception:
+        return None
+
+
+async def _redis_sliding_window_check(redis_client, bucket_key: str, window: int, limit: int, now: float):
+    """Check and record a request using Redis sorted-set sliding window.
+
+    Returns (allowed: bool, count: int, oldest_ts: float|None).
+    Raises on Redis errors so caller can fall back to in-memory.
+    """
+    min_score = now - window
+    pipe = redis_client.pipeline()
+    pipe.zremrangebyscore(bucket_key, "-inf", min_score)
+    pipe.zcard(bucket_key)
+    pipe.zrange(bucket_key, 0, 0, withscores=True)
+    results = await pipe.execute()
+
+    current_count = results[1]
+    oldest_entry = results[2]  # list of (member, score) tuples
+    oldest_ts = oldest_entry[0][1] if oldest_entry else None
+
+    if current_count >= limit:
+        return False, current_count, oldest_ts
+
+    # Record this request — use "now:random" as member to ensure uniqueness
+    member = f"{now}:{os.urandom(4).hex()}"
+    pipe2 = redis_client.pipeline()
+    pipe2.zadd(bucket_key, {member: now})
+    pipe2.expire(bucket_key, window + 60)  # TTL slightly beyond window
+    await pipe2.execute()
+    return True, current_count + 1, oldest_ts
+
 ROOT_DIR = Path(__file__).parent.parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -49,16 +89,23 @@ RATE_LIMIT_RULES = {
     "/api/voice/realtime/session": {"window": 300, "limit": 8, "detail": "Too many voice session requests. Please wait a few minutes before trying again."},
     "/api/voice/realtime/negotiate": {"window": 300, "limit": 16, "detail": "Too many voice negotiation requests. Please wait a few minutes before trying again."},
 }
-RATE_LIMIT_BUCKETS = defaultdict(deque)
+RATE_LIMIT_BUCKETS = defaultdict(deque)  # in-memory fallback
 RATE_LIMIT_LOCK = Lock()
+RATE_LIMIT_REDIS_PREFIX = "biqc-ratelimit:mw:"
 # Admin inbox for operational alerts (waitlist / contact form, etc.)
 BIQC_ADMIN_NOTIFICATION_EMAIL = (
     os.environ.get("BIQC_ADMIN_NOTIFICATION_EMAIL") or "support@biqc.ai"
 ).strip()
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 RESEND_FROM_EMAIL = (
-    os.environ.get("RESEND_FROM_EMAIL") or os.environ.get("BIQC_RESEND_FROM_EMAIL") or ""
+    os.environ.get("RESEND_FROM_EMAIL") or os.environ.get("BIQC_RESEND_FROM_EMAIL") or "noreply@biqc.ai"
 ).strip()
+
+
+def _is_production_env() -> bool:
+    env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
+    prod_flag = (os.environ.get("PRODUCTION") or "").strip().lower()
+    return env == "production" or prod_flag in {"1", "true", "yes"}
 
 
 # ==================== MIDDLEWARE ====================
@@ -125,12 +172,42 @@ class RateLimitAPIMiddleware(BaseHTTPMiddleware):
 
         now = time.time()
         bucket_key = f"{request.url.path}:{self._identifier(request)}"
+        window = rule["window"]
+        limit = rule["limit"]
+
+        # --- Try Redis first (shared across instances, survives deploys) ---
+        redis_client = _get_rate_limit_redis()
+        if redis_client is not None:
+            try:
+                redis_key = f"{RATE_LIMIT_REDIS_PREFIX}{bucket_key}"
+                allowed, _count, oldest_ts = await _redis_sliding_window_check(
+                    redis_client, redis_key, window, limit, now,
+                )
+                if not allowed:
+                    retry_after = max(1, int(window - (now - oldest_ts))) if oldest_ts else window
+                    return JSONResponse(
+                        {
+                            "detail": rule.get("detail") or "Too many requests. Please wait a few minutes before trying again.",
+                            "retry_after_seconds": retry_after,
+                        },
+                        status_code=429,
+                        headers={
+                            "Retry-After": str(retry_after),
+                            "X-RateLimit-Limit": str(limit),
+                            "X-RateLimit-Window": str(window),
+                        },
+                    )
+                return await call_next(request)
+            except Exception as exc:
+                logger.debug("Redis rate-limit unavailable, falling back to in-memory: %s", exc)
+
+        # --- In-memory fallback (original logic) ---
         with RATE_LIMIT_LOCK:
             bucket = RATE_LIMIT_BUCKETS[bucket_key]
-            while bucket and bucket[0] <= now - rule["window"]:
+            while bucket and bucket[0] <= now - window:
                 bucket.popleft()
-            if len(bucket) >= rule["limit"]:
-                retry_after = max(1, int(rule["window"] - (now - bucket[0])))
+            if len(bucket) >= limit:
+                retry_after = max(1, int(window - (now - bucket[0])))
                 return JSONResponse(
                     {
                         "detail": rule.get("detail") or "Too many requests. Please wait a few minutes before trying again.",
@@ -139,8 +216,8 @@ class RateLimitAPIMiddleware(BaseHTTPMiddleware):
                     status_code=429,
                     headers={
                         "Retry-After": str(retry_after),
-                        "X-RateLimit-Limit": str(rule["limit"]),
-                        "X-RateLimit-Window": str(rule["window"]),
+                        "X-RateLimit-Limit": str(limit),
+                        "X-RateLimit-Window": str(window),
                     },
                 )
             bucket.append(now)
@@ -171,7 +248,11 @@ def configure_middleware(app):
         CORSMiddleware,
         allow_credentials=True,
         allow_origins=_allowed_origins(),
-        allow_origin_regex=r"^https://biqc\.ai$|^https://biqc-web-dev\.azurewebsites\.net$|^http://(localhost|127\.0\.0\.1):3000$",
+        allow_origin_regex=(
+            r"^https://biqc\.ai$"
+            if _is_production_env()
+            else r"^https://biqc\.ai$|^https://biqc-web-dev\.azurewebsites\.net$|^http://(localhost|127\.0\.0\.1):3000$"
+        ),
         allow_methods=["*"],
         allow_headers=["*"],
         expose_headers=["X-API-Server"],
