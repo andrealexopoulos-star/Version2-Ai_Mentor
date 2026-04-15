@@ -544,23 +544,165 @@ def _mark_webhook_event(sb, event_id: str, status: str) -> None:
         logger.warning("Failed to mark webhook event %s as %s: %s", event_id, status, exc)
 
 
+# Sentinel to distinguish "don't touch this column" from "set it to NULL"
+# in _update_subscription_lifecycle. None is a real, meaningful payload
+# (e.g. past_due_since=None clears the dunning timestamp on a successful
+# recurring charge); we need a third state to mean "skip".
+_UNSET = object()
+
+
+def _ts_from_epoch(value: Any) -> Optional[str]:
+    """Convert a Stripe Unix-epoch timestamp to ISO-8601 UTC.
+
+    Stripe emits period_end, trial_end, etc. as integer seconds since
+    epoch. Postgres timestamptz wants an ISO string. Returns None on
+    falsy or unparseable input so callers can pass Stripe payloads
+    through defensively without a pre-guard.
+    """
+    if value is None:
+        return None
+    try:
+        epoch = int(value)
+    except (TypeError, ValueError):
+        return None
+    if epoch <= 0:
+        return None
+    return datetime.fromtimestamp(epoch, tz=timezone.utc).isoformat()
+
+
+def _resolve_user_by_customer_id(sb, customer_id: Optional[str]) -> Optional[str]:
+    """Resolve user_id from a Stripe customer id (cus_…).
+
+    Lookup order:
+      1. users.stripe_customer_id — cached on the row at checkout /
+         invoice receipt, single-row primary-key-ish read.
+      2. payment_transactions.stripe_customer_id — fallback for legacy
+         rows written before migration 096 added the users column.
+
+    Returns None if the customer id is blank or no row matches.
+    """
+    if not customer_id:
+        return None
+    try:
+        res = (
+            sb.table("users")
+            .select("id")
+            .eq("stripe_customer_id", customer_id)
+            .limit(1)
+            .execute()
+        )
+        rows = (res.data or []) if res is not None else []
+        if rows:
+            return (rows[0] or {}).get("id")
+    except Exception as exc:  # pragma: no cover — lookup is best-effort
+        logger.warning("users.stripe_customer_id lookup failed for %s: %s", customer_id, exc)
+
+    try:
+        res = (
+            sb.table("payment_transactions")
+            .select("user_id")
+            .eq("stripe_customer_id", customer_id)
+            .limit(1)
+            .execute()
+        )
+        rows = (res.data or []) if res is not None else []
+        if rows:
+            return (rows[0] or {}).get("user_id")
+    except Exception as exc:  # pragma: no cover
+        logger.warning(
+            "payment_transactions.stripe_customer_id lookup failed for %s: %s",
+            customer_id, exc,
+        )
+    return None
+
+
+def _update_subscription_lifecycle(
+    sb,
+    user_id: str,
+    *,
+    status: Any = _UNSET,
+    current_period_end: Any = _UNSET,
+    past_due_since: Any = _UNSET,
+    trial_ends_at: Any = _UNSET,
+    stripe_customer_id: Any = _UNSET,
+) -> None:
+    """Write only the non-UNSET lifecycle fields to users.
+
+    Pass `_UNSET` (the default) to leave a column alone; pass `None` to
+    explicitly null it. This three-state contract is what stops the
+    invoice.payment_succeeded path from clobbering a populated
+    current_period_end when the event shape happens to omit it.
+    """
+    payload: Dict[str, Any] = {}
+    if status is not _UNSET:
+        payload["subscription_status"] = status
+    if current_period_end is not _UNSET:
+        payload["current_period_end"] = current_period_end
+    if past_due_since is not _UNSET:
+        payload["past_due_since"] = past_due_since
+    if trial_ends_at is not _UNSET:
+        payload["trial_ends_at"] = trial_ends_at
+    if stripe_customer_id is not _UNSET:
+        payload["stripe_customer_id"] = stripe_customer_id
+    if not payload:
+        return
+    try:
+        sb.table("users").update(payload).eq("id", user_id).execute()
+    except Exception as exc:
+        logger.error(
+            "users lifecycle update failed for %s: %s (payload=%s)",
+            user_id, exc, payload,
+        )
+
+
+def _get_past_due_since(sb, user_id: str) -> Optional[str]:
+    """Return users.past_due_since for a user, or None. Best-effort — any
+    Supabase failure returns None so callers treat it as a fresh dunning
+    cycle rather than crashing the webhook."""
+    try:
+        res = (
+            sb.table("users")
+            .select("past_due_since")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
+        rows = (res.data or []) if res is not None else []
+        return ((rows[0] or {}).get("past_due_since")) if rows else None
+    except Exception:
+        return None
+
+
 def _downgrade_user_tier(sb, customer_id: Optional[str], subscription_id: Optional[str]) -> None:
-    """On subscription cancellation, drop the user back to free tier."""
+    """On subscription cancellation, drop the user back to free tier.
+
+    Also records subscription_status='canceled' and clears current_period_end
+    / past_due_since so the dunning / period-end UI stops showing stale
+    paid-state data.
+    """
     if not customer_id and not subscription_id:
         return
     try:
-        # Find the user via payment_transactions linkage.
-        query = sb.table("payment_transactions").select("user_id").limit(1)
-        if customer_id:
-            query = query.eq("stripe_customer_id", customer_id)
-        elif subscription_id:
-            query = query.eq("stripe_subscription_id", subscription_id)
-        rows = query.execute()
-        user_id = ((rows.data or [{}])[0] or {}).get("user_id")
+        user_id = _resolve_user_by_customer_id(sb, customer_id)
+        if not user_id and subscription_id:
+            rows = (
+                sb.table("payment_transactions")
+                .select("user_id")
+                .eq("stripe_subscription_id", subscription_id)
+                .limit(1)
+                .execute()
+            )
+            user_id = ((rows.data or [{}])[0] or {}).get("user_id")
         if not user_id:
             logger.info("subscription cancel: no user matched cust=%s sub=%s", customer_id, subscription_id)
             return
         _apply_tier_upgrade(sb, user_id, "free")
+        _update_subscription_lifecycle(
+            sb, user_id,
+            status="canceled",
+            current_period_end=None,
+            past_due_since=None,
+        )
         logger.info("Subscription cancelled — user %s downgraded to free", user_id)
     except Exception as exc:
         logger.error("Subscription cancellation downgrade failed: %s", exc)
@@ -618,14 +760,119 @@ async def stripe_webhook(request: Request):
                     user_id = (session.metadata or {}).get("user_id")
                     if user_id:
                         _apply_tier_upgrade(sb, user_id, (session.metadata or {}).get("tier", "starter"))
+                        # Cache the customer id on the user row + flag active
+                        # so downstream webhooks (invoice.*, subscription.*)
+                        # can resolve without a payment_transactions join.
+                        _update_subscription_lifecycle(
+                            sb, user_id,
+                            status="active",
+                            past_due_since=None,
+                            stripe_customer_id=customer_id,
+                        )
+
+            elif event.type == "invoice.payment_succeeded":
+                # Recurring charge cleared. Renew the paid-for period, flag
+                # status=active, and clear any dunning timestamp so the
+                # "payment failed" banner disappears. We do NOT touch
+                # subscription_tier here — tier is set by the checkout flow
+                # and kept until an explicit cancellation event.
+                inv = event.data.object
+                customer_id = getattr(inv, "customer", None)
+                subscription_id = getattr(inv, "subscription", None)
+                period_end_ts = _ts_from_epoch(getattr(inv, "period_end", None))
+                user_id = _resolve_user_by_customer_id(sb, customer_id)
+                if user_id:
+                    _update_subscription_lifecycle(
+                        sb, user_id,
+                        status="active",
+                        current_period_end=period_end_ts,
+                        past_due_since=None,
+                        stripe_customer_id=customer_id,
+                    )
+                    logger.info(
+                        "invoice.payment_succeeded: user=%s cust=%s sub=%s period_end=%s",
+                        user_id, customer_id, subscription_id, period_end_ts,
+                    )
+                else:
+                    logger.warning(
+                        "invoice.payment_succeeded: no user resolved for cust=%s sub=%s — skipping lifecycle update",
+                        customer_id, subscription_id,
+                    )
+
+            elif event.type == "invoice.payment_failed":
+                # Dunning started. Set subscription_status=past_due and stamp
+                # past_due_since on the FIRST failure only — preserving the
+                # original timestamp across retries lets us measure time-in-
+                # dunning and enforce a grace window before revoking tier.
+                # Tier revocation stays owned by customer.subscription.deleted
+                # / updated(status=unpaid|canceled|incomplete_expired).
+                inv = event.data.object
+                customer_id = getattr(inv, "customer", None)
+                subscription_id = getattr(inv, "subscription", None)
+                attempt_count = getattr(inv, "attempt_count", None)
+                user_id = _resolve_user_by_customer_id(sb, customer_id)
+                if user_id:
+                    existing = _get_past_due_since(sb, user_id)
+                    now_iso = datetime.now(timezone.utc).isoformat()
+                    _update_subscription_lifecycle(
+                        sb, user_id,
+                        status="past_due",
+                        past_due_since=(existing or now_iso),
+                        stripe_customer_id=customer_id,
+                    )
+                    logger.warning(
+                        "invoice.payment_failed: user=%s cust=%s sub=%s attempt=%s",
+                        user_id, customer_id, subscription_id, attempt_count,
+                    )
+                else:
+                    logger.warning(
+                        "invoice.payment_failed: no user resolved for cust=%s sub=%s — event recorded only",
+                        customer_id, subscription_id,
+                    )
+
+            elif event.type == "customer.subscription.trial_will_end":
+                # Stripe fires this ~3 days before a trial ends. Refresh
+                # trial_ends_at so /billing/overview can render the countdown
+                # without an extra Stripe round-trip.
+                sub = event.data.object
+                customer_id = getattr(sub, "customer", None)
+                trial_end_ts = _ts_from_epoch(getattr(sub, "trial_end", None))
+                user_id = _resolve_user_by_customer_id(sb, customer_id)
+                if user_id:
+                    _update_subscription_lifecycle(
+                        sb, user_id,
+                        trial_ends_at=trial_end_ts,
+                        stripe_customer_id=customer_id,
+                    )
+                logger.info(
+                    "customer.subscription.trial_will_end: user=%s cust=%s trial_end=%s",
+                    user_id, customer_id, trial_end_ts,
+                )
 
             elif event.type == "customer.subscription.updated":
                 sub = event.data.object
-                # If a subscription is set to cancel at period end and is now past_due / unpaid / canceled,
-                # downgrade. Otherwise refresh whatever tier the price metadata implies.
                 status = getattr(sub, "status", "") or ""
+                customer_id = getattr(sub, "customer", None)
+                subscription_id = getattr(sub, "id", None)
+                current_period_end_ts = _ts_from_epoch(getattr(sub, "current_period_end", None))
+                trial_end_ts = _ts_from_epoch(getattr(sub, "trial_end", None))
+
                 if status in {"canceled", "unpaid", "incomplete_expired"}:
-                    _downgrade_user_tier(sb, getattr(sub, "customer", None), getattr(sub, "id", None))
+                    # Terminal state → revoke tier + mark canceled.
+                    _downgrade_user_tier(sb, customer_id, subscription_id)
+                else:
+                    # Non-terminal tick → refresh lifecycle state so the app
+                    # reflects Stripe's truth (trialing→active transition,
+                    # renewal period advancing, paused→active resume, etc.).
+                    user_id = _resolve_user_by_customer_id(sb, customer_id)
+                    if user_id:
+                        _update_subscription_lifecycle(
+                            sb, user_id,
+                            status=(status or None),
+                            current_period_end=current_period_end_ts,
+                            trial_ends_at=trial_end_ts,
+                            stripe_customer_id=customer_id,
+                        )
 
             elif event.type == "customer.subscription.deleted":
                 sub = event.data.object
