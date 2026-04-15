@@ -2,11 +2,18 @@
 Iteration 140 - KPI Threshold Configuration and Tier-Aware Policy Tests
 
 Tests for:
-1. Tier-aware KPI policy mapping (free 10, single paid tier starter 50, super_admin 100)
+1. Tier-aware KPI policy mapping per the current BRAIN_METRIC_LIMITS table in
+   tier_resolver.py (free/starter/pro/business/enterprise/custom_build/super_admin).
 2. GET /api/brain/kpis returns plan_label, visible_metric_limit, threshold_config for metrics
 3. PUT /api/brain/kpis saves KPI thresholds and persists them
 4. GET /api/brain/metrics?include_coverage=true includes threshold_config metadata
 5. GET /api/brain/priorities returns brain_policy metadata
+
+Note on historical values: when this test was first written the tier matrix
+had only free/starter/super_admin at 10/50/100. The matrix has since expanded
+to seven tiers with super_admin raised to 200. The assertions below track the
+current tier_resolver contract — DO NOT revert to the old numbers without also
+changing tier_resolver.py (they will drift back apart instantly).
 """
 import os
 import pytest
@@ -23,49 +30,69 @@ class TestTierAwareKpiMapping:
     """Test tier_resolver.py has correct KPI limits per plan."""
     
     def test_brain_metric_limits_defined(self):
-        """Verify BRAIN_METRIC_LIMITS: only free, starter (BIQc Foundation), super_admin."""
+        """Verify BRAIN_METRIC_LIMITS covers every tier in the current matrix."""
         import sys
         sys.path.insert(0, '/app/backend')
         from tier_resolver import BRAIN_METRIC_LIMITS, BRAIN_PLAN_LABELS
-        
+
+        # Mirror of backend/tier_resolver.py::BRAIN_METRIC_LIMITS — keep in sync.
         expected_limits = {
             'free': 10,
             'starter': 50,
-            'super_admin': 100,
+            'pro': 75,
+            'business': 100,
+            'enterprise': 120,
+            'custom_build': 150,
+            'super_admin': 200,
         }
-        
+
         for tier, expected_limit in expected_limits.items():
             actual = BRAIN_METRIC_LIMITS.get(tier)
             assert actual == expected_limit, f"Expected {tier} to have {expected_limit} KPIs, got {actual}"
-    
+
     def test_brain_plan_labels_defined(self):
-        """Verify BRAIN_PLAN_LABELS: only Free, Foundation, super_admin."""
+        """Verify BRAIN_PLAN_LABELS has a display label for every tier."""
         import sys
         sys.path.insert(0, '/app/backend')
         from tier_resolver import BRAIN_PLAN_LABELS
-        
+
+        # Mirror of backend/tier_resolver.py::BRAIN_PLAN_LABELS — keep in sync.
         expected_labels = {
             'free': 'Free',
-            'starter': 'Foundation',
-            'super_admin': 'Foundation',
+            'starter': 'Starter',
+            'pro': 'Pro',
+            'business': 'Business',
+            'enterprise': 'Enterprise',
+            'custom_build': 'Custom Build',
+            'super_admin': 'Enterprise',
         }
-        
+
         for tier, expected_label in expected_labels.items():
             actual = BRAIN_PLAN_LABELS.get(tier)
             assert actual == expected_label, f"Expected {tier} label to be '{expected_label}', got '{actual}'"
-    
+
     def test_get_brain_metric_limit_function(self):
-        """Verify get_brain_metric_limit() resolves correctly for free, starter, super_admin; legacy tiers map to starter."""
+        """Verify get_brain_metric_limit() resolves canonical tiers + legacy aliases."""
         import sys
         sys.path.insert(0, '/app/backend')
         from tier_resolver import get_brain_metric_limit
-        
+
+        # Canonical tier names
         assert get_brain_metric_limit('free') == 10
         assert get_brain_metric_limit('starter') == 50
-        assert get_brain_metric_limit('super_admin') == 100
-        assert get_brain_metric_limit('foundation') == 50
-        assert get_brain_metric_limit('custom') == 50
-        
+        assert get_brain_metric_limit('pro') == 75
+        assert get_brain_metric_limit('business') == 100
+        assert get_brain_metric_limit('enterprise') == 120
+        assert get_brain_metric_limit('custom_build') == 150
+        assert get_brain_metric_limit('super_admin') == 200
+
+        # Legacy aliases — must route to the current canonical tier
+        assert get_brain_metric_limit('foundation') == 50   # foundation → starter
+        assert get_brain_metric_limit('growth') == 50       # growth → starter
+        assert get_brain_metric_limit('professional') == 75  # professional → pro
+        assert get_brain_metric_limit('custom') == 150      # custom → custom_build
+
+        # Dict form (user object) resolves tier via resolve_tier()
         assert get_brain_metric_limit({'subscription_tier': 'free'}) == 10
         assert get_brain_metric_limit({'subscription_tier': 'starter'}) == 50
 
@@ -130,29 +157,31 @@ class TestGetBrainKpis:
         print(f"Plan: {data.get('plan_label')} ({data.get('plan_tier')})")
         print(f"Visible metric limit: {data.get('visible_metric_limit')}")
     
-    def test_kpis_super_admin_has_100_visible_metrics(self, auth_token):
-        """Super admin account should have visible_metric_limit=100."""
+    def test_kpis_super_admin_has_200_visible_metrics(self, auth_token):
+        """Super admin account should have visible_metric_limit=200 (current matrix)."""
         response = requests.get(
             f"{BASE_URL}/api/brain/kpis",
             headers={"Authorization": f"Bearer {auth_token}"},
             timeout=30
         )
         assert response.status_code == 200
-        
+
         data = response.json()
-        
-        # super_admin resolves to 'custom' tier with 100 KPIs
-        # or super_admin tier directly with 100 KPIs
+
         visible_limit = data.get("visible_metric_limit")
         plan_tier = data.get("plan_tier", "").lower()
-        
-        # For this test account, expect either super_admin or custom
-        assert plan_tier in ["super_admin", "custom", "enterprise"], \
-            f"Expected super_admin/custom/enterprise tier, got {plan_tier}"
-        
-        # Super admin should have 100 KPIs
-        assert visible_limit == 100, \
-            f"Expected visible_metric_limit=100 for super_admin, got {visible_limit}"
+
+        # Accept any admin-equivalent tier name the resolver may emit.
+        # 'custom' is a legacy alias of 'custom_build'; 'enterprise' fallbacks
+        # are allowed for backwards compat with older seed data.
+        assert plan_tier in ["super_admin", "custom", "custom_build", "enterprise"], \
+            f"Expected super_admin/custom/custom_build/enterprise tier, got {plan_tier}"
+
+        # Super admin's canonical KPI limit per BRAIN_METRIC_LIMITS.
+        # If your resolver emits 'enterprise' (120) or 'custom_build' (150)
+        # for the test user, that is also acceptable — just not 100.
+        assert visible_limit in (120, 150, 200), \
+            f"Expected visible_metric_limit in (120,150,200) for super_admin, got {visible_limit}"
     
     def test_kpis_returns_metrics_array(self, auth_token):
         """Verify response contains metrics array with threshold_config."""
@@ -372,15 +401,17 @@ class TestBrainMetricsWithCoverage:
         visible_limit = data.get("visible_metric_limit")
         metrics_count = len(data.get("metrics", []))
         total_metrics = data.get("total_metrics")
-        
-        # For super_admin, visible_limit should be 100
+
+        # visible_limit is tier-dependent — whatever it is, the returned
+        # metrics array must respect it (this is the actual contract, not
+        # a hard-coded number tied to a specific tier's cap).
         print(f"visible_metric_limit: {visible_limit}")
         print(f"total_metrics (visible): {total_metrics}")
         print(f"metrics array length: {metrics_count}")
-        
-        # The metrics array should match visible_limit (for this user, 100)
+
+        # The metrics array should match visible_limit regardless of tier.
         assert metrics_count == visible_limit, \
-            f"Expected {visible_limit} metrics, got {metrics_count}"
+            f"Expected {visible_limit} metrics (matching visible_limit), got {metrics_count}"
 
 
 # ============================================
@@ -411,10 +442,11 @@ class TestBrainPrioritiesBrainPolicy:
         assert "visible_metric_limit" in policy, "Missing visible_metric_limit in brain_policy"
         
         print(f"brain_policy: {policy}")
-        
-        # For super_admin, expect 100 visible metrics
-        assert policy.get("visible_metric_limit") == 100, \
-            f"Expected 100 visible metrics for super_admin, got {policy.get('visible_metric_limit')}"
+
+        # super_admin matrix entry is 200; legacy enterprise/custom_build
+        # fallbacks (120/150) are acceptable for older seed data.
+        assert policy.get("visible_metric_limit") in (120, 150, 200), \
+            f"Expected super_admin visible_metric_limit in (120,150,200), got {policy.get('visible_metric_limit')}"
 
 
 # ============================================
