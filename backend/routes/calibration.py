@@ -1439,8 +1439,14 @@ async def get_calibration_status(current_user: dict = Depends(get_current_user))
 async def skip_calibration(current_user: dict = Depends(get_current_user)):
     """Super admin only — skip calibration entirely and mark as complete."""
     user_role = current_user.get("role", "user")
-    user_email = current_user.get("email", "")
-    if user_role not in ("superadmin", "admin") and user_email != "andre@thestrategysquad.com.au":
+    user_email = (current_user.get("email") or "").strip().lower()
+    # Master admin gate sourced from BIQC_MASTER_ADMIN_EMAIL env — NOT a
+    # hard-coded address. Previously this hard-coded the old pre-rebrand
+    # email, which meant the skip gate would have silently broken the moment
+    # Andreas's account was migrated to a different identity provider.
+    master_admin_email = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "").strip().lower()
+    is_master_admin = bool(master_admin_email) and user_email == master_admin_email
+    if user_role not in ("superadmin", "admin") and not is_master_admin:
         raise HTTPException(status_code=403, detail="Super admin only")
     
     user_id = current_user["id"]
