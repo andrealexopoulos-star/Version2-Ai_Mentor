@@ -20,6 +20,38 @@ stripe.api_key = STRIPE_KEY
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
 
+def _stripe_tax_enabled() -> bool:
+    """Feature flag for Stripe Tax / GST / ABN collection (Step 7 / P1-2).
+
+    Reads live each call so tests and hot-config reloads work. Defaults to
+    FALSE — the Stripe Tax dashboard setting must be activated (registration
+    + origin address configured) before flipping this on, otherwise Stripe
+    rejects the checkout creation with a 400.
+
+    Activation checklist:
+      1. In Stripe dashboard → Tax → activate Australia registration.
+      2. Set origin address to BIQc AU business address.
+      3. Set BIQC_COMPANY_ABN env var to the registered ABN.
+      4. Set STRIPE_TAX_ENABLED=1 in Azure App Service env vars.
+    """
+    return (os.environ.get("STRIPE_TAX_ENABLED") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+# Company ABN for invoice / receipt footer. Empty until Andreas registers
+# the entity with the ATO and sets this env var. Not a secret but set via
+# env so legal metadata can be rotated without a deploy.
+BIQC_COMPANY_ABN = (os.environ.get("BIQC_COMPANY_ABN") or "").strip()
+BIQC_COMPANY_LEGAL_NAME = (
+    os.environ.get("BIQC_COMPANY_LEGAL_NAME")
+    or "Business Intelligence Quotient Centre Pty Ltd"
+).strip()
+
+
 def _is_stripe_production_ready() -> bool:
     """True when Stripe is configured with a live secret and a webhook secret.
 
@@ -333,35 +365,63 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
     else:
         cancel_url = f"{base_origin}/upgrade"
 
-    try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": plan["currency"],
-                    "unit_amount": plan["amount"],
-                    "recurring": {"interval": plan["interval"]},
-                    "product_data": {
-                        "name": plan["name"],
-                        "description": "Paid operating tier for visibility, revenue and operations control, marketing intelligence, Boardroom context, governance workflows, and up to 5 integrations.",
-                    },
+    # Tax / GST / ABN collection — only enabled once Stripe Tax is activated
+    # in the dashboard (see _stripe_tax_enabled docstring). We set
+    # tax_behavior='inclusive' on the price: AU convention is that
+    # advertised prices already include GST, so Stripe subtracts it from
+    # the displayed amount rather than adding on top.
+    session_kwargs: Dict[str, Any] = {
+        "payment_method_types": ["card"],
+        "line_items": [{
+            "price_data": {
+                "currency": plan["currency"],
+                "unit_amount": plan["amount"],
+                "recurring": {"interval": plan["interval"]},
+                "product_data": {
+                    "name": plan["name"],
+                    "description": "Paid operating tier for visibility, revenue and operations control, marketing intelligence, Boardroom context, governance workflows, and up to 5 integrations.",
                 },
-                "quantity": 1,
-            }],
-            mode="subscription",
-            success_url=success_url,
-            cancel_url=cancel_url,
-            customer_email=user_email,
-            metadata={
-                "user_id": user_id,
-                "user_email": user_email,
-                "tier": plan["tier"],
-                "source": "biqc_upgrade",
-                "pricing_source": (plan.get("governance", {}) or {}).get("source", "legacy_static"),
-                "pricing_plan_key": (plan.get("governance", {}) or {}).get("plan_key", plan_id),
-                "pricing_plan_version": str((plan.get("governance", {}) or {}).get("plan_version", "")),
             },
-        )
+            "quantity": 1,
+        }],
+        "mode": "subscription",
+        "success_url": success_url,
+        "cancel_url": cancel_url,
+        "customer_email": user_email,
+        "metadata": {
+            "user_id": user_id,
+            "user_email": user_email,
+            "tier": plan["tier"],
+            "source": "biqc_upgrade",
+            "pricing_source": (plan.get("governance", {}) or {}).get("source", "legacy_static"),
+            "pricing_plan_key": (plan.get("governance", {}) or {}).get("plan_key", plan_id),
+            "pricing_plan_version": str((plan.get("governance", {}) or {}).get("plan_version", "")),
+            "tax_enabled": "1" if _stripe_tax_enabled() else "0",
+        },
+    }
+
+    if _stripe_tax_enabled():
+        # Stripe Tax pipeline — requires Tax dashboard activation.
+        # - automatic_tax: Stripe calculates GST at checkout and remits it.
+        # - tax_id_collection: present the ABN field to the buyer; B2B with
+        #   valid ABN triggers reverse-charge (GST exempt within AU).
+        # - billing_address_collection=required: needed so Stripe knows the
+        #   buyer's jurisdiction before calculating tax.
+        # - customer_update: after collecting new address/name, write them
+        #   back onto the Customer record so renewals keep the right data.
+        # - tax_behavior=inclusive on the line item: advertised prices
+        #   already include GST (AU convention).
+        session_kwargs["automatic_tax"] = {"enabled": True}
+        session_kwargs["tax_id_collection"] = {"enabled": True}
+        session_kwargs["billing_address_collection"] = "required"
+        session_kwargs["customer_update"] = {"address": "auto", "name": "auto"}
+        # Per-line tax_behavior tells Stripe that `unit_amount` already
+        # bakes in GST. Without this, Stripe might add GST on top in
+        # some configurations (depends on product defaults).
+        session_kwargs["line_items"][0]["price_data"]["tax_behavior"] = "inclusive"
+
+    try:
+        session = stripe.checkout.Session.create(**session_kwargs)
         logger.info(f"✅ Stripe checkout created for {user_email} → {plan['name']}")
         try:
             # stripe_customer_id may be None at session-create time — the Customer
