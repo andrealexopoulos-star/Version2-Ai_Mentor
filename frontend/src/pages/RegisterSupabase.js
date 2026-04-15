@@ -130,6 +130,11 @@ const RegisterSupabase = () => {
       });
       trackEvent(EVENTS.ACTIVATION_SIGNUP_COMPLETE, { method: 'email' });
       trackActivationStep('signup_complete', { method: 'email' });
+      // Google Ads conversion — new sign-up
+      if (window.gtag) {
+        window.gtag('event', 'conversion', { send_to: 'AW-18002554945', event_category: 'signup', event_label: 'email_registration' });
+        window.gtag('event', 'sign_up', { method: 'email' });
+      }
       toast.success('Account created! Please check your email to confirm.');
       navigate('/login-supabase');
     } catch (error) {
@@ -202,7 +207,11 @@ const RegisterSupabase = () => {
         }
       }
       const result = await signInWithOAuth(provider);
-      if (result?.url) { window.location.href = result.url; }
+      if (result?.url) {
+        // Flag for conversion tracking in AuthCallbackSupabase
+        try { localStorage.setItem('biqc_pending_signup', provider); } catch {}
+        window.location.href = result.url;
+      }
     } catch (error) {
       const msg = error?.message || '';
       if (msg.includes('Supabase is not configured')) {

@@ -110,6 +110,15 @@ const AuthCallbackSupabase = () => {
         if (!mounted) return;
 
         if (data?.session) {
+          // Google Ads conversion — fire if this was a new sign-up (flag set by RegisterSupabase)
+          try {
+            const pendingSignup = localStorage.getItem('biqc_pending_signup');
+            if (pendingSignup && window.gtag) {
+              window.gtag('event', 'conversion', { send_to: 'AW-18002554945', event_category: 'signup', event_label: `oauth_${pendingSignup}` });
+              window.gtag('event', 'sign_up', { method: pendingSignup });
+              localStorage.removeItem('biqc_pending_signup');
+            }
+          } catch {}
           await routeAfterAuth(data.session);
           return;
         }

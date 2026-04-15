@@ -6,13 +6,16 @@
     <link rel="shortcut icon" href="%PUBLIC_URL%/logo192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0F1720" />
-    <!-- Google tag (gtag.js) — GDPR: config only fires after consent -->
+    <!-- Google tag (gtag.js) — GA4 + Google Ads conversion tracking -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-HRW99KL3BF"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       window.gtag = window.gtag || gtag;
       gtag('js', new Date());
+
+      // Google Ads conversion tag — always active for conversion measurement
+      gtag('config', 'AW-18002554945');
 
       // Enable GA4 config — called on consent or if previously accepted
       window.__biqc_enable_analytics = function() {
@@ -28,6 +31,21 @@
           window.__biqc_enable_analytics();
         }
       } catch(e) {}
+    </script>
+    <!-- Google tag (gtag.js) event - delayed navigation helper -->
+    <script>
+      function gtagSendEvent(url) {
+        var callback = function () {
+          if (typeof url === 'string') {
+            window.location = url;
+          }
+        };
+        gtag('event', 'ads_conversion_Subscribe_1', {
+          'event_callback': callback,
+          'event_timeout': 2000,
+        });
+        return false;
+      }
     </script>
     
     <!-- Cache Control for Mobile -->
