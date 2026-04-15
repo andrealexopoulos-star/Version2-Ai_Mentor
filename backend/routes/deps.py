@@ -5,6 +5,8 @@ Extracted from server.py — zero logic changes.
 All route modules import auth deps and shared state from here.
 server.py calls init_route_deps() once at startup to inject globals.
 """
+from __future__ import annotations  # enables `str | None` etc. on Python 3.9
+
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import logging
@@ -172,6 +174,17 @@ TIER_RATE_LIMIT_DEFAULTS = {
         "boardroom_diagnosis": {"monthly_limit": -1, "burst_limit": 40, "burst_window_seconds": 300},
         "war_room_ask": {"monthly_limit": -1, "burst_limit": 40, "burst_window_seconds": 300},
     },
+    # custom_build is a contracted sales tier. Defaults mirror enterprise;
+    # individual customer overrides live in user_operator_profile.rate_limits
+    # and are merged on top by _merge_rate_limit_config. Kept as a distinct
+    # entry so display code can tell "Custom Build" apart from generic
+    # "Enterprise" (Step 8 / P1-3 — normalise across PLANS + tiers.js).
+    "custom_build": {
+        "soundboard_daily": {"monthly_limit": -1, "burst_limit": 40, "burst_window_seconds": 300},
+        "trinity_daily": {"monthly_limit": -1, "burst_limit": 30, "burst_window_seconds": 300},
+        "boardroom_diagnosis": {"monthly_limit": -1, "burst_limit": 40, "burst_window_seconds": 300},
+        "war_room_ask": {"monthly_limit": -1, "burst_limit": 40, "burst_window_seconds": 300},
+    },
     "super_admin": {
         feature: {"monthly_limit": -1, "burst_limit": -1, "burst_window_seconds": 300}
         for feature in RATE_LIMIT_FEATURE_LABELS
@@ -184,11 +197,19 @@ RATE_LIMIT_BURST_REDIS_PREFIX = "biqc-ratelimit:burst:"
 
 
 def _normalize_subscription_tier(tier: str | None) -> str:
-    """Normalize DB subscription_tier to canonical tier name."""
+    """Normalize DB subscription_tier to canonical tier name.
+
+    custom_build is intentionally distinct from enterprise: it is a
+    contracted sales tier with the same default entitlements but a
+    separate identity for display and custom entitlement overlays.
+    Legacy 'custom' collapses into 'custom_build' (Step 8 / P1-3).
+    """
     tier_value = (tier or "free").lower().strip()
     if tier_value in ("superadmin", "super_admin"):
         return "super_admin"
-    if tier_value in ("enterprise", "custom", "custom_build"):
+    if tier_value in ("custom", "custom_build"):
+        return "custom_build"
+    if tier_value == "enterprise":
         return "enterprise"
     if tier_value == "business":
         return "business"

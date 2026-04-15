@@ -38,6 +38,13 @@ TIER_TOKEN_LIMITS: dict[str, dict[str, int]] = {
         "input_allocated":  30_000_000,
         "output_allocated": 15_000_000,
     },
+    # Contracted sales tier — defaults mirror enterprise. Per-customer
+    # overrides should be applied via separate entitlement records if/when
+    # a contract justifies it (Step 8 / P1-3 — unified with PLANS + tiers.js).
+    "custom_build": {
+        "input_allocated":  30_000_000,
+        "output_allocated": 15_000_000,
+    },
     "super_admin": {
         "input_allocated":  -1,
         "output_allocated": -1,
@@ -108,11 +115,18 @@ def _current_period() -> tuple[datetime, datetime]:
 
 
 def _normalize_tier(tier: str | None) -> str:
-    """Canonical tier string, matching deps._normalize_subscription_tier."""
+    """Canonical tier string, matching deps._normalize_subscription_tier.
+
+    Keep in lock-step with routes.deps._normalize_subscription_tier — in
+    particular, custom_build stays distinct from enterprise (Step 8 /
+    P1-3) so usage metering preserves the commercial identity.
+    """
     t = (tier or "free").lower().strip()
     if t in ("superadmin", "super_admin"):
         return "super_admin"
-    if t in ("enterprise", "custom", "custom_build"):
+    if t in ("custom", "custom_build"):
+        return "custom_build"
+    if t == "enterprise":
         return "enterprise"
     if t == "business":
         return "business"
