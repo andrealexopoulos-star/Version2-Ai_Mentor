@@ -364,6 +364,11 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
         )
         logger.info(f"✅ Stripe checkout created for {user_email} → {plan['name']}")
         try:
+            # stripe_customer_id may be None at session-create time — the Customer
+            # object is attached only once the user completes checkout. We
+            # enrich both stripe_customer_id and stripe_subscription_id in the
+            # checkout.session.completed webhook so cancellation/dunning
+            # lookups can resolve back to the user.
             sb.table("payment_transactions").insert({
                 "user_id": user_id,
                 "session_id": session.id,
@@ -373,6 +378,8 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
                 "tier": plan["tier"],
                 "payment_status": "initiated",
                 "created_at": datetime.now(timezone.utc).isoformat(),
+                "stripe_customer_id": getattr(session, "customer", None),
+                "stripe_subscription_id": getattr(session, "subscription", None),
             }).execute()
         except Exception as e:
             logger.warning(f"Failed to store payment transaction: {e}")
@@ -590,10 +597,23 @@ async def stripe_webhook(request: Request):
             if event.type == "checkout.session.completed":
                 session = event.data.object
                 if session.payment_status == "paid":
-                    sb.table("payment_transactions").update({
+                    # Enrich the payment_transactions row with the now-known
+                    # customer + subscription IDs so later cancellation /
+                    # dunning webhooks can resolve the user back via these
+                    # linkage columns (see migration 095).
+                    update_payload = {
                         "payment_status": "paid",
                         "paid_at": datetime.now(timezone.utc).isoformat(),
-                    }).eq("session_id", session.id).execute()
+                    }
+                    customer_id = getattr(session, "customer", None)
+                    subscription_id = getattr(session, "subscription", None)
+                    if customer_id:
+                        update_payload["stripe_customer_id"] = customer_id
+                    if subscription_id:
+                        update_payload["stripe_subscription_id"] = subscription_id
+                    sb.table("payment_transactions").update(update_payload).eq(
+                        "session_id", session.id
+                    ).execute()
 
                     user_id = (session.metadata or {}).get("user_id")
                     if user_id:
