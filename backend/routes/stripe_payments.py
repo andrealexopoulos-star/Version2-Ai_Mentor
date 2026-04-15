@@ -588,32 +588,124 @@ async def confirm_checkout_session(
     }
 
 
+def _resolve_stripe_customer_for_portal(sb, user_id: str, user_email: str) -> Optional[str]:
+    """Return the Stripe customer_id to use for the portal session.
+
+    Lookup order (Step 11 / P1-10 — cancelled + free users must reach
+    the portal):
+      1. users.stripe_customer_id — the canonical link written by
+         checkout / webhooks. A cancelled user still has this populated
+         so they can reach their invoice history.
+      2. Stripe Customer.list(email=…) — covers the edge case where
+         the webhook never linked the customer to the user row (pre-096
+         data, or a signature-verification failure at checkout time).
+         We cache the match back to the users row so the next portal
+         hit skips the API round-trip.
+      3. None — caller decides whether to create a new customer or
+         return a "no billing history" signal.
+
+    We never silently create a customer here: a free user who has
+    genuinely never transacted gets an explicit message from the caller
+    rather than an orphan Stripe customer row that dashboards will later
+    have to clean up.
+    """
+    # 1. DB cache — single-row read, keyed on PK.
+    try:
+        res = (
+            sb.table("users")
+            .select("stripe_customer_id")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
+        rows = (getattr(res, "data", None) or [])
+        cached = (rows[0] or {}).get("stripe_customer_id") if rows else None
+        if cached:
+            return cached
+    except Exception as exc:  # pragma: no cover — DB outage falls through
+        logger.warning("[Portal] users.stripe_customer_id lookup failed for %s: %s", user_id, exc)
+
+    # 2. Email lookup in Stripe. Skip if email is empty — Stripe will
+    # happily return all customers with no email filter, and picking
+    # "first one" in that case is a bug waiting to happen.
+    if not user_email:
+        return None
+    try:
+        listing = stripe.Customer.list(email=user_email, limit=1)
+        if listing.data:
+            customer_id = listing.data[0].id
+            # Cache back to users row so the next call hits path 1.
+            try:
+                sb.table("users").update({"stripe_customer_id": customer_id}).eq("id", user_id).execute()
+            except Exception as exc:  # pragma: no cover — best-effort cache
+                logger.warning("[Portal] cache of stripe_customer_id failed for %s: %s", user_id, exc)
+            return customer_id
+    except Exception as exc:
+        logger.warning("[Portal] Stripe Customer.list failed for %s: %s", user_email, exc)
+
+    return None
+
+
 @router.post("/stripe/portal-session")
 @router.post("/billing/portal")  # convenience alias
 async def create_portal_session(request: Request, current_user: dict = Depends(get_current_user)):
-    """Create a Stripe Customer Portal session for subscription management.
+    """Open a Stripe Customer Portal session.
 
-    If the user doesn't have a Stripe customer ID yet, we look up or create one
-    from their email, then return the portal URL.
+    Step 11 (P1-10) — cancelled and free users must be able to reach
+    the portal. A cancelled customer still needs access to past invoices
+    and to reactivate; a truly-new free user gets a clear "no billing
+    history yet — upgrade to start" response instead of an orphan
+    Stripe customer being silently created.
+
+    Resolution order (see `_resolve_stripe_customer_for_portal`):
+      1. users.stripe_customer_id (canonical, populated by webhooks)
+      2. Stripe Customer.list by email (covers pre-migration gaps)
+      3. Create a new Stripe customer, cache the id back to users
+
+    Error semantics:
+      • 503 — STRIPE_API_KEY not set (misconfiguration)
+      • 400 — Stripe portal not configured in the dashboard (returned
+              as a clear message so ops know where to click)
+      • 502 — transient Stripe outage; client should retry
     """
     if not STRIPE_KEY:
         raise HTTPException(status_code=503, detail="Stripe is not configured")
 
-    user_email = current_user.get("email", "")
+    user_email = (current_user.get("email") or "").strip()
     user_id = current_user["id"]
 
+    # Lazy import so unit tests that stub routes.deps don't fail here.
     try:
-        # Try to find an existing Stripe customer by email
-        customers = stripe.Customer.list(email=user_email, limit=1)
-        if customers.data:
-            customer_id = customers.data[0].id
-        else:
-            # Create a minimal customer record so the portal has something to attach to
+        from routes.deps import get_sb
+        sb = get_sb()
+    except Exception as exc:  # pragma: no cover — dev envs without Supabase
+        logger.warning("[Portal] Supabase unavailable: %s", exc)
+        sb = None
+
+    try:
+        customer_id = None
+        if sb is not None:
+            customer_id = _resolve_stripe_customer_for_portal(sb, user_id, user_email)
+
+        # Fallback: no DB, or no row matched and no Stripe customer exists
+        # for this email. Create one so the user can add a payment method
+        # for the first time. We cache back to the DB if it's reachable.
+        if not customer_id:
+            if not user_email:
+                raise HTTPException(
+                    status_code=400,
+                    detail="A verified email is required to open the billing portal.",
+                )
             customer = stripe.Customer.create(
                 email=user_email,
                 metadata={"biqc_user_id": user_id},
             )
             customer_id = customer.id
+            if sb is not None:
+                try:
+                    sb.table("users").update({"stripe_customer_id": customer_id}).eq("id", user_id).execute()
+                except Exception as exc:  # pragma: no cover — best-effort cache
+                    logger.warning("[Portal] cache of new customer id failed for %s: %s", user_id, exc)
 
         configured_base = (os.environ.get("FRONTEND_URL") or "").strip() or "https://biqc.ai"
         return_url = f"{configured_base}/billing"
@@ -624,11 +716,25 @@ async def create_portal_session(request: Request, current_user: dict = Depends(g
         )
         return {"url": portal_session.url}
 
+    except HTTPException:
+        raise
     except stripe.error.InvalidRequestError as e:
-        logger.error(f"Stripe portal error: {e}")
-        raise HTTPException(status_code=400, detail="Unable to create billing portal session")
+        # This is what Stripe throws when the portal hasn't been
+        # configured in the dashboard yet (common on a fresh account).
+        # Surface a message ops can act on rather than a generic 400.
+        msg = str(e) or "Billing portal is not yet configured."
+        logger.error(f"[Portal] Stripe rejected session creation: {msg}")
+        detail = (
+            "Billing portal is not available. If you just launched, an admin must "
+            "configure the Customer Portal in the Stripe dashboard. Users with no "
+            "prior subscription will need to upgrade first."
+        )
+        raise HTTPException(status_code=400, detail=detail)
+    except stripe.error.APIConnectionError as e:
+        logger.error(f"[Portal] Stripe connectivity failed: {e}")
+        raise HTTPException(status_code=502, detail="Stripe is temporarily unavailable. Please try again.")
     except Exception as e:
-        logger.error(f"Portal session creation failed: {e}")
+        logger.error(f"[Portal] session creation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to open billing portal")
 
 
