@@ -258,8 +258,15 @@ async def proxy_edge_function(
             function_name_value=resolved_name,
         )
 
-    # Enforce backend-mediated service-role forwarding so edge reliability
-    # does not depend on client JWT audience/scope differences.
+    # Forward the caller's Supabase JWT so edge functions can identify the
+    # user via their standard verifyAuth → getUser(token) path.  The backend
+    # has already verified this JWT in Depends(get_current_user) above, so
+    # forwarding it doesn't weaken auth — it just lets the edge function
+    # resolve user.id without a service-role key mismatch.
+    #
+    # Falls back to service_role only when no user JWT is available (e.g.
+    # internal/cron callers).  The anon key is still required as the apikey
+    # header for Supabase's gateway routing.
     service_role = (
         os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
         or os.environ.get("SUPABASE_KEY")
@@ -274,7 +281,8 @@ async def proxy_edge_function(
             http_status=503,
             function_name_value=resolved_name,
         )
-    outbound_auth = f"Bearer {service_role}"
+    user_jwt = (request.headers.get("authorization") or "").strip()
+    outbound_auth = user_jwt if user_jwt.startswith("Bearer ") else f"Bearer {service_role}"
     outbound_apikey = service_role
 
     endpoint = f"{supabase_url}/functions/v1/{resolved_name}"
