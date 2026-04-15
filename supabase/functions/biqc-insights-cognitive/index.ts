@@ -479,20 +479,41 @@ serve(async (req) => {
       });
     }
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-      });
+
+    // Resolve the target user. When invoked via the backend proxy
+    // (integrations.py:/edge/functions/{name}), auth is service_role and the
+    // proxy has already injected a trusted user_id into the request body
+    // after verifying the caller's Supabase JWT. Trust that value.
+    //
+    // For direct user-JWT invocations (batch_precompute cron, testing), fall
+    // back to getUser(token) so nothing regresses.
+    let user: { id: string; email?: string };
+    if (auth.isServiceRole) {
+      const bodyUserId = typeof body?.user_id === "string" ? body.user_id : null;
+      if (!bodyUserId && !body.batch_precompute) {
+        return new Response(
+          JSON.stringify({ error: "user_id required in payload for service_role requests" }),
+          { status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+        );
+      }
+      // batch_precompute iterates its own user list below — a placeholder id is safe.
+      user = { id: bodyUserId || "service_role" };
+    } else {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "No auth" }), {
+          status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user: jwtUser }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !jwtUser) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+      user = { id: jwtUser.id, email: jwtUser.email || undefined };
     }
 
     // PRECOMPUTE MODE — generate snapshots for all active users (called by pg_cron)

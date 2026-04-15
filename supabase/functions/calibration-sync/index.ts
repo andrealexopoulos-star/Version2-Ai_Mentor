@@ -43,17 +43,42 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization") || "";
-    const token = authHeader.replace("Bearer ", "");
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { data: { user }, error: authErr } = await sb.auth.getUser(token);
-    if (authErr || !user) {
-      return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
 
-    const userId = user.id;
+    // Resolve the target user. When invoked via the backend proxy
+    // (integrations.py:/edge/functions/{name}), auth is service_role and the
+    // proxy has already injected a trusted user_id into the request body
+    // after verifying the caller's Supabase JWT. Trust that value.
+    //
+    // For direct user-JWT invocations (legacy / testing), fall back to
+    // getUser(token) so nothing regresses.
+    let userId: string;
+    let body: any = {};
+    try {
+      const raw = await req.text();
+      if (raw) body = JSON.parse(raw);
+    } catch { body = {}; }
+
+    if (auth.isServiceRole) {
+      const bodyUserId = typeof body?.user_id === "string" ? body.user_id : null;
+      if (!bodyUserId) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "user_id required in payload for service_role requests" }),
+          { status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+        );
+      }
+      userId = bodyUserId;
+    } else {
+      const authHeader = req.headers.get("Authorization") || "";
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authErr } = await sb.auth.getUser(token);
+      if (authErr || !user) {
+        return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+      userId = user.id;
+    }
 
     // Load operator profile (has calibration answers)
     const { data: op } = await sb.from("user_operator_profile")
