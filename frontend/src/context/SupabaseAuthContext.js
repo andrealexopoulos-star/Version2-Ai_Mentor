@@ -317,10 +317,68 @@ export const SupabaseAuthProvider = ({ children }) => {
     }
   };
 
-  const signUp = async (email, password, metadata = {}) => {
+  // Step 13 / P1-8 — signUp now accepts an `options` bag so callers can
+  // pass a reCAPTCHA token. When a token is provided we route signup
+  // through the backend (/api/auth/supabase/signup) so verification
+  // happens server-side before the Supabase auth row is created.
+  // Without the backend round-trip an attacker could skip the captcha
+  // by calling supabase.auth.signUp() directly from devtools.
+  //
+  // Signature is backwards-compatible: existing callers that pass 3 args
+  // continue to use the direct-to-Supabase path (dev / no captcha).
+  const signUp = async (email, password, metadata = {}, options = {}) => {
     if (!hasSupabaseConfig) {
       throw new Error(SUPABASE_SETUP_MESSAGE);
     }
+    const { recaptchaToken = '', recaptchaAction = 'register' } = options || {};
+
+    if (recaptchaToken) {
+      // Backend-routed signup path: captcha verified server-side, then
+      // Supabase auth user + profile created, session tokens returned.
+      clearClientAuthCachesForFreshLogin();
+      const response = await fetch(`${getBackendUrl()}/api/auth/supabase/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          full_name: metadata.full_name || null,
+          company_name: metadata.company_name || null,
+          industry: metadata.industry || null,
+          role: metadata.role || null,
+          recaptcha_token: recaptchaToken,
+          recaptcha_action: recaptchaAction,
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = payload?.detail || payload?.message || 'Signup failed';
+        throw new Error(message);
+      }
+
+      // If the backend returned a session (email confirmation disabled),
+      // plant it into supabase-js so subsequent API calls are authenticated.
+      // When email confirmation is enabled upstream, session will be null
+      // and the user will confirm via the email link instead.
+      const accessToken = payload?.session?.access_token;
+      const refreshToken = payload?.session?.refresh_token;
+      if (accessToken && refreshToken) {
+        const { error: setSessionErr } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (setSessionErr) throw setSessionErr;
+      }
+      return payload;
+    }
+
+    // Fallback — direct client-side Supabase signup. Used when reCAPTCHA
+    // is not configured (dev/local) so the flow still works without a
+    // site key. Production callers should always pass a token.
     const { data, error } = await supabase.auth.signUp({
       email, password, options: { data: metadata }
     });

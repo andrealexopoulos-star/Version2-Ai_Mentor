@@ -125,9 +125,25 @@ const RegisterSupabase = () => {
           return;
         }
       }
-      await signUp(formData.email, formData.password, {
-        full_name: formData.full_name, company_name: formData.company_name, industry: formData.industry, role: 'user'
-      });
+      // Step 13 / P1-8 — pass the captcha token through so the backend can
+      // verify it before creating the Supabase auth user. When a token is
+      // provided, signUp routes through /api/auth/supabase/signup; when it
+      // isn't (captcha disabled/unavailable in dev), signUp falls back to
+      // the direct Supabase client path.
+      await signUp(
+        formData.email,
+        formData.password,
+        {
+          full_name: formData.full_name,
+          company_name: formData.company_name,
+          industry: formData.industry,
+          role: 'user',
+        },
+        {
+          recaptchaToken: recaptchaOperational ? captchaToken : '',
+          recaptchaAction,
+        }
+      );
       trackEvent(EVENTS.ACTIVATION_SIGNUP_COMPLETE, { method: 'email' });
       trackActivationStep('signup_complete', { method: 'email' });
       // Google Ads conversion — new sign-up

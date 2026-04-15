@@ -115,6 +115,12 @@ class SignUpRequest(BaseModel):
     industry: Optional[str] = None
     # Kept for backward compatibility with old clients; ignored server-side.
     role: Optional[str] = None
+    # Step 13 / P1-8 — reCAPTCHA token from the browser. When reCAPTCHA is
+    # configured server-side (RECAPTCHA_SECRET_KEY or the enterprise trio),
+    # this field is required in production; missing/invalid tokens are
+    # rejected before we create a Supabase auth user. In dev/without
+    # config this is silently accepted so local flows still work.
+    recaptcha_token: Optional[str] = None
 
 class SignInRequest(BaseModel):
     email: EmailStr
@@ -363,12 +369,85 @@ async def get_current_user_supabase(credentials: HTTPAuthorizationCredentials = 
     token = credentials.credentials
     return await verify_supabase_token(token)
 
+# ────────────────────────────────────────────────────────────────────────────
+# Step 13 / P1-8 — reCAPTCHA gate for the signup path.
+#
+# Without this gate a scripted attacker can hit POST /api/auth/supabase/signup
+# directly and skip the browser-side /auth/recaptcha/verify check entirely.
+# This helper runs server-side verification on the token the client submits,
+# so the Supabase auth row is never created unless the captcha has passed.
+#
+# Behaviour matrix:
+#   configured | token | prod → 400 (token required)
+#   configured | token | dev  → log + allow (so local dev without a site
+#                               key set doesn't break tests)
+#   configured | present       → verify; 400 on fail, 503 on verifier down
+#                                in prod (fail-closed)
+#   not-configured               → no-op (captcha not enforced in this env)
+# ────────────────────────────────────────────────────────────────────────────
+async def _enforce_signup_recaptcha(request: "SignUpRequest") -> None:
+    """Verify the client's reCAPTCHA token before creating an auth user.
+
+    Imports the helpers lazily to avoid a circular import between
+    auth_supabase and routes.auth at module load time.
+    """
+    try:
+        from routes.auth import recaptcha_is_configured, verify_recaptcha_token
+    except Exception as import_err:
+        # If the helper module fails to import we don't want to break signup
+        # entirely — log loudly and continue. In practice this only trips
+        # during isolated unit tests that stub out routes.auth.
+        logger.warning(f"[signup] recaptcha helpers unavailable: {import_err}")
+        return
+
+    token = (request.recaptcha_token or "").strip()
+    configured = recaptcha_is_configured()
+
+    if not token:
+        if configured and _is_production():
+            raise HTTPException(status_code=400, detail="Captcha token required")
+        if configured:
+            # Dev environments that happen to have the server-side secret
+            # set but no browser site-key. Log but don't block.
+            logger.warning("[signup] reCAPTCHA configured but no token provided — allowing in non-prod")
+        return
+
+    try:
+        result = await verify_recaptcha_token(token, expected_action="register")
+    except HTTPException:
+        # 4xx / 5xx from the verifier — propagate as-is (already user-safe).
+        raise
+    except Exception as exc:
+        logger.warning(f"[signup] unexpected recaptcha verify error: {exc}")
+        if _is_production():
+            raise HTTPException(status_code=503, detail="Captcha verification unavailable")
+        return
+
+    if result.get("skipped"):
+        # Dev-bypass flag or missing secret in non-prod.
+        return
+
+    if not result.get("ok"):
+        if result.get("unavailable"):
+            # Google siteverify down or enterprise API 5xx.
+            if _is_production():
+                raise HTTPException(status_code=503, detail="Captcha verification unavailable")
+            logger.warning("[signup] recaptcha verifier unavailable — allowing in non-prod")
+            return
+        raise HTTPException(status_code=400, detail="Captcha verification failed")
+
+
 # Auth Endpoints
 async def signup_with_email(request: SignUpRequest):
     """
     Sign up with email and password using Supabase Auth
     """
     try:
+        # Step 13 / P1-8 — gate signup on reCAPTCHA before touching Supabase.
+        # Runs first so invalid/bot signups don't consume Supabase auth quota
+        # or create orphaned auth.users rows.
+        await _enforce_signup_recaptcha(request)
+
         # Check if user already exists
         existing_user = await get_user_by_email(request.email)
         if existing_user:

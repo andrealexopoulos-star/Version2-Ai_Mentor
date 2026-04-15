@@ -233,6 +233,78 @@ async def verify_recaptcha(request: RecaptchaVerifyRequest):
 
     return {"ok": True, "provider": "standard", "score": score, "action": returned_action or None}
 
+
+# ────────────────────────────────────────────────────────────────────────────
+# Step 13 / P1-8 — reCAPTCHA helpers for internal callers (signup, OAuth).
+#
+# The endpoint above is designed to be hit over HTTP by the browser. Server-
+# side callers (e.g. signup_with_email in auth_supabase.py) need the same
+# verification logic without making a loopback HTTP request. Rather than
+# duplicate ~150 lines of code, we expose two small helpers:
+#
+#   recaptcha_is_configured()   — sync, checks env vars to decide whether
+#                                 enforcement is active for this environment.
+#                                 Signup uses it to decide "token required"
+#                                 vs. "no token, no problem".
+#
+#   verify_recaptcha_token()    — async, delegates to the same core logic
+#                                 as the endpoint (via RecaptchaVerifyRequest).
+#                                 Returns the identical response dict so
+#                                 callers can inspect ok / unavailable / skipped.
+#
+# Both are pure wrappers — the single source of truth for verification
+# behaviour remains the `verify_recaptcha` endpoint above.
+# ────────────────────────────────────────────────────────────────────────────
+def recaptcha_is_configured() -> bool:
+    """True when a reCAPTCHA secret or enterprise credentials are set in env.
+
+    The signup path uses this to distinguish "captcha disabled — allow signup"
+    from "captcha enabled but caller didn't provide a token — reject". It
+    matches the env-var lookups used inside `verify_recaptcha` so the two
+    stay in lockstep.
+    """
+    standard = bool(_first_env(
+        "RECAPTCHA_SECRET_KEY",
+        "RECAPTCHA_SECRET",
+        "GOOGLE_RECAPTCHA_SECRET_KEY",
+        "GOOGLE_RECAPTCHA_SECRET",
+        "CAPTCHA_SECRET_KEY",
+    ))
+    enterprise = bool(
+        _first_env(
+            "RECAPTCHA_ENTERPRISE_PROJECT_ID",
+            "GOOGLE_CLOUD_PROJECT",
+            "GOOGLE_CLOUD_PROJECT_ID",
+            "GOOGLE_PROJECT_ID",
+        )
+        and _first_env(
+            "RECAPTCHA_ENTERPRISE_API_KEY",
+            "GOOGLE_API_KEY",
+            "GOOGLE_CLOUD_API_KEY",
+            "RECAPTCHA_API_KEY",
+        )
+    )
+    return standard or enterprise
+
+
+async def verify_recaptcha_token(
+    token: str,
+    expected_action: str = "register",
+    site_key: str = "",
+) -> dict:
+    """Verify a reCAPTCHA token in-process and return the endpoint's dict.
+
+    Intended for server-side callers (e.g. signup). Delegates to the same
+    `verify_recaptcha` endpoint handler so the verification semantics and
+    failure modes are identical to what the browser sees.
+    """
+    return await verify_recaptcha(RecaptchaVerifyRequest(
+        token=token,
+        expectedAction=expected_action,
+        siteKey=site_key or None,
+    ))
+
+
 @router.get("/auth/supabase/oauth/{provider}")
 async def supabase_oauth(provider: str, redirect_to: Optional[str] = None):
     """
