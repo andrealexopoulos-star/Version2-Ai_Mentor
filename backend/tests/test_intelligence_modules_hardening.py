@@ -9,31 +9,37 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 
+# _APIRouter / _HTTPException / _Request are defined at module scope so that
+# routes.auth stubbing below can reference them even when fastapi is already
+# installed in sys.modules (otherwise the conditional block skips their def
+# and line below raises UnboundLocalError — see CI run 24451600859).
+class _HTTPException(Exception):
+    def __init__(self, status_code: int = 500, detail: str = ""):
+        super().__init__(detail)
+        self.status_code = status_code
+        self.detail = detail
+
+
+class _APIRouter:
+    def _passthrough(self, *_args, **_kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
+
+    get = _passthrough
+    post = _passthrough
+    put = _passthrough
+    patch = _passthrough
+    delete = _passthrough
+
+
+class _Request:
+    pass
+
+
 def _install_module_stubs():
     if "fastapi" not in sys.modules:
         fastapi_stub = types.ModuleType("fastapi")
-
-        class _HTTPException(Exception):
-            def __init__(self, status_code: int = 500, detail: str = ""):
-                super().__init__(detail)
-                self.status_code = status_code
-                self.detail = detail
-
-        class _APIRouter:
-            def _passthrough(self, *_args, **_kwargs):
-                def _decorator(func):
-                    return func
-                return _decorator
-
-            get = _passthrough
-            post = _passthrough
-            put = _passthrough
-            patch = _passthrough
-            delete = _passthrough
-
-        class _Request:
-            pass
-
         fastapi_stub.APIRouter = _APIRouter
         fastapi_stub.Depends = lambda fn: fn
         fastapi_stub.HTTPException = _HTTPException
@@ -64,7 +70,10 @@ def _install_module_stubs():
     if "routes.auth" not in sys.modules:
         routes_auth_stub = types.ModuleType("routes.auth")
         routes_auth_stub.get_current_user = lambda: {"id": "stub-user"}
-        routes_auth_stub.router = _APIRouter()  # stub router so later tests can import it
+        # Use the fastapi module's APIRouter if installed, else our local stub.
+        # This keeps the router usable whether fastapi is real or stubbed.
+        router_cls = getattr(sys.modules.get("fastapi"), "APIRouter", _APIRouter)
+        routes_auth_stub.router = router_cls()
         sys.modules["routes.auth"] = routes_auth_stub
 
 

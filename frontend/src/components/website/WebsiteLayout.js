@@ -102,7 +102,7 @@ const WebsiteFooter = () => (
         <div>
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[#8FA0B8]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Legal</h2>
           <div className="space-y-2.5">
-            {[['Privacy Policy', '/trust/privacy'], ['Terms of Service', '/trust/terms'], ['Trust & Security', '/trust/security']].map(([l, p]) => (
+            {[['Privacy Policy', '/trust/privacy'], ['Terms of Service', '/trust/terms'], ['Refund Policy', '/trust/refund-policy'], ['Trust & Security', '/trust/security']].map(([l, p]) => (
               <Link key={p} to={p} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.body }}>{l}</Link>
             ))}
           </div>

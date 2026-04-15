@@ -204,8 +204,74 @@ export const TrustCentrePage = () => (
       <li><a href="/trust/privacy" style={{ color: '#E85D00' }}>Privacy Policy</a></li>
       <li><a href="/trust/dpa" style={{ color: '#E85D00' }}>Data Processing Agreement</a></li>
       <li><a href="/trust/security" style={{ color: '#E85D00' }}>Security & Infrastructure</a></li>
+      <li><a href="/trust/refund-policy" style={{ color: '#E85D00' }}>Refund Policy</a></li>
     </ul>
     <h2>Contact</h2>
     <p>For security inquiries: support@biqc.ai<br />For privacy inquiries: support@biqc.ai</p>
+  </TrustPageShell>
+);
+
+// Step 14 / P1-9 — Refund Policy page. Matches the TrustPageShell layout so
+// it reads as an extension of the trust suite rather than a standalone
+// legal page. Content is deliberately specific on the 7-day window,
+// pro-rata credit mechanic, and what's excluded (add-on bundles, custom
+// build work, overages already billed) so support isn't re-writing the
+// policy on every ticket. The ops runbook at
+// docs/operations/REFUND_POLICY_RUNBOOK.md is the procedural companion —
+// this page is the customer-facing contract.
+export const RefundPolicyPage = () => (
+  <TrustPageShell title="Refund Policy" lastUpdated="April 2026">
+    <h2>1. Overview</h2>
+    <p>BIQc offers a transparent refund policy designed for fairness and predictability. This policy describes when you&rsquo;re eligible for a refund, how pro-rata credits work on plan changes, and what&rsquo;s excluded. It applies to all customers on monthly and annual subscriptions.</p>
+
+    <h2>2. 7-Day Satisfaction Window</h2>
+    <p>New subscribers may request a full refund within <strong>7 days</strong> of their first paid charge if BIQc did not meet the described service. Contact support@biqc.ai within the window with your account email and the reason. Approved refunds are returned to the original payment method within 5&ndash;10 business days.</p>
+    <ul>
+      <li>Applies to the first paid billing cycle only</li>
+      <li>Does not apply to renewals after the first period</li>
+      <li>Requires the account to be in good standing (no policy violations)</li>
+    </ul>
+
+    <h2>3. Plan Changes &amp; Pro-Rata Credits</h2>
+    <p>When you upgrade mid-cycle we bill the difference pro-rata to the end of the current period. When you downgrade, the unused portion of the higher plan becomes an account credit applied to your next invoice; downgrades do not issue a cash refund.</p>
+    <ul>
+      <li>Upgrades: pro-rata charge, effective immediately</li>
+      <li>Downgrades: pro-rata credit on the next invoice, effective at period end</li>
+      <li>Credits expire 12 months after issue if unused</li>
+    </ul>
+
+    <h2>4. Annual Plan Refunds</h2>
+    <p>Annual plans may be cancelled at any time. Refunds for annual plans outside the 7-day window are issued as a pro-rata credit for the unused months (not cash) and applied to future BIQc usage. Annual discounts already applied are deducted from the credit calculation.</p>
+
+    <h2>5. Cancellations</h2>
+    <p>You may cancel at any time from your billing dashboard. Cancellation takes effect at the end of the current billing period, and you retain full access until then. Cancelling does not automatically trigger a refund; use the procedures above if a refund is appropriate.</p>
+
+    <h2>6. Exclusions</h2>
+    <p>The following are <strong>not</strong> eligible for refund or credit:</p>
+    <ul>
+      <li>Usage overages that have already been billed (Stripe metered line items)</li>
+      <li>Custom build / Enterprise engagements where work has commenced (subject to the individual statement of work)</li>
+      <li>Add-on bundles already consumed (snapshots, deep-analysis runs)</li>
+      <li>Accounts terminated for breach of the Acceptable Use terms</li>
+      <li>Partial months of use for customers beyond the 7-day window</li>
+    </ul>
+
+    <h2>7. Disputed Charges</h2>
+    <p>If you believe a charge is incorrect, contact support@biqc.ai before raising a dispute with your card issuer. We resolve the majority of billing questions within one business day, and chargebacks may delay any legitimate refund significantly.</p>
+
+    <h2>8. How to Request a Refund</h2>
+    <p>Email <strong>support@biqc.ai</strong> with:</p>
+    <ul>
+      <li>The account email address</li>
+      <li>The Stripe charge ID or receipt number (from your email receipt)</li>
+      <li>A short description of why you&rsquo;re requesting the refund</li>
+    </ul>
+    <p>We respond within one business day and issue approved refunds within 5&ndash;10 business days of approval.</p>
+
+    <h2>9. Changes to This Policy</h2>
+    <p>We may update this policy to reflect operational changes or new product offerings. Material changes take effect 30 days after they are posted; continued use after that date constitutes acceptance.</p>
+
+    <h2>10. Contact</h2>
+    <p>Questions about this policy or a specific refund request: support@biqc.ai</p>
   </TrustPageShell>
 );

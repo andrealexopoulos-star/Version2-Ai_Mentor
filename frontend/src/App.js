@@ -55,6 +55,7 @@ const SitePrivacyPage = React.lazy(() => import('./pages/website/TrustSubPages')
 const SiteDPAPage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.DPAPage })));
 const SiteSecurityPage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.SecurityPage })));
 const SiteTrustCentrePage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.TrustCentrePage })));
+const SiteRefundPolicyPage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.RefundPolicyPage })));
 
 // Free tier
 const Advisor = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/Advisor'));
@@ -306,6 +307,7 @@ function AppRoutes() {
         <Route path="/trust/dpa" element={<SiteDPAPage />} />
         <Route path="/trust/security" element={<SiteSecurityPage />} />
         <Route path="/trust/centre" element={<SiteTrustCentrePage />} />
+        <Route path="/trust/refund-policy" element={<SiteRefundPolicyPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
