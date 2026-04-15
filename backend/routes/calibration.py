@@ -1079,6 +1079,24 @@ def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews:
     }
 
 
+def _score_from_signal(signal: Any) -> int:
+    """Deterministic 0-100 score derived from an enrichment signal dict.
+
+    Prefers an explicit numeric score field if present; otherwise falls back
+    to a "populated density" metric (fraction of non-empty keys × 100).
+    Always returns an int in [0, 100]. Never fabricates data — zeros-out
+    when nothing meaningful is present.
+    """
+    if isinstance(signal, dict):
+        raw = signal.get("score") or signal.get("visibility_score") or signal.get("engagement_score")
+        if isinstance(raw, (int, float)):
+            return max(0, min(100, int(raw)))
+        present = sum(1 for v in signal.values() if v)
+        total = max(1, len(signal))
+        return int(round((present / total) * 100))
+    return 0
+
+
 def _build_seo_analysis(raw_html: str, page_text: str, page_title: str, meta_description: str) -> Dict[str, Any]:
     html = raw_html or ""
     text = page_text or ""
@@ -2474,6 +2492,47 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     get_sb().table("business_profiles").update(profile_update).eq("id", profile["id"]).execute()
             except Exception as profile_error:
                 logger.warning(f"[enrichment/website] Could not persist scan bundle to business profile: {profile_error}")
+
+            # ═══ DIGITAL FOOTPRINT COMPOSITE ═══
+            # Derive a Market & Position footprint score from deterministic scan signals.
+            # Consumed downstream by /snapshot/latest → MarketPage (and BoardRoom / CMO
+            # Report via cognitive.business_dna_enrichment). Never fabricated — zeros
+            # out when signals are missing so the UI can decide to show calibrating.
+            try:
+                seo_score = _score_from_signal(enrichment.get("seo_analysis"))
+                social_score = _score_from_signal(enrichment.get("social_media_analysis"))
+                content_score = _score_from_signal(enrichment.get("website_health"))
+                overall = int(round((seo_score + social_score + content_score) / 3)) \
+                    if (seo_score or social_score or content_score) else 0
+                enrichment["digital_footprint"] = {
+                    "score": overall,
+                    "seo_score": seo_score,
+                    "social_score": social_score,
+                    "content_score": content_score,
+                    "computed_at": datetime.now(timezone.utc).isoformat(),
+                }
+            except Exception as footprint_error:
+                logger.warning(f"[enrichment/website] digital_footprint compute skipped: {footprint_error}")
+
+            # ═══ PERSIST ENRICHMENT TO business_dna_enrichment ═══
+            # Latest-scan-wins upsert keyed on (user_id, business_profile_id). Allows
+            # Market & Position / BoardRoom / CMO Report to read Deep Scan output
+            # without re-scanning. Wrapped so a persistence failure never fails the
+            # scan response.
+            try:
+                if user_id:
+                    profile_for_bde = await get_business_profile_supabase(get_sb(), user_id)
+                    if profile_for_bde and profile_for_bde.get("id"):
+                        get_sb().table("business_dna_enrichment").upsert({
+                            "user_id": user_id,
+                            "business_profile_id": profile_for_bde["id"],
+                            "website_url": url,
+                            "enrichment": enrichment,
+                            "digital_footprint": enrichment.get("digital_footprint") or {},
+                            "updated_at": datetime.now(timezone.utc).isoformat(),
+                        }, on_conflict="user_id,business_profile_id").execute()
+            except Exception as bde_error:
+                logger.warning(f"[enrichment/website] business_dna_enrichment upsert skipped: {bde_error}")
 
             asyncio.create_task(set_domain_scan(scan_domain, enrichment))
 
