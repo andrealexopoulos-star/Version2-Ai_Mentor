@@ -64,7 +64,22 @@ def _install_module_stubs():
 
     if "intelligence_spine" not in sys.modules:
         spine_stub = types.ModuleType("intelligence_spine")
+        # Stub ALL public names that routes actually import, because pytest
+        # shares sys.modules across test files — a partial stub would break
+        # any later-running test that transitively imports routes.* via
+        # `from server import app` (see CI run 24452003701 for
+        # test_profile_autofill failing on _get_spine_enabled).
         spine_stub.emit_spine_event = lambda **_kwargs: None
+        spine_stub._get_cached_flag = lambda _flag: False
+        spine_stub._get_spine_enabled = lambda: False
+        spine_stub._get_spine_enabled_for_tenant = lambda _tenant_id: False
+        spine_stub.log_llm_call = lambda **_kwargs: None
+        spine_stub.log_model_execution = lambda **_kwargs: None
+
+        class _SpineWriteError(Exception):
+            pass
+
+        spine_stub.SpineWriteError = _SpineWriteError
         sys.modules["intelligence_spine"] = spine_stub
 
     if "routes.auth" not in sys.modules:
