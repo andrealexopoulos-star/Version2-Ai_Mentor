@@ -184,7 +184,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-[2000]"
-      style={{ background: 'rgba(10, 16, 24, 0.97)', backdropFilter: 'blur(20px)' }}
+      style={{ background: 'var(--canvas-app, #FAFAFA)', backdropFilter: 'blur(20px)' }}
       data-testid="post-cmo-integration-overlay">
 
       <style>{`
@@ -208,7 +208,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
         <div className="text-center mb-8">
           <div className="relative w-16 h-16 mx-auto mb-6">
             <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, #E85D00, #7C3AED)', animation: 'pulseRing 2.5s ease-in-out infinite' }} />
-            <div className="absolute inset-0.5 rounded-2xl flex items-center justify-center" style={{ background: 'var(--biqc-bg-input, #0A1018)' }}>
+            <div className="absolute inset-0.5 rounded-2xl flex items-center justify-center" style={{ background: 'var(--surface, #FFFFFF)' }}>
               <Link2 className="w-7 h-7" style={{ color: '#E85D00' }} />
             </div>
           </div>
@@ -218,10 +218,10 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
             <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Unified Integrations Engine</span>
           </div>
 
-          <h1 className="text-2xl font-semibold mb-3" style={{ color: 'var(--biqc-text, #EDF1F7)', fontFamily: fontFamily.display }}>
+          <h1 className="text-2xl font-semibold mb-3" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
             Your intelligence foundation is ready.{firstName ? ` Hi ${firstName}!` : ''}
           </h1>
-          <p className="text-sm max-w-sm mx-auto leading-relaxed mb-3" style={{ color: 'var(--biqc-text-2, #8FA0B8)', fontFamily: fontFamily.body }}>
+          <p className="text-sm max-w-sm mx-auto leading-relaxed mb-3" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}>
             Connect your email to activate priority inbox, calendar intelligence and client signals. Takes 30 seconds.
           </p>
           {!statusLoading && connected.length > 0 && (
@@ -253,7 +253,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
                 onMouseLeave={() => setHoveredId(null)}
                 className="relative flex items-start gap-3 p-4 rounded-xl text-left transition-all"
                 style={{
-                  background: isConnected ? `${intg.color}15` : hoveredId === intg.id ? 'rgba(140,170,210,0.15)' : 'var(--surface, #0E1628)',
+                  background: isConnected ? `${intg.color}15` : hoveredId === intg.id ? 'rgba(140,170,210,0.08)' : 'var(--surface, #FFFFFF)',
                   border: `1px solid ${isConnected ? intg.color + '40' : hoveredId === intg.id ? '#334155' : 'rgba(140,170,210,0.15)'}`,
                   animation: `gridFade ${0.3 + i * 0.08}s ease-out`,
                   transform: hoveredId === intg.id && !isConnecting ? 'translateY(-2px)' : 'none',
@@ -276,7 +276,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
                   {intg.logo}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--biqc-text, #EDF1F7)', fontFamily: fontFamily.body }}>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
                     {isConnecting ? 'Connecting...' : intg.name}
                   </p>
                   <p className="text-[10px] leading-relaxed" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{intg.description}</p>
