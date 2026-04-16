@@ -792,7 +792,7 @@ export default function Integrations() {
                     style={{
                       border: active ? '1px solid var(--lava)' : '1px solid var(--border)',
                       background: active ? 'var(--lava)' : 'transparent',
-                      color: active ? 'white' : 'var(--ink-secondary)',
+                      color: active ? 'var(--ink-inverse)' : 'var(--ink-secondary)',
                       fontFamily: 'var(--font-mono)',
                       letterSpacing: 'var(--ls-caps)',
                     }}

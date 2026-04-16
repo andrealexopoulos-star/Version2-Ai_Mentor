@@ -12,7 +12,6 @@ import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState } from '../components/PageStateComponents';
 import SemanticContractBanner from '../components/SemanticContractBanner';
 import MeetingPrepCard from '../components/intelligence/MeetingPrepCard';
-import { fontFamily } from '../design-system/tokens';
 
 const CalendarView = () => {
   const location = useLocation();
@@ -215,13 +214,13 @@ const CalendarView = () => {
   };
   const intelligenceSummaryText = formatIntelligenceSummary(intelligenceSummary);
   const syncBadge = syncing
-    ? { label: 'Syncing', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' }
+    ? { label: 'Syncing', color: 'var(--warning)', bg: 'var(--warning-wash)' }
     : loading
-      ? { label: 'Loading', color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' }
+      ? { label: 'Loading', color: 'var(--info)', bg: 'var(--info-wash)' }
       : loadError
-        ? { label: 'Degraded', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' }
+        ? { label: 'Degraded', color: 'var(--danger)', bg: 'var(--danger-wash)' }
         : upcomingEvents.length > 0
-          ? { label: 'Synced', color: '#10B981', bg: 'rgba(16,185,129,0.12)' }
+          ? { label: 'Synced', color: 'var(--positive)', bg: 'var(--positive-wash)' }
           : { label: 'No events', color: 'var(--ink-muted, #737373)', bg: 'rgba(148,163,184,0.12)' };
 
   const createDraftEvent = async () => {
@@ -530,7 +529,7 @@ const CalendarView = () => {
                             const heightPx = Math.min(durationMin, 120);
                             const subjectLower = (ev.subject || '').toLowerCase();
                             const type = subjectLower.includes('deal') || ev.importance === 'high' ? 'deal' : subjectLower.includes('internal') || subjectLower.includes('standup') || subjectLower.includes('sync') ? 'internal' : 'customer';
-                            const typeColors = { deal: { bg: 'var(--lava-wash, rgba(232,93,0,0.12))', border: 'var(--lava)', color: 'var(--lava)' }, customer: { bg: 'rgba(22,163,74,0.1)', border: '#16A34A', color: '#16A34A' }, internal: { bg: 'rgba(37,99,235,0.08)', border: '#2563EB', color: 'var(--info, #2563EB)' } };
+                            const typeColors = { deal: { bg: 'var(--lava-wash, rgba(232,93,0,0.12))', border: 'var(--lava)', color: 'var(--lava)' }, customer: { bg: 'var(--positive-wash)', border: 'var(--positive)', color: 'var(--positive)' }, internal: { bg: 'var(--info-wash)', border: 'var(--info)', color: 'var(--info)' } };
                             const tc = typeColors[type] || typeColors.customer;
                             return (
                               <div key={ei} style={{ position: 'absolute', left: 4, right: 4, top: startMin, borderRadius: 'var(--r-sm, 4px)', padding: '4px 6px', fontSize: 11, overflow: 'hidden', cursor: 'pointer', borderLeft: `3px solid ${tc.border}`, background: tc.bg, color: tc.color, height: heightPx, zIndex: 2, transition: 'all 150ms ease' }}>
@@ -548,7 +547,7 @@ const CalendarView = () => {
 
               {/* Legend */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface-tint, var(--surface-sunken))', flexWrap: 'wrap' }}>
-                {[{ label: 'Deal', color: 'var(--lava)' }, { label: 'Customer', color: '#16A34A' }, { label: 'Internal', color: '#2563EB' }, { label: 'Personal', color: 'var(--ink-muted, #737373)' }, { label: 'Critical', color: '#DC2626' }].map(item => (
+                {[{ label: 'Deal', color: 'var(--lava)' }, { label: 'Customer', color: 'var(--positive)' }, { label: 'Internal', color: 'var(--info)' }, { label: 'Personal', color: 'var(--ink-muted, #737373)' }, { label: 'Critical', color: 'var(--danger)' }].map(item => (
                   <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-secondary)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)' }}>
                     <div style={{ width: 8, height: 8, borderRadius: 2, background: item.color }} />
                     {item.label}
