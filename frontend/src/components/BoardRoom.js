@@ -411,7 +411,7 @@ export function BoardRoomBody({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       className={`flex h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`}
-      style={{ background: colors.bg, fontFamily: fontFamily.display }}
+      style={{ background: 'var(--canvas-app)', fontFamily: fontFamily.display }}
       aria-label="Boardroom shell"
     >
       <BoardroomConversationList
@@ -425,7 +425,7 @@ export function BoardRoomBody({
       />
 
       <div className="flex-1 flex flex-col" role="main" aria-label="Boardroom main content">
-        <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: colors.border }}>
+        <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-4">
             <a href="/advisor" data-testid="boardroom-home" className={`text-xs px-3 py-1.5 rounded-lg hover:bg-white/5 ${focusRingClass}`} style={{ color: colors.textMuted }} aria-label="Return to intelligence platform">
               Intelligence Platform
@@ -439,7 +439,7 @@ export function BoardRoomBody({
           <button
             onClick={refreshConversations}
             className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`}
-            style={{ borderColor: colors.border, color: colors.textSecondary }}
+            style={{ borderColor: 'var(--border)', color: colors.textSecondary }}
             aria-label="Refresh boardroom conversation list"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${convListLoading ? 'animate-spin' : ''}`} />
@@ -448,7 +448,7 @@ export function BoardRoomBody({
         </header>
 
         {/* Focus area pills */}
-        <div className="flex items-center gap-2 px-6 py-2 border-b" style={{ borderColor: colors.border }} aria-label="Focus area filters" data-testid="boardroom-focus-pills">
+        <div className="flex items-center gap-2 px-6 py-2 border-b" style={{ borderColor: 'var(--border)' }} aria-label="Focus area filters" data-testid="boardroom-focus-pills">
           {FOCUS_PILLS.map((pill) => {
             const isActive = activeFocusPill === pill.id;
             return (
@@ -496,7 +496,7 @@ export function BoardRoomBody({
           )}
 
           <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.02 }} aria-label="Executive briefing panel">
-            <div className="p-6 rounded-2xl border" style={{ borderColor: colors.border, background: colors.bgCard, boxShadow: shadow.card }}>
+            <div className="p-6 rounded-2xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card, boxShadow: shadow.card }}>
               <p className="text-sm leading-relaxed" style={{ color: colors.text }}>
                 {briefingLoading ? BRIEFING_LOADING_STEPS[briefingStepIndex] : (primaryBrief || 'Executive briefing will appear once enough connected signals are available.')}
               </p>
@@ -515,7 +515,7 @@ export function BoardRoomBody({
           <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.04 }} data-testid="diagnosis-zone" aria-label="Diagnosis selection zone">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[11px] uppercase tracking-[0.08em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>— Diagnosis</h2>
-              <button onClick={handleNewSession} className={`inline-flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg border ${focusRingClass}`} style={{ color: colors.textSecondary, borderColor: colors.border }} aria-label="Start new boardroom session from diagnosis zone">
+              <button onClick={handleNewSession} className={`inline-flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg border ${focusRingClass}`} style={{ color: colors.textSecondary, borderColor: 'var(--border)' }} aria-label="Start new boardroom session from diagnosis zone">
                 <Plus className="w-3.5 h-3.5" />
                 New session
               </button>
@@ -528,7 +528,7 @@ export function BoardRoomBody({
                   transition={{ duration: 0.15 }}
                   onClick={() => runDiagnosis(area)}
                   className={`text-left p-4 rounded-xl border ${focusRingClass} active:scale-95 transition-transform`}
-                  style={{ borderColor: colors.border, background: colors.bgCard }}
+                  style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}
                   aria-label={`Run ${area.label} diagnosis`}
                   data-testid={`diagnosis-${area.id}`}
                 >
@@ -556,7 +556,7 @@ export function BoardRoomBody({
                 aria-label="Diagnosis result panel"
                 className="space-y-3"
               >
-                <button onClick={closeDiagnosis} className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ color: colors.textSecondary, borderColor: colors.border }} aria-label="Back to boardroom summary">
+                <button onClick={closeDiagnosis} className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ color: colors.textSecondary, borderColor: 'var(--border)' }} aria-label="Back to boardroom summary">
                   <ArrowLeft className="w-3.5 h-3.5" />
                   Back to boardroom
                 </button>
@@ -568,7 +568,7 @@ export function BoardRoomBody({
                   className="space-y-3"
                 >
                   {isStreaming && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }} aria-label="Diagnosis stream in progress">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }} aria-label="Diagnosis stream in progress">
                       <div className="flex items-center gap-2 mb-2">
                         <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" style={{ color: colors.brand }} aria-hidden />
                         <p className="text-xs" style={{ color: colors.brand }}>{DIAGNOSIS_LOADING_STEPS[diagnosisStepIndex]}</p>
@@ -581,7 +581,7 @@ export function BoardRoomBody({
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: colors.warning, background: colors.warningDim }} aria-label="Diagnosis error">
                       <p className="text-sm" style={{ color: colors.warning }}>{diagError}</p>
                       {activeArea && (
-                        <button onClick={() => runDiagnosis(activeArea)} className={`mt-3 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ borderColor: colors.border, color: colors.textSecondary }} aria-label={`Retry ${activeArea.label} diagnosis`}>
+                        <button onClick={() => runDiagnosis(activeArea)} className={`mt-3 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ borderColor: 'var(--border)', color: colors.textSecondary }} aria-label={`Retry ${activeArea.label} diagnosis`}>
                           Retry diagnosis
                         </button>
                       )}
@@ -589,7 +589,7 @@ export function BoardRoomBody({
                   )}
 
                   {diagnosisResult && (
-                    <motion.article initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="p-5 rounded-2xl border space-y-3" style={{ borderColor: colors.border, background: colors.bgCard }}>
+                    <motion.article initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="p-5 rounded-2xl border space-y-3" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}>
                       <h3 className="text-lg font-semibold" style={{ color: colors.text }}>{diagnosisResult.headline || activeArea?.label}</h3>
                       {diagnosisResult.narrative && <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: colors.textSecondary }}>{diagnosisResult.narrative}</p>}
                       {diagnosisResult.what_to_watch && <p className="text-sm" style={{ color: colors.warning }}>What to watch: {diagnosisResult.what_to_watch}</p>}
@@ -628,7 +628,7 @@ export function BoardRoomBody({
               </AnimatePresence>
 
               {!diagnosisHistory.length && !isStreaming && (
-                <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+                <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}>
                   <p className="text-xs" style={{ color: colors.textMuted }}>
                     No persisted messages yet. Run a diagnosis to start this conversation.
                   </p>
@@ -644,13 +644,13 @@ export function BoardRoomBody({
             className="grid grid-cols-1 md:grid-cols-2 gap-3"
             aria-label="Boardroom decision checklist section"
           >
-            <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+            <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}>
               <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
                 Decision checklist
               </h3>
               <ul className="space-y-2" role="list">
                 {DECISION_CHECKLIST.map((item) => (
-                  <li key={item.id} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }}>
+                  <li key={item.id} className="rounded-lg border px-3 py-2" style={{ borderColor: 'var(--border)' }}>
                     <p className="text-xs font-semibold" style={{ color: colors.text }}>
                       {item.title}
                     </p>
@@ -662,13 +662,13 @@ export function BoardRoomBody({
               </ul>
             </div>
 
-            <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+            <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}>
               <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
                 Operating guide
               </h3>
               <ul className="space-y-2" role="list">
                 {BOARDROOM_GUIDES.map((guide, idx) => (
-                  <li key={guide} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }} aria-label={`Boardroom guide item ${idx + 1}`}>
+                  <li key={guide} className="rounded-lg border px-3 py-2" style={{ borderColor: 'var(--border)' }} aria-label={`Boardroom guide item ${idx + 1}`}>
                     <p className="text-[11px]" style={{ color: colors.textSecondary }}>
                       {guide}
                     </p>
@@ -696,7 +696,7 @@ export function BoardRoomBody({
         {/* Chat input bar */}
         <div
           className="px-6 py-3 border-t"
-          style={{ borderColor: colors.border, background: colors.bgCard }}
+          style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}
           data-testid="boardroom-input-bar"
         >
           <div className="text-[10px] mb-2" style={{ color: colors.textMuted }}>
@@ -705,7 +705,7 @@ export function BoardRoomBody({
           <div className="flex items-end gap-2">
             <button
               className={`p-2 rounded-lg border ${focusRingClass}`}
-              style={{ borderColor: colors.border, color: colors.textMuted }}
+              style={{ borderColor: 'var(--border)', color: colors.textMuted }}
               aria-label="Attach file"
               data-testid="boardroom-attach-btn"
             >
@@ -721,8 +721,8 @@ export function BoardRoomBody({
               disabled={isStreaming}
               className="flex-1 text-sm px-3 py-2 rounded-xl border resize-none focus:outline-none focus:ring-1"
               style={{
-                background: colors.bgInput,
-                borderColor: colors.border,
+                background: 'var(--canvas-app)'Input,
+                borderColor: 'var(--border)',
                 color: colors.text,
                 fontFamily: fontFamily.body,
                 maxHeight: 160,
