@@ -37,10 +37,11 @@ async def execute_marketing_benchmark_job(payload: dict) -> dict:
     from routes.dsee import resolve_domain, classify_structure, _serper, _get_review_data, _check_authority
     from routes.sdd import compute_service_density, compute_geographic_density, compute_citation_density
 
+    from supabase_client import get_supabase_client
+    sb = get_supabase_client()
+
     # Get user's business profile
     try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
         profile = sb.table('business_profiles') \
             .select('business_name, website, industry, location') \
             .eq('user_id', current_user['id']).maybe_single().execute()
@@ -160,7 +161,7 @@ async def run_benchmark(req: BenchmarkRequest, current_user: dict = Depends(get_
     except HTTPException:
         raise
     except Exception as exc:
-        logger.warning("Synchronous benchmark execution failed; falling back to queue: %s", exc)
+        logger.exception("Synchronous benchmark execution failed; falling back to queue: %s", exc)
 
     queued = await enqueue_job(
         "market-research",

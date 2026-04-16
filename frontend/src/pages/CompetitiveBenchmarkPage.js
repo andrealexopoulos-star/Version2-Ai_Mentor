@@ -158,7 +158,7 @@ const ScoreGauge = ({ score, label, color, isReal }) => {
 };
 
 // ── Enhanced pillar bar ───────────────────────────────────────────────────────
-const PillarBar = ({ pillar, score, isReal, isWeakest }) => {
+const PillarBar = ({ pillar, score, isReal, isWeakest, enrichmentDetail }) => {
   const [expanded, setExpanded] = useState(false);
   const color = !isReal || score == null ? 'var(--ink-muted)' : score >= 70 ? 'var(--positive)' : score >= 40 ? 'var(--warning)' : 'var(--danger)';
   const pct = isReal && score != null ? Math.min(score, 100) : 0;
@@ -202,9 +202,34 @@ const PillarBar = ({ pillar, score, isReal, isWeakest }) => {
         <div className="mt-2 ml-11 p-3" style={{ borderRadius: 'var(--r-md, 8px)', background: 'var(--surface-sunken, var(--surface))', border: '1px solid var(--border)' }}>
           <p className="text-xs mb-2" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{pillar.desc}</p>
           {isReal && score != null && (
-            <div className="flex items-start gap-1.5">
+            <div className="flex items-start gap-1.5 mb-2">
               <Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--lava)' }} />
               <p className="text-[11px]" style={{ color: 'var(--lava)', fontFamily: 'var(--font-ui)' }}>{pillar.action}</p>
+            </div>
+          )}
+          {enrichmentDetail && (
+            <div className="mt-2 pt-2 space-y-1.5" style={{ borderTop: '1px solid #243140' }}>
+              {enrichmentDetail.status && (
+                <p className="text-[10px]" style={{ fontFamily: fontFamily.mono }}>
+                  <span className="text-[#64748B]">Status: </span>
+                  <span style={{ color: enrichmentDetail.status === 'strong' ? '#10B981' : '#F59E0B' }}>{enrichmentDetail.status}</span>
+                </p>
+              )}
+              {enrichmentDetail.channels && (
+                <p className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Active: {enrichmentDetail.channels.join(', ')}</p>
+              )}
+              {enrichmentDetail.signals && enrichmentDetail.signals.length > 0 && (
+                <p className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Signals: {enrichmentDetail.signals.join(', ')}</p>
+              )}
+              {enrichmentDetail.strengths?.map((s, i) => (
+                <p key={`s${i}`} className="text-[10px] text-[#9FB0C3] flex items-start gap-1"><CheckCircle2 className="w-3 h-3 text-[#10B981] shrink-0 mt-0.5" />{s}</p>
+              ))}
+              {enrichmentDetail.gaps?.map((g, i) => (
+                <p key={`g${i}`} className="text-[10px] text-[#9FB0C3] flex items-start gap-1"><AlertTriangle className="w-3 h-3 text-[#F59E0B] shrink-0 mt-0.5" />{g}</p>
+              ))}
+              {enrichmentDetail.priority_actions?.map((a, i) => (
+                <p key={`a${i}`} className="text-[10px] text-[#9FB0C3] flex items-start gap-1"><Zap className="w-3 h-3 text-[#FF6A00] shrink-0 mt-0.5" />{a}</p>
+              ))}
             </div>
           )}
         </div>
@@ -222,6 +247,8 @@ export default function CompetitiveBenchmarkPage() {
   const [benchmarkQueued, setBenchmarkQueued] = useState(false);
   const [showProvenance, setShowProvenance] = useState(false);
   const autoBenchmarkTriggeredRef = useRef(false);
+
+  const [enrichmentData, setEnrichmentData] = useState(null);
 
   // Req 4: Competitor comparison
   const [competitorInputs, setCompetitorInputs] = useState(['']);
@@ -289,6 +316,11 @@ export default function CompetitiveBenchmarkPage() {
         }
       }
     } catch {} finally { setLoading(false); }
+    // Fetch enrichment for pillar details
+    try {
+      const enrRes = await apiClient.get('/enrichment/latest');
+      if (enrRes.data?.has_data) setEnrichmentData(enrRes.data);
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -345,8 +377,10 @@ export default function CompetitiveBenchmarkPage() {
       } else {
         setCompetitorError(`Could not fetch data for ${clean}. Try a different domain.`);
       }
-    } catch {
-      setCompetitorError(`Analysis failed for ${clean}. Check the domain and try again.`);
+    } catch (err) {
+      const detail = err?.response?.data?.message || err?.response?.data?.error || err?.message || '';
+      console.error(`Benchmark analysis failed for ${clean}:`, err?.response?.data || err);
+      setCompetitorError(`Analysis failed for ${clean}${detail ? `: ${detail}` : '. Check the domain and try again.'}`);
     }
     setAnalyzingCompetitor(null);
   };
@@ -379,6 +413,18 @@ export default function CompetitiveBenchmarkPage() {
                 : 'Complete calibration with your business website to generate your Digital Footprint score.'
               }
             </p>
+            {enrichmentData?.scanned_at && (
+              <div className="flex items-center gap-3 mt-2">
+                <span className="text-[10px] text-[#64748B] flex items-center gap-1" style={{ fontFamily: fontFamily.mono }}>
+                  Scan: {new Date(enrichmentData.scanned_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+                {enrichmentData.next_update_available && (
+                  <span className="text-[10px] text-[#4A5568] flex items-center gap-1" style={{ fontFamily: fontFamily.mono }}>
+                    Next update: {new Date(enrichmentData.next_update_available).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <Button onClick={handleRefresh} disabled={refreshing} variant="outline" className="gap-2"
             style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}>
@@ -560,15 +606,26 @@ export default function CompetitiveBenchmarkPage() {
                 )}
               </CardHeader>
               <CardContent>
-                {PILLARS.map(pillar => (
-                  <PillarBar
-                    key={pillar.key}
-                    pillar={pillar}
-                    score={data?.pillars?.[pillar.key]}
-                    isReal={hasRealData}
-                    isWeakest={pillar.key === weakestPillar}
-                  />
-                ))}
+                {PILLARS.map(pillar => {
+                  const enr = enrichmentData?.enrichment || {};
+                  const detailMap = {
+                    website: enr.website_health ? { status: enr.website_health.status, summary: enr.website_health.summary } : null,
+                    social: enr.social_media_analysis ? { status: null, channels: enr.social_media_analysis.active_channels, signals: enr.social_media_analysis.content_signals_detected, priority_actions: enr.social_media_analysis.priority_actions } : null,
+                    reviews: enr.review_aggregation?.has_data ? { status: null, positive: enr.review_aggregation.positive_count, negative: enr.review_aggregation.negative_count } : null,
+                    content: enr.paid_media_analysis ? { status: enr.paid_media_analysis.maturity?.replace(/_/g, ' '), priority_actions: enr.paid_media_analysis.priority_actions } : null,
+                    seo: enr.seo_analysis ? { status: enr.seo_analysis.status, strengths: enr.seo_analysis.strengths, gaps: enr.seo_analysis.gaps, priority_actions: enr.seo_analysis.priority_actions } : null,
+                  };
+                  return (
+                    <PillarBar
+                      key={pillar.key}
+                      pillar={pillar}
+                      score={data?.pillars?.[pillar.key]}
+                      isReal={hasRealData}
+                      isWeakest={pillar.key === weakestPillar}
+                      enrichmentDetail={detailMap[pillar.key]}
+                    />
+                  );
+                })}
                 {!hasRealData && (
                   <p className="text-xs text-center mt-3 italic" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
                     Pillar scores will populate once your website has been scanned during calibration.
