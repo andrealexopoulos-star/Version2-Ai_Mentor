@@ -101,7 +101,7 @@ export default function IntelligencePage() {
     <WebsiteLayout>
       {/* Hero */}
       <section className="py-20 md:py-24 text-center px-6"
-        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }}>
+        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)' }}>
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-[48px] font-bold leading-[1.15] tracking-tight mb-4"
             style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>

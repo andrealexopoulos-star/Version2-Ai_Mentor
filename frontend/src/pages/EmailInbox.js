@@ -731,7 +731,7 @@ const EmailInbox = () => {
               transition: background 150ms ease, border-color 150ms ease;
             }
             .inbox-msg-row:hover {
-              background: var(--surface-2, #121D30) !important;
+              background: var(--surface-2, var(--surface-sunken)) !important;
             }
           `}</style>
 

@@ -169,7 +169,7 @@ const DecisionPatterns = () => {
             <div className="p-4 rounded-xl" style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
               <div className="flex items-center gap-2 mb-2">
                 <TrendingDown className="w-4 h-4" style={{ color: '#EF4444' }} />
-                <span className="text-xs font-medium" style={{ color: '#FCA5A5', fontFamily: fontFamily.body }}>Areas to Improve</span>
+                <span className="text-xs font-medium" style={{ color: 'var(--danger, #DC2626)', fontFamily: fontFamily.body }}>Areas to Improve</span>
               </div>
               <ul className="space-y-1">
                 {weaknesses.map((w, i) => (

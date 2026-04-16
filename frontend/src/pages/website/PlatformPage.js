@@ -633,7 +633,7 @@ export default function PlatformPage() {
       `}</style>
 
       {/* ── Hero ── */}
-      <section style={{ background: 'linear-gradient(180deg, #080C14 0%, #0B1120 100%)', paddingTop: 80, paddingBottom: 48 }}>
+      <section style={{ background: 'linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)', paddingTop: 80, paddingBottom: 48 }}>
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
           <span style={{ fontFamily: 'var(--font-mono)', color: O, fontSize: 11, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase' }}>
             The Platform
@@ -769,7 +769,7 @@ export default function PlatformPage() {
       </section>
 
       {/* ── Integrations — "Connects to tools you already use" ── */}
-      <section style={{ background: '#080C14', padding: '64px 24px', borderTop: '1px solid rgba(140,170,210,0.08)' }} data-testid="integrations-strip">
+      <section style={{ background: '#FAFAFA', padding: '64px 24px', borderTop: '1px solid rgba(140,170,210,0.08)' }} data-testid="integrations-strip">
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(20px, 2.5vw, 28px)', fontWeight: 700, marginBottom: 8, letterSpacing: 'var(--ls-display)' }}>Connects to tools you already use</h2>
           <p style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)', fontSize: 15, marginBottom: 32 }}>One-click integrations. No engineering required.</p>

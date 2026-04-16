@@ -558,7 +558,7 @@ const DashboardLayout = ({ children }) => {
 
       {/* ═══ SIDEBAR ═══ */}
       <aside className={`fixed left-0 transition-all duration-300 ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-[60px] h-[calc(100vh-60px)]`}
-        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, linear-gradient(180deg, #0B1120 0%, #080C14 100%))', borderRight: '1px solid rgba(140,170,210,0.08)', width: `${activeSidebarWidth}px` }}
+        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, linear-gradient(180deg, #0B1120 0%, #FAFAFA 100%))', borderRight: '1px solid rgba(140,170,210,0.08)', width: `${activeSidebarWidth}px` }}
         role="navigation" aria-label="Main navigation">
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}

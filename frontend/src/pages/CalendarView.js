@@ -462,7 +462,7 @@ const CalendarView = () => {
           <>
           {loadError && (
             <div className="rounded-xl border px-4 py-3" style={{ background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.3)', borderRadius: 'var(--r-lg)' }} data-testid="calendar-partial-error">
-              <p className="text-sm" style={{ color: '#FCA5A5' }}>
+              <p className="text-sm" style={{ color: 'var(--danger, #DC2626)' }}>
                 Calendar intelligence is partially degraded: {loadError}
               </p>
             </div>
@@ -530,7 +530,7 @@ const CalendarView = () => {
                             const heightPx = Math.min(durationMin, 120);
                             const subjectLower = (ev.subject || '').toLowerCase();
                             const type = subjectLower.includes('deal') || ev.importance === 'high' ? 'deal' : subjectLower.includes('internal') || subjectLower.includes('standup') || subjectLower.includes('sync') ? 'internal' : 'customer';
-                            const typeColors = { deal: { bg: 'var(--lava-wash, rgba(232,93,0,0.12))', border: 'var(--lava)', color: 'var(--lava)' }, customer: { bg: 'rgba(22,163,74,0.1)', border: '#16A34A', color: '#16A34A' }, internal: { bg: 'rgba(37,99,235,0.08)', border: '#2563EB', color: '#93B4F8' } };
+                            const typeColors = { deal: { bg: 'var(--lava-wash, rgba(232,93,0,0.12))', border: 'var(--lava)', color: 'var(--lava)' }, customer: { bg: 'rgba(22,163,74,0.1)', border: '#16A34A', color: '#16A34A' }, internal: { bg: 'rgba(37,99,235,0.08)', border: '#2563EB', color: 'var(--info, #2563EB)' } };
                             const tc = typeColors[type] || typeColors.customer;
                             return (
                               <div key={ei} style={{ position: 'absolute', left: 4, right: 4, top: startMin, borderRadius: 'var(--r-sm, 4px)', padding: '4px 6px', fontSize: 11, overflow: 'hidden', cursor: 'pointer', borderLeft: `3px solid ${tc.border}`, background: tc.bg, color: tc.color, height: heightPx, zIndex: 2, transition: 'all 150ms ease' }}>

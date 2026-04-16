@@ -319,7 +319,7 @@ export const ManualSummaryFallback = ({ firstName, onSubmit, isSubmitting }) => 
             type="submit"
             disabled={isSubmitting || summary.trim().length < 10}
             className="w-full px-8 py-3.5 rounded-full text-sm font-medium transition-opacity disabled:opacity-40"
-            style={{ background: CHARCOAL, color: 'var(--canvas, #080C14)' }}
+            style={{ background: CHARCOAL, color: 'var(--canvas, #FAFAFA)' }}
             data-testid="submit-summary-btn"
           >
             Continue

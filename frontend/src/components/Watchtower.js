@@ -363,7 +363,7 @@ const Watchtower = () => {
             {!loading && error && (
               <div
                 className="rounded-xl border p-6 text-center text-sm"
-                style={{ background: 'var(--danger-wash)', borderColor: 'var(--danger)', color: '#FCA5A5' }}
+                style={{ background: 'var(--danger-wash)', borderColor: 'var(--danger)', color: 'var(--danger, #DC2626)' }}
                 data-testid="wt-error"
               >
                 {error}

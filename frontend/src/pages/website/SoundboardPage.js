@@ -212,7 +212,7 @@ export default function SoundboardPage() {
       `}</style>
 
       {/* â"€â"€ Hero â"€â"€ */}
-      <section style={{ background: 'linear-gradient(180deg, #080C14 0%, #0B1120 100%)', padding: '80px 24px 56px', textAlign: 'center' }}>
+      <section style={{ background: 'linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)', padding: '80px 24px 56px', textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(198,95,46,0.08)', border: '1px solid rgba(198,95,46,0.25)', borderRadius: 20, padding: '6px 14px', marginBottom: 20 }}>
           <Mic size={12} style={{ color: '#C65F2E' }} />
           <span style={{ fontFamily: fontFamily.mono, color: '#C65F2E', fontSize: 11, fontWeight: 700, letterSpacing: '0.18em' }}>SOUNDBOARD â€" LIVE DEMO</span>
@@ -260,7 +260,7 @@ export default function SoundboardPage() {
       </div>
 
       {/* â"€â"€ Main demo area â"€â"€ */}
-      <section style={{ background: '#080C14', padding: '32px 16px 64px', minHeight: 600 }}>
+      <section style={{ background: '#FAFAFA', padding: '32px 16px 64px', minHeight: 600 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24, alignItems: 'start' }}>
 
           {/* LEFT: Example browser */}
@@ -345,8 +345,8 @@ export default function SoundboardPage() {
       </section>
 
       {/* â"€â"€ Bottom CTA â"€â"€ */}
-      <section style={{ background: '#080C14', padding: '64px 24px', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: fontFamily.display, color: '#E6EEF7', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
+      <section style={{ background: '#FAFAFA', padding: '64px 24px', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
           Ask BIQc is calibrated to your business.
         </h2>
         <p style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', fontSize: 15, marginBottom: 28, maxWidth: 480, margin: '0 auto 28px' }}>

@@ -392,7 +392,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
                     </span>
                   )}
                   {msg?.retrieval_contract?.answer_grade && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(236,72,153,0.14)', color: '#F9A8D4', fontFamily: fontFamily.mono }}>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(236,72,153,0.14)', color: 'var(--danger, #DC2626)', fontFamily: fontFamily.mono }}>
                       grade {msg.retrieval_contract.answer_grade}
                     </span>
                   )}

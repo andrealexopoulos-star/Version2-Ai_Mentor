@@ -280,7 +280,7 @@ const HeroExperienceTabs = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-[12px] sm:text-[13px] leading-relaxed" style={{ color: '#C9D5E4', fontFamily: fontFamily.body }}>
+          <p className="text-[12px] sm:text-[13px] leading-relaxed" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}>
             Ask BIQc unifies your finance, sales, marketing, operations, and communication platforms into one live decision layer. It reasons across current evidence, surfaces what matters now, and gives owners and leaders confident answers, smarter prioritization, and practical next steps in real time.
           </p>
           <div className="space-y-2">
@@ -300,7 +300,7 @@ const HeroExperienceTabs = () => {
                     <item.icon className="h-3 w-3" style={{ color: '#5B8FA8' }} />
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold" style={{ color: '#E7EEF7', fontFamily: fontFamily.body }}>{item.role}</p>
+                    <p className="text-[11px] font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>{item.role}</p>
                     <p className="text-[10px]" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{item.line}</p>
                   </div>
                 </div>
@@ -314,7 +314,7 @@ const HeroExperienceTabs = () => {
                 <p className="text-[10px] uppercase tracking-[0.12em] mb-1" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>
                   {userIntent}
                 </p>
-                <p className="text-xs sm:text-sm" style={{ color: '#E7EEF7', fontFamily: fontFamily.body }}>
+                <p className="text-xs sm:text-sm" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
                   &ldquo;{promptText}
                   <span style={{ animation: 'liveCursor 1.3s ease-in-out infinite' }}>|</span>&rdquo;
                 </p>
