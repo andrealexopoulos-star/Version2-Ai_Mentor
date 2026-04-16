@@ -208,7 +208,7 @@ const SubscribePage = () => {
                   className="w-full py-3.5 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
                   style={{
                     borderRadius: 'var(--r-lg)',
-                    background: isPopular ? 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF7A1A))' : '#1E293B',
+                    background: isPopular ? 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF7A1A))' : 'var(--ink-display, #0A0A0A)',
                     border: '1px solid transparent',
                     marginBottom: 'var(--sp-6, 24px)',
                     fontFamily: 'var(--font-ui)',
