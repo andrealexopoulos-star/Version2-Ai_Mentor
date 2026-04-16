@@ -2522,17 +2522,40 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             try:
                 if user_id:
                     profile_for_bde = await get_business_profile_supabase(get_sb(), user_id)
-                    if profile_for_bde and profile_for_bde.get("id"):
+                    bde_profile_id = profile_for_bde.get("id") if profile_for_bde else None
+
+                    # If no business profile exists yet (fresh signup), create one
+                    # so enrichment data is never silently lost
+                    if not bde_profile_id:
+                        biz_name = enrichment.get("business_name") or enrichment.get("title") or "Business"
+                        industry = enrichment.get("industry") or ""
+                        try:
+                            new_profile = get_sb().table("business_profiles").insert({
+                                "user_id": user_id,
+                                "business_name": biz_name,
+                                "website": url,
+                                "industry": industry,
+                            }).execute()
+                            if new_profile.data:
+                                bde_profile_id = new_profile.data[0]["id"]
+                                logger.info(f"[enrichment/website] Auto-created business_profiles row {bde_profile_id} for user {user_id}")
+                        except Exception as profile_create_err:
+                            logger.warning(f"[enrichment/website] Could not auto-create business profile: {profile_create_err}")
+
+                    if bde_profile_id:
                         get_sb().table("business_dna_enrichment").upsert({
                             "user_id": user_id,
-                            "business_profile_id": profile_for_bde["id"],
+                            "business_profile_id": bde_profile_id,
                             "website_url": url,
                             "enrichment": enrichment,
                             "digital_footprint": enrichment.get("digital_footprint") or {},
                             "updated_at": datetime.now(timezone.utc).isoformat(),
                         }, on_conflict="user_id,business_profile_id").execute()
+                        logger.info(f"[enrichment/website] business_dna_enrichment persisted for user {user_id}")
+                    else:
+                        logger.error(f"[enrichment/website] CRITICAL: Could not persist enrichment — no business_profile_id for user {user_id}")
             except Exception as bde_error:
-                logger.warning(f"[enrichment/website] business_dna_enrichment upsert skipped: {bde_error}")
+                logger.error(f"[enrichment/website] business_dna_enrichment upsert FAILED: {bde_error}")
 
             asyncio.create_task(set_domain_scan(scan_domain, enrichment))
 
