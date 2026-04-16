@@ -35,7 +35,7 @@ const SemanticContractBanner = ({ payload, title = 'Data Contract' }) => {
       data-testid="semantic-contract-banner"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted, #737373)' }}>
           {title}
         </p>
         {dataStatus && (
@@ -48,35 +48,35 @@ const SemanticContractBanner = ({ payload, title = 'Data Contract' }) => {
         )}
       </div>
       <div className="grid gap-2 md:grid-cols-3 text-xs">
-        <div style={{ color: '#CBD5E1' }}>
+        <div style={{ color: 'var(--ink-secondary, #525252)' }}>
           Confidence:{' '}
-          <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+          <strong style={{ color: 'var(--ink-display, #0A0A0A)' }}>
             {confidence === null ? 'n/a' : `${Math.round(confidence * 100)}%`}
           </strong>
         </div>
-        <div style={{ color: '#CBD5E1' }}>
+        <div style={{ color: 'var(--ink-secondary, #525252)' }}>
           Lookback:{' '}
-          <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+          <strong style={{ color: 'var(--ink-display, #0A0A0A)' }}>
             {Number.isFinite(lookbackEffective) ? lookbackEffective : 'n/a'} / {Number.isFinite(lookbackTarget) ? lookbackTarget : 'n/a'} days
           </strong>
         </div>
-        <div style={{ color: '#CBD5E1' }}>
+        <div style={{ color: 'var(--ink-secondary, #525252)' }}>
           Backfill:{' '}
-          <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>{payload.backfill_state || 'none'}</strong>
+          <strong style={{ color: 'var(--ink-display, #0A0A0A)' }}>{payload.backfill_state || 'none'}</strong>
         </div>
       </div>
       {payload.confidence_reason && (
-        <p className="text-xs" style={{ color: '#94A3B8' }}>
+        <p className="text-xs" style={{ color: 'var(--ink-muted, #737373)' }}>
           {payload.confidence_reason}
         </p>
       )}
       {missingPeriods.length > 0 && (
-        <p className="text-xs" style={{ color: '#FCA5A5' }}>
+        <p className="text-xs" style={{ color: 'var(--danger, #DC2626)' }}>
           Gaps: {missingPeriods.slice(0, 2).join(' | ')}
         </p>
       )}
       {actions.length > 0 && (
-        <p className="text-xs" style={{ color: '#FFB17A' }}>
+        <p className="text-xs" style={{ color: 'var(--warning, #D97706)' }}>
           Next: {actions[0]}
         </p>
       )}
