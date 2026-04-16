@@ -121,7 +121,7 @@ const Tooltip = ({ text, children }) => {
       {children}
       {show && (
         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs leading-snug z-50 w-56"
-          style={{ background: 'var(--surface-2, #1E2D3D)', color: 'var(--ink-display)', border: '1px solid var(--border)', fontFamily: 'var(--font-ui)', boxShadow: 'var(--elev-2)' }}>
+          style={{ background: 'var(--surface-2)', color: 'var(--ink-display)', border: '1px solid var(--border)', fontFamily: 'var(--font-ui)', boxShadow: 'var(--elev-2)' }}>
           {text}
         </span>
       )}
@@ -193,7 +193,7 @@ const PillarBar = ({ pillar, score, isReal, isWeakest, enrichmentDetail }) => {
               </button>
             </div>
           </div>
-          <div className="h-1.5 rounded-full" style={{ background: 'var(--surface-2, rgba(140,170,210,0.12))' }}>
+          <div className="h-1.5 rounded-full" style={{ background: 'var(--surface-2)' }}>
             <div className="h-full rounded-full transition-all duration-700" style={{ background: color, width: `${pct}%` }} />
           </div>
         </div>
@@ -208,27 +208,27 @@ const PillarBar = ({ pillar, score, isReal, isWeakest, enrichmentDetail }) => {
             </div>
           )}
           {enrichmentDetail && (
-            <div className="mt-2 pt-2 space-y-1.5" style={{ borderTop: '1px solid #243140' }}>
+            <div className="mt-2 pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border)' }}>
               {enrichmentDetail.status && (
                 <p className="text-[10px]" style={{ fontFamily: 'var(--font-mono)' }}>
-                  <span className="text-[#64748B]">Status: </span>
-                  <span style={{ color: enrichmentDetail.status === 'strong' ? '#10B981' : '#F59E0B' }}>{enrichmentDetail.status}</span>
+                  <span style={{ color: 'var(--ink-muted)' }}>Status: </span>
+                  <span style={{ color: enrichmentDetail.status === 'strong' ? 'var(--positive)' : 'var(--warning)' }}>{enrichmentDetail.status}</span>
                 </p>
               )}
               {enrichmentDetail.channels && (
-                <p className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: 'var(--font-mono)' }}>Active: {enrichmentDetail.channels.join(', ')}</p>
+                <p className="text-[10px]" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>Active: {enrichmentDetail.channels.join(', ')}</p>
               )}
               {enrichmentDetail.signals && enrichmentDetail.signals.length > 0 && (
-                <p className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: 'var(--font-mono)' }}>Signals: {enrichmentDetail.signals.join(', ')}</p>
+                <p className="text-[10px]" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>Signals: {enrichmentDetail.signals.join(', ')}</p>
               )}
               {enrichmentDetail.strengths?.map((s, i) => (
-                <p key={`s${i}`} className="text-[10px] text-[#9FB0C3] flex items-start gap-1"><CheckCircle2 className="w-3 h-3 text-[#10B981] shrink-0 mt-0.5" />{s}</p>
+                <p key={`s${i}`} className="text-[10px] flex items-start gap-1" style={{ color: 'var(--ink-secondary)' }}><CheckCircle2 className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--positive)' }} />{s}</p>
               ))}
               {enrichmentDetail.gaps?.map((g, i) => (
-                <p key={`g${i}`} className="text-[10px] text-[#9FB0C3] flex items-start gap-1"><AlertTriangle className="w-3 h-3 text-[#F59E0B] shrink-0 mt-0.5" />{g}</p>
+                <p key={`g${i}`} className="text-[10px] flex items-start gap-1" style={{ color: 'var(--ink-secondary)' }}><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} />{g}</p>
               ))}
               {enrichmentDetail.priority_actions?.map((a, i) => (
-                <p key={`a${i}`} className="text-[10px] text-[#9FB0C3] flex items-start gap-1"><Zap className="w-3 h-3 text-[#FF6A00] shrink-0 mt-0.5" />{a}</p>
+                <p key={`a${i}`} className="text-[10px] flex items-start gap-1" style={{ color: 'var(--ink-secondary)' }}><Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--lava)' }} />{a}</p>
               ))}
             </div>
           )}
@@ -415,11 +415,11 @@ export default function CompetitiveBenchmarkPage() {
             </p>
             {enrichmentData?.scanned_at && (
               <div className="flex items-center gap-3 mt-2">
-                <span className="text-[10px] text-[#64748B] flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)' }}>
+                <span className="text-[10px] flex items-center gap-1" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                   Scan: {new Date(enrichmentData.scanned_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
                 {enrichmentData.next_update_available && (
-                  <span className="text-[10px] text-[#4A5568] flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)' }}>
+                  <span className="text-[10px] flex items-center gap-1" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                     Next update: {new Date(enrichmentData.next_update_available).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                   </span>
                 )}
@@ -445,7 +445,7 @@ export default function CompetitiveBenchmarkPage() {
             {showProvenance && (
               <div className="mt-3 grid gap-2 sm:grid-cols-2" data-testid="benchmark-provenance-drawer">
                 {benchmarkProvenance.map((item) => (
-                  <div key={item.label} className="px-3 py-2" style={{ borderRadius: 'var(--r-md, 8px)', background: 'var(--surface-2, rgba(148,163,184,0.08))', border: '1px solid var(--border)' }}>
+                  <div key={item.label} className="px-3 py-2" style={{ borderRadius: 'var(--r-md, 8px)', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                     <p className="text-[10px] uppercase" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>{item.label}</p>
                     <p className="mt-1 text-xs" style={{ color: 'var(--ink)', fontFamily: 'var(--font-ui)' }}>{item.value}</p>
                   </div>
@@ -486,7 +486,7 @@ export default function CompetitiveBenchmarkPage() {
                     return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="var(--border)" strokeWidth="0.5" />;
                   })}
                   {/* Data shape */}
-                  <polygon points={dataPolygon} fill="rgba(232,93,0,0.08)" stroke="var(--lava)" strokeWidth="2" />
+                  <polygon points={dataPolygon} fill="var(--lava-soft)" stroke="var(--lava)" strokeWidth="2" />
                   {/* Data points */}
                   {dataPoints.map((p, i) => (
                     <circle key={i} cx={p.x} cy={p.y} r="4" fill="var(--lava)" />
@@ -566,8 +566,8 @@ export default function CompetitiveBenchmarkPage() {
                               {data.overallScore >= data.industryAvg ? `+${data.overallScore - data.industryAvg} above avg` : `${data.overallScore - data.industryAvg} below avg`}
                             </span>
                           </div>
-                          <div className="h-2 rounded-full relative" style={{ background: 'var(--surface-2, rgba(140,170,210,0.12))' }}>
-                            <div className="absolute h-full rounded-full" style={{ background: 'var(--silver-4, #64748B)', width: `${data.industryAvg}%` }} />
+                          <div className="h-2 rounded-full relative" style={{ background: 'var(--surface-2)' }}>
+                            <div className="absolute h-full rounded-full" style={{ background: 'var(--silver-4)', width: `${data.industryAvg}%` }} />
                             <div className="absolute h-full rounded-full" style={{ background: 'var(--lava)', width: `${data.overallScore}%`, opacity: 0.8 }} />
                           </div>
                           <div className="flex justify-between mt-1">

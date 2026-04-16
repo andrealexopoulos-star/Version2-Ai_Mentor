@@ -26,14 +26,14 @@ const Panel = ({ children, className = '', ...props }) => (
 );
 
 const STATUS_MAP = {
-  STABLE: { label: 'On Track', color: '#10B981', bg: '#10B98108', b: '#10B98125' },
-  DRIFT: { label: 'Slipping', color: '#F59E0B', bg: '#F59E0B08', b: '#F59E0B25' },
-  COMPRESSION: { label: 'Under Pressure', color: '#E85D00', bg: '#E85D0008', b: '#E85D0025' },
-  CRITICAL: { label: 'At Risk', color: '#EF4444', bg: '#EF444408', b: '#EF444425' },
+  STABLE: { label: 'On Track', color: 'var(--positive)', bg: 'var(--positive-wash)', b: 'var(--positive)' },
+  DRIFT: { label: 'Slipping', color: 'var(--warning)', bg: 'var(--warning-wash)', b: 'var(--warning)' },
+  COMPRESSION: { label: 'Under Pressure', color: 'var(--lava)', bg: 'var(--lava-wash)', b: 'var(--lava)' },
+  CRITICAL: { label: 'At Risk', color: 'var(--danger)', bg: 'var(--danger-wash)', b: 'var(--danger)' },
 };
 
 const GaugeMeter = ({ value, label, suffix = '%', thresholds = [30, 60, 80] }) => {
-  const color = value >= thresholds[2] ? 'var(--positive, #10B981)' : value >= thresholds[1] ? 'var(--warning, #F59E0B)' : value >= thresholds[0] ? 'var(--lava, #E85D00)' : 'var(--danger, #EF4444)';
+  const color = value >= thresholds[2] ? 'var(--positive)' : value >= thresholds[1] ? 'var(--warning)' : value >= thresholds[0] ? 'var(--lava)' : 'var(--danger)';
   return (
     <div className="p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
       <span className="text-[10px] block mb-1 uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)' }}>{label}</span>
@@ -304,10 +304,10 @@ const MarketPage = () => {
     setPdfGenerating(null);
   };
 
-  const statusColors = { pending: '#F59E0B', in_progress: '#3B82F6', done: '#10B981' };
+  const statusColors = { pending: 'var(--warning)', in_progress: 'var(--info)', done: 'var(--positive)' };
   const statusLabels = { pending: 'Pending', in_progress: 'In Progress', done: 'Done' };
   const statusCycle = { pending: 'in_progress', in_progress: 'done', done: 'pending' };
-  const priorityColors = { urgent: '#EF4444', high: '#FF6A00', medium: '#F59E0B', low: '#64748B' };
+  const priorityColors = { urgent: 'var(--danger)', high: 'var(--lava)', medium: 'var(--warning)', low: 'var(--ink-muted)' };
 
   const TABS = [
     { id: 'intelligence', label: 'Focus', icon: Zap },
@@ -364,11 +364,11 @@ const MarketPage = () => {
               <svg width="100%" height="100%" viewBox="0 0 240 240" style={{ transform: 'rotate(-90deg)' }}>
                 <defs>
                   <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#FF7A18" />
-                    <stop offset="100%" stopColor="var(--lava, #E85D00)" />
+                    <stop offset="0%" stopColor="var(--lava-warm)" />
+                    <stop offset="100%" stopColor="var(--lava)" />
                   </linearGradient>
                 </defs>
-                <circle cx="120" cy="120" r="100" fill="none" stroke="var(--surface-sunken, #060A12)" strokeWidth="14" />
+                <circle cx="120" cy="120" r="100" fill="none" stroke="var(--surface-sunken)" strokeWidth="14" />
                 <circle cx="120" cy="120" r="100" fill="none" stroke="url(#gaugeGrad)" strokeWidth="14" strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 100}
                   strokeDashoffset={2 * Math.PI * 100 * (1 - (confidence || 0) / 100)} />
@@ -396,7 +396,7 @@ const MarketPage = () => {
               <span className="text-lg font-bold" style={{ color: st.color, fontFamily: 'var(--font-display)' }}>{hasLiveMarketContext ? st.label : 'Waiting for data'}</span>
             </div>
             <div className="flex items-center gap-2">
-              {confidence && <span className="text-xs px-2 py-0.5" style={{ color: st.color, background: `${st.color}15`, fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>{confidence}% confidence</span>}
+                {confidence && <span className="text-xs px-2 py-0.5" style={{ color: st.color, background: st.bg, fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>{confidence}% confidence</span>}
               <button onClick={() => { setLoading(true); fetchSnapshot().finally(() => setLoading(false)); }} className="p-1.5 rounded-lg hover:bg-black/5" data-testid="market-refresh">
                 <RefreshCw className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
               </button>
@@ -404,7 +404,7 @@ const MarketPage = () => {
                 <button
                   onClick={() => setShowRecalibrateModal(true)}
                   className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-                  style={{ background: '#7C3AED15', color: '#7C3AED', border: '1px solid #7C3AED30' }}
+                  style={{ background: 'var(--info-wash)', color: 'var(--info)', border: '1px solid var(--info)' }}
                   data-testid="recalibrate-btn"
                 >
                   <RefreshCw className="w-3 h-3" /> Recalibrate
@@ -448,11 +448,11 @@ const MarketPage = () => {
               <div className="mt-4 space-y-3" data-testid="market-evidence-health-list">
                 <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }} data-testid="market-pressure-status">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>Pressure calibration</p>
-                  <p className="mt-2 text-sm text-[#CBD5E1]">{pressureAvailable ? `Pressure data available: ${marketPressureSummary || 'signal mix detected for this cycle.'}` : (pressureMessage || 'Pressure calibration is not available yet.')}</p>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary)' }}>{pressureAvailable ? `Pressure data available: ${marketPressureSummary || 'signal mix detected for this cycle.'}` : (pressureMessage || 'Pressure calibration is not available yet.')}</p>
                 </div>
                 <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }} data-testid="market-freshness-status">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>Evidence freshness</p>
-                  <p className="mt-2 text-sm text-[#CBD5E1]">{freshnessAvailable ? `Freshness scoring active: ${freshnessSummary || 'recent evidence is now available.'}` : (freshnessMessage || 'Evidence freshness is not available yet.')}</p>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary)' }}>{freshnessAvailable ? `Freshness scoring active: ${freshnessSummary || 'recent evidence is now available.'}` : (freshnessMessage || 'Evidence freshness is not available yet.')}</p>
                   <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }} data-testid="market-lineage-badge-evidence">
                     <LineageBadge lineage={marketIntelLineage} data_freshness={marketIntelFreshness} confidence_score={marketIntelConfidence} compact />
                   </div>
@@ -461,11 +461,11 @@ const MarketPage = () => {
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>Scan status</p>
                   {scanTimestamp ? (
                     <div className="mt-2 space-y-1">
-                      <p className="text-sm text-[#CBD5E1] flex items-center gap-1.5"><Clock className="w-3 h-3 text-[#64748B]" /> Last scan: {new Date(scanTimestamp).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                      {nextUpdate && <p className="text-[10px] text-[#64748B]" style={{ fontFamily: 'var(--font-mono)' }}>Next update: {new Date(nextUpdate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
+                      <p className="text-sm flex items-center gap-1.5" style={{ color: 'var(--ink-secondary)' }}><Clock className="w-3 h-3" style={{ color: 'var(--ink-muted)' }} /> Last scan: {new Date(scanTimestamp).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      {nextUpdate && <p className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Next update: {new Date(nextUpdate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm text-[#CBD5E1]">Complete calibration to generate your scan data.</p>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary)' }}>Complete calibration to generate your scan data.</p>
                   )}
                 </div>
               </div>
@@ -481,10 +481,10 @@ const MarketPage = () => {
           return (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: 'Digital Footprint', value: footprint.score, unit: '/100', color: '#E85D00', icon: BarChart3, desc: 'Internal channel strength, not external market demand.' },
-                { label: 'Social Engagement', value: footprint.social_score, unit: '/100', color: '#3B82F6', icon: MessageSquare, desc: 'Internal audience response across owned and social channels.' },
-                { label: 'SEO Visibility', value: footprint.seo_score, unit: '/100', color: '#10B981', icon: Eye, desc: 'Owned-search discoverability for your business.' },
-                { label: 'Content Authority', value: footprint.content_score, unit: '/100', color: '#8B5CF6', icon: FileText, desc: 'Content depth and authority inside your current channel footprint.' },
+                { label: 'Digital Footprint', value: footprint.score, unit: '/100', color: 'var(--lava)', icon: BarChart3, desc: 'Internal channel strength, not external market demand.' },
+                { label: 'Social Engagement', value: footprint.social_score, unit: '/100', color: 'var(--info)', icon: MessageSquare, desc: 'Internal audience response across owned and social channels.' },
+                { label: 'SEO Visibility', value: footprint.seo_score, unit: '/100', color: 'var(--positive)', icon: Eye, desc: 'Owned-search discoverability for your business.' },
+                { label: 'Content Authority', value: footprint.content_score, unit: '/100', color: 'var(--ink-secondary)', icon: FileText, desc: 'Content depth and authority inside your current channel footprint.' },
               ].map(metric => (
                 <div key={metric.label} className="p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
                   <div className="flex items-center justify-between mb-2">
@@ -514,7 +514,7 @@ const MarketPage = () => {
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors shrink-0`}
-              style={{ background: activeTab === tab.id ? 'var(--lava-wash, rgba(232,93,0,0.08))' : 'transparent', color: activeTab === tab.id ? 'var(--ink-display)' : 'var(--ink-muted)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-md, 8px)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', fontSize: 11 }}
+              style={{ background: activeTab === tab.id ? 'var(--lava-wash)' : 'transparent', color: activeTab === tab.id ? 'var(--ink-display)' : 'var(--ink-muted)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-md, 8px)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', fontSize: 11 }}
               data-testid={`tab-${tab.id}`}>
               <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
@@ -531,7 +531,7 @@ const MarketPage = () => {
             <Panel data-testid="brief-section">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2"><Zap className="w-3.5 h-3.5" style={{ color: 'var(--lava)' }} /><h2 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Executive Brief</h2></div>
-                <span className="text-[9px] px-2 py-0.5" style={{ background: 'var(--lava-wash, rgba(232,93,0,0.08))', color: 'var(--lava)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)' }}>MARKET INTELLIGENCE</span>
+                <span className="text-[9px] px-2 py-0.5" style={{ background: 'var(--lava-wash)', color: 'var(--lava)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)' }}>MARKET INTELLIGENCE</span>
               </div>
               <div className="mb-2" data-testid="market-lineage-badge-brief">
                 <LineageBadge lineage={marketIntelLineage} data_freshness={marketIntelFreshness} confidence_score={marketIntelConfidence} compact />
@@ -557,9 +557,9 @@ const MarketPage = () => {
                         <p className="text-sm font-semibold mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>{m.move}</p>
                         <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{m.rationale}</p>
                         <div className="flex flex-wrap gap-3">
-                          {m.expected_impact && <span className="text-[11px]" style={{ fontFamily: 'var(--font-mono)', color: 'var(--positive, #10B981)' }}>{m.expected_impact}</span>}
+                          {m.expected_impact && <span className="text-[11px]" style={{ fontFamily: 'var(--font-mono)', color: 'var(--positive)' }}>{m.expected_impact}</span>}
                           {m.confidence != null && <span className="text-[11px]" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)' }}>{m.confidence}% confidence</span>}
-                          {m.urgency && <span className="text-[11px] px-2 py-0.5" style={{ color: m.urgency === 'immediate' ? 'var(--danger, #EF4444)' : 'var(--warning, #F59E0B)', background: (m.urgency === 'immediate' ? '#EF4444' : '#F59E0B') + '15', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>{m.urgency?.replace('_', ' ')}</span>}
+                          {m.urgency && <span className="text-[11px] px-2 py-0.5" style={{ color: m.urgency === 'immediate' ? 'var(--danger)' : 'var(--warning)', background: m.urgency === 'immediate' ? 'var(--danger-wash)' : 'var(--warning-wash)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>{m.urgency?.replace('_', ' ')}</span>}
                         </div>
                         <button onClick={() => sendToChat(`Help me execute: ${m.move}. ${m.rationale}`)}
                           className="flex items-center gap-1.5 mt-3 text-[11px] px-3 py-1.5 transition-colors hover:bg-[var(--lava-wash)]"
@@ -575,21 +575,21 @@ const MarketPage = () => {
               {(ap.probability_shift_if_executed || ap.probability_shift_if_ignored) && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
                   {ap.probability_shift_if_executed != null && (
-                    <div className="p-4 text-center" style={{ background: 'var(--positive-wash, #10B98108)', border: '1px solid var(--positive, #10B981)25', borderRadius: 'var(--r-lg, 12px)' }}>
+                    <div className="p-4 text-center" style={{ background: 'var(--positive-wash)', border: '1px solid var(--positive)', borderRadius: 'var(--r-lg, 12px)' }}>
                       <span className="text-[11px] block mb-1 uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)' }}>If you act</span>
-                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: 'var(--positive, #10B981)', fontSize: 'var(--size-mono-lg, 24px)' }}>+{ap.probability_shift_if_executed}%</span>
+                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: 'var(--positive)', fontSize: 'var(--size-mono-lg, 24px)' }}>+{ap.probability_shift_if_executed}%</span>
                     </div>
                   )}
                   {ap.probability_shift_if_ignored != null && (
-                    <div className="p-4 text-center" style={{ background: 'var(--danger-wash, #EF444408)', border: '1px solid var(--danger, #EF4444)25', borderRadius: 'var(--r-lg, 12px)' }}>
+                    <div className="p-4 text-center" style={{ background: 'var(--danger-wash)', border: '1px solid var(--danger)', borderRadius: 'var(--r-lg, 12px)' }}>
                       <span className="text-[11px] block mb-1 uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)' }}>If you don't</span>
-                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: 'var(--danger, #EF4444)', fontSize: 'var(--size-mono-lg, 24px)' }}>-{Math.abs(ap.probability_shift_if_ignored)}%</span>
+                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: 'var(--danger)', fontSize: 'var(--size-mono-lg, 24px)' }}>-{Math.abs(ap.probability_shift_if_ignored)}%</span>
                     </div>
                   )}
                   {ap.decision_window_pressure && (
-                    <div className="p-4 text-center" style={{ background: 'var(--warning-wash, #F59E0B08)', border: '1px solid var(--warning, #F59E0B)25', borderRadius: 'var(--r-lg, 12px)' }}>
+                    <div className="p-4 text-center" style={{ background: 'var(--warning-wash)', border: '1px solid var(--warning)', borderRadius: 'var(--r-lg, 12px)' }}>
                       <span className="text-[11px] block mb-1 uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)' }}>Time to act</span>
-                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: 'var(--warning, #F59E0B)', fontSize: 'var(--size-mono-lg, 24px)' }}>{ap.decision_window_pressure.window_days}d</span>
+                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: 'var(--warning)', fontSize: 'var(--size-mono-lg, 24px)' }}>{ap.decision_window_pressure.window_days}d</span>
                     </div>
                   )}
                 </div>
@@ -600,25 +600,25 @@ const MarketPage = () => {
             <Panel><p className="text-sm text-[var(--ink-secondary)]">Complete forensic calibration and connect integrations to unlock personalised action priorities.</p></Panel>
           )}
           {filteredBlindside && (
-            <div className="p-5" style={{ background: 'var(--danger-wash, #EF444406)', border: '1px solid var(--danger, #EF4444)33', borderRadius: 'var(--r-xl, 16px)' }} data-testid="risk-section">
-              <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-4 h-4" style={{ color: 'var(--danger, #EF4444)' }} /><h2 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Biggest Risk Right Now</h2></div>
+            <div className="p-5" style={{ background: 'var(--danger-wash)', border: '1px solid var(--danger)', borderRadius: 'var(--r-xl, 16px)' }} data-testid="risk-section">
+              <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-4 h-4" style={{ color: 'var(--danger)' }} /><h2 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Biggest Risk Right Now</h2></div>
               <p className="text-sm mb-2" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{filteredBlindside.risk}</p>
               {filteredBlindside.evidence && <p className="text-xs leading-relaxed mb-2" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{filteredBlindside.evidence}</p>}
-              {filteredBlindside.prevention_action && <p className="text-xs" style={{ fontFamily: 'var(--font-mono)', color: 'var(--positive, #10B981)' }}>What to do: {filteredBlindside.prevention_action}</p>}
+              {filteredBlindside.prevention_action && <p className="text-xs" style={{ fontFamily: 'var(--font-mono)', color: 'var(--positive)' }}>What to do: {filteredBlindside.prevention_action}</p>}
             </div>
           )}
           {filteredLever && (
-            <div className="p-5" style={{ background: 'var(--positive-wash, #10B98106)', border: '1px solid var(--positive, #10B981)33', borderRadius: 'var(--r-xl, 16px)' }} data-testid="opportunity-section">
-              <div className="flex items-center gap-2 mb-3"><TrendingUp className="w-4 h-4" style={{ color: 'var(--positive, #10B981)' }} /><h2 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Growth Opportunity You're Missing</h2></div>
+            <div className="p-5" style={{ background: 'var(--positive-wash)', border: '1px solid var(--positive)', borderRadius: 'var(--r-xl, 16px)' }} data-testid="opportunity-section">
+              <div className="flex items-center gap-2 mb-3"><TrendingUp className="w-4 h-4" style={{ color: 'var(--positive)' }} /><h2 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Growth Opportunity You're Missing</h2></div>
               <p className="text-sm mb-2" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{filteredLever.lever}</p>
               {filteredLever.evidence && <p className="text-xs mb-2" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{filteredLever.evidence}</p>}
-              {filteredLever.potential_value && <span className="text-xs" style={{ fontFamily: 'var(--font-mono)', color: 'var(--positive, #10B981)' }}>Potential: {filteredLever.potential_value}</span>}
+              {filteredLever.potential_value && <span className="text-xs" style={{ fontFamily: 'var(--font-mono)', color: 'var(--positive)' }}>Potential: {filteredLever.potential_value}</span>}
             </div>
           )}
           {(goalProb != null || filteredAlignment) && (
             <Panel data-testid="track-section">
               <h2 className="text-sm font-semibold mb-3" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Are You On Track?</h2>
-              {goalProb != null && <div className="flex items-center gap-4 mb-3"><span className="text-3xl font-bold" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--size-mono-lg, 30px)', color: goalProb > 60 ? 'var(--positive, #10B981)' : 'var(--warning, #F59E0B)' }}>{goalProb}%</span><span className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>chance of hitting your goals</span></div>}
+              {goalProb != null && <div className="flex items-center gap-4 mb-3"><span className="text-3xl font-bold" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--size-mono-lg, 30px)', color: goalProb > 60 ? 'var(--positive)' : 'var(--warning)' }}>{goalProb}%</span><span className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>chance of hitting your goals</span></div>}
               {filteredAlignment && <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{filteredAlignment}</p>}
             </Panel>
           )}
@@ -627,13 +627,13 @@ const MarketPage = () => {
           {/* ═══ SWOT ANALYSIS ═══ */}
           {hasEnrichment && (swot.strengths?.length > 0 || swot.weaknesses?.length > 0 || swot.opportunities?.length > 0 || swot.threats?.length > 0) && (
             <div data-testid="swot-section" style={{ animation: 'snapFade 0.6s ease-out' }}>
-              <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>SWOT Analysis</h2>
+              <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display)' }}>SWOT Analysis</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
-                  { key: 'strengths', label: 'Strengths', color: '#10B981', icon: CheckCircle2 },
-                  { key: 'weaknesses', label: 'Weaknesses', color: '#EF4444', icon: AlertTriangle },
-                  { key: 'opportunities', label: 'Opportunities', color: '#3B82F6', icon: TrendingUp },
-                  { key: 'threats', label: 'Threats', color: '#F59E0B', icon: Shield },
+                  { key: 'strengths', label: 'Strengths', color: 'var(--positive)', icon: CheckCircle2 },
+                  { key: 'weaknesses', label: 'Weaknesses', color: 'var(--danger)', icon: AlertTriangle },
+                  { key: 'opportunities', label: 'Opportunities', color: 'var(--info)', icon: TrendingUp },
+                  { key: 'threats', label: 'Threats', color: 'var(--warning)', icon: Shield },
                 ].map(q => {
                   const items = swot[q.key] || [];
                   const QIcon = q.icon;
@@ -641,17 +641,17 @@ const MarketPage = () => {
                     <div key={q.key} className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${q.color}20` }}>
                       <div className="flex items-center gap-2 mb-3">
                         <QIcon className="w-4 h-4" style={{ color: q.color }} />
-                        <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{q.label}</span>
+                        <span className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>{q.label}</span>
                         <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: q.color + '15', color: q.color, fontFamily: fontFamily.mono }}>{items.length}</span>
                       </div>
                       <div className="space-y-2">
                         {items.map((item, i) => (
-                          <p key={i} className="text-xs text-[#9FB0C3] leading-relaxed flex items-start gap-2">
+                          <p key={i} className="text-xs leading-relaxed flex items-start gap-2" style={{ color: 'var(--ink-secondary)' }}>
                             <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: q.color }} />
                             {item.length > 150 ? item.substring(0, 147) + '...' : item}
                           </p>
                         ))}
-                        {items.length === 0 && <p className="text-[10px] text-[#4A5568] italic">No data available</p>}
+                        {items.length === 0 && <p className="text-[10px] italic" style={{ color: 'var(--ink-muted)' }}>No data available</p>}
                       </div>
                     </div>
                   );
@@ -664,17 +664,17 @@ const MarketPage = () => {
           {hasEnrichment && cmoActions.length > 0 && (
             <div data-testid="cmo-actions-section" style={{ animation: 'snapFade 0.6s ease-out' }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>CMO Priority Actions</h2>
-                {cmoBrief && <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }}>FROM SCAN</span>}
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>CMO Priority Actions</h2>
+                {cmoBrief && <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: 'var(--lava-wash)', color: 'var(--lava)', fontFamily: fontFamily.mono }}>FROM SCAN</span>}
               </div>
               <div className="space-y-2">
                 {cmoActions.map((action, i) => {
                   const tracked = actionItems.find(it => it.source === 'cmo' && it.title === action);
                   return (
                     <div key={i} className="rounded-xl p-4 flex items-start gap-3" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-                      <span className="text-sm font-bold text-[#FF6A00] mt-0.5 shrink-0" style={{ fontFamily: fontFamily.mono }}>#{i + 1}</span>
+                      <span className="text-sm font-bold mt-0.5 shrink-0" style={{ color: 'var(--lava)', fontFamily: fontFamily.mono }}>#{i + 1}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#F4F7FA] leading-relaxed">{action}</p>
+                        <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-display)' }}>{action}</p>
                         {tracked && (
                           <div className="flex items-center gap-2 mt-2">
                             <button onClick={() => handleStatusChange(tracked.id, statusCycle[tracked.status])}
@@ -682,8 +682,8 @@ const MarketPage = () => {
                               style={{ background: statusColors[tracked.status] + '15', color: statusColors[tracked.status], fontFamily: fontFamily.mono }}>
                               <Circle className="w-2.5 h-2.5" /> {statusLabels[tracked.status]}
                             </button>
-                            {tracked.due_date && <span className="text-[10px] text-[#64748B] flex items-center gap-1" style={{ fontFamily: fontFamily.mono }}><Calendar className="w-2.5 h-2.5" /> {new Date(tracked.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>}
-                            {tracked.assigned_to && <span className="text-[10px] text-[#64748B] flex items-center gap-1" style={{ fontFamily: fontFamily.mono }}><UserPlus className="w-2.5 h-2.5" /> {tracked.assigned_to}</span>}
+                            {tracked.due_date && <span className="text-[10px] flex items-center gap-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}><Calendar className="w-2.5 h-2.5" /> {new Date(tracked.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>}
+                            {tracked.assigned_to && <span className="text-[10px] flex items-center gap-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}><UserPlus className="w-2.5 h-2.5" /> {tracked.assigned_to}</span>}
                             <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: priorityColors[tracked.priority] + '15', color: priorityColors[tracked.priority], fontFamily: fontFamily.mono }}>{tracked.priority}</span>
                           </div>
                         )}
@@ -695,7 +695,7 @@ const MarketPage = () => {
               {actionItems.filter(it => it.source === 'cmo').length === 0 && (
                 <button onClick={handleSeedActions} disabled={seedingActions}
                   className="flex items-center gap-2 mt-3 text-xs px-4 py-2 rounded-lg transition-colors"
-                  style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030', opacity: seedingActions ? 0.6 : 1, fontFamily: fontFamily.mono }}>
+                  style={{ background: 'var(--lava-wash)', color: 'var(--lava)', border: '1px solid var(--lava)', opacity: seedingActions ? 0.6 : 1, fontFamily: fontFamily.mono }}>
                   {seedingActions ? <Loader2 className="w-3 h-3 animate-spin" /> : <PlayCircle className="w-3 h-3" />}
                   {seedingActions ? 'Generating...' : 'Generate 90-Day Action Plan'}
                 </button>
@@ -707,13 +707,13 @@ const MarketPage = () => {
           {hasEnrichment && industryActions.length > 0 && (
             <Panel data-testid="industry-actions-section">
               <div className="flex items-center gap-2 mb-3">
-                <Target className="w-3.5 h-3.5 text-[#7C3AED]" />
-                <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Industry-Specific Actions</h3>
+                <Target className="w-3.5 h-3.5" style={{ color: 'var(--info)' }} />
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>Industry-Specific Actions</h3>
               </div>
               <div className="space-y-2">
                 {industryActions.map((action, i) => (
-                  <p key={i} className="text-xs text-[#9FB0C3] leading-relaxed flex items-start gap-2">
-                    <span className="text-[10px] font-bold text-[#7C3AED] mt-0.5 shrink-0" style={{ fontFamily: fontFamily.mono }}>{i + 1}.</span>
+                  <p key={i} className="text-xs leading-relaxed flex items-start gap-2" style={{ color: 'var(--ink-secondary)' }}>
+                    <span className="text-[10px] font-bold mt-0.5 shrink-0" style={{ color: 'var(--info)', fontFamily: fontFamily.mono }}>{i + 1}.</span>
                     {action}
                   </p>
                 ))}
@@ -725,8 +725,8 @@ const MarketPage = () => {
           {actionItems.length > 0 && (
             <div data-testid="action-plan-timeline" style={{ animation: 'snapFade 0.6s ease-out' }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>90-Day Action Plan</h2>
-                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>90-Day Action Plan</h2>
+                <span className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>
                   {actionItems.filter(it => it.status === 'done').length}/{actionItems.length} complete
                 </span>
               </div>
@@ -740,18 +740,18 @@ const MarketPage = () => {
                       {item.status === 'in_progress' && <div className="w-2 h-2 rounded-full" style={{ background: statusColors.in_progress }} />}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-xs text-[#F4F7FA] truncate ${item.status === 'done' ? 'line-through' : ''}`}>{item.title}</p>
+                      <p className={`text-xs truncate ${item.status === 'done' ? 'line-through' : ''}`} style={{ color: 'var(--ink-display)' }}>{item.title}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: priorityColors[item.priority] + '15', color: priorityColors[item.priority], fontFamily: fontFamily.mono }}>{item.priority}</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#24314050', color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>{item.source.replace('_', ' ')}</span>
-                        {item.due_date && <span className="text-[9px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{new Date(item.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>}
+                        <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'var(--surface-sunken)', color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{item.source.replace('_', ' ')}</span>
+                        {item.due_date && <span className="text-[9px]" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{new Date(item.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>}
                       </div>
                     </div>
                     {item.assigned_to ? (
-                      <span className="text-[9px] text-[#64748B] shrink-0" style={{ fontFamily: fontFamily.mono }}>{item.assigned_to}</span>
+                      <span className="text-[9px] shrink-0" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{item.assigned_to}</span>
                     ) : (
                       <button onClick={() => { const name = prompt('Assign to (name or email):'); if (name) handleAssign(item.id, name); }}
-                        className="text-[9px] text-[#64748B] shrink-0 hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.mono }}>
+                        className="text-[9px] shrink-0 transition-colors" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>
                         <UserPlus className="w-3 h-3" />
                       </button>
                     )}
@@ -771,9 +771,9 @@ const MarketPage = () => {
             <p className="text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>How crowded is your market and where do you stand relative to competitors.</p>
             {marketPosition && (
               <Panel className="mt-3" data-testid="market-position-statement">
-                <div className="flex items-center gap-2 mb-2"><Globe className="w-3.5 h-3.5 text-[#7C3AED]" /><span className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>Market Position</span></div>
-                <p className="text-sm text-[#CBD5E1] leading-relaxed">{marketPosition}</p>
-                {scanTimestamp && <p className="text-[9px] text-[#4A5568] mt-2" style={{ fontFamily: fontFamily.mono }}>Last scanned: {new Date(scanTimestamp).toLocaleDateString('en-AU')}</p>}
+                <div className="flex items-center gap-2 mb-2"><Globe className="w-3.5 h-3.5" style={{ color: 'var(--info)' }} /><span className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>Market Position</span></div>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>{marketPosition}</p>
+                {scanTimestamp && <p className="text-[9px] mt-2" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Last scanned: {new Date(scanTimestamp).toLocaleDateString('en-AU')}</p>}
               </Panel>
             )}
 
@@ -782,7 +782,7 @@ const MarketPage = () => {
                 <Layers className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
                 <p className="text-sm mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Complete calibration to unlock saturation analysis.</p>
                 <p className="text-xs mb-4" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>BIQc needs your business context to assess market density, positioning, and competitive pressure.</p>
-                <button onClick={() => navigate('/market/calibration')} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#7C3AED' }} data-testid="saturation-calibrate-cta">
+                <button onClick={() => navigate('/market/calibration')} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: 'var(--info)' }} data-testid="saturation-calibrate-cta">
                   <Eye className="w-4 h-4" /> Start Calibration
                 </button>
               </Panel>
@@ -794,7 +794,7 @@ const MarketPage = () => {
                   <GaugeMeter value={demandCapture} label="Demand Capture Rate" suffix="%" thresholds={[30, 50, 70]} />
                   <div className="p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
                     <span className="text-[10px] block mb-1 uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)' }}>Position Verdict</span>
-                    <span className="text-xl font-bold" style={{ color: positionVerdict === 'STABLE' ? 'var(--positive, #10B981)' : positionVerdict === 'DRIFT' ? 'var(--warning, #F59E0B)' : 'var(--danger, #EF4444)', fontFamily: 'var(--font-mono)' }}>
+                    <span className="text-xl font-bold" style={{ color: positionVerdict === 'STABLE' ? 'var(--positive)' : positionVerdict === 'DRIFT' ? 'var(--warning)' : 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
                       {positionVerdict || '—'}
                     </span>
                   </div>
@@ -803,19 +803,19 @@ const MarketPage = () => {
                 {/* Competitor Density */}
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
-                    <BarChart3 className="w-4 h-4 text-[#7C3AED]" />
+                    <BarChart3 className="w-4 h-4" style={{ color: 'var(--info)' }} />
                     <h3 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Competitive Landscape</h3>
                   </div>
                   {competitors.length > 0 ? (
                     <div className="space-y-2">
                       {competitors.map((comp, i) => (
                         <div key={i} className="flex items-center gap-3 p-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--info)' }} />
                           <div className="flex-1 min-w-0">
                             <span className="text-sm block truncate" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>{comp.name}</span>
                             {comp.signal && <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>{comp.signal}</p>}
                           </div>
-                          {comp.threat_level && <span className="text-[10px] px-2 py-0.5" style={{ color: comp.threat_level === 'high' ? 'var(--danger, #EF4444)' : 'var(--warning, #F59E0B)', background: (comp.threat_level === 'high' ? '#EF4444' : '#F59E0B') + '15', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>{comp.threat_level}</span>}
+                          {comp.threat_level && <span className="text-[10px] px-2 py-0.5" style={{ color: comp.threat_level === 'high' ? 'var(--danger)' : 'var(--warning)', background: comp.threat_level === 'high' ? 'var(--danger-wash)' : 'var(--warning-wash)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>{comp.threat_level}</span>}
                         </div>
                       ))}
                     </div>
@@ -824,23 +824,23 @@ const MarketPage = () => {
                       {competitorSwot.slice(0, 5).map((comp, i) => (
                         <div key={i} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-[#F4F7FA] font-medium" style={{ fontFamily: fontFamily.display }}>{comp.name}</span>
-                            {comp.threat_level && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: comp.threat_level === 'high' ? '#EF4444' : comp.threat_level === 'medium' ? '#F59E0B' : '#10B981', background: (comp.threat_level === 'high' ? '#EF4444' : comp.threat_level === 'medium' ? '#F59E0B' : '#10B981') + '15', fontFamily: fontFamily.mono }}>{comp.threat_level} threat</span>}
+                            <span className="text-sm font-medium" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>{comp.name}</span>
+                            {comp.threat_level && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: comp.threat_level === 'high' ? 'var(--danger)' : comp.threat_level === 'medium' ? 'var(--warning)' : 'var(--positive)', background: comp.threat_level === 'high' ? 'var(--danger-wash)' : comp.threat_level === 'medium' ? 'var(--warning-wash)' : 'var(--positive-wash)', fontFamily: fontFamily.mono }}>{comp.threat_level} threat</span>}
                           </div>
                           <div className="grid grid-cols-2 gap-2 mt-2">
                             <div>
-                              <p className="text-[9px] text-[#10B981] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Strengths</p>
-                              {(comp.strengths || []).slice(0, 2).map((s, j) => <p key={j} className="text-[10px] text-[#9FB0C3] leading-snug">{s.length > 80 ? s.substring(0, 77) + '...' : s}</p>)}
+                              <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--positive)', fontFamily: fontFamily.mono }}>Strengths</p>
+                              {(comp.strengths || []).slice(0, 2).map((s, j) => <p key={j} className="text-[10px] leading-snug" style={{ color: 'var(--ink-secondary)' }}>{s.length > 80 ? s.substring(0, 77) + '...' : s}</p>)}
                             </div>
                             <div>
-                              <p className="text-[9px] text-[#EF4444] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Weaknesses</p>
-                              {(comp.weaknesses || []).slice(0, 2).map((w, j) => <p key={j} className="text-[10px] text-[#9FB0C3] leading-snug">{w.length > 80 ? w.substring(0, 77) + '...' : w}</p>)}
+                              <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--danger)', fontFamily: fontFamily.mono }}>Weaknesses</p>
+                              {(comp.weaknesses || []).slice(0, 2).map((w, j) => <p key={j} className="text-[10px] leading-snug" style={{ color: 'var(--ink-secondary)' }}>{w.length > 80 ? w.substring(0, 77) + '...' : w}</p>)}
                             </div>
                           </div>
                           {comp.opportunities_against_them?.length > 0 && (
                             <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--biqc-border)' }}>
-                              <p className="text-[9px] text-[#3B82F6] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Your opportunities against them</p>
-                              {comp.opportunities_against_them.slice(0, 1).map((o, j) => <p key={j} className="text-[10px] text-[#9FB0C3] leading-snug">{o.length > 100 ? o.substring(0, 97) + '...' : o}</p>)}
+                              <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--info)', fontFamily: fontFamily.mono }}>Your opportunities against them</p>
+                              {comp.opportunities_against_them.slice(0, 1).map((o, j) => <p key={j} className="text-[10px] leading-snug" style={{ color: 'var(--ink-secondary)' }}>{o.length > 100 ? o.substring(0, 97) + '...' : o}</p>)}
                             </div>
                           )}
                         </div>
@@ -855,26 +855,26 @@ const MarketPage = () => {
                 {seoAnalysis.score != null && (
                   <Panel data-testid="saturation-seo">
                     <div className="flex items-center gap-2 mb-3">
-                      <SearchIcon className="w-4 h-4 text-[#10B981]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SEO Analysis</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: seoAnalysis.status === 'strong' ? '#10B981' : '#F59E0B', background: (seoAnalysis.status === 'strong' ? '#10B981' : '#F59E0B') + '15', fontFamily: fontFamily.mono }}>{seoAnalysis.score}/100 — {seoAnalysis.status}</span>
+                      <SearchIcon className="w-4 h-4" style={{ color: 'var(--positive)' }} />
+                      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>SEO Analysis</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: seoAnalysis.status === 'strong' ? 'var(--positive)' : 'var(--warning)', background: seoAnalysis.status === 'strong' ? 'var(--positive-wash)' : 'var(--warning-wash)', fontFamily: fontFamily.mono }}>{seoAnalysis.score}/100 — {seoAnalysis.status}</span>
                     </div>
                     {seoAnalysis.strengths?.length > 0 && (
                       <div className="mb-3">
-                        <p className="text-[9px] text-[#10B981] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Strengths</p>
-                        {seoAnalysis.strengths.map((s, i) => <p key={i} className="text-[10px] text-[#9FB0C3] flex items-start gap-1.5"><CheckCircle2 className="w-3 h-3 text-[#10B981] shrink-0 mt-0.5" />{s}</p>)}
+                        <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--positive)', fontFamily: fontFamily.mono }}>Strengths</p>
+                        {seoAnalysis.strengths.map((s, i) => <p key={i} className="text-[10px] flex items-start gap-1.5" style={{ color: 'var(--ink-secondary)' }}><CheckCircle2 className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--positive)' }} />{s}</p>)}
                       </div>
                     )}
                     {seoAnalysis.gaps?.length > 0 && (
                       <div className="mb-3">
-                        <p className="text-[9px] text-[#F59E0B] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Gaps</p>
-                        {seoAnalysis.gaps.map((g, i) => <p key={i} className="text-[10px] text-[#9FB0C3] flex items-start gap-1.5"><AlertTriangle className="w-3 h-3 text-[#F59E0B] shrink-0 mt-0.5" />{g}</p>)}
+                        <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--warning)', fontFamily: fontFamily.mono }}>Gaps</p>
+                        {seoAnalysis.gaps.map((g, i) => <p key={i} className="text-[10px] flex items-start gap-1.5" style={{ color: 'var(--ink-secondary)' }}><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} />{g}</p>)}
                       </div>
                     )}
                     {seoAnalysis.priority_actions?.length > 0 && (
                       <div>
-                        <p className="text-[9px] text-[#FF6A00] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Priority Actions</p>
-                        {seoAnalysis.priority_actions.map((a, i) => <p key={i} className="text-[10px] text-[#9FB0C3] flex items-start gap-1.5"><Zap className="w-3 h-3 text-[#FF6A00] shrink-0 mt-0.5" />{a}</p>)}
+                        <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--lava)', fontFamily: fontFamily.mono }}>Priority Actions</p>
+                        {seoAnalysis.priority_actions.map((a, i) => <p key={i} className="text-[10px] flex items-start gap-1.5" style={{ color: 'var(--ink-secondary)' }}><Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--lava)' }} />{a}</p>)}
                       </div>
                     )}
                   </Panel>
@@ -884,12 +884,12 @@ const MarketPage = () => {
                 {watchtower?.positions && Object.keys(watchtower.positions).length > 0 && (
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-4 h-4 text-[#3B82F6]" />
+                      <Activity className="w-4 h-4" style={{ color: 'var(--info)' }} />
                       <h3 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Signal Positions by Source</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {Object.entries(watchtower.positions).map(([domain, pos]) => {
-                        const posColor = pos.position === 'CRITICAL' ? '#EF4444' : pos.position === 'COMPRESSION' ? '#E85D00' : pos.position === 'DRIFT' ? '#F59E0B' : '#10B981';
+                        const posColor = pos.position === 'CRITICAL' ? 'var(--danger)' : pos.position === 'COMPRESSION' ? 'var(--lava)' : pos.position === 'DRIFT' ? 'var(--warning)' : 'var(--positive)';
                         return (
                           <div key={domain} className="p-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
                             <div className="flex items-center justify-between mb-1">
@@ -924,7 +924,7 @@ const MarketPage = () => {
                 <Crosshair className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
                 <p className="text-sm mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Connect CRM to analyse demand capture.</p>
                 <p className="text-xs mb-4" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Demand capture analysis requires CRM data (deals, contacts) and calibration to assess market opportunity.</p>
-                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#3B82F6' }} data-testid="demand-connect-cta">
+                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: 'var(--info)' }} data-testid="demand-connect-cta">
                   <Plug className="w-4 h-4" /> Connect CRM
                 </a>
               </Panel>
@@ -937,7 +937,7 @@ const MarketPage = () => {
                   {pipeline != null && (
                     <div className="p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
                       <span className="text-[10px] block mb-1 uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)' }}>Active Pipeline</span>
-                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: 'var(--info, #3B82F6)', fontSize: 'var(--size-mono-lg, 24px)' }}>${Math.round(pipeline / 1000)}K</span>
+                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: 'var(--info)', fontSize: 'var(--size-mono-lg, 24px)' }}>${Math.round(pipeline / 1000)}K</span>
                     </div>
                   )}
                 </div>
@@ -946,12 +946,12 @@ const MarketPage = () => {
                 {pressure?.pressures && (
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
-                      <Target className="w-4 h-4 text-[#E85D00]" />
+                      <Target className="w-4 h-4" style={{ color: 'var(--lava)' }} />
                       <h3 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Demand Pressure by Channel</h3>
                     </div>
                     <div className="space-y-3">
                       {Object.entries(pressure.pressures).map(([domain, p]) => {
-                        const levelColor = p.level === 'critical' ? 'var(--danger, #EF4444)' : p.level === 'elevated' ? 'var(--lava, #E85D00)' : p.level === 'moderate' ? 'var(--warning, #F59E0B)' : p.level === 'low' ? 'var(--positive, #10B981)' : 'var(--silver-4, #64748B)';
+                        const levelColor = p.level === 'critical' ? 'var(--danger)' : p.level === 'elevated' ? 'var(--lava)' : p.level === 'moderate' ? 'var(--warning)' : p.level === 'low' ? 'var(--positive)' : 'var(--silver-4)';
                         return (
                           <div key={domain}>
                             <div className="flex justify-between mb-1">
@@ -978,15 +978,15 @@ const MarketPage = () => {
                 {paidMedia.maturity && (
                   <Panel data-testid="demand-paid-media">
                     <div className="flex items-center gap-2 mb-3">
-                      <BarChart3 className="w-4 h-4 text-[#F59E0B]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Paid Media Analysis</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: paidMedia.maturity === 'unknown_or_low_visibility' ? '#F59E0B' : '#10B981', background: (paidMedia.maturity === 'unknown_or_low_visibility' ? '#F59E0B' : '#10B981') + '15', fontFamily: fontFamily.mono }}>{paidMedia.maturity.replace(/_/g, ' ')}</span>
+                      <BarChart3 className="w-4 h-4" style={{ color: 'var(--warning)' }} />
+                      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>Paid Media Analysis</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: paidMedia.maturity === 'unknown_or_low_visibility' ? 'var(--warning)' : 'var(--positive)', background: paidMedia.maturity === 'unknown_or_low_visibility' ? 'var(--warning-wash)' : 'var(--positive-wash)', fontFamily: fontFamily.mono }}>{paidMedia.maturity.replace(/_/g, ' ')}</span>
                     </div>
-                    {paidMedia.assessment && <p className="text-xs text-[#9FB0C3] leading-relaxed mb-3">{paidMedia.assessment}</p>}
+                    {paidMedia.assessment && <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--ink-secondary)' }}>{paidMedia.assessment}</p>}
                     {paidMedia.priority_actions?.length > 0 && (
                       <div>
-                        <p className="text-[9px] text-[#FF6A00] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Priority Actions</p>
-                        {paidMedia.priority_actions.map((a, i) => <p key={i} className="text-[10px] text-[#9FB0C3] flex items-start gap-1.5 mb-1"><Zap className="w-3 h-3 text-[#FF6A00] shrink-0 mt-0.5" />{a}</p>)}
+                        <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--lava)', fontFamily: fontFamily.mono }}>Priority Actions</p>
+                        {paidMedia.priority_actions.map((a, i) => <p key={i} className="text-[10px] flex items-start gap-1.5 mb-1" style={{ color: 'var(--ink-secondary)' }}><Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--lava)' }} />{a}</p>)}
                       </div>
                     )}
                   </Panel>
@@ -996,12 +996,12 @@ const MarketPage = () => {
                 {aeoStrategy.length > 0 && (
                   <Panel data-testid="demand-aeo">
                     <div className="flex items-center gap-2 mb-3">
-                      <Eye className="w-4 h-4 text-[#8B5CF6]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>AI Engine Optimisation</h3>
+                      <Eye className="w-4 h-4" style={{ color: 'var(--info)' }} />
+                      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>AI Engine Optimisation</h3>
                     </div>
-                    <p className="text-[10px] text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>Actions to improve your visibility in AI-powered search and answer engines.</p>
+                    <p className="text-[10px] mb-3" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Actions to improve your visibility in AI-powered search and answer engines.</p>
                     <div className="space-y-2">
-                      {aeoStrategy.map((action, i) => <p key={i} className="text-xs text-[#9FB0C3] leading-relaxed flex items-start gap-2"><span className="text-[10px] font-bold text-[#8B5CF6] mt-0.5 shrink-0" style={{ fontFamily: fontFamily.mono }}>{i + 1}.</span>{action}</p>)}
+                      {aeoStrategy.map((action, i) => <p key={i} className="text-xs leading-relaxed flex items-start gap-2" style={{ color: 'var(--ink-secondary)' }}><span className="text-[10px] font-bold mt-0.5 shrink-0" style={{ color: 'var(--info)', fontFamily: fontFamily.mono }}>{i + 1}.</span>{action}</p>)}
                     </div>
                   </Panel>
                 )}
@@ -1023,7 +1023,7 @@ const MarketPage = () => {
                 <Filter className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
                 <p className="text-sm mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Connect CRM to analyse funnel friction.</p>
                 <p className="text-xs mb-4" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Funnel analysis requires deal stage data from your CRM to identify where deals stall, drop off, or slow down.</p>
-                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#F59E0B' }} data-testid="friction-connect-cta">
+                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: 'var(--warning)' }} data-testid="friction-connect-cta">
                   <Plug className="w-4 h-4" /> Connect CRM
                 </a>
               </Panel>
@@ -1033,13 +1033,13 @@ const MarketPage = () => {
                 {freshness?.freshness && (
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
-                      <RefreshCw className="w-4 h-4 text-[#3B82F6]" />
+                      <RefreshCw className="w-4 h-4" style={{ color: 'var(--info)' }} />
                       <h3 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Data Freshness by Source</h3>
                     </div>
                     <p className="text-xs mb-4" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Stale data creates blind spots. Fresh data reduces friction in decision-making.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {Object.entries(freshness.freshness).filter(([, f]) => f.status !== 'no_data').map(([domain, f]) => {
-                        const fColor = f.status === 'fresh' ? '#10B981' : f.status === 'recent' ? '#3B82F6' : f.status === 'aging' ? '#F59E0B' : '#EF4444';
+                        const fColor = f.status === 'fresh' ? 'var(--positive)' : f.status === 'recent' ? 'var(--info)' : f.status === 'aging' ? 'var(--warning)' : 'var(--danger)';
                         return (
                           <div key={domain} className="p-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
                             <div className="flex items-center justify-between mb-1">
@@ -1058,13 +1058,13 @@ const MarketPage = () => {
                 {/* Friction Points */}
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
-                    <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
+                      <AlertTriangle className="w-4 h-4" style={{ color: 'var(--warning)' }} />
                     <h3 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Identified Friction Points</h3>
                   </div>
                   {c.data_gaps && c.data_gaps.length > 0 ? (
                     <div className="space-y-2">
                       {c.data_gaps.map((gap, i) => {
-                        const impactColor = gap.impact_on_confidence === 'high' ? '#EF4444' : gap.impact_on_confidence === 'medium' ? '#F59E0B' : '#10B981';
+                        const impactColor = gap.impact_on_confidence === 'high' ? 'var(--danger)' : gap.impact_on_confidence === 'medium' ? 'var(--warning)' : 'var(--positive)';
                         return (
                           <div key={i} className="flex items-start gap-3 p-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
                             <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: impactColor }} />
@@ -1091,11 +1091,11 @@ const MarketPage = () => {
                 {websiteHealth.score != null && (
                   <Panel data-testid="friction-website-health">
                     <div className="flex items-center gap-2 mb-3">
-                      <Globe className="w-4 h-4 text-[#3B82F6]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Website Health</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: websiteHealth.status === 'strong' ? '#10B981' : '#F59E0B', background: (websiteHealth.status === 'strong' ? '#10B981' : '#F59E0B') + '15', fontFamily: fontFamily.mono }}>{websiteHealth.score}/100 — {websiteHealth.status}</span>
+                      <Globe className="w-4 h-4" style={{ color: 'var(--info)' }} />
+                      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>Website Health</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: websiteHealth.status === 'strong' ? 'var(--positive)' : 'var(--warning)', background: websiteHealth.status === 'strong' ? 'var(--positive-wash)' : 'var(--warning-wash)', fontFamily: fontFamily.mono }}>{websiteHealth.score}/100 — {websiteHealth.status}</span>
                     </div>
-                    {websiteHealth.summary && <p className="text-xs text-[#9FB0C3] leading-relaxed">{websiteHealth.summary}</p>}
+                    {websiteHealth.summary && <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>{websiteHealth.summary}</p>}
                   </Panel>
                 )}
 
@@ -1103,14 +1103,14 @@ const MarketPage = () => {
                 {trustSignals.length > 0 && (
                   <Panel data-testid="friction-trust-signals">
                     <div className="flex items-center gap-2 mb-3">
-                      <Shield className="w-4 h-4 text-[#10B981]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Trust Signals</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: fontFamily.mono }}>{trustSignals.length} detected</span>
+                      <Shield className="w-4 h-4" style={{ color: 'var(--positive)' }} />
+                      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>Trust Signals</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'var(--positive-wash)', color: 'var(--positive)', fontFamily: fontFamily.mono }}>{trustSignals.length} detected</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {trustSignals.map((signal, i) => (
-                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-lg flex items-center gap-1.5" style={{ background: '#10B98108', border: '1px solid #10B98120', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}>
-                          <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> {signal}
+                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-lg flex items-center gap-1.5" style={{ background: 'var(--positive-wash)', border: '1px solid var(--positive)', color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>
+                          <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--positive)' }} /> {signal}
                         </span>
                       ))}
                     </div>
@@ -1121,24 +1121,24 @@ const MarketPage = () => {
                 {reviewAgg.has_data && (
                   <Panel data-testid="friction-reviews">
                     <div className="flex items-center gap-2 mb-3">
-                      <Star className="w-4 h-4 text-[#F59E0B]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Review Reputation</h3>
+                      <Star className="w-4 h-4" style={{ color: 'var(--warning)' }} />
+                      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>Review Reputation</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid #10B98120' }}>
-                        <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Positive</span>
-                        <span className="text-lg font-bold text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>{reviewAgg.positive_count || 0}</span>
+                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--positive)' }}>
+                        <span className="text-[10px] block" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Positive</span>
+                        <span className="text-lg font-bold" style={{ color: 'var(--positive)', fontFamily: fontFamily.mono }}>{reviewAgg.positive_count || 0}</span>
                       </div>
-                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid #EF444420' }}>
-                        <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Negative</span>
-                        <span className="text-lg font-bold text-[#EF4444]" style={{ fontFamily: fontFamily.mono }}>{reviewAgg.negative_count || 0}</span>
+                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--danger)' }}>
+                        <span className="text-[10px] block" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Negative</span>
+                        <span className="text-lg font-bold" style={{ color: 'var(--danger)', fontFamily: fontFamily.mono }}>{reviewAgg.negative_count || 0}</span>
                       </div>
                     </div>
                     {reviewAgg.top_recent?.length > 0 && (
                       <div>
-                        <p className="text-[9px] text-[#94A3B8] uppercase mb-2" style={{ fontFamily: fontFamily.mono }}>Recent reviews</p>
+                        <p className="text-[9px] uppercase mb-2" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Recent reviews</p>
                         {reviewAgg.top_recent.slice(0, 2).map((r, i) => (
-                          <p key={i} className="text-[10px] text-[#9FB0C3] leading-snug mb-1 pl-2" style={{ borderLeft: '2px solid #F59E0B30' }}>{r.length > 120 ? r.substring(0, 117) + '...' : r}</p>
+                          <p key={i} className="text-[10px] leading-snug mb-1 pl-2" style={{ color: 'var(--ink-secondary)', borderLeft: '2px solid var(--warning)' }}>{r.length > 120 ? r.substring(0, 117) + '...' : r}</p>
                         ))}
                       </div>
                     )}
@@ -1149,21 +1149,21 @@ const MarketPage = () => {
                 {(goalProb != null || mi.misalignment_index != null) && (
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
-                      <TrendingUp className="w-4 h-4 text-[#10B981]" />
+                      <TrendingUp className="w-4 h-4" style={{ color: 'var(--positive)' }} />
                       <h3 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Conversion Intelligence</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {goalProb != null && (
                         <div className="p-4 text-center" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
                           <span className="text-[10px] block mb-1 uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)' }}>Goal Achievement</span>
-                          <span className="text-3xl font-bold" style={{ color: goalProb > 60 ? 'var(--positive, #10B981)' : 'var(--warning, #F59E0B)', fontFamily: 'var(--font-mono)', fontSize: 'var(--size-mono-lg, 30px)' }}>{goalProb}%</span>
+                          <span className="text-3xl font-bold" style={{ color: goalProb > 60 ? 'var(--positive)' : 'var(--warning)', fontFamily: 'var(--font-mono)', fontSize: 'var(--size-mono-lg, 30px)' }}>{goalProb}%</span>
                           <span className="text-[10px] block mt-1" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>probability at current pace</span>
                         </div>
                       )}
                       {mi.misalignment_index != null && (
                         <div className="p-4 text-center" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
                           <span className="text-[10px] block mb-1 uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)' }}>Strategy-Execution Gap</span>
-                          <span className="text-3xl font-bold" style={{ color: mi.misalignment_index > 50 ? 'var(--danger, #EF4444)' : mi.misalignment_index > 25 ? 'var(--warning, #F59E0B)' : 'var(--positive, #10B981)', fontFamily: 'var(--font-mono)', fontSize: 'var(--size-mono-lg, 30px)' }}>{mi.misalignment_index}</span>
+                          <span className="text-3xl font-bold" style={{ color: mi.misalignment_index > 50 ? 'var(--danger)' : mi.misalignment_index > 25 ? 'var(--warning)' : 'var(--positive)', fontFamily: 'var(--font-mono)', fontSize: 'var(--size-mono-lg, 30px)' }}>{mi.misalignment_index}</span>
                           <span className="text-[10px] block mt-1" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>misalignment index (lower is better)</span>
                         </div>
                       )}
@@ -1203,20 +1203,20 @@ const MarketPage = () => {
                 <p className="text-[10px] mb-3" style={{ color: 'var(--ink-muted)' }}>Executive PDF with Digital Footprint, SWOT, CMO actions, competitive landscape, and SEO analysis.</p>
                 <button onClick={() => handleDownloadPdf('market-position')} disabled={pdfGenerating === 'market-position' || !hasEnrichment}
                   className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors w-full justify-center"
-                  style={{ background: hasEnrichment ? 'var(--lava)' : '#243140', color: hasEnrichment ? 'white' : 'var(--ink-muted)', opacity: pdfGenerating === 'market-position' ? 0.6 : 1, fontFamily: 'var(--font-mono)' }}>
+                  style={{ background: hasEnrichment ? 'var(--lava)' : 'var(--surface-sunken)', color: hasEnrichment ? 'white' : 'var(--ink-muted)', opacity: pdfGenerating === 'market-position' ? 0.6 : 1, fontFamily: 'var(--font-mono)' }}>
                   {pdfGenerating === 'market-position' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                   {pdfGenerating === 'market-position' ? 'Generating...' : hasEnrichment ? 'Download PDF' : 'Complete calibration first'}
                 </button>
               </div>
               <div className="rounded-xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-2 mb-2">
-                  <BarChart3 className="w-4 h-4 text-[#7C3AED]" />
+                  <BarChart3 className="w-4 h-4" style={{ color: 'var(--info)' }} />
                   <span className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Competitive Benchmark Report</span>
                 </div>
                 <p className="text-[10px] mb-3" style={{ color: 'var(--ink-muted)' }}>Executive PDF with competitor landscape, 5-pillar breakdown, SEO analysis, social media, and review reputation.</p>
                 <button onClick={() => handleDownloadPdf('benchmark')} disabled={pdfGenerating === 'benchmark' || !hasEnrichment}
                   className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors w-full justify-center"
-                  style={{ background: hasEnrichment ? '#7C3AED' : '#243140', color: hasEnrichment ? 'white' : 'var(--ink-muted)', opacity: pdfGenerating === 'benchmark' ? 0.6 : 1, fontFamily: 'var(--font-mono)' }}>
+                  style={{ background: hasEnrichment ? 'var(--info)' : 'var(--surface-sunken)', color: hasEnrichment ? 'white' : 'var(--ink-muted)', opacity: pdfGenerating === 'benchmark' ? 0.6 : 1, fontFamily: 'var(--font-mono)' }}>
                   {pdfGenerating === 'benchmark' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                   {pdfGenerating === 'benchmark' ? 'Generating...' : hasEnrichment ? 'Download PDF' : 'Complete calibration first'}
                 </button>
@@ -1247,35 +1247,35 @@ const MarketPage = () => {
       </div>
       {showRecalibrateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { if (!recalSubmitting) setShowRecalibrateModal(false); }}>
-          <div className="w-full max-w-md rounded-2xl p-6 space-y-4 mx-4" style={{ background: 'var(--surface, #0B1120)', border: '1px solid var(--border, #1E293B)' }} onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-2xl p-6 space-y-4 mx-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
             {recalSubmitted ? (
               <div className="text-center space-y-3 py-4">
-                <CheckCircle2 className="w-10 h-10 mx-auto text-green-400" />
-                <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)' }}>Request Received</h2>
-                <p className="text-sm" style={{ color: 'var(--ink-secondary, #94A3B8)' }}>Our team will be in touch within 24 hours to schedule your recalibration session.</p>
-                <button onClick={() => { setShowRecalibrateModal(false); setRecalSubmitted(false); }} className="mt-3 px-5 py-2 rounded-lg text-sm font-medium text-white" style={{ background: '#E85D00' }}>Close</button>
+                <CheckCircle2 className="w-10 h-10 mx-auto" style={{ color: 'var(--positive)' }} />
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display)' }}>Request Received</h2>
+                <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>Our team will be in touch within 24 hours to schedule your recalibration session.</p>
+                <button onClick={() => { setShowRecalibrateModal(false); setRecalSubmitted(false); }} className="mt-3 px-5 py-2 rounded-lg text-sm font-medium text-white" style={{ background: 'var(--lava)' }}>Close</button>
               </div>
             ) : (
               <form onSubmit={handleRecalSubmit} className="space-y-4">
                 <div>
-                  <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: 'var(--font-display)' }}>Request Recalibration</h2>
-                  <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary, #94A3B8)' }}>Your business profile was calibrated {daysSinceCalibration} days ago. Submit a request and our team will arrange a fresh calibration session.</p>
+                  <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>Request Recalibration</h2>
+                  <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary)' }}>Your business profile was calibrated {daysSinceCalibration} days ago. Submit a request and our team will arrange a fresh calibration session.</p>
                 </div>
                 <div>
-                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--ink-secondary, #94A3B8)' }}>Your name</label>
-                  <input value={recalForm.name} onChange={e => setRecalForm(p => ({ ...p, name: e.target.value }))} required className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--surface-sunken, #060B18)', border: '1px solid var(--border, #1E293B)', color: 'var(--ink-display, #0A0A0A)' }} placeholder="Full name" />
+                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--ink-secondary)' }}>Your name</label>
+                  <input value={recalForm.name} onChange={e => setRecalForm(p => ({ ...p, name: e.target.value }))} required className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)', color: 'var(--ink-display)' }} placeholder="Full name" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--ink-secondary, #94A3B8)' }}>Email</label>
-                  <input value={recalForm.email} onChange={e => setRecalForm(p => ({ ...p, email: e.target.value }))} required type="email" className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--surface-sunken, #060B18)', border: '1px solid var(--border, #1E293B)', color: 'var(--ink-display, #0A0A0A)' }} placeholder="you@company.com" />
+                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--ink-secondary)' }}>Email</label>
+                  <input value={recalForm.email} onChange={e => setRecalForm(p => ({ ...p, email: e.target.value }))} required type="email" className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)', color: 'var(--ink-display)' }} placeholder="you@company.com" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--ink-secondary, #94A3B8)' }}>Message (optional)</label>
-                  <textarea value={recalForm.message} onChange={e => setRecalForm(p => ({ ...p, message: e.target.value }))} rows={3} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: 'var(--surface-sunken, #060B18)', border: '1px solid var(--border, #1E293B)', color: 'var(--ink-display, #0A0A0A)' }} placeholder="Any details about what's changed in your business..." />
+                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--ink-secondary)' }}>Message (optional)</label>
+                  <textarea value={recalForm.message} onChange={e => setRecalForm(p => ({ ...p, message: e.target.value }))} rows={3} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)', color: 'var(--ink-display)' }} placeholder="Any details about what's changed in your business..." />
                 </div>
                 <div className="flex gap-3 pt-1">
-                  <button type="button" onClick={() => setShowRecalibrateModal(false)} className="flex-1 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--border, #1E293B)', color: 'var(--ink-secondary, #94A3B8)' }}>Cancel</button>
-                  <button type="submit" disabled={recalSubmitting} className="flex-1 py-2 rounded-lg text-sm font-medium text-white" style={{ background: '#E85D00', opacity: recalSubmitting ? 0.6 : 1 }}>{recalSubmitting ? 'Submitting...' : 'Contact Sales'}</button>
+                  <button type="button" onClick={() => setShowRecalibrateModal(false)} className="flex-1 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--border)', color: 'var(--ink-secondary)' }}>Cancel</button>
+                  <button type="submit" disabled={recalSubmitting} className="flex-1 py-2 rounded-lg text-sm font-medium text-white" style={{ background: 'var(--lava)', opacity: recalSubmitting ? 0.6 : 1 }}>{recalSubmitting ? 'Submitting...' : 'Contact Sales'}</button>
                 </div>
               </form>
             )}
@@ -1288,7 +1288,7 @@ const MarketPage = () => {
 
 // ═══ Friction Item Component ═══
 const FrictionItem = ({ label, detail, impact }) => {
-  const color = impact === 'high' ? 'var(--danger, #EF4444)' : impact === 'medium' ? 'var(--warning, #F59E0B)' : 'var(--positive, #10B981)';
+  const color = impact === 'high' ? 'var(--danger)' : impact === 'medium' ? 'var(--warning)' : 'var(--positive)';
   return (
     <div className="flex items-start gap-3 p-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg, 12px)' }}>
       <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: color }} />
@@ -1305,12 +1305,12 @@ const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, na
   <div data-testid="gaps-section">
     <button onClick={() => setGapsOpen(!gapsOpen)} className="w-full flex items-center justify-between p-4 transition-colors hover:bg-white/[0.02]" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl, 16px)' }}>
       <div className="flex items-center gap-3">
-        <Link2 className="w-4 h-4" style={{ color: 'var(--info, #3B82F6)' }} />
+        <Link2 className="w-4 h-4" style={{ color: 'var(--info)' }} />
         <div className="text-left">
           <h2 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Your Marketing Gaps</h2>
           <div className="flex gap-3 mt-1">
-            <span className="text-[11px]" style={{ color: hasCRM ? 'var(--positive, #10B981)' : 'var(--warning, #F59E0B)', fontFamily: 'var(--font-mono)' }}>{hasCRM ? 'CRM connected' : 'CRM not connected'}</span>
-            <span className="text-[11px]" style={{ color: pipeline ? 'var(--positive, #10B981)' : 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{pipeline ? `$${Math.round(pipeline / 1000)}K pipeline` : 'No pipeline data'}</span>
+            <span className="text-[11px]" style={{ color: hasCRM ? 'var(--positive)' : 'var(--warning)', fontFamily: 'var(--font-mono)' }}>{hasCRM ? 'CRM connected' : 'CRM not connected'}</span>
+            <span className="text-[11px]" style={{ color: pipeline ? 'var(--positive)' : 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{pipeline ? `$${Math.round(pipeline / 1000)}K pipeline` : 'No pipeline data'}</span>
             <span className="text-[11px]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{channelsData?.summary?.connected || 0}/{channelsData?.summary?.total || 0} channels</span>
           </div>
         </div>
@@ -1320,13 +1320,13 @@ const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, na
     {gapsOpen && (
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {(channelsData?.channels || []).map(ch => (
-          <div key={ch.key} className="p-3 flex items-center gap-3" style={{ background: 'var(--surface)', border: `1px solid ${ch.status === 'connected' ? 'var(--positive, #10B981)30' : 'var(--border)'}`, borderRadius: 'var(--r-lg, 12px)' }}>
+          <div key={ch.key} className="p-3 flex items-center gap-3" style={{ background: 'var(--surface)', border: `1px solid ${ch.status === 'connected' ? 'var(--positive)' : 'var(--border)'}`, borderRadius: 'var(--r-lg, 12px)' }}>
             <div className="w-8 h-8 flex items-center justify-center shrink-0 text-white font-bold text-xs" style={{ background: ch.color, borderRadius: 'var(--r-md, 8px)' }}>{ch.name[0]}</div>
             <span className="text-sm flex-1" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{ch.name}</span>
             {ch.status === 'connected' ? (
-              <span className="text-[11px] px-2 py-1 flex items-center gap-1" style={{ color: 'var(--positive, #10B981)', background: 'var(--positive-wash, #10B98115)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}><CheckCircle2 className="w-3 h-3" /> Connected</span>
+              <span className="text-[11px] px-2 py-1 flex items-center gap-1" style={{ color: 'var(--positive)', background: 'var(--positive-wash)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}><CheckCircle2 className="w-3 h-3" /> Connected</span>
             ) : ch.available ? (
-              <button onClick={() => navigate('/integrations')} className="text-[11px] px-2 py-1" style={{ color: 'var(--positive, #10B981)', background: 'var(--positive-wash, #10B98115)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>Connect</button>
+              <button onClick={() => navigate('/integrations')} className="text-[11px] px-2 py-1" style={{ color: 'var(--positive)', background: 'var(--positive-wash)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>Connect</button>
             ) : (
               <span className="text-[11px] px-2 py-1" style={{ color: 'var(--ink-muted)', background: 'var(--surface-sunken)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>Soon</span>
             )}
@@ -1355,12 +1355,12 @@ const ForensicCalibrationCard = ({ isSuperAdmin, navigate }) => {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Forensic Calibration</h3>
-            {forensicResult && <span className="text-[11px] px-2 py-0.5" style={{ color: forensicResult.risk_color || 'var(--positive, #10B981)', background: (forensicResult.risk_color || '#10B981') + '15', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>{forensicResult.risk_profile} — {forensicResult.composite_score}/100</span>}
+            {forensicResult && <span className="text-[11px] px-2 py-0.5" style={{ color: forensicResult.risk_color || 'var(--positive)', background: 'var(--surface-sunken)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>{forensicResult.risk_profile} — {forensicResult.composite_score}/100</span>}
           </div>
           {forensicResult ? (
             <button onClick={() => navigate('/market/calibration')} className="text-xs hover:underline" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)' }}>View results</button>
           ) : isSuperAdmin ? (
-            <button onClick={() => navigate('/market/calibration')} className="text-xs px-4 py-2 rounded-lg text-white mt-2" style={{ background: '#E85D00' }}>
+            <button onClick={() => navigate('/market/calibration')} className="text-xs px-4 py-2 rounded-lg text-white mt-2" style={{ background: 'var(--lava)' }}>
               Complete calibration <ArrowRight className="w-3 h-3 inline ml-1" />
             </button>
           ) : (
