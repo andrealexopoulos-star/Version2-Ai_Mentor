@@ -137,12 +137,12 @@ const TrustPage = () => {
           <button onClick={() => nav('/register-supabase')} className="px-10 py-4 rounded-xl text-[13px] font-semibold inline-flex items-center gap-2 text-white" style={{ background: AZURE, fontFamily: fontFamily.display, boxShadow: '0 8px 24px rgba(0,122,255,0.25)' }} data-testid="trust-cta-deploy">
             Start Free Trial
           </button>
-          <p className="text-[10px] tracking-[0.1em] uppercase font-medium" style={{ fontFamily: fontFamily.mono, color: '#94A3B8' }}>Australian owned · Australian hosted · Your data, your sovereignty</p>
+          <p className="text-[10px] tracking-[0.1em] uppercase font-medium" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #737373)' }}>Australian owned · Australian hosted · Your data, your sovereignty</p>
         </div>
       </section>
 
       <footer className="relative z-10 py-8 px-6 lg:px-16" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-        <p className="text-center text-[11px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>&copy; 2026 BIQc — Business IQ Centre. Powered by Business Intelligence Quotient Centre.</p>
+        <p className="text-center text-[11px]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>&copy; 2026 BIQc — Business IQ Centre. Powered by Business Intelligence Quotient Centre.</p>
       </footer>
     </div>
   );

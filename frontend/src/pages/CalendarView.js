@@ -222,7 +222,7 @@ const CalendarView = () => {
         ? { label: 'Degraded', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' }
         : upcomingEvents.length > 0
           ? { label: 'Synced', color: '#10B981', bg: 'rgba(16,185,129,0.12)' }
-          : { label: 'No events', color: '#94A3B8', bg: 'rgba(148,163,184,0.12)' };
+          : { label: 'No events', color: 'var(--ink-muted, #737373)', bg: 'rgba(148,163,184,0.12)' };
 
   const createDraftEvent = async () => {
     if (!advisorDraft) return;
@@ -548,7 +548,7 @@ const CalendarView = () => {
 
               {/* Legend */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface-tint, var(--surface-sunken))', flexWrap: 'wrap' }}>
-                {[{ label: 'Deal', color: 'var(--lava)' }, { label: 'Customer', color: '#16A34A' }, { label: 'Internal', color: '#2563EB' }, { label: 'Personal', color: '#94A3B8' }, { label: 'Critical', color: '#DC2626' }].map(item => (
+                {[{ label: 'Deal', color: 'var(--lava)' }, { label: 'Customer', color: '#16A34A' }, { label: 'Internal', color: '#2563EB' }, { label: 'Personal', color: 'var(--ink-muted, #737373)' }, { label: 'Critical', color: '#DC2626' }].map(item => (
                   <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-secondary)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)' }}>
                     <div style={{ width: 8, height: 8, borderRadius: 2, background: item.color }} />
                     {item.label}

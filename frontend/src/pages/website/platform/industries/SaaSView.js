@@ -28,7 +28,7 @@ const SaaSView = () => (
               { name: 'Evergreen Ltd', mrr: '$1,800', usage: -28, signal: 'Support tickets up 3x. Frustration signals detected.', risk: 'high' },
               { name: 'Clearview Ops', mrr: '$1,200', usage: -15, signal: 'Only 2 of 8 seats active. Low adoption.', risk: 'medium' },
             ].map(a => (
-              <div key={a.name} className="p-3 rounded-lg mb-2" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
+              <div key={a.name} className="p-3 rounded-lg mb-2" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-[#EDF1F7]" style={{ fontFamily: SORA }}>{a.name}</span>
                   <span className="text-xs" style={{ fontFamily: MONO, color: a.risk === 'high' ? '#E85D00' : '#F59E0B' }}>{a.mrr}/mo</span>

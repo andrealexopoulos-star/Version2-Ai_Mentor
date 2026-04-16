@@ -559,7 +559,7 @@ const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null, hasConnecti
       data-testid="first-time-onboarding">
 
       <div className="w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ background: '#0F1720', border: '1px solid #1E2D3D', boxShadow: '0 24px 80px rgba(0,0,0,0.7)', maxHeight: '90vh', overflowY: 'auto' }}>
+        style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid #1E2D3D', boxShadow: '0 24px 80px rgba(0,0,0,0.7)', maxHeight: '90vh', overflowY: 'auto' }}>
 
         {/* Header bar */}
         <div className="flex items-center justify-between px-5 py-3.5"

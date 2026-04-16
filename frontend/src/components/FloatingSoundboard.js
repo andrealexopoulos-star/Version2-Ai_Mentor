@@ -397,7 +397,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
                     </span>
                   )}
                   {msg?.data_freshness && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.14)', color: '#FCD34D', fontFamily: fontFamily.mono }}>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.14)', color: 'var(--warning, #D97706)', fontFamily: fontFamily.mono }}>
                       Last updated {msg.data_freshness}
                     </span>
                   )}

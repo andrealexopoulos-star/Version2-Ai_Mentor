@@ -30,7 +30,7 @@ const MSPView = () => (
               ].map(c => {
                 const rc = { high: '#E85D00', medium: '#F59E0B', low: '#10B981' };
                 return (
-                  <div key={c.client} className="flex items-center gap-4 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
+                  <div key={c.client} className="flex items-center gap-4 p-3 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <div className="w-2 h-2 rounded-full" style={{ background: rc[c.risk], boxShadow: c.risk === 'high' ? `0 0 8px ${rc[c.risk]}50` : 'none' }} />
                     <div className="flex-1">
                       <span className="text-sm font-medium text-[#EDF1F7] block" style={{ fontFamily: SORA }}>{c.client}</span>
@@ -57,7 +57,7 @@ const MSPView = () => (
               <MetricCard label="Top Client" value="34%" sub="Meridian Group" color="#E85D00" alert />
               <MetricCard label="Top 3 Clients" value="61%" sub="$496K of $812K revenue" color="#F59E0B" alert />
             </div>
-            <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #E85D0020' }}>
+            <div className="p-3 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid #E85D0020' }}>
               <span className="text-[10px] text-[#64748B] uppercase" style={{ fontFamily: MONO }}>If Top Client Lost</span>
               <div className="flex items-center gap-4 mt-1">
                 <span className="text-sm text-[#E85D00]" style={{ fontFamily: MONO }}>Revenue: -34%</span>

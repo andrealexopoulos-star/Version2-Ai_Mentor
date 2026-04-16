@@ -74,7 +74,7 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
           <button
             onClick={onClose}
             className="inline-flex min-h-[40px] items-center rounded-xl border px-3"
-            style={{ borderColor: '#334155', color: '#CBD5E1' }}
+            style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)' }}
             data-testid="advisor-evidence-drawer-close-button"
           >
             <X className="h-4 w-4" />
@@ -114,7 +114,7 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
           {evidenceRefs.length > 0 && (
             <section className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-evidence-drawer-refs">
               <h4 className="mb-2 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Supporting evidence</h4>
-              <p className="mb-3 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>Plain-language summary of what BIQc found in your data.</p>
+              <p className="mb-3 text-xs" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.body }}>Plain-language summary of what BIQc found in your data.</p>
               <ul className="list-disc space-y-2 pl-5 text-sm" data-testid="advisor-evidence-drawer-refs-list">
                 {evidenceRefs.slice(0, 5).map((item, index) => {
                   const human = humanizeEvidence(item);
@@ -133,7 +133,7 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
           <Link
             to={targetRoute}
             className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs"
-            style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+            style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
             data-testid="advisor-evidence-drawer-open-source-page"
           >
             Open source context <ArrowUpRight className="h-3.5 w-3.5" />
@@ -141,7 +141,7 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
           <Link
             to="/soundboard"
             className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs"
-            style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+            style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
             data-testid="advisor-evidence-drawer-open-soundboard"
           >
             Ask BIQc for supporting evidence <ArrowUpRight className="h-3.5 w-3.5" />

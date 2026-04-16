@@ -34,7 +34,7 @@ const ContinuitySuite = ({ firstName, calStep, error, onResume }) => {
         <p className="text-base leading-relaxed mb-8" style={{ color: MUTED, maxWidth: 480, margin: '0 auto' }}>
           I have begun mapping your DNA, but we need the final {9 - calStep} stage{9 - calStep !== 1 ? 's' : ''} to reach 100% foresight accuracy.
         </p>
-        <p className="text-sm mb-10" style={{ color: '#94A3B8' }}>{calStep} of 9 stages completed.</p>
+        <p className="text-sm mb-10" style={{ color: 'var(--ink-muted, #737373)' }}>{calStep} of 9 stages completed.</p>
         {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
         <button onClick={onResume} className="px-8 py-3 rounded-xl text-sm font-semibold"
           style={{ background: '#E85D00', color: '#FFFFFF' }} data-testid="continue-calibration-btn">

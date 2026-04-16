@@ -12,7 +12,7 @@ const HealthCapsule = ({ label, value, status, icon: Icon }) => {
   const colors = { good: '#10B981', warning: '#F59E0B', critical: '#E85D00' };
   const c = colors[status] || colors.good;
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }} data-testid={`health-${label.toLowerCase().replace(/\s/g,'-')}`}>
+    <div className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }} data-testid={`health-${label.toLowerCase().replace(/\s/g,'-')}`}>
       <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ background: c + '15' }}>
         <Icon className="w-4 h-4" style={{ color: c }} />
       </div>
@@ -150,7 +150,7 @@ const ExecOverview = () => (
                 { label: 'Alerts (30d)', value: '23', color: '#E85D00' },
                 { label: 'Issues Prevented', value: '8', color: '#10B981' },
               ].map(m => (
-                <div key={m.label} className="p-3 rounded-md" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
+                <div key={m.label} className="p-3 rounded-md" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
                   <span className="text-lg font-bold block" style={{ fontFamily: fontFamily.mono, color: m.color }}>{m.value}</span>
                   <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
                 </div>

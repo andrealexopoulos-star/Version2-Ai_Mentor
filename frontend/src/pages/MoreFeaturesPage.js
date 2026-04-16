@@ -62,7 +62,7 @@ export default function MoreFeaturesPage() {
               </p>
             </div>
             <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.65)' }} data-testid="more-features-package-note">
-              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Current launch package</p>
+              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>Current launch package</p>
               <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }}>Free + BIQc Foundation ($349/mo)</p>
             </div>
           </div>
@@ -77,7 +77,7 @@ export default function MoreFeaturesPage() {
             <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#60A5FA', fontFamily: fontFamily.mono }}>
               Access transparency
             </p>
-            <p className="mt-1 text-sm" style={{ color: '#E2E8F0' }}>
+            <p className="mt-1 text-sm" style={{ color: 'var(--ink, #171717)' }}>
               <strong>{fromRoute}</strong> is staged beyond your current tier ({requiredTier || 'starter'}).
               You can review value now and join the waitlist before the module is promoted to live access.
             </p>
@@ -108,7 +108,7 @@ export default function MoreFeaturesPage() {
                 </div>
               </div>
               <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Request access</p>
+                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>Request access</p>
                 <p className="mt-3 text-sm leading-7" style={{ color: 'var(--biqc-text-2)' }}>
                   {hasPlatformOverride
                     ? 'You have direct platform access. Open the live module from here.'
@@ -143,7 +143,7 @@ export default function MoreFeaturesPage() {
         {grouped.map(([category, features]) => (
           <section key={category} className="space-y-4" data-testid={`more-features-group-${category.toLowerCase().replace(/\s+/g, '-')}`}>
             <div>
-              <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>{category}</p>
+              <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>{category}</p>
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {features.map((feature) => {

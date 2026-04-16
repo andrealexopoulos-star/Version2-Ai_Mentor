@@ -123,7 +123,7 @@ export const ProactiveInsightBubble = () => {
 
       <div className="rounded-2xl overflow-hidden"
         style={{
-          background: '#0F1720',
+          background: 'var(--surface, #FFFFFF)',
           border: `1px solid ${priorityColor}30`,
           boxShadow: `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px ${priorityColor}20`,
         }}>

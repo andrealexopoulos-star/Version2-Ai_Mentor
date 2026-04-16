@@ -62,7 +62,7 @@ const ConstructionView = () => (
                 { claim: 'Claim #18 — Harbour City', amount: '$68,000', days: 12, status: 'current' },
                 { claim: 'Claim #19 — Meridian', amount: '$54,000', days: 8, status: 'current' },
               ].map(cl => (
-                <div key={cl.claim} className="flex items-center justify-between p-2.5 rounded" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
+                <div key={cl.claim} className="flex items-center justify-between p-2.5 rounded" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
                   <div>
                     <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: SORA }}>{cl.claim}</span>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>{cl.days} days outstanding</span>

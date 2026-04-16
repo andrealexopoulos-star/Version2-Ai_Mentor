@@ -26,7 +26,7 @@ const AgencyView = () => (
             ].map(c => {
               const rc = { high: '#E85D00', medium: '#F59E0B', low: '#10B981' };
               return (
-                <div key={c.client} className="flex items-center gap-3 p-2.5 rounded mb-2" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
+                <div key={c.client} className="flex items-center gap-3 p-2.5 rounded mb-2" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
                   <div className="w-2 h-2 rounded-full" style={{ background: rc[c.risk] }} />
                   <div className="flex-1">
                     <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: SORA }}>{c.client}</span>
@@ -56,7 +56,7 @@ const AgencyView = () => (
               { client: 'BluePeak — Brand Refresh', quoted: 60, actual: 78, impact: -3600 },
               { client: 'Metro — Monthly Content', quoted: 20, actual: 26, impact: -1200 },
             ].map(p => (
-              <div key={p.client} className="p-3 rounded-lg mb-2" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
+              <div key={p.client} className="p-3 rounded-lg mb-2" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
                 <div className="flex justify-between mb-1">
                   <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: SORA }}>{p.client}</span>
                   <span className="text-xs text-[#E85D00]" style={{ fontFamily: MONO }}>-${Math.abs(p.impact)}</span>

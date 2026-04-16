@@ -36,7 +36,7 @@ export const SourceProvenanceBadge = ({ source, signalType, timestamp, testId })
       </span>
       <span
         className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px]"
-        style={{ background: '#1E293B', borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+        style={{ background: '#1E293B', borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
         data-testid={`${testId}-signal`}
       >
         <RadioTower className="h-3 w-3" />
@@ -44,7 +44,7 @@ export const SourceProvenanceBadge = ({ source, signalType, timestamp, testId })
       </span>
       <span
         className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px]"
-        style={{ background: '#0F172A', borderColor: '#334155', color: '#94A3B8', fontFamily: fontFamily.mono }}
+        style={{ background: 'var(--surface-sunken, #F5F5F5)', borderColor: '#334155', color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}
         data-testid={`${testId}-time`}
       >
         <Clock3 className="h-3 w-3" />

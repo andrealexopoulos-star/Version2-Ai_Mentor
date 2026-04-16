@@ -6,7 +6,7 @@ const STATUS_STYLE = {
   active: { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.35)', color: '#10B981', label: 'Active' },
   foundation: { bg: 'rgba(232,93,0,0.15)', border: 'rgba(232,93,0,0.35)', color: '#E85D00', label: 'Foundation' },
   waitlist: { bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.35)', color: '#3B82F6', label: 'Waitlist' },
-  locked: { bg: 'rgba(100,116,139,0.16)', border: 'rgba(100,116,139,0.35)', color: '#94A3B8', label: 'Locked' },
+  locked: { bg: 'rgba(100,116,139,0.16)', border: 'rgba(100,116,139,0.35)', color: 'var(--ink-muted, #737373)', label: 'Locked' },
 };
 
 function UsageMeter({ usage }) {
@@ -15,10 +15,10 @@ function UsageMeter({ usage }) {
   return (
     <div className="mt-3">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+        <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>
           {usage.label || 'Usage'}
         </span>
-        <span className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
+        <span className="text-[10px]" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}>
           {usage.used}/{usage.limit}
         </span>
       </div>

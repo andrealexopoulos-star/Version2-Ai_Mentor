@@ -20,7 +20,7 @@ export default function BIQcLegalPage() {
     <DashboardLayout>
       <div className="mx-auto max-w-6xl space-y-8" data-testid="biqc-legal-page">
         <section className="rounded-[28px] border p-8" style={{ borderColor: 'var(--biqc-border)', background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(15,23,42,0.85))' }}>
-          <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>BIQc Legal</p>
+          <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>BIQc Legal</p>
           <h1 className="mt-3 text-4xl sm:text-5xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>One place for trust, privacy, and terms.</h1>
           <p className="mt-3 max-w-3xl text-sm sm:text-base" style={{ color: 'var(--biqc-text-2)' }}>
             All BIQc legal reading is consolidated here to reduce cognitive load. Switch tabs to review security, privacy, DPA, terms, and enterprise commitments.

@@ -66,7 +66,7 @@ const DecisionPatterns = () => {
         <div className="p-4 rounded-xl" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4" style={{ color: '#F59E0B' }} />
-            <span className="text-sm font-medium" style={{ color: '#FCD34D', fontFamily: fontFamily.body }}>
+            <span className="text-sm font-medium" style={{ color: 'var(--warning, #D97706)', fontFamily: fontFamily.body }}>
               {pendingReviews.length} decision{pendingReviews.length !== 1 ? 's' : ''} pending review
             </span>
           </div>

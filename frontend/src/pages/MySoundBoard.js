@@ -1096,7 +1096,7 @@ const MySoundBoard = () => {
                     style={{
                       padding: '6px 12px', borderRadius: 999, fontSize: 11, fontWeight: 600,
                       background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.35)',
-                      color: '#CBD5E1', fontFamily: fontFamily.mono, cursor: 'pointer',
+                      color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono, cursor: 'pointer',
                     }}
                   >
                     {showAdvancedControls ? 'Hide advanced' : 'Advanced'}
@@ -1121,7 +1121,7 @@ const MySoundBoard = () => {
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </button>
                       {showModeMenu && (
-                        <div style={{ position: 'absolute', bottom: '100%', left: 0, marginBottom: 8, width: 320, borderRadius: 12, overflow: 'hidden', background: '#0F1720', border: '1px solid #1E2D3D', zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+                        <div style={{ position: 'absolute', bottom: '100%', left: 0, marginBottom: 8, width: 320, borderRadius: 12, overflow: 'hidden', background: 'var(--surface, #FFFFFF)', border: '1px solid #1E2D3D', zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
                           {availableModes.map((mode, idx) => (
                             <button
                               key={mode.id}
@@ -1176,7 +1176,7 @@ const MySoundBoard = () => {
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </button>
                       {showAgentMenu && (
-                        <div style={{ position: 'absolute', bottom: '100%', left: 0, marginBottom: 8, width: 224, borderRadius: 12, overflow: 'hidden', background: '#0F1720', border: '1px solid #1E2D3D', zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+                        <div style={{ position: 'absolute', bottom: '100%', left: 0, marginBottom: 8, width: 224, borderRadius: 12, overflow: 'hidden', background: 'var(--surface, #FFFFFF)', border: '1px solid #1E2D3D', zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
                           <p style={{ padding: '6px 12px', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748B', fontFamily: fontFamily.mono, margin: 0 }}>Agent</p>
                           {BIQC_AGENTS.map((agent) => (
                             <button

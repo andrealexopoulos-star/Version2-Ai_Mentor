@@ -142,7 +142,7 @@ const MeetingPrepCard = () => {
                       {meeting.alerts.map((alert, ai) => (
                         <div key={ai} className="flex items-center gap-2 text-xs">
                           <AlertTriangle className="w-3 h-3" style={{ color: '#F59E0B' }} />
-                          <span style={{ color: '#FCD34D', fontFamily: fontFamily.body }}>{alert}</span>
+                          <span style={{ color: 'var(--warning, #D97706)', fontFamily: fontFamily.body }}>{alert}</span>
                         </div>
                       ))}
                     </div>

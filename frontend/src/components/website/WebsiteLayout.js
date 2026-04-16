@@ -130,7 +130,7 @@ const WebsiteLayout = ({ children }) => {
   }, []);
 
   return (
-    <div className="min-h-screen" style={{ background: '#0F1720', color: 'var(--ink-display, #EDF1F7)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--surface, #FFFFFF)', color: 'var(--ink-display, #EDF1F7)' }}>
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <WebsiteNav />
       <main id="main-content">{children}</main>
