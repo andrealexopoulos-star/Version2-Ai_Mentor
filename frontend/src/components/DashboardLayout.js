@@ -619,7 +619,7 @@ const DashboardLayout = ({ children }) => {
                       style={{
                         fontFamily: fontFamily.body,
                         color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
-                        background: sectionActive ? 'var(--surface-sunken) : 'transparent',
+                        background: sectionActive ? 'var(--surface-sunken)' : 'transparent',
                         borderLeft: sectionActive ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                       }}
                       data-testid={`nav-section-${section.id}`}
@@ -704,7 +704,7 @@ const DashboardLayout = ({ children }) => {
               className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all hover:bg-white/5"
               style={{
                 color: isActive('/biqc-legal') ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
-                background: isActive('/biqc-legal') ? 'var(--surface-sunken) : 'transparent',
+                background: isActive('/biqc-legal') ? 'var(--surface-sunken)' : 'transparent',
                 borderLeft: isActive('/biqc-legal') ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                 fontFamily: fontFamily.body,
               }}
