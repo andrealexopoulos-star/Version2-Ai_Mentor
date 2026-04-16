@@ -376,7 +376,7 @@ const DashboardLayout = ({ children }) => {
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: `var(--biqc-bg, ${colors.bg})`, color: `var(--biqc-text, ${colors.text})` }}>
       {/* ═══ TOP BAR ═══ */}
-      <header className="fixed top-0 left-0 right-0 h-[60px] px-4 lg:px-6 flex items-center justify-between" style={{ background: 'var(--biqc-sidebar-bg, #0A1018)', backdropFilter: 'saturate(180%) blur(16px)', WebkitBackdropFilter: 'saturate(180%) blur(16px)', borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
+      <header className="fixed top-0 left-0 right-0 h-[60px] px-4 lg:px-6 flex items-center justify-between" style={{ background: 'var(--biqc-sidebar-bg, ), backdropFilter: 'saturate(180%) blur(16px)', WebkitBackdropFilter: 'saturate(180%) blur(16px)', borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
         <div className="flex items-center gap-3">
           <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
             {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -558,12 +558,12 @@ const DashboardLayout = ({ children }) => {
 
       {/* ═══ SIDEBAR ═══ */}
       <aside className={`fixed left-0 transition-all duration-300 ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-[60px] h-[calc(100vh-60px)]`}
-        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, linear-gradient(180deg, #0B1120 0%, #FAFAFA 100%))', borderRight: '1px solid rgba(140,170,210,0.08)', width: `${activeSidebarWidth}px` }}
+        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, var(--surface))', borderRight: '1px solid rgba(140,170,210,0.08)', width: `${activeSidebarWidth}px` }}
         role="navigation" aria-label="Main navigation">
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="hidden lg:flex absolute -right-3 top-6 w-6 h-6 rounded-full items-center justify-center hover:bg-white/10 transition-colors"
-          style={{ background: 'var(--biqc-bg-card, #0E1628)', border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}
+          style={{ background: 'var(--biqc-bg-card, ), border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           {sidebarCollapsed ? <ChevronRight className="w-4 h-4" style={{ color: 'var(--biqc-text-muted)' }} /> : <ChevronRight className="w-4 h-4 rotate-180" style={{ color: 'var(--biqc-text-muted)' }} />}
         </button>
@@ -619,7 +619,7 @@ const DashboardLayout = ({ children }) => {
                       style={{
                         fontFamily: fontFamily.body,
                         color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
-                        background: sectionActive ? 'var(--surface-sunken, #060A12)' : 'transparent',
+                        background: sectionActive ? 'var(--surface-sunken, ) : 'transparent',
                         borderLeft: sectionActive ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                       }}
                       data-testid={`nav-section-${section.id}`}
@@ -704,7 +704,7 @@ const DashboardLayout = ({ children }) => {
               className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all hover:bg-white/5"
               style={{
                 color: isActive('/biqc-legal') ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
-                background: isActive('/biqc-legal') ? 'var(--surface-sunken, #060A12)' : 'transparent',
+                background: isActive('/biqc-legal') ? 'var(--surface-sunken, ) : 'transparent',
                 borderLeft: isActive('/biqc-legal') ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                 fontFamily: fontFamily.body,
               }}
