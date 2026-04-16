@@ -926,7 +926,7 @@ input[type="password"]::placeholder {
 [data-theme="dark"] [role="listbox"] { background: hsl(222, 47%, 8%) !important; }
 
 /* Light mode: Shadcn components use their default light styling — no overrides needed */
-[role="menu"] { background: hsl(222, 47%, 8%) !important; }
+[data-theme="dark"] [role="menu"] { background: hsl(222, 47%, 8%) !important; }
 
 /* ==================== MOBILE RESPONSIVE STYLES ==================== */
 
