@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en-AU" data-theme="dark">
+<html lang="en-AU" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="shortcut icon" href="%PUBLIC_URL%/logo192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0F1720" />
+    <meta name="theme-color" content="#FFFFFF" />
     <!-- Inline theme boot — runs before React mounts to prevent a flash of the
          wrong theme. Reads the persisted value set by ThemeContext; falls back
          to prefers-color-scheme; defaults to dark to match historical UX. -->
@@ -17,14 +17,14 @@
           var theme = stored;
           if (theme !== 'light' && theme !== 'dark') {
             var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-            theme = prefersLight ? 'light' : 'dark';
+            theme = prefersLight ? 'light' : 'light';
           }
           document.documentElement.setAttribute('data-theme', theme);
           // Keep the browser chrome in sync with the active theme.
           var meta = document.querySelector('meta[name="theme-color"]');
           if (meta) meta.setAttribute('content', theme === 'light' ? '#FFFFFF' : '#0F1720');
         } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.setAttribute('data-theme', 'light');
         }
       })();
     </script>

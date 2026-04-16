@@ -377,7 +377,7 @@ const MarketPage = () => {
                 <span style={{ fontFamily: 'var(--font-display)', fontSize: 64, lineHeight: 1, color: 'var(--ink-display)', letterSpacing: '-0.04em' }}>{confidence || '—'}</span>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', marginTop: 4 }}>Position Score</span>
                 <span style={{ fontSize: 13, color: 'var(--lava)', fontWeight: 600, marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  {stateStatus === 'STABLE' ? '↑ Holding' : stateStatus === 'DRIFT' ? '↗ Drifting' : '↓ Declining'}
+                  {stateStatus === 'STABLE' ? '↑ Holding' : stateStatus === 'DRIFT' ? '↗ Drifting' : stateStatus === 'COMPRESSION' ? '↘ Under Pressure' : stateStatus === 'CRITICAL' ? '↓ At Risk' : '— Calibrating'}
                 </span>
               </div>
             </div>
