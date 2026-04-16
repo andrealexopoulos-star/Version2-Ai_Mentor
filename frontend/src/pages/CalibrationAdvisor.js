@@ -35,8 +35,16 @@ const CalibrationAdvisor = () => {
   const [redirecting, setRedirecting] = useState(false);
 
   // Early bail-out: if calibration is already complete, redirect immediately
-  // without mounting any heavy child components that can crash
+  // without mounting any heavy child components that can crash.
+  // BUT: skip redirect if returning from OAuth (step=integration_connect)
+  // so the email connection can be resumed.
   useEffect(() => {
+    const step = searchParams.get('step');
+    const isOAuthReturn = step === 'integration_connect'
+      || searchParams.get('outlook_connected')
+      || searchParams.get('gmail_connected');
+    if (isOAuthReturn) return; // Let the OAuth handler below process first
+
     let cancelled = false;
     apiClient.get('/calibration/status').then(res => {
       if (!cancelled && res.data?.status === 'COMPLETE') {
