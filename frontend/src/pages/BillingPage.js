@@ -160,16 +160,16 @@ const BillingPage = () => {
         {fetchError && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-            background: 'var(--lava-wash)', border: '1px solid var(--border)',
+            background: 'var(--danger-wash)', border: '1px solid var(--danger)',
             borderRadius: 12, marginBottom: 16,
             fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-secondary)',
           }}>
-            <span style={{ color: 'var(--lava)' }}>{'\u26A0'}</span>
+            <span style={{ color: 'var(--danger)' }}>{'\u26A0'}</span>
             <span style={{ flex: 1 }}>{fetchError}</span>
             <button
               onClick={() => { setFetchError(null); load(); }}
               style={{
-                background: 'var(--lava)', color: 'white', border: 'none',
+                background: 'var(--danger)', color: 'var(--ink-inverse)', border: 'none',
                 padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
               }}
             >Retry</button>
@@ -247,8 +247,8 @@ const BillingPage = () => {
               {!isHighestPlan && (
                 <button
                   onClick={() => navigate('/upgrade')}
-                  className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:shadow-lg whitespace-nowrap"
-                  style={{ background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))' }}
+                  className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:shadow-lg whitespace-nowrap"
+                  style={{ background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))', color: 'var(--ink-inverse)' }}
                 >
                   Upgrade to Pro — $199/mo
                 </button>
@@ -455,7 +455,7 @@ const BillingPage = () => {
                   };
                   const sStyle = statusStyles[status] || statusStyles.paid;
                   return (
-                    <tr key={row.session_id || `${row.created_at}-${row.amount}-${i}`} className="hover:bg-white/[0.02]">
+                    <tr key={row.session_id || `${row.created_at}-${row.amount}-${i}`} className="hover:bg-[var(--surface-tint)]">
                       <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-secondary)', borderBottom: '1px solid var(--border)' }}>
                         {row.created_at || ''}
                       </td>
@@ -499,7 +499,7 @@ const BillingPage = () => {
           <div className="rounded-2xl p-8 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--surface), var(--surface-2))' }}>
             <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 120%, var(--lava-wash), transparent 60%)' }} />
             <div className="relative z-10">
-              <h2 className="text-[28px] font-semibold text-white mb-2" style={{ fontFamily: 'var(--font-display)' }}>
+              <h2 className="text-[28px] font-semibold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
                 Unlock the full power of BIQc
               </h2>
               <p className="text-sm mb-5 mx-auto max-w-[480px] leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
@@ -507,8 +507,8 @@ const BillingPage = () => {
               </p>
               <button
                 onClick={() => navigate('/upgrade')}
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-md text-base font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5"
-                style={{ background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))' }}
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-md text-base font-semibold transition-all hover:shadow-lg hover:-translate-y-0.5"
+                style={{ background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))', color: 'var(--ink-inverse)' }}
               >
                 <Zap className="w-[18px] h-[18px]" />
                 Upgrade to Pro — $199/mo

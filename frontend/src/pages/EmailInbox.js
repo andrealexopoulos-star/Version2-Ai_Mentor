@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
-import { fontFamily } from '../design-system/tokens';
 
 const EmailInbox = () => {
   const navigate = useNavigate();
@@ -391,9 +390,9 @@ const EmailInbox = () => {
 
   const PriorityBadge = ({ level }) => {
     const styles = {
-      high: { bg: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', icon: AlertCircle },
-      medium: { bg: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', icon: Clock },
-      low: { bg: 'rgba(34, 197, 94, 0.1)', color: '#10B981', icon: CheckCircle2 }
+      high: { bg: 'var(--danger-wash)', color: 'var(--danger)', icon: AlertCircle },
+      medium: { bg: 'var(--warning-wash)', color: 'var(--warning)', icon: Clock },
+      low: { bg: 'var(--positive-wash)', color: 'var(--positive)', icon: CheckCircle2 }
     };
     const style = styles[level] || styles.medium;
     const Icon = style.icon;
@@ -421,12 +420,12 @@ const EmailInbox = () => {
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
         <div 
           className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
-          style={{ background: 'var(--bg-primary)' }}
+          style={{ background: 'var(--surface)' }}
         >
-          <div className="sticky top-0 p-6 border-b" style={{ background: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
+          <div className="sticky top-0 p-6 border-b" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--ink-display)' }}>
                   {hasNewFormat ? 'BIQc Suggested Reply' : 'AI Reply Suggestions'}
                 </h2>
                 {replySuggestions.priority_level && (
@@ -434,27 +433,27 @@ const EmailInbox = () => {
                     className="inline-block px-2 py-0.5 rounded text-xs font-medium mb-2"
                     style={{
                       background: replySuggestions.priority_level === 'high'
-                        ? 'rgba(239,68,68,0.18)'
+                        ? 'var(--danger-wash)'
                         : replySuggestions.priority_level === 'medium'
-                          ? 'rgba(245,158,11,0.18)'
-                          : 'rgba(16,185,129,0.18)',
+                          ? 'var(--warning-wash)'
+                          : 'var(--positive-wash)',
                       color: replySuggestions.priority_level === 'high'
-                        ? '#F87171'
+                        ? 'var(--danger)'
                         : replySuggestions.priority_level === 'medium'
-                          ? '#FBBF24'
-                          : '#34D399',
+                          ? 'var(--warning)'
+                          : 'var(--positive)',
                     }}
                   >
                     {replySuggestions.priority_level.toUpperCase()} PRIORITY
                   </span>
                 )}
                 {replySuggestions.original_subject && (
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
                     Re: {replySuggestions.original_subject}
                   </p>
                 )}
                 {replySuggestions.from && (
-                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>
                     From: {replySuggestions.from}
                   </p>
                 )}
@@ -465,9 +464,9 @@ const EmailInbox = () => {
                   setSelectedEmail(null);
                 }}
                 className="p-2 rounded-lg"
-                style={{ background: 'transparent', border: '1px solid rgba(148,163,184,0.24)' }}
+                style={{ background: 'transparent', border: '1px solid var(--border)' }}
               >
-                <X className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
+                <X className="w-5 h-5" style={{ color: 'var(--ink-muted)' }} />
               </button>
             </div>
           </div>
@@ -480,13 +479,13 @@ const EmailInbox = () => {
                 {replySuggestions.advisor_rationale && (
                   <div 
                     className="p-4 rounded-xl"
-                    style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
+                    style={{ background: 'var(--info-wash)', border: '1px solid var(--info)' }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium text-blue-600">BIQc Advisor Rationale</span>
+                      <TrendingUp className="w-4 h-4" style={{ color: 'var(--info)' }} />
+                      <span className="font-medium" style={{ color: 'var(--info)' }}>BIQc Advisor Rationale</span>
                     </div>
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>
                       {replySuggestions.advisor_rationale}
                     </p>
                   </div>
@@ -500,7 +499,7 @@ const EmailInbox = () => {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-yellow-500" />
-                      <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      <span className="font-semibold" style={{ color: 'var(--ink-display)' }}>
                         Suggested Reply
                       </span>
                     </div>
@@ -526,7 +525,7 @@ const EmailInbox = () => {
                         size="sm"
                         onClick={sendRecommendedReply}
                         disabled={sendingReply}
-                        style={{ background: '#16A34A', color: 'white' }}
+                        style={{ background: 'var(--positive)', color: 'var(--ink-inverse)' }}
                       >
                         <Send className="w-3 h-3 mr-1" />
                         {sendingReply ? 'Preparing…' : 'Send via Mailbox'}
@@ -536,7 +535,7 @@ const EmailInbox = () => {
                   
                   <div 
                     className="p-4 rounded-lg whitespace-pre-wrap text-sm"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                    style={{ background: 'var(--surface-sunken)', color: 'var(--ink)' }}
                   >
                     {replySuggestions.suggested_reply || 'No reply generated'}
                   </div>
@@ -550,13 +549,13 @@ const EmailInbox = () => {
                 {replySuggestions.context_insight && (
                   <div 
                     className="p-4 rounded-xl"
-                    style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
+                    style={{ background: 'var(--info-wash)', border: '1px solid var(--info)' }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium text-blue-600">Strategic Insight</span>
+                      <TrendingUp className="w-4 h-4" style={{ color: 'var(--info)' }} />
+                      <span className="font-medium" style={{ color: 'var(--info)' }}>Strategic Insight</span>
                     </div>
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>
                       {replySuggestions.context_insight}
                     </p>
                   </div>
@@ -573,7 +572,7 @@ const EmailInbox = () => {
                         {reply.style === 'direct' && <Zap className="w-4 h-4 text-yellow-500" />}
                         {reply.style === 'relationship' && <User className="w-4 h-4 text-pink-500" />}
                         {reply.style === 'strategic' && <Target className="w-4 h-4 text-purple-500" />}
-                        <span className="font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>
+                        <span className="font-semibold capitalize" style={{ color: 'var(--ink-display)' }}>
                           {reply.style === 'direct' ? 'Direct & Efficient' : 
                            reply.style === 'relationship' ? 'Relationship-Building' : 
                            'Strategic Positioning'}
@@ -590,20 +589,20 @@ const EmailInbox = () => {
                     </div>
                     
                     {reply.subject && reply.subject !== `Re: ${replySuggestions.original_subject}` && (
-                      <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+                      <p className="text-sm mb-2" style={{ color: 'var(--ink-muted)' }}>
                         <span className="font-medium">Subject:</span> {reply.subject}
                       </p>
                     )}
                     
                     <div 
                       className="p-4 rounded-lg mb-3 whitespace-pre-wrap text-sm"
-                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                      style={{ background: 'var(--surface-sunken)', color: 'var(--ink)' }}
                     >
                       {reply.body}
                     </div>
                     
                     {reply.strategic_note && (
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
                         <span className="font-medium">Why this works:</span> {reply.strategic_note}
                       </p>
                     )}
@@ -614,7 +613,7 @@ const EmailInbox = () => {
             
             {/* Fallback if no content */}
             {!hasNewFormat && !replySuggestions.replies?.length && (
-              <div className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-center py-8" style={{ color: 'var(--ink-muted)' }}>
                 No reply suggestions available
               </div>
             )}
@@ -762,7 +761,7 @@ const EmailInbox = () => {
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', marginTop: 16, marginBottom: 8 }}>Smart Folders</div>
               {['high', 'medium', 'low'].map(level => {
                 const count = priorityAnalysis?.[`${level}_priority`]?.length || 0;
-                const colors = { high: '#EF4444', medium: '#F59E0B', low: '#10B981' };
+                const colors = { high: 'var(--danger)', medium: 'var(--warning)', low: 'var(--positive)' };
                 return (
                   <div
                     key={level}
@@ -834,7 +833,7 @@ const EmailInbox = () => {
                       <div style={{ fontSize: 12, fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)', marginTop: 3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.4 }}>{msg.snippet || msg.reason || ''}</div>
                       {msg.priority_level && (
                         <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-                          <span style={{ padding: '2px 8px', borderRadius: 100, fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', fontWeight: 600, background: msg.priority_level === 'high' ? 'rgba(220,38,38,0.1)' : msg.priority_level === 'medium' ? 'rgba(245,158,11,0.1)' : 'rgba(22,163,74,0.1)', color: msg.priority_level === 'high' ? '#DC2626' : msg.priority_level === 'medium' ? '#D97706' : '#16A34A' }}>{msg.priority_level}</span>
+                          <span style={{ padding: '2px 8px', borderRadius: 100, fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', fontWeight: 600, background: msg.priority_level === 'high' ? 'var(--danger-wash)' : msg.priority_level === 'medium' ? 'var(--warning-wash)' : 'var(--positive-wash)', color: msg.priority_level === 'high' ? 'var(--danger)' : msg.priority_level === 'medium' ? 'var(--warning)' : 'var(--positive)' }}>{msg.priority_level}</span>
                         </div>
                       )}
                     </div>
@@ -854,7 +853,7 @@ const EmailInbox = () => {
                     </h2>
                     {/* From row */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF8A3D))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF8A3D))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-inverse)', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
                         {(selectedEmailData.from || 'U')[0].toUpperCase()}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -883,7 +882,7 @@ const EmailInbox = () => {
                       </Button>
                       {/* Reclassify dropdown-style buttons */}
                       {['high', 'medium', 'low'].filter(l => l !== (selectedEmailData.user_override || selectedEmailData.priority_level)).map(l => {
-                        const clr = l === 'high' ? '#EF4444' : l === 'medium' ? '#F59E0B' : '#10B981';
+                        const clr = l === 'high' ? 'var(--danger)' : l === 'medium' ? 'var(--warning)' : 'var(--positive)';
                         return (
                           <Button key={l} size="sm" variant="outline" disabled={reclassifying === selectedEmailData.email_id} onClick={() => reclassifyEmail(selectedEmailData.email_id, l)} style={{ fontSize: 11 }}>
                             {reclassifying === selectedEmailData.email_id ? '...' : <><span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: clr, marginRight: 4 }} />{l.charAt(0).toUpperCase() + l.slice(1)}</>}
@@ -948,10 +947,10 @@ const EmailInbox = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div
             className="p-8 rounded-2xl text-center"
-            style={{ background: 'var(--bg-primary)' }}
+            style={{ background: 'var(--surface)' }}
           >
             <PageLoadingState message="Generating smart replies..." compact />
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--ink-muted)' }}>
               Analyzing context and crafting responses
             </p>
           </div>

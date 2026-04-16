@@ -20,35 +20,35 @@ const focusAreas = [
     id: 'growth',
     title: 'Growth & Strategy',
     icon: TrendingUp,
-    color: '#0066FF',
+    color: 'var(--info)',
     description: 'Scale your business, find new opportunities'
   },
   {
     id: 'operations',
     title: 'Operations',
     icon: Zap,
-    color: '#00C853',
+    color: 'var(--positive)',
     description: 'Improve efficiency, streamline processes'
   },
   {
     id: 'financial',
     title: 'Financial',
     icon: DollarSign,
-    color: '#FF9500',
+    color: 'var(--warning)',
     description: 'Cash flow, pricing, profitability'
   },
   {
     id: 'marketing',
     title: 'Marketing & Sales',
     icon: Target,
-    color: '#7C3AED',
+    color: 'var(--lava)',
     description: 'Win clients, improve conversion'
   },
   {
     id: 'team',
     title: 'Team & Leadership',
     icon: Users,
-    color: '#EC4899',
+    color: 'var(--ink-secondary)',
     description: 'Hiring, culture, delegation'
   }
 ];
@@ -702,11 +702,11 @@ const Advisor = () => {
           <div className="flex flex-col gap-5">
 
             {/* ── Morning Brief Card (matches approved mockup) ── */}
-            <div className="relative overflow-hidden" style={{ padding: 'var(--sp-7)', background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--r-xl)' }}>
+            <div className="relative overflow-hidden" style={{ padding: 'var(--sp-7)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)' }}>
               {/* Animated orb */}
               <style>{`
                 @keyframes orbDrift { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(40px, 30px); } }
-                @keyframes briefPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232,93,0,0.8); } 50% { box-shadow: 0 0 0 8px rgba(232,93,0,0); } }
+                @keyframes briefPulse { 0%, 100% { box-shadow: 0 0 0 0 var(--lava-ring); } 50% { box-shadow: 0 0 0 8px transparent; } }
               `}</style>
               <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: 'radial-gradient(circle, var(--lava) 0%, transparent 60%)', opacity: 0.25, filter: 'blur(60px)', animation: 'orbDrift 20s ease-in-out infinite' }} />
               <div style={{ position: 'relative', zIndex: 1 }}>
@@ -716,9 +716,9 @@ const Advisor = () => {
                 </div>
                 {advisorLoading ? (
                   <>
-                    <div className="mt-3 h-10 w-3/4 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.08)' }} />
-                    <div className="mt-4 h-4 w-full rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                    <div className="mt-2 h-4 w-2/3 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                    <div className="mt-3 h-10 w-3/4 rounded animate-pulse" style={{ background: 'var(--surface-2)' }} />
+                    <div className="mt-4 h-4 w-full rounded animate-pulse" style={{ background: 'var(--surface-2)' }} />
+                    <div className="mt-2 h-4 w-2/3 rounded animate-pulse" style={{ background: 'var(--surface-2)' }} />
                   </>
                 ) : (() => {
                   const memo = snapshotData?.cognitive?.executive_memo || snapshotData?.snapshot?.executive_memo;
@@ -731,10 +731,10 @@ const Advisor = () => {
                   if (!hasAnyData) {
                     return (
                       <>
-                        <h2 className="mt-3" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 'var(--lh-display)', letterSpacing: '-0.025em', color: 'white' }}>
+                        <h2 className="mt-3" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 'var(--lh-display)', letterSpacing: '-0.025em', color: 'var(--ink-display)' }}>
                           Start getting <em style={{ color: 'var(--lava-warm)', fontStyle: 'italic' }}>intelligence</em>.
                         </h2>
-                        <p className="mt-4 leading-relaxed" style={{ color: 'var(--ink-secondary, #525252)', fontSize: 'var(--size-sm)' }}>
+                        <p className="mt-4 leading-relaxed" style={{ color: 'var(--ink-secondary)', fontSize: 'var(--size-sm)' }}>
                           Ask BIQc any question about your business right now — strategy, pricing, hiring, cash flow.
                           Connect your inbox and CRM to turn on live brief updates and real-time signals.
                         </p>
@@ -752,7 +752,7 @@ const Advisor = () => {
                             type="button"
                             onClick={() => navigate('/integrations')}
                             className="inline-flex items-center gap-2 text-sm font-medium"
-                            style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)' }}
+                            style={{ padding: '10px 16px', background: 'var(--surface-sunken)', color: 'var(--ink-display)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)' }}
                             data-testid="advisor-empty-connect"
                           >
                             Connect integrations
@@ -765,24 +765,24 @@ const Advisor = () => {
                   const headlineEmphasis = urgentCount > 0 ? 'act on' : 'for now';
                   return (
                     <>
-                      <h2 className="mt-3" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 'var(--lh-display)', letterSpacing: '-0.025em', color: 'white' }}>
+                      <h2 className="mt-3" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 'var(--lh-display)', letterSpacing: '-0.025em', color: 'var(--ink-display)' }}>
                         {headline} <em style={{ color: 'var(--lava-warm)', fontStyle: 'italic' }}>{headlineEmphasis}</em>.
                       </h2>
-                      <p className="mt-4 leading-relaxed" style={{ color: 'var(--ink-secondary, #525252)', fontSize: 'var(--size-sm)' }}>
+                      <p className="mt-4 leading-relaxed" style={{ color: 'var(--ink-secondary)', fontSize: 'var(--size-sm)' }}>
                         {memo || (decideNow?.signal_summary) || 'Your intelligence brief is being assembled.'}
                       </p>
-                      <div className="grid grid-cols-3 mt-6 pt-5" style={{ gap: 'var(--sp-4)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div className="grid grid-cols-3 mt-6 pt-5" style={{ gap: 'var(--sp-4)', borderTop: '1px solid var(--border)' }}>
                         <div>
-                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: urgentCount > 0 ? 'var(--lava)' : 'white', lineHeight: 1 }}>{urgentCount}</div>
-                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted, #737373)', letterSpacing: 'var(--ls-caps)' }}>Need attention</div>
+                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: urgentCount > 0 ? 'var(--lava)' : 'var(--ink-display)', lineHeight: 1 }}>{urgentCount}</div>
+                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}>Need attention</div>
                         </div>
                         <div>
-                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'white', lineHeight: 1 }}>{totalOverdue > 0 ? `$${Math.round(totalOverdue / 1000)}k` : '\u2014'}</div>
-                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted, #737373)', letterSpacing: 'var(--ls-caps)' }}>At risk</div>
+                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'var(--ink-display)', lineHeight: 1 }}>{totalOverdue > 0 ? `$${Math.round(totalOverdue / 1000)}k` : '\u2014'}</div>
+                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}>At risk</div>
                         </div>
                         <div>
-                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'white', lineHeight: 1 }}>{stalledDeals > 0 ? stalledDeals : overdueInvoices > 0 ? overdueInvoices : '\u2014'}</div>
-                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted, #737373)', letterSpacing: 'var(--ls-caps)' }}>{stalledDeals > 0 ? 'Stalled deals' : overdueInvoices > 0 ? 'Overdue' : 'Signals'}</div>
+                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'var(--ink-display)', lineHeight: 1 }}>{stalledDeals > 0 ? stalledDeals : overdueInvoices > 0 ? overdueInvoices : '\u2014'}</div>
+                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}>{stalledDeals > 0 ? 'Stalled deals' : overdueInvoices > 0 ? 'Overdue' : 'Signals'}</div>
                         </div>
                       </div>
                     </>
@@ -792,7 +792,7 @@ const Advisor = () => {
                   onClick={() => navigate('/soundboard')}
                   className="mt-6 inline-flex items-center gap-2 font-semibold transition-all"
                   style={{ padding: '12px 18px', background: 'var(--lava)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)', fontSize: 'var(--size-sm)', fontWeight: 'var(--fw-semi)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--lava-warm)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(232,93,0,0.3)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--lava-warm)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--elev-2)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--lava)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   Open the brief <ArrowRight className="w-4 h-4" />

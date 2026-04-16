@@ -668,7 +668,7 @@ const Settings = () => {
                             checked={!!notifications[key]}
                             onCheckedChange={() => toggleNotification(key)}
                             disabled={notifSaving}
-                            className="data-[state=checked]:bg-[#E85D00]"
+                            className="data-[state=checked]:bg-[var(--lava)]"
                           />
                         </div>
                       ))}
