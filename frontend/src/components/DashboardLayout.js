@@ -563,7 +563,7 @@ const DashboardLayout = ({ children }) => {
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="hidden lg:flex absolute -right-3 top-6 w-6 h-6 rounded-full items-center justify-center hover:bg-white/10 transition-colors"
-          style={{ background: 'var(--biqc-bg-card), border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}
+          style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           {sidebarCollapsed ? <ChevronRight className="w-4 h-4" style={{ color: 'var(--biqc-text-muted)' }} /> : <ChevronRight className="w-4 h-4 rotate-180" style={{ color: 'var(--biqc-text-muted)' }} />}
         </button>
