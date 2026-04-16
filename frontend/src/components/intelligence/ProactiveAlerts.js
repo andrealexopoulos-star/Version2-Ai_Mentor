@@ -72,7 +72,7 @@ const ProactiveAlerts = ({ userId }) => {
         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(34, 197, 94, 0.15)' }}>
           <Lightbulb className="w-4 h-4" style={{ color: '#22C55E' }} />
         </div>
-        <span className="text-sm" style={{ fontFamily: fontFamily.body, color: '#86EFAC' }}>
+        <span className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--positive, #16A34A)' }}>
           No proactive alerts — your business signals are stable
         </span>
       </div>
