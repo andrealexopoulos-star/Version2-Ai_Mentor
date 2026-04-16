@@ -670,13 +670,13 @@ export default function CompetitiveBenchmarkPage() {
                       />
                     </div>
                     <Button onClick={() => analyzeCompetitor(input, idx)} disabled={!input.trim() || analyzingCompetitor === idx}
-                      className="gap-1.5 text-xs px-3" style={{ background: 'var(--lava)', color: 'white', border: 'none', borderRadius: 'var(--r-md, 8px)' }}
+                      className="gap-1.5 text-xs px-3" style={{ background: 'var(--lava)', color: 'var(--ink-inverse)', border: 'none', borderRadius: 'var(--r-md, 8px)' }}
                       data-testid={`analyze-competitor-${idx}`}>
                       {analyzingCompetitor === idx ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
                       {analyzingCompetitor === idx ? 'Scanning…' : 'Analyse'}
                     </Button>
                     {competitorInputs.length > 1 && (
-                      <button onClick={() => removeCompetitorInput(idx)} className="p-1.5 rounded hover:bg-black/5" style={{ color: 'var(--ink-muted)' }}>
+                      <button onClick={() => removeCompetitorInput(idx)} className="p-1.5 rounded hover:bg-[var(--surface-tint)]" style={{ color: 'var(--ink-muted)' }}>
                         <X className="w-3.5 h-3.5" />
                       </button>
                     )}

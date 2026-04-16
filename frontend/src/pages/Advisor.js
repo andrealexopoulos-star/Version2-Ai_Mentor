@@ -580,7 +580,7 @@ const Advisor = () => {
             <button
               onClick={() => navigate('/alerts')}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={{ background: 'var(--lava)', color: 'white', fontFamily: 'var(--font-ui)', border: 'none', cursor: 'pointer' }}
+              style={{ background: 'var(--lava)', color: 'var(--ink-inverse)', fontFamily: 'var(--font-ui)', border: 'none', cursor: 'pointer' }}
             >
               Open Alert Centre <ArrowRight className="w-4 h-4" />
             </button>
@@ -645,7 +645,7 @@ const Advisor = () => {
                       borderRadius: 'var(--r-pill)',
                       letterSpacing: 'var(--ls-caps)',
                       background: signalFilter === f.toLowerCase() ? 'var(--lava)' : 'var(--surface-sunken)',
-                      color: signalFilter === f.toLowerCase() ? 'white' : 'var(--ink-secondary)',
+                      color: signalFilter === f.toLowerCase() ? 'var(--ink-inverse)' : 'var(--ink-secondary)',
                       border: `1px solid ${signalFilter === f.toLowerCase() ? 'var(--lava)' : 'var(--border)'}`,
                       cursor: 'pointer',
                     }}
@@ -690,7 +690,7 @@ const Advisor = () => {
                   <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)' }} />
                   <p className="text-sm font-medium" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>No signals yet</p>
                   <p className="text-xs mt-1" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Connect your inbox and CRM to start surfacing business intelligence.</p>
-                  <button onClick={() => navigate('/connect-email')} className="mt-4 px-4 py-2 text-sm font-semibold" style={{ background: 'var(--lava)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)' }}>
+                  <button onClick={() => navigate('/connect-email')} className="mt-4 px-4 py-2 text-sm font-semibold" style={{ background: 'var(--lava)', color: 'var(--ink-inverse)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)' }}>
                     Connect inbox <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
                   </button>
                 </div>
@@ -743,7 +743,7 @@ const Advisor = () => {
                             type="button"
                             onClick={() => navigate('/soundboard')}
                             className="inline-flex items-center gap-2 text-sm font-semibold"
-                            style={{ padding: '10px 16px', background: 'var(--lava)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)' }}
+                            style={{ padding: '10px 16px', background: 'var(--lava)', color: 'var(--ink-inverse)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)' }}
                             data-testid="advisor-empty-ask-biqc"
                           >
                             Ask BIQc now <ArrowRight className="w-3.5 h-3.5" />
@@ -791,7 +791,7 @@ const Advisor = () => {
                 <button
                   onClick={() => navigate('/soundboard')}
                   className="mt-6 inline-flex items-center gap-2 font-semibold transition-all"
-                  style={{ padding: '12px 18px', background: 'var(--lava)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)', fontSize: 'var(--size-sm)', fontWeight: 'var(--fw-semi)' }}
+                  style={{ padding: '12px 18px', background: 'var(--lava)', color: 'var(--ink-inverse)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)', fontSize: 'var(--size-sm)', fontWeight: 'var(--fw-semi)' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--lava-warm)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--elev-2)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--lava)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
