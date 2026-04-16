@@ -32,8 +32,35 @@ const CalibrationAdvisor = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [skipping, setSkipping] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+
+  // Early bail-out: if calibration is already complete, redirect immediately
+  // without mounting any heavy child components that can crash
+  useEffect(() => {
+    let cancelled = false;
+    apiClient.get('/calibration/status').then(res => {
+      if (!cancelled && res.data?.status === 'COMPLETE') {
+        setRedirecting(true);
+        try { clearBootstrapCache(); } catch {}
+        navigate('/market', { replace: true });
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
+
+  // If we're redirecting, render a minimal loading state — no heavy components
+  if (redirecting) {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }}>
+        <div className="text-center">
+          <div className="w-10 h-10 rounded-full mx-auto mb-3" style={{ background: '#FF6A00', animation: 'pulse 1.5s infinite' }} />
+          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Redirecting to your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Handle OAuth return from email connect — resume at integration_connect step
   // Must fire regardless of current cal.entry to prevent loop after OAuth redirect
