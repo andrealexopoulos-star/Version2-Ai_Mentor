@@ -88,7 +88,7 @@ const WelcomeStep = ({ firstName, onConnect, onSkip }) => (
     </div>
 
     {/* Security */}
-    <div className="rounded-xl p-4" style={{ background: '#0A1018', border: '1px solid #1E2D3D' }}>
+    <div className="rounded-xl p-4" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid #1E2D3D' }}>
       <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Your Data Security</p>
       <div className="grid grid-cols-2 gap-2">
         {SECURITY_POINTS.map((pt, i) => (
@@ -378,7 +378,7 @@ const AllDoneStep = ({ connectedList, onFinish }) => (
     </div>
 
     {connectedList.length > 0 && (
-      <div className="rounded-xl p-4" style={{ background: '#0A1018', border: '1px solid #1E2D3D' }}>
+      <div className="rounded-xl p-4" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid #1E2D3D' }}>
         <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Connected Systems</p>
         <div className="flex flex-wrap gap-2 justify-center">
           {connectedList.map(c => (
@@ -436,7 +436,7 @@ const WelcomeBackStep = ({ firstName, connectedCount, connectedNames, onConnectM
       ))}
     </div>
 
-    <div className="rounded-xl p-4" style={{ background: '#0A1018', border: '1px solid #1E2D3D' }}>
+    <div className="rounded-xl p-4" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid #1E2D3D' }}>
       <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Your data security</p>
       <div className="grid grid-cols-2 gap-2">
         {[

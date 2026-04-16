@@ -34,7 +34,7 @@ const LogoCard = ({ name }) => (
 );
 
 export const IntegrationCarousel = () => (
-  <section className="py-14 sm:py-20 overflow-hidden" style={{ background: '#0B1120' }} data-testid="integration-carousel">
+  <section className="py-14 sm:py-20 overflow-hidden" style={{ background: 'var(--canvas-app, #FAFAFA)' }} data-testid="integration-carousel">
     <div className="max-w-5xl mx-auto px-6 mb-12 text-center">
       <span className="font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#E85D00', fontSize: '12px' }}>
         500+ Integrations

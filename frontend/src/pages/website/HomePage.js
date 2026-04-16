@@ -308,7 +308,7 @@ const HomePage = () => {
     {/* ══════════════════════════════════════════════════════════
         ANIMATED CONNECTOR — diagram → What You Get
     ══════════════════════════════════════════════════════════ */}
-    <div style={{ background: '#0B1120', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 0, paddingBottom: 0 }}>
+    <div style={{ background: 'var(--canvas-app, #FAFAFA)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 0, paddingBottom: 0 }}>
       <style>{`
         @keyframes connectorPulse {
           0%   { transform: translateX(-50%) translateY(0);    opacity: 0; }
@@ -409,7 +409,7 @@ const HomePage = () => {
     {/* ══════════════════════════════════════════════════════════
         WHAT YOU GET — pain-point framing
     ══════════════════════════════════════════════════════════ */}
-    <section className="pb-16 sm:pb-24" style={{ background: '#0B1120' }} data-testid="what-you-get">
+    <section className="pb-16 sm:pb-24" style={{ background: 'var(--canvas-app, #FAFAFA)' }} data-testid="what-you-get">
       <style>{`
         .wyg-card-enhanced:hover {
           box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(140,170,210,0.08) !important;
@@ -513,7 +513,7 @@ const HomePage = () => {
     </section>
 
     {/* AI era evidence cards */}
-    <section className="py-14 sm:py-16" style={{ background: '#0B1120' }} data-testid="ai-era-section">
+    <section className="py-14 sm:py-16" style={{ background: 'var(--canvas-app, #FAFAFA)' }} data-testid="ai-era-section">
       <div className="max-w-5xl mx-auto px-6">
         <p className="text-xs font-semibold tracking-widest uppercase mb-3 text-center" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>
           The Opportunity
@@ -536,7 +536,7 @@ const HomePage = () => {
     </section>
 
     {/* TRUST & COMPLIANCE BADGES */}
-    <section className="py-10" style={{ background: '#0B1120', borderTop: '1px solid rgba(140,170,210,0.1)', borderBottom: '1px solid rgba(140,170,210,0.1)' }} data-testid="trust-badges">
+    <section className="py-10" style={{ background: 'var(--canvas-app, #FAFAFA)', borderTop: '1px solid rgba(140,170,210,0.1)', borderBottom: '1px solid rgba(140,170,210,0.1)' }} data-testid="trust-badges">
       <div className="max-w-5xl mx-auto px-6">
         <div className="flex flex-wrap items-center justify-center gap-4">
           {[
@@ -558,7 +558,7 @@ const HomePage = () => {
     </section>
 
     {/* WHAT COGNITION DELIVERS */}
-    <section className="py-14 sm:py-20" style={{ background: '#0B1120' }} data-testid="cognition-section">
+    <section className="py-14 sm:py-20" style={{ background: 'var(--canvas-app, #FAFAFA)' }} data-testid="cognition-section">
       <div className="max-w-5xl mx-auto px-6">
         <div className="mb-10 sm:mb-12 text-center">
           <p className="text-xs font-medium tracking-widest uppercase mb-4" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>What Cognition-as-a-Service Delivers</p>

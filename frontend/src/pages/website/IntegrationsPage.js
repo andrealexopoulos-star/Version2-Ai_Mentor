@@ -121,7 +121,7 @@ const IntegrationCard = ({ integration, categoryTitle }) => (
     <div className="flex items-center justify-between">
       <div
         className="w-10 h-10 rounded-[10px] flex items-center justify-center text-base font-bold flex-shrink-0"
-        style={{ background: '#0B1120', color: 'var(--ink-display)' }}
+        style={{ background: 'var(--canvas-app, #FAFAFA)', color: 'var(--ink-display)' }}
       >
         {integration.initial}
       </div>
@@ -163,7 +163,7 @@ const IntegrationCard = ({ integration, categoryTitle }) => (
     {/* Category badge */}
     <span
       className="text-[11px] font-semibold rounded-full px-2.5 py-0.5 mt-1 w-fit"
-      style={{ color: '#5C6E82', background: '#0B1120' }}
+      style={{ color: '#5C6E82', background: 'var(--canvas-app, #FAFAFA)' }}
     >
       {categoryTitle}
     </span>
@@ -200,7 +200,7 @@ const IntegrationsPage = () => {
       </section>
 
       {/* ── CATEGORY SECTIONS ── */}
-      <div style={{ background: '#0B1120' }} data-testid="integrations-grid">
+      <div style={{ background: 'var(--canvas-app, #FAFAFA)' }} data-testid="integrations-grid">
         {CATEGORIES.map((cat) => (
           <section key={cat.id} className="pb-14 px-4 sm:px-6">
             <div className="max-w-7xl mx-auto">
@@ -211,7 +211,7 @@ const IntegrationsPage = () => {
                   {cat.title}{' '}
                   <span
                     className="inline-block text-xs font-semibold rounded-full px-3 py-0.5 ml-2 align-middle"
-                    style={{ color: 'var(--ink-secondary)', background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)' }}
+                    style={{ color: 'var(--ink-secondary)', background: 'var(--canvas-app, #FAFAFA)', border: '1px solid rgba(140,170,210,0.12)' }}
                   >
                     {cat.integrations.length} integration{cat.integrations.length !== 1 ? 's' : ''}
                   </span>
@@ -234,10 +234,10 @@ const IntegrationsPage = () => {
       </div>
 
       {/* ── MERGE.DEV BANNER ── */}
-      <section className="pb-14 px-4 sm:px-6" style={{ background: '#0B1120' }} data-testid="integrations-merge-banner">
+      <section className="pb-14 px-4 sm:px-6" style={{ background: 'var(--canvas-app, #FAFAFA)' }} data-testid="integrations-merge-banner">
         <div className="max-w-7xl mx-auto">
           <div className="rounded-2xl p-10 sm:p-14 grid grid-cols-1 lg:grid-cols-5 gap-10 items-center"
-            style={{ background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)' }}>
+            style={{ background: 'var(--canvas-app, #FAFAFA)', border: '1px solid rgba(140,170,210,0.12)' }}>
             <div className="lg:col-span-3">
               <h3 className="text-2xl sm:text-[32px] font-bold leading-snug mb-3"
                 style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-display)' }}>
@@ -269,7 +269,7 @@ const IntegrationsPage = () => {
       </section>
 
       {/* ── CTA ── */}
-      <section className="pb-24 px-6 text-center" style={{ background: '#0B1120' }}>
+      <section className="pb-24 px-6 text-center" style={{ background: 'var(--canvas-app, #FAFAFA)' }}>
         <div className="max-w-xl mx-auto rounded-2xl p-14"
           style={{
             background: 'var(--surface)',

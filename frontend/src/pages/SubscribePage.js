@@ -192,7 +192,7 @@ const SubscribePage = () => {
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full whitespace-nowrap" style={{ background: 'var(--lava-wash)', color: 'var(--lava-deep, var(--lava))', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Current plan</span>
               )}
               {isPopular && !isCurrent && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full text-white whitespace-nowrap" style={{ background: '#1E293B', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Most popular</span>
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full text-white whitespace-nowrap" style={{ background: 'var(--surface-sunken, #F5F5F5)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Most popular</span>
               )}
               <h3 className="text-[28px] font-semibold mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', lineHeight: 1 }}>{plan.name}</h3>
               <p className="text-sm mb-6" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', lineHeight: 1.5, minHeight: 44 }}>{plan.tagline || ''}</p>
@@ -412,7 +412,7 @@ const FeatureComparisonTable = () => (
           <tr style={{ background: 'var(--surface-sunken)' }}>
             <th className="text-left px-5 py-4 text-[11px] font-semibold uppercase" style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps, 0.08em)', fontFamily: 'var(--font-mono)' }}>Feature</th>
             <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Free</th>
-            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'white', background: '#1E293B', fontFamily: 'var(--font-ui)' }}>Growth $69</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'white', background: 'var(--surface-sunken, #F5F5F5)', fontFamily: 'var(--font-ui)' }}>Growth $69</th>
             <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Pro $199</th>
           </tr>
         </thead>

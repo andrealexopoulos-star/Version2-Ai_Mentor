@@ -660,7 +660,7 @@ export default function PlatformPage() {
       </section>
 
       {/* ── Tab bar ── */}
-      <div style={{ background: '#0B1120', borderBottom: '1px solid rgba(255,255,255,0.07)', position: 'sticky', top: 64, zIndex: 30 }}>
+      <div style={{ background: 'var(--canvas-app, #FAFAFA)', borderBottom: '1px solid rgba(255,255,255,0.07)', position: 'sticky', top: 64, zIndex: 30 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px', display: 'flex', overflowX: 'auto', scrollbarWidth: 'none' }}>
           {SLIDES.map((s, i) => (
             <button
@@ -682,7 +682,7 @@ export default function PlatformPage() {
       </div>
 
       {/* ── Main showcase ── */}
-      <section style={{ background: '#0B1120', padding: '48px 16px 64px' }}>
+      <section style={{ background: 'var(--canvas-app, #FAFAFA)', padding: '48px 16px 64px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 40, alignItems: 'start' }}>
 
@@ -739,7 +739,7 @@ export default function PlatformPage() {
       </section>
 
       {/* ── Capabilities Grid — "Everything you need to run smarter" ── */}
-      <section style={{ background: '#0B1120', padding: '80px 24px', borderTop: '1px solid rgba(140,170,210,0.08)' }} data-testid="capabilities-grid">
+      <section style={{ background: 'var(--canvas-app, #FAFAFA)', padding: '80px 24px', borderTop: '1px solid rgba(140,170,210,0.08)' }} data-testid="capabilities-grid">
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <span style={{ fontFamily: 'var(--font-mono)', color: O, fontSize: 11, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase' }}>Capabilities</span>
@@ -787,7 +787,7 @@ export default function PlatformPage() {
       </section>
 
       {/* ── Bottom CTA ── */}
-      <section style={{ background: '#0B1120', padding: '80px 24px', textAlign: 'center', borderTop: '1px solid rgba(140,170,210,0.08)' }}>
+      <section style={{ background: 'var(--canvas-app, #FAFAFA)', padding: '80px 24px', textAlign: 'center', borderTop: '1px solid rgba(140,170,210,0.08)' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(28px, 4vw, 36px)', fontWeight: 700, marginBottom: 16, letterSpacing: 'var(--ls-display)' }}>
           Ready to see your business clearly?
         </h2>

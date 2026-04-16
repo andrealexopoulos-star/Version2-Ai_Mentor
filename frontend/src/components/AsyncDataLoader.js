@@ -44,7 +44,7 @@ export const SkeletonCard = ({ lines = 3, className = '' }) => (
   <div className={`rounded-xl p-5 animate-pulse ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
     <div className="h-2 rounded mb-3 w-1/3" style={{ background: 'rgba(140,170,210,0.15)' }} />
     {Array.from({ length: lines }).map((_, i) => (
-      <div key={i} className="h-2 rounded mb-2" style={{ background: '#1E2A38', width: `${100 - i * 15}%` }} />
+      <div key={i} className="h-2 rounded mb-2" style={{ background: 'var(--surface-sunken, #F5F5F5)', width: `${100 - i * 15}%` }} />
     ))}
   </div>
 );
@@ -98,7 +98,7 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
                 <div
                   className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-[10px] leading-snug pointer-events-none opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity z-50"
                   style={{
-                    background: '#1E2A38',
+                    background: 'var(--surface-sunken, #F5F5F5)',
                     border: '1px solid #2D3E50',
                     color: 'var(--biqc-text-2)',
                     fontFamily: fontFamily.body,

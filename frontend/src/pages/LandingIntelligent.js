@@ -658,7 +658,7 @@ const LandingIntelligent = () => {
       </div>
 
       {/* Footer */}
-      <footer className="relative z-10 px-4 sm:px-6 py-6 sm:py-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ background: '#080E18', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <footer className="relative z-10 px-4 sm:px-6 py-6 sm:py-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ background: 'var(--canvas-app, #FAFAFA)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="flex items-center gap-2.5">
           <div className="flex items-center justify-center rounded-xl text-white font-black text-xs" style={{ width: 28, height: 28, background: 'rgba(249,115,22,0.2)', fontFamily: 'var(--font-display)' }}>B</div>
           <span className="text-[10px] sm:text-xs text-slate-600" style={{ fontFamily: 'var(--font-mono)' }}>© 2026 BIQc — Business IQ Centre</span>
