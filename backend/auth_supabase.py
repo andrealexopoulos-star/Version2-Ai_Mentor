@@ -75,6 +75,8 @@ MASTER_ADMIN_EMAIL = _load_master_admin_email()
 
 
 def _is_master_admin_email(email: str | None) -> bool:
+    if not MASTER_ADMIN_EMAIL:
+        return False
     return str(email or "").strip().lower() == MASTER_ADMIN_EMAIL
 
 
