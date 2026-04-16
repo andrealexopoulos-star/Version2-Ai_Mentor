@@ -4,7 +4,7 @@ import { fontFamily } from '../../design-system/tokens';
 
 const LAVA = '#E85D00';
 const LAVA_SOFT = '#FF8C33';
-const STEEL_SURFACE = '#111A25';
+const STEEL_SURFACE = 'var(--surface-sunken, #F5F5F5)';
 const STEEL_BORDER = 'rgba(140,170,210,0.15)';
 const STEEL_MUTED = 'var(--ink-muted)';
 const LAVA_BG = 'rgba(232,93,0,0.08)';
@@ -650,7 +650,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           )}
 
           {websiteScanSummary && Object.keys(websiteScanSummary).length > 0 && (
-            <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
+            <div className="p-3 rounded-lg" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Website Scan Coverage</p>
               <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>
                 ABN: {websiteScanSummary.abn || 'Data not available on free tier'} · Full business name: {websiteScanSummary.full_business_name || bizName}
@@ -1221,8 +1221,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             {customerReviews.impact.map((row, idx) => (
               <div key={idx} className="p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{row.fundamental}</p>
-                <p className="text-xs mb-1" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{row.impact}</p>
-                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{row.mechanism}</p>
+                <p className="text-xs mb-1" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>{row.impact}</p>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}>{row.mechanism}</p>
               </div>
             ))}
           </div>
@@ -1295,7 +1295,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 </div>
               )}
               {staff.founderBackground && (
-                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
+                <div className="p-3 rounded-lg" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }}>
                   <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Founder / Leadership Context</p>
                   <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>
                     {staff.founderBackground.substring(0, 240)}{staff.founderBackground.length > 240 ? '...' : ''}
@@ -1305,7 +1305,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               {staff.platforms.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {staff.platforms.slice(0, 3).map((p, idx) => (
-                    <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #3B82F630' }}>
+                    <div key={idx} className="p-3 rounded-lg" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid #3B82F630' }}>
                       <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>
                         {String(p?.platform || 'Staff source')}
                       </p>
@@ -1371,10 +1371,10 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                 {staffImpact.impact.map((row, idx) => (
-                  <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
+                  <div key={idx} className="p-3 rounded-lg" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{row.fundamental}</p>
-                    <p className="text-xs mb-1" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{row.impact}</p>
-                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{row.mechanism}</p>
+                    <p className="text-xs mb-1" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>{row.impact}</p>
+                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}>{row.mechanism}</p>
                   </div>
                 ))}
               </div>
@@ -1413,7 +1413,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {['strengths', 'weaknesses', 'opportunities', 'threats'].map((key) => (
-                <div key={key} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
+                <div key={key} className="p-3 rounded-lg" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }}>
                   <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{key}</p>
                   {Array.isArray(swot[key]) && swot[key].length > 0 ? (
                     <ul className="space-y-1">
@@ -1451,7 +1451,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
 
             {marketTrajectory && (
               <p className="text-xs text-[var(--ink-secondary)] mb-3" style={{ fontFamily: fontFamily.body }}>
-                Market trajectory: <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>{marketTrajectory}</strong>
+                Market trajectory: <strong style={{ color: 'var(--ink-display, #0A0A0A)' }}>{marketTrajectory}</strong>
               </p>
             )}
 
@@ -1461,7 +1461,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   <p className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.body }}>{marketAnalysis.analysis_title}</p>
                 )}
                 {marketAnalysis.market_size && (
-                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Market Size</p>
                     <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>
                       {typeof marketAnalysis.market_size === 'string' ? marketAnalysis.market_size : JSON.stringify(marketAnalysis.market_size)}
@@ -1469,7 +1469,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   </div>
                 )}
                 {marketAnalysis.competitor_landscape && (
-                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Competitor Landscape</p>
                     <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>
                       {typeof marketAnalysis.competitor_landscape === 'string' ? marketAnalysis.competitor_landscape : JSON.stringify(marketAnalysis.competitor_landscape)}
@@ -1477,7 +1477,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   </div>
                 )}
                 {marketAnalysis.customer_insight && (
-                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Customer Insight</p>
                     <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>
                       {typeof marketAnalysis.customer_insight === 'string' ? marketAnalysis.customer_insight : JSON.stringify(marketAnalysis.customer_insight)}
@@ -1518,7 +1518,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {['strengths', 'weaknesses', 'opportunities', 'threats'].map((k) => (
                         Array.isArray(marketAnalysis.swot[k]) && marketAnalysis.swot[k].length > 0 && (
-                          <div key={k} className="p-2 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
+                          <div key={k} className="p-2 rounded-lg" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }}>
                             <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{k}</p>
                             <ul className="space-y-0.5">
                               {marketAnalysis.swot[k].map((item, idx) => (
