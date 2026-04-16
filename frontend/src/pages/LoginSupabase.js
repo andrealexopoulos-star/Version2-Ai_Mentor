@@ -320,7 +320,7 @@ const LoginSupabase = () => {
           {!hasSupabaseConfig && (
             <div
               className="mb-6 rounded-xl border px-4 py-3 text-sm"
-              style={{ borderColor: '#F59E0B', background: 'rgba(245,158,11,0.12)', color: '#FDE68A', fontFamily: UI }}
+              style={{ borderColor: '#F59E0B', background: 'rgba(245,158,11,0.12)', color: 'var(--warning, #D97706)', fontFamily: UI }}
               data-testid="login-supabase-config-missing"
             >
               <p className="font-semibold text-[#FBBF24] mb-1">Local setup required</p>

@@ -5,7 +5,7 @@ import { fontFamily } from '../../../design-system/tokens';
 
 
 const PlatformLogin = () => (
-  <div className="min-h-screen flex" style={{ background: '#0F1720' }}>
+  <div className="min-h-screen flex" style={{ background: 'var(--surface, #FFFFFF)' }}>
     {/* Left: Login Form */}
     <div className="flex-1 flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">

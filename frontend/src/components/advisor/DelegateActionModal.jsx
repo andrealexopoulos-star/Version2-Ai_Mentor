@@ -82,7 +82,7 @@ export const DelegateActionModal = ({
           <button
             onClick={onClose}
             className="inline-flex min-h-[40px] items-center rounded-xl border px-3"
-            style={{ borderColor: '#334155', color: '#CBD5E1' }}
+            style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)' }}
             data-testid="delegate-modal-close-button"
           >
             <X className="h-4 w-4" />
@@ -102,7 +102,7 @@ export const DelegateActionModal = ({
                 onProviderChange(value);
               }}
               className="w-full rounded-xl border px-3 py-2 text-sm"
-              style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0' }}
+              style={{ background: 'var(--surface-sunken, #F5F5F5)', borderColor: '#334155', color: 'var(--ink, #171717)' }}
               data-testid="delegate-modal-provider-select"
             >
               {providers.map((provider) => (
@@ -123,7 +123,7 @@ export const DelegateActionModal = ({
                 onChange={(event) => setForm((prev) => ({ ...prev, assigneeName: event.target.value }))}
                 placeholder="Name"
                 className="w-full rounded-xl border px-3 py-2 text-sm"
-                style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0' }}
+                style={{ background: 'var(--surface-sunken, #F5F5F5)', borderColor: '#334155', color: 'var(--ink, #171717)' }}
                 data-testid="delegate-modal-assignee-name-input"
               />
             </div>
@@ -136,7 +136,7 @@ export const DelegateActionModal = ({
                 onChange={(event) => setForm((prev) => ({ ...prev, assigneeEmail: event.target.value }))}
                 placeholder="name@company.com"
                 className="w-full rounded-xl border px-3 py-2 text-sm"
-                style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0' }}
+                style={{ background: 'var(--surface-sunken, #F5F5F5)', borderColor: '#334155', color: 'var(--ink, #171717)' }}
                 data-testid="delegate-modal-assignee-email-input"
               />
             </div>
@@ -151,7 +151,7 @@ export const DelegateActionModal = ({
                 value={form.assigneeRemoteId}
                 onChange={(event) => onSelectAssignee(event.target.value)}
                 className="w-full rounded-xl border px-3 py-2 text-sm"
-                style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0' }}
+                style={{ background: 'var(--surface-sunken, #F5F5F5)', borderColor: '#334155', color: 'var(--ink, #171717)' }}
                 data-testid="delegate-modal-assignee-select"
               >
                 <option value="">Select from connected users</option>
@@ -173,7 +173,7 @@ export const DelegateActionModal = ({
                 value={form.collectionRemoteId}
                 onChange={(event) => setForm((prev) => ({ ...prev, collectionRemoteId: event.target.value }))}
                 className="w-full rounded-xl border px-3 py-2 text-sm"
-                style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0' }}
+                style={{ background: 'var(--surface-sunken, #F5F5F5)', borderColor: '#334155', color: 'var(--ink, #171717)' }}
                 data-testid="delegate-modal-collection-select"
               >
                 <option value="">Default workspace/project</option>
@@ -194,13 +194,13 @@ export const DelegateActionModal = ({
                 value={form.dueAt}
                 onChange={(event) => setForm((prev) => ({ ...prev, dueAt: event.target.value }))}
                 className="w-full rounded-xl border px-3 py-2 text-sm"
-                style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0' }}
+                style={{ background: 'var(--surface-sunken, #F5F5F5)', borderColor: '#334155', color: 'var(--ink, #171717)' }}
                 data-testid="delegate-modal-due-at-input"
               />
             </div>
             <label
               className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm"
-              style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0' }}
+              style={{ background: 'var(--surface-sunken, #F5F5F5)', borderColor: '#334155', color: 'var(--ink, #171717)' }}
               data-testid="delegate-modal-calendar-toggle"
             >
               <input
@@ -223,7 +223,7 @@ export const DelegateActionModal = ({
                 type="button"
                 onClick={onClose}
                 className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs"
-                style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                 data-testid="delegate-modal-cancel-button"
               >
                 Cancel

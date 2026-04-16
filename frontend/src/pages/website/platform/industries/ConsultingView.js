@@ -46,7 +46,7 @@ const ConsultingView = () => (
             ].map(p => {
               const mc = { healthy: '#10B981', warning: '#F59E0B', critical: '#E85D00' };
               return (
-                <div key={p.project} className="mb-3 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
+                <div key={p.project} className="mb-3 p-3 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
                   <div className="flex justify-between mb-1">
                     <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: SORA }}>{p.project}</span>
                     <span className="text-xs" style={{ fontFamily: MONO, color: mc[p.status] }}>{p.impact > 0 ? '+' : ''}{p.impact < 0 ? '-' : ''}${Math.abs(p.impact)}</span>
@@ -74,7 +74,7 @@ const ConsultingView = () => (
               { name: 'Harbour Finance — Tax Advisory', value: '$28,000', days: 51, stage: 'Pricing Discussion' },
               { name: 'Pacific Industries — Compliance', value: '$18,000', days: 47, stage: 'Decision Pending' },
             ].map(p => (
-              <div key={p.name} className="flex items-center justify-between p-2.5 rounded mb-2" style={{ background: '#0F1720', border: '1px solid #E85D0020' }}>
+              <div key={p.name} className="flex items-center justify-between p-2.5 rounded mb-2" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid #E85D0020' }}>
                 <div>
                   <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: SORA }}>{p.name}</span>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>{p.stage} &middot; {p.days} days</span>

@@ -45,13 +45,13 @@ const AutomationCard = ({ auto }) => (
     <div className="px-5 pb-4 space-y-2" style={{ borderTop: '1px solid rgba(140,170,210,0.15)' }}>
       <div className="flex gap-3 pt-3">
         <span className="text-[10px] font-semibold px-2 py-1 rounded uppercase tracking-wider shrink-0 h-fit" style={{ fontFamily: fontFamily.mono, color: '#3B82F6', background: '#3B82F6' + '15', border: '1px solid #3B82F620' }}>IF</span>
-        <div className="flex-1 p-3 rounded-md" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
+        <div className="flex-1 p-3 rounded-md" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
           <p className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{auto.condition}</p>
         </div>
       </div>
       <div className="flex gap-3">
         <span className="text-[10px] font-semibold px-2 py-1 rounded uppercase tracking-wider shrink-0 h-fit" style={{ fontFamily: fontFamily.mono, color: '#10B981', background: '#10B981' + '15', border: '1px solid #10B98120' }}>THEN</span>
-        <div className="flex-1 p-3 rounded-md" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
+        <div className="flex-1 p-3 rounded-md" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
           <p className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{auto.action}</p>
         </div>
       </div>

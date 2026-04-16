@@ -67,7 +67,7 @@ export const SignalCard = ({ title, detail, action, source, signalType, timestam
         <SourceProvenanceBadge source={source} signalType={signalType} timestamp={timestamp} testId={`${testId}-provenance`} />
         {action ? (
           <div className="rounded-xl border px-3 py-2" style={{ borderColor: `${tone}33`, background: `${tone}10` }} data-testid={`${testId}-action`}>
-            <p className="text-sm" style={{ color: '#E2E8F0', fontFamily: fontFamily.body }}>{action}</p>
+            <p className="text-sm" style={{ color: 'var(--ink, #171717)', fontFamily: fontFamily.body }}>{action}</p>
           </div>
         ) : null}
       </div>
@@ -91,7 +91,7 @@ export const QuietActionLink = ({ label, onClick, testId }) => (
   <button
     onClick={onClick}
     className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs transition-colors hover:bg-white/5"
-    style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+    style={{ borderColor: 'var(--biqc-border)', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
     data-testid={testId}
   >
     {label} <ArrowRight className="h-3.5 w-3.5" />

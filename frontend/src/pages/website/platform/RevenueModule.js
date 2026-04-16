@@ -99,7 +99,7 @@ const RevenueModule = () => (
           <div className="space-y-2 mb-4">
             {[{ name: 'Key Account #1', signal: 'Response time elevated. Engagement declining over 30 days.', risk: 'HIGH' },
               { name: 'Client F', signal: 'Contract renewal in 45 days. No renewal discussion initiated.', risk: 'MODERATE' }].map(c => (
-              <div key={c.name} className="p-3 rounded-md" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
+              <div key={c.name} className="p-3 rounded-md" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{c.name}</span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ fontFamily: fontFamily.mono, color: c.risk === 'HIGH' ? '#E85D00' : '#F59E0B', background: (c.risk === 'HIGH' ? '#E85D00' : '#F59E0B') + '15' }}>{c.risk}</span>

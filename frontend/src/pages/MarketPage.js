@@ -743,7 +743,7 @@ const MarketPage = () => {
                       <p className={`text-xs text-[#F4F7FA] truncate ${item.status === 'done' ? 'line-through' : ''}`}>{item.title}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: priorityColors[item.priority] + '15', color: priorityColors[item.priority], fontFamily: fontFamily.mono }}>{item.priority}</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#24314050', color: '#94A3B8', fontFamily: fontFamily.mono }}>{item.source.replace('_', ' ')}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#24314050', color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>{item.source.replace('_', ' ')}</span>
                         {item.due_date && <span className="text-[9px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{new Date(item.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>}
                       </div>
                     </div>
@@ -1109,7 +1109,7 @@ const MarketPage = () => {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {trustSignals.map((signal, i) => (
-                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-lg flex items-center gap-1.5" style={{ background: '#10B98108', border: '1px solid #10B98120', color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-lg flex items-center gap-1.5" style={{ background: '#10B98108', border: '1px solid #10B98120', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}>
                           <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> {signal}
                         </span>
                       ))}

@@ -88,7 +88,7 @@ const BoardroomCouncilCard = ({
         <p className={`${compact ? 'text-[10px]' : 'text-xs'} font-semibold mb-1`} style={{ color: '#DBEAFE', fontFamily: fontFamily.mono }}>
           {selected?.role || 'Boardroom'}
         </p>
-        <p className={`${compact ? 'text-xs' : 'text-sm'} leading-relaxed`} style={{ color: '#E2E8F0', fontFamily: fontFamily.body }}>
+        <p className={`${compact ? 'text-xs' : 'text-sm'} leading-relaxed`} style={{ color: 'var(--ink, #171717)', fontFamily: fontFamily.body }}>
           {selected?.line || 'Checking strategic priorities...'}
         </p>
       </div>

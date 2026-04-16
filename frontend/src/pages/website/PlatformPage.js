@@ -76,7 +76,7 @@ const DashboardMock = () => (
           <div key={title} style={{ background: MOCK_CARD, border: `1px solid ${MOCK_BORD}`, borderRadius: 7, padding: '7px 10px', marginBottom: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
-              <span style={{ color: '#CBD5E1', fontSize: 10 }}>{title}</span>
+              <span style={{ color: 'var(--ink-secondary, #525252)', fontSize: 10 }}>{title}</span>
             </div>
             <MockBadge color={color} label={severity} />
           </div>
@@ -125,7 +125,7 @@ const RevenueMock = () => (
         <MockRow label="Active Deals" value="8" />
         <MockRow label="Stalled (>7d)" value="3" color={R} />
         <div style={{ marginTop: 8, padding: '6px 8px', background: `${B}10`, borderRadius: 6, borderLeft: `2px solid ${B}` }}>
-          <div style={{ color: '#CBD5E1', fontSize: 9 }}><strong>Insight:</strong> 3 deals stalled at proposal. Close rate declining.</div>
+          <div style={{ color: 'var(--ink-secondary, #525252)', fontSize: 9 }}><strong>Insight:</strong> 3 deals stalled at proposal. Close rate declining.</div>
         </div>
       </MockCard>
       <MockCard>
@@ -138,7 +138,7 @@ const RevenueMock = () => (
         {[['Deal Alpha', '$45K · 65%', G], ['Deal Beta', '$28K · 40%', O], ['Deal Gamma', '$15K · 80%', B]].map(([n, v, c]) => (
           <div key={n} style={{ marginBottom: 5 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 2 }}>
-              <span style={{ color: '#CBD5E1' }}>{n}</span>
+              <span style={{ color: 'var(--ink-secondary, #525252)' }}>{n}</span>
               <span style={{ color: c }}>{v}</span>
             </div>
             <div style={{ height: 4, background: MOCK_BORD, borderRadius: 2 }}>
@@ -153,14 +153,14 @@ const RevenueMock = () => (
         <MockRow label="Revenue at Risk" value="$18,400" color={R} />
         <div style={{ marginTop: 8, borderRadius: 7, padding: '7px 9px', background: MOCK_CARD, border: `1px solid ${R}25`, marginBottom: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-            <span style={{ color: '#CBD5E1', fontSize: 10, fontWeight: 600 }}>Key Account #1</span>
+            <span style={{ color: 'var(--ink-secondary, #525252)', fontSize: 10, fontWeight: 600 }}>Key Account #1</span>
             <Tag color={R}>HIGH</Tag>
           </div>
           <div style={{ color: 'var(--ink-secondary)', fontSize: 9 }}>Response time elevated. Engagement declining 30d.</div>
         </div>
         <div style={{ borderRadius: 7, padding: '7px 9px', background: MOCK_CARD, border: `1px solid ${Y}25` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-            <span style={{ color: '#CBD5E1', fontSize: 10, fontWeight: 600 }}>Client F</span>
+            <span style={{ color: 'var(--ink-secondary, #525252)', fontSize: 10, fontWeight: 600 }}>Client F</span>
             <Tag color={Y}>MODERATE</Tag>
           </div>
           <div style={{ color: 'var(--ink-secondary)', fontSize: 9 }}>Contract renewal in 45 days. No renewal discussion.</div>
@@ -189,7 +189,7 @@ const AlertsMock = () => (
         <div key={t} style={{ background: MOCK_CARD, border: `1px solid ${c}20`, borderRadius: 8, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, flexShrink: 0 }} />
-            <span style={{ color: '#CBD5E1', fontSize: 11 }}>{t}</span>
+            <span style={{ color: 'var(--ink-secondary, #525252)', fontSize: 11 }}>{t}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <span style={{ color: '#64748B', fontSize: 10 }}>{time}</span>
@@ -202,7 +202,7 @@ const AlertsMock = () => (
         <div key={t} style={{ background: MOCK_CARD, border: `1px solid ${Y}20`, borderRadius: 8, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: Y, flexShrink: 0 }} />
-            <span style={{ color: '#CBD5E1', fontSize: 11 }}>{t}</span>
+            <span style={{ color: 'var(--ink-secondary, #525252)', fontSize: 11 }}>{t}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <span style={{ color: '#64748B', fontSize: 10 }}>{time}</span>
@@ -380,7 +380,7 @@ const MarketMock = () => (
             { name: 'Competitor C', signal: 'Hiring 3 AEs', severity: B },
           ].map(({ name, signal, severity }) => (
             <div key={name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: `1px solid ${MOCK_BORD}` }}>
-              <span style={{ color: '#CBD5E1', fontSize: 10 }}>{name}</span>
+              <span style={{ color: 'var(--ink-secondary, #525252)', fontSize: 10 }}>{name}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ color: 'var(--ink-secondary)', fontSize: 9 }}>{signal}</span>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: severity }} />
@@ -434,7 +434,7 @@ const ComplianceMock = () => (
           <div key={name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${MOCK_BORD}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Clock size={9} style={{ color }} />
-              <span style={{ color: '#CBD5E1', fontSize: 10 }}>{name}</span>
+              <span style={{ color: 'var(--ink-secondary, #525252)', fontSize: 10 }}>{name}</span>
             </div>
             <span style={{ color, fontSize: 10, fontFamily: 'var(--font-mono)' }}>{days}</span>
           </div>
@@ -489,7 +489,7 @@ const DataHealthMock = () => (
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               <div style={{ width: 7, height: 7, borderRadius: '50%', background: c }} />
               <div>
-                <div style={{ color: '#CBD5E1', fontSize: 10, fontWeight: 600 }}>{name}</div>
+                <div style={{ color: 'var(--ink-secondary, #525252)', fontSize: 10, fontWeight: 600 }}>{name}</div>
                 <div style={{ color: '#64748B', fontSize: 8 }}>{type}</div>
               </div>
             </div>
@@ -652,7 +652,7 @@ export default function PlatformPage() {
             <Link to="/register-supabase" style={{ background: 'var(--lava)', color: '#fff', borderRadius: 'var(--r-md)', padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-ui)', textDecoration: 'none', boxShadow: '0 6px 24px rgba(232,93,0,0.3)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               Start Free Trial <ArrowRight size={15} />
             </Link>
-            <Link to="/soundboard" style={{ background: 'rgba(255,255,255,0.04)', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>
+            <Link to="/soundboard" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--ink-secondary, #525252)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>
               Try Ask BIQc Demo
             </Link>
           </div>
@@ -702,7 +702,7 @@ export default function PlatformPage() {
                 {slide.highlights.map(h => (
                   <div key={h} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <CheckCircle size={13} style={{ color: G, flexShrink: 0 }} />
-                    <span style={{ fontFamily: 'var(--font-ui)', color: '#CBD5E1', fontSize: 13 }}>{h}</span>
+                    <span style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary, #525252)', fontSize: 13 }}>{h}</span>
                   </div>
                 ))}
               </div>

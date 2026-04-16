@@ -99,7 +99,7 @@ const PlatformLayout = ({ children, title }) => {
   );
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#0F1720', color: 'var(--ink-display, #EDF1F7)' }}>
+    <div className="min-h-screen flex" style={{ background: 'var(--surface, #FFFFFF)', color: 'var(--ink-display, #EDF1F7)' }}>
       <Sidebar />
       {mobileSidebar && <Sidebar mobile />}
 

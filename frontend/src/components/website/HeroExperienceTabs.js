@@ -255,7 +255,7 @@ const HeroExperienceTabs = () => {
                   key={line}
                   className="meet-line text-sm sm:text-[15px]"
                   style={{
-                    color: '#CBD5E1',
+                    color: 'var(--ink-secondary, #525252)',
                     fontFamily: fontFamily.body,
                     animationDelay: `${idx * 110}ms`,
                   }}

@@ -10,7 +10,7 @@ export const Panel = ({ children, className = '' }) => (
 );
 
 export const MetricCard = ({ label, value, sub, color = 'var(--ink-display, #EDF1F7)', alert = false }) => (
-  <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: `1px solid ${alert ? '#E85D00' + '40' : 'rgba(140,170,210,0.15)'}` }}>
+  <div className="p-4 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: `1px solid ${alert ? '#E85D00' + '40' : 'rgba(140,170,210,0.15)'}` }}>
     <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>{label}</span>
     <span className="text-xl font-bold block" style={{ fontFamily: fontFamily.mono, color }}>{value}</span>
     {sub && <span className="text-[11px] text-[#64748B] mt-0.5 block" style={{ fontFamily: fontFamily.body }}>{sub}</span>}

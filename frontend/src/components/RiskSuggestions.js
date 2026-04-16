@@ -231,7 +231,7 @@ export const RiskSuggestions = () => {
         return (
           <div key={risk.id}
             className="rounded-xl p-4 relative"
-            style={{ background: '#0F1720', border: `1px solid ${sevColor}30` }}
+            style={{ background: 'var(--surface, #FFFFFF)', border: `1px solid ${sevColor}30` }}
             data-testid={`risk-card-${risk.id}`}>
 
             {/* Dismiss */}

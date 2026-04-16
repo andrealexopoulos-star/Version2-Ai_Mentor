@@ -126,7 +126,7 @@ export default function UpgradePage({ success = false }) {
 
   if (success) {
     return (
-      <div className="min-h-screen px-6 py-16" style={{ background: '#070E18', fontFamily: fontFamily.body }} data-testid="upgrade-success-page">
+      <div className="min-h-screen px-6 py-16" style={{ background: 'var(--canvas-app, #FAFAFA)', fontFamily: fontFamily.body }} data-testid="upgrade-success-page">
         <div className="mx-auto max-w-3xl space-y-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.3)' }}>
             <CheckCircle2 className="h-4 w-4 text-[#10B981]" />
@@ -164,7 +164,7 @@ export default function UpgradePage({ success = false }) {
   }
 
   return (
-    <div className="min-h-screen px-6 py-16" style={{ background: '#070E18', fontFamily: fontFamily.body }} data-testid="upgrade-page">
+    <div className="min-h-screen px-6 py-16" style={{ background: 'var(--canvas-app, #FAFAFA)', fontFamily: fontFamily.body }} data-testid="upgrade-page">
       <div className="mx-auto max-w-5xl space-y-10">
         <div className="text-center">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'rgba(232,93,0,0.12)', border: '1px solid rgba(232,93,0,0.24)' }}>

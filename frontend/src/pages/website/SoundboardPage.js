@@ -177,7 +177,7 @@ function ChatDisplay({ mode, example }) {
             <Radio size={10} />
             BIQC Â· {mode.label.toUpperCase()} MODE
           </div>
-          <div style={{ fontFamily: fontFamily.body, color: '#CBD5E1', fontSize: 14, lineHeight: 1.75, whiteSpace: 'pre-line' }}>
+          <div style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #525252)', fontSize: 14, lineHeight: 1.75, whiteSpace: 'pre-line' }}>
             {displayedAnswer}
             {!done && <span style={{ display: 'inline-block', width: 2, height: 14, background: mode.color, marginLeft: 2, animation: 'blink 0.8s step-end infinite', verticalAlign: 'middle' }} />}
           </div>
@@ -283,7 +283,7 @@ export default function SoundboardPage() {
                 value={search}
                 onChange={e => { setSearch(e.target.value); setActiveExample(0); }}
                 placeholder="Search examples..."
-                style={{ border: 'none', background: 'none', color: '#CBD5E1', fontFamily: fontFamily.body, fontSize: 13, outline: 'none', width: '100%', '::placeholder': { color: '#64748B' } }}
+                style={{ border: 'none', background: 'none', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body, fontSize: 13, outline: 'none', width: '100%', '::placeholder': { color: '#64748B' } }}
               />
             </div>
 

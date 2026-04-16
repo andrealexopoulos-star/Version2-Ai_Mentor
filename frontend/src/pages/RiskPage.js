@@ -32,7 +32,7 @@ const Tooltip = ({ text, children }) => {
       {children}
       {show && (
         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-[11px] leading-snug z-50 whitespace-pre-wrap max-w-[200px]"
-          style={{ background: '#1E2D3D', color: 'var(--ink-display)', border: '1px solid #334155', fontFamily: 'var(--font-ui)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+          style={{ background: '#1E2D3D', color: 'var(--ink-display)', border: '1px solid var(--border-strong, rgba(10,10,10,0.14))', fontFamily: 'var(--font-ui)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
           {text}
         </span>
       )}
@@ -218,7 +218,7 @@ const HeatMapDot = ({ dot }) => {
       {dot.id}
       {hover && (
         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-[11px] leading-snug z-50 whitespace-nowrap"
-          style={{ background: '#1E2D3D', color: 'var(--ink-display)', border: '1px solid #334155', fontFamily: 'var(--font-ui)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+          style={{ background: '#1E2D3D', color: 'var(--ink-display)', border: '1px solid var(--border-strong, rgba(10,10,10,0.14))', fontFamily: 'var(--font-ui)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
           {dot.name}
         </span>
       )}

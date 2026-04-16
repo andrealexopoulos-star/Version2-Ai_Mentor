@@ -143,7 +143,7 @@ export const DailyBriefCard = () => {
             </span>
           )}
           {degradedTruth.length > 0 && (
-            <span className="flex items-center gap-1 text-xs" style={{ color: '#FDE68A', fontFamily: fontFamily.mono }} data-testid="daily-brief-truth-state">
+            <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--warning, #D97706)', fontFamily: fontFamily.mono }} data-testid="daily-brief-truth-state">
               <AlertTriangle className="w-3 h-3" /> Truth gate: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}
             </span>
           )}

@@ -1406,7 +1406,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 }
               }}
               className="px-2.5 py-1 rounded-full text-[10px] font-semibold"
-              style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.35)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+              style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.35)', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
             >
               {showAdvancedControls ? 'Hide advanced' : 'Show advanced'}
             </button>
@@ -1428,7 +1428,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
                 {showModeMenu && (
                   <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
-                    style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                    style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid #1E2D3D' }}>
                     {availableModes.map((mode, idx) => (
                       <button
                         key={mode.id}
@@ -1469,7 +1469,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
                 {showAgentMenu && (
                   <div className="absolute bottom-full left-0 mb-2 w-60 rounded-xl overflow-hidden shadow-xl z-50"
-                    style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                    style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid #1E2D3D' }}>
                     <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Agent persona</p>
                     {BIQC_AGENTS.map((agent) => (
                       <button

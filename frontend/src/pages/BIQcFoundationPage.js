@@ -44,7 +44,7 @@ export default function BIQcFoundationPage() {
                   <span
                     key={trustPoint}
                     className="rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.12em]"
-                    style={{ borderColor: 'var(--biqc-border)', color: '#94A3B8', fontFamily: fontFamily.mono, background: 'rgba(15,23,42,0.38)' }}
+                    style={{ borderColor: 'var(--biqc-border)', color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono, background: 'rgba(15,23,42,0.38)' }}
                   >
                     {trustPoint}
                   </span>
@@ -52,23 +52,23 @@ export default function BIQcFoundationPage() {
               </div>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.42)' }}>
-                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Price</p>
+                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>Price</p>
                   <p className="mt-1 text-2xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>$349 / month</p>
                 </div>
                 <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.42)' }}>
-                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Annual option</p>
+                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>Annual option</p>
                   <p className="mt-1 text-2xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>$3,490 / year</p>
                   <p className="mt-1 text-[11px]" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>2 months equivalent discount. No hidden fees.</p>
                 </div>
                 <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.42)' }}>
-                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Product description</p>
+                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>Product description</p>
                   <p className="mt-1 max-w-xl text-sm" style={{ color: 'var(--biqc-text-2)' }}>AI operating layer for visibility, decision support, execution control, Boardroom context, and up to 5 integrations.</p>
                 </div>
               </div>
             </div>
 
             <div className="w-full max-w-sm rounded-[24px] border p-5" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.42)' }} data-testid="biqc-foundation-sidebar-summary">
-              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Included</p>
+              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>Included</p>
               <div className="mt-4 space-y-2">
                 {FOUNDATION_FEATURES.map((feature) => (
                   <div key={feature.key} className="flex items-start gap-2 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
@@ -98,7 +98,7 @@ export default function BIQcFoundationPage() {
             <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
               Access transparency
             </p>
-            <p className="mt-1 text-sm" style={{ color: '#E2E8F0' }}>
+            <p className="mt-1 text-sm" style={{ color: 'var(--ink, #171717)' }}>
               <strong>{fromRoute}</strong> requires the <strong>{requiredTier || 'starter'}</strong> tier.
               Upgrade unlocks deeper module capability and higher monthly limits with no hidden access behavior.
             </p>
@@ -130,7 +130,7 @@ export default function BIQcFoundationPage() {
                 </div>
               </div>
               <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Benefits</p>
+                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>Benefits</p>
                 <div className="mt-4 space-y-2">
                   {selectedFeature.benefits.map((line) => (
                     <div key={line} className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text-2)', background: 'rgba(255,255,255,0.03)' }}>
@@ -167,7 +167,7 @@ export default function BIQcFoundationPage() {
         <section className="space-y-4" data-testid="biqc-foundation-grid">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Feature detail</p>
+              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.mono }}>Feature detail</p>
               <h2 className="mt-2 text-2xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>What BIQc Foundation actually adds</h2>
             </div>
           </div>
