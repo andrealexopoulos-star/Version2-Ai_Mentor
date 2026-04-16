@@ -506,7 +506,7 @@ const Settings = () => {
             </nav>
             {/* Settings Content */}
             <div className="min-w-0">
-            <TabsList className="hidden">
+            <TabsList className="sr-only">
               <TabsTrigger value="account">Account</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
               <TabsTrigger value="signals">Signals</TabsTrigger>
