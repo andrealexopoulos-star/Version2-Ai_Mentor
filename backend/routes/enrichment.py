@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends
 from routes.auth import get_current_user
-from supabase_client import get_supabase_client
+from supabase_client import get_supabase_admin
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -18,7 +18,7 @@ router = APIRouter()
 async def get_latest_enrichment(current_user: dict = Depends(get_current_user)):
     """Return the latest enrichment data from business_dna_enrichment."""
     try:
-        sb = get_supabase_client()
+        sb = get_supabase_admin()
         res = sb.table('business_dna_enrichment') \
             .select('enrichment, digital_footprint, created_at') \
             .eq('user_id', current_user['id']) \

@@ -11,7 +11,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from routes.auth import get_current_user
-from supabase_client import get_supabase_client
+from supabase_client import get_supabase_admin
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -39,7 +39,7 @@ class ActionItemUpdate(BaseModel):
 @router.get("/action-items")
 async def list_action_items(current_user: dict = Depends(get_current_user)):
     """List all action items for the current user."""
-    sb = get_supabase_client()
+    sb = get_supabase_admin()
     res = sb.table('action_items') \
         .select('*') \
         .eq('user_id', current_user['id']) \
@@ -51,7 +51,7 @@ async def list_action_items(current_user: dict = Depends(get_current_user)):
 @router.post("/action-items")
 async def create_action_item(item: ActionItemCreate, current_user: dict = Depends(get_current_user)):
     """Create a single action item."""
-    sb = get_supabase_client()
+    sb = get_supabase_admin()
     data = {
         'user_id': current_user['id'],
         'title': item.title,
@@ -72,7 +72,7 @@ async def create_action_item(item: ActionItemCreate, current_user: dict = Depend
 @router.patch("/action-items/{item_id}")
 async def update_action_item(item_id: str, update: ActionItemUpdate, current_user: dict = Depends(get_current_user)):
     """Update an action item (status, assignee, due_date, etc.)."""
-    sb = get_supabase_client()
+    sb = get_supabase_admin()
     updates = {}
     if update.title is not None:
         updates['title'] = update.title
@@ -102,7 +102,7 @@ async def update_action_item(item_id: str, update: ActionItemUpdate, current_use
 @router.delete("/action-items/{item_id}")
 async def delete_action_item(item_id: str, current_user: dict = Depends(get_current_user)):
     """Delete an action item."""
-    sb = get_supabase_client()
+    sb = get_supabase_admin()
     res = sb.table('action_items') \
         .delete() \
         .eq('id', item_id) \
@@ -124,7 +124,7 @@ async def seed_from_enrichment(current_user: dict = Depends(get_current_user)):
 
     Clears previously seeded items (keeps manual ones) before re-seeding.
     """
-    sb = get_supabase_client()
+    sb = get_supabase_admin()
 
     bde = sb.table('business_dna_enrichment') \
         .select('enrichment') \
