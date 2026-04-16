@@ -15,6 +15,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
+// Use the most powerful available model
+const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL_COGNITIVE") || "o3";
 
 // ─── Merge.dev ───
 async function fetchMerge(token: string, endpoint: string, limit = 20) {
@@ -536,14 +538,17 @@ serve(async (req) => {
             .select("provider, category, account_token").eq("user_id", u.user_id);
           const { ctx, sources, blind_spots } = await gatherFullContext(supabase, u.user_id, integrations || []);
           // Minimal AI call for precompute
+          const preBody: any = {
+            model: OPENAI_MODEL,
+            messages: [{ role: isReasoningModel ? "developer" : "system", content: COGNITIVE_SYSTEM_PROMPT }, { role: "user", content: `Precompute snapshot.\n${buildPrioritizedContext(ctx)}` }],
+            response_format: { type: "json_object" },
+          };
+          if (isReasoningModel) { preBody.max_completion_tokens = 8000; }
+          else { preBody.temperature = 0.3; preBody.max_tokens = 4000; }
           const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "gpt-5.2",
-              messages: [{ role: "system", content: COGNITIVE_SYSTEM_PROMPT }, { role: "user", content: `Precompute snapshot.\n${buildPrioritizedContext(ctx)}` }],
-              temperature: 0.3, max_tokens: 4000, response_format: { type: "json_object" },
-            }),
+            body: JSON.stringify(preBody),
           });
           if (aiRes.ok) {
             const aiData = await aiRes.json();
@@ -744,20 +749,27 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
       }
     ).then(r => r.json()).catch(() => null);
 
-    // Step 2: GPT-5.2 for main cognitive analysis
+    // Step 2: Main cognitive analysis via most powerful model
+    const isReasoningModel = OPENAI_MODEL.startsWith("o");
+    const aiBody: any = {
+      model: OPENAI_MODEL,
+      messages: [
+        { role: isReasoningModel ? "developer" : "system", content: COGNITIVE_SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+    };
+    // o-series models use max_completion_tokens, not max_tokens, and don't accept temperature
+    if (isReasoningModel) {
+      aiBody.max_completion_tokens = 16000;
+    } else {
+      aiBody.temperature = 0.3;
+      aiBody.max_tokens = 8000;
+    }
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gpt-5.2",
-        messages: [
-          { role: "system", content: COGNITIVE_SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 8000,
-        response_format: { type: "json_object" },
-      }),
+      body: JSON.stringify(aiBody),
     });
 
     // Merge market intelligence when both are ready
@@ -765,9 +777,12 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
 
     if (!aiRes.ok) {
       const err = await aiRes.text();
-      console.error("[biqc-insights] OpenAI error:", err);
+      console.error("[biqc-insights] OpenAI error:", aiRes.status, err);
       return new Response(JSON.stringify({
         error: "Cognitive system temporarily unavailable",
+        debug_status: aiRes.status,
+        debug_error: err.slice(0, 500),
+        model_used: OPENAI_MODEL,
         data_sources: sources,
       }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
@@ -782,7 +797,7 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
         user_id: user.id,
         function_name: "biqc-insights-cognitive",
         api_provider: "openai",
-        model: "gpt-5.2",
+        model: OPENAI_MODEL,
         tokens_in: usage.prompt_tokens || 0,
         tokens_out: usage.completion_tokens || 0,
         cost_estimate: ((usage.prompt_tokens || 0) * 0.0008 + (usage.completion_tokens || 0) * 0.003) / 1000,

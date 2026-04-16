@@ -26,7 +26,7 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
     return { ok: false, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY", status: 500, userId: null, isServiceRole: false };
   }
 
-  // Path 1: service_role key (backend workers, cron jobs)
+  // Path 1: exact string match for service_role key
   if (token === SERVICE_ROLE_KEY) {
     return {
       ok: true,
@@ -36,6 +36,25 @@ export async function verifyAuth(req: Request): Promise<AuthResult> {
       isServiceRole: true,
     };
   }
+
+  // Path 1b: JWT payload role check (handles key format differences between vault and env)
+  try {
+    const parts = token.split(".");
+    if (parts.length === 3) {
+      const p = parts[1];
+      const padded = p + "=".repeat((4 - (p.length % 4)) % 4);
+      const decoded = JSON.parse(atob(padded.replace(/-/g, "+").replace(/_/g, "/")));
+      if (decoded && decoded.role === "service_role" && decoded.iss === "supabase") {
+        return {
+          ok: true,
+          user: { id: "service_role", role: "service_role" },
+          status: 200,
+          userId: null,
+          isServiceRole: true,
+        };
+      }
+    }
+  } catch { /* not a service_role JWT — fall through to user auth */ }
 
   // Path 2: user JWT
   try {

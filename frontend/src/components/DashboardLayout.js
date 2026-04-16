@@ -461,7 +461,7 @@ const DashboardLayout = ({ children }) => {
               )}
             </button>
             {showNotifications && (
-              <div className="absolute right-0 top-12 w-96 max-h-[480px] overflow-y-auto rounded-xl shadow-xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', zIndex: 9999, position: 'fixed', right: 16, top: 64 }}>
+              <div className="absolute right-0 top-12 w-96 max-h-[480px] overflow-y-auto rounded-xl shadow-xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', zIndex: 9999 }}>
                 <div className="p-3 flex items-center justify-between sticky top-0" style={{ borderBottom: '1px solid var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
                   <h3 className="font-semibold text-sm" style={{ fontFamily: DISPLAY, color: 'var(--ink-display)' }}>Alerts</h3>
                   <div className="flex items-center gap-2">

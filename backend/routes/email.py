@@ -2270,7 +2270,7 @@ async def get_calendar_events(
 async def sync_calendar(current_user: dict = Depends(get_current_user)):
     """Sync calendar and generate AI insights"""
     # First fetch events
-    events_response = await get_calendar_events(days_ahead=30, days_back=0, current_user=current_user)
+    events_response = await get_calendar_events(days_ahead=30, days_back=28, current_user=current_user)
     events = events_response.get("events", [])
     
     # Generate calendar intelligence
