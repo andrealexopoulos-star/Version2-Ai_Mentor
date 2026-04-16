@@ -867,6 +867,9 @@ const ForensicCalibration = () => {
 
   const scanTimerRef = useRef(null);
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
+  const paidTiers = ['pro', 'professional', 'business', 'enterprise', 'custom_build', 'super_admin'];
+  const userTier = (user?.subscription_tier || user?.trial_tier || 'free').toLowerCase();
+  const hasPaidAccess = isSuperAdmin || paidTiers.includes(userTier);
 
   useEffect(() => { ensurePulseKeyframes(); }, []);
 
@@ -1028,7 +1031,7 @@ const ForensicCalibration = () => {
   }, []);
 
   /* ── Access gate ── */
-  if (!isSuperAdmin) {
+  if (!hasPaidAccess) {
     return (
       <DashboardLayout>
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
