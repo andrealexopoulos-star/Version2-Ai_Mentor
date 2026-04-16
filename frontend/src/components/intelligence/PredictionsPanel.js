@@ -127,7 +127,7 @@ const PredictionsPanel = ({ compact = false }) => {
                     </span>
                   </div>
                   {/* Score bar */}
-                  <div className="h-1.5 rounded-full mb-2" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="h-1.5 rounded-full mb-2" style={{ background: 'var(--border, rgba(0,0,0,0.06))' }}>
                     <div className="h-full rounded-full transition-all duration-700"
                       style={{ width: `${score * 100}%`, background: scoreColor }} />
                   </div>

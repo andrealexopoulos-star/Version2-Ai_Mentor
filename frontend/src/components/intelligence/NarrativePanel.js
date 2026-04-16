@@ -110,7 +110,7 @@ const NarrativePanel = () => {
           </p>
           {narrative.data_completeness != null && (
             <div className="mt-3 flex items-center gap-2">
-              <div className="h-1 flex-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <div className="h-1 flex-1 rounded-full" style={{ background: 'var(--border, rgba(0,0,0,0.06))' }}>
                 <div className="h-full rounded-full" style={{ width: `${narrative.data_completeness * 100}%`, background: '#E85D00' }} />
               </div>
               <span className="text-[10px]" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
