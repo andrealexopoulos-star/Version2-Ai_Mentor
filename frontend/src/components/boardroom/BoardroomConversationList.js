@@ -47,7 +47,7 @@ export default function BoardroomConversationList({
   if (collapsed) {
     return (
       <aside className="w-12 flex flex-col items-center py-3 border-r" style={{ borderColor: colors.border, background: colors.bgSidebar }}>
-        <button onClick={() => onToggle(false)} className="p-2 rounded hover:bg-white/5 transition-colors focus-visible:ring-2" aria-label="Expand conversation sidebar" aria-expanded="false" data-testid="boardroom-sidebar-toggle">
+        <button onClick={() => onToggle(false)} className="p-2 rounded hover:bg-black/5 transition-colors focus-visible:ring-2" aria-label="Expand conversation sidebar" aria-expanded="false" data-testid="boardroom-sidebar-toggle">
           <ChevronRight className="w-4 h-4" style={{ color: colors.textSecondary }} />
         </button>
       </aside>
@@ -58,7 +58,7 @@ export default function BoardroomConversationList({
     <aside className="w-[260px] flex flex-col border-r" style={{ borderColor: colors.border, background: colors.bgSidebar }} aria-label={`${modeLabel} conversations`} data-testid="boardroom-conversation-list">
       <div className="flex items-center justify-between p-3 border-b" style={{ borderColor: colors.border }}>
         <h2 className="text-sm font-semibold" style={{ color: colors.text, fontFamily: fontFamily.display }}>{modeLabel}</h2>
-        <button onClick={() => onToggle(true)} className="p-1.5 rounded hover:bg-white/5 transition-colors focus-visible:ring-2" aria-label="Collapse conversation sidebar" aria-expanded="true" data-testid="boardroom-sidebar-toggle">
+        <button onClick={() => onToggle(true)} className="p-1.5 rounded hover:bg-black/5 transition-colors focus-visible:ring-2" aria-label="Collapse conversation sidebar" aria-expanded="true" data-testid="boardroom-sidebar-toggle">
           <ChevronLeft className="w-4 h-4" style={{ color: colors.textSecondary }} />
         </button>
       </div>
@@ -105,7 +105,7 @@ export default function BoardroomConversationList({
                       <motion.li key={conv.id} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.15 }}>
                         <button
                           onClick={() => onSelect(conv.id)}
-                          className="w-full text-left px-2 py-2 rounded-lg transition-colors hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-offset-0"
+                          className="w-full text-left px-2 py-2 rounded-lg transition-colors hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-offset-0"
                           style={{ background: isActive ? `${colors.brand}15` : 'transparent', borderLeft: isActive ? `2px solid ${colors.brand}` : '2px solid transparent' }}
                           aria-label={`Open conversation: ${conv.title || 'Untitled'}`}
                           aria-current={isActive ? 'page' : undefined}

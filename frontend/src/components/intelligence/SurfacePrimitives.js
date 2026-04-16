@@ -19,7 +19,7 @@ export const SurfaceHeader = ({ eyebrow, title, question, summary, rightSlot, te
       <p className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }} data-testid={`${testIdPrefix}-eyebrow`}>
         — {eyebrow}
       </p>
-      <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid={`${testIdPrefix}-title`}>
+      <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid={`${testIdPrefix}-title`}>
         {title}
       </h1>
       <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }} data-testid={`${testIdPrefix}-question`}>
@@ -90,7 +90,7 @@ export const EmptyStateCard = ({ title, detail, testId }) => (
 export const QuietActionLink = ({ label, onClick, testId }) => (
   <button
     onClick={onClick}
-    className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs transition-colors hover:bg-white/5"
+    className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs transition-colors hover:bg-black/5"
     style={{ borderColor: 'var(--biqc-border)', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
     data-testid={testId}
   >

@@ -149,7 +149,7 @@ const BillingPage = () => {
           </div>
           <button
             onClick={load}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-colors hover:bg-white/5"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-colors hover:bg-black/5"
             style={{ border: '1px solid var(--border)', color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />

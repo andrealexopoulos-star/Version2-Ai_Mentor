@@ -63,7 +63,7 @@ const WelcomeStep = ({ firstName, onConnect, onSkip }) => (
         style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', boxShadow: '0 0 40px rgba(232,93,0,0.3)' }}>
         <Zap className="w-8 h-8 text-white" />
       </div>
-      <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+      <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
         Welcome to BIQc{firstName ? `, ${firstName}` : ''}.
       </h2>
       <p className="text-sm leading-relaxed max-w-sm mx-auto" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
@@ -154,7 +154,7 @@ const EmailStep = ({ onSkip }) => {
   return (
     <div className="space-y-5">
       <div className="text-center">
-        <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+        <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
           Connect Your Email
         </h2>
         <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
@@ -178,7 +178,7 @@ const EmailStep = ({ onSkip }) => {
               }
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{p.name}</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>{p.name}</p>
               <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{p.desc}</p>
             </div>
             <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: '#64748B' }} />
@@ -203,7 +203,7 @@ const ConnectMoreStep = ({ emailProvider, onYes, onNo }) => (
         style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)' }}>
         <CheckCircle2 className="w-6 h-6" style={{ color: '#10B981' }} />
       </div>
-      <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+      <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
         {emailProvider ? `${emailProvider} Connected` : 'Email Connected'}
       </h2>
       <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
@@ -305,7 +305,7 @@ const IntegrationStep = ({ connectedList, onConnected, onDone, mergeLinkToken, s
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+        <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
           Connect Business Tools
         </h2>
         <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
@@ -341,7 +341,7 @@ const IntegrationStep = ({ connectedList, onConnected, onDone, mergeLinkToken, s
               }
             </div>
             <div>
-              <p className="text-xs font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{cat.label}</p>
+              <p className="text-xs font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>{cat.label}</p>
               <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{cat.desc}</p>
             </div>
           </button>
@@ -369,7 +369,7 @@ const AllDoneStep = ({ connectedList, onFinish }) => (
         style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', boxShadow: '0 0 40px rgba(232,93,0,0.3)' }}>
         <Zap className="w-8 h-8 text-white" />
       </div>
-      <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+      <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
         BIQc Is Active
       </h2>
       <p className="text-sm max-w-xs mx-auto leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
@@ -412,7 +412,7 @@ const WelcomeBackStep = ({ firstName, connectedCount, connectedNames, onConnectM
         style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', boxShadow: '0 0 32px rgba(232,93,0,0.25)' }}>
         <Zap className="w-7 h-7 text-white" />
       </div>
-      <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+      <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
         Welcome back{firstName ? `, ${firstName}` : ''}.
       </h2>
       <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
@@ -573,7 +573,7 @@ const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null, hasConnecti
             </span>
           </div>
           {(step !== 0) && (
-            <button onClick={handleFinish} className="p-1 rounded-lg hover:bg-white/5"
+            <button onClick={handleFinish} className="p-1 rounded-lg hover:bg-black/5"
               style={{ color: '#4A5568' }} data-testid="onboarding-close">
               <X className="w-4 h-4" />
             </button>

@@ -125,7 +125,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
         <div className="text-center mb-8">
           <h2 style={{
             fontFamily: fontFamily.display,
-            color: 'var(--ink-display, #EDF1F7)',
+            color: 'var(--ink-display, #0A0A0A)',
             fontSize: 'clamp(26px, 3.8vw, 44px)',
             fontWeight: 700,
             lineHeight: 1.1,

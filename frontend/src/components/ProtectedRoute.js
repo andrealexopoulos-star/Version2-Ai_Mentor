@@ -55,7 +55,7 @@ const AuthError = () => (
       <p className="text-sm text-white/50">Unable to establish session. Please try again.</p>
       <button 
         onClick={() => window.location.reload()} 
-        className="mt-2 px-5 py-2 border border-white/15 text-white/60 text-xs tracking-wider hover:bg-white/5 transition-colors"
+        className="mt-2 px-5 py-2 border border-white/15 text-white/60 text-xs tracking-wider hover:bg-black/5 transition-colors"
       >
         Reconnect
       </button>
@@ -70,7 +70,7 @@ const AccessDenied = () => (
       <p className="text-sm text-white/50">You do not have permission to view this page.</p>
       <a 
         href="/advisor"
-        className="inline-block mt-2 px-5 py-2 border border-white/15 text-white/60 text-xs tracking-wider hover:bg-white/5 transition-colors"
+        className="inline-block mt-2 px-5 py-2 border border-white/15 text-white/60 text-xs tracking-wider hover:bg-black/5 transition-colors"
       >
         Return to Intelligence Platform
       </a>

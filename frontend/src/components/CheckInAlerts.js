@@ -123,7 +123,7 @@ export const CheckInAlerts = () => {
                 <Calendar className="w-3 h-3 inline mr-1" />
                 Pick a Date
               </button>
-              <button onClick={() => handleDismiss(alert.type)} className="text-[11px] px-2 py-1.5 rounded-lg transition-colors hover:bg-white/5" style={{ color: '#64748B' }} data-testid={`checkin-dismiss-${alert.type}`}>
+              <button onClick={() => handleDismiss(alert.type)} className="text-[11px] px-2 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: '#64748B' }} data-testid={`checkin-dismiss-${alert.type}`}>
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -140,7 +140,7 @@ export const CheckInAlerts = () => {
               <h3 className="text-lg font-bold" style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text)' }}>
                 {showScheduler === 'recalibration' ? 'Schedule Recalibration' : 'Schedule Video Check-In'}
               </h3>
-              <button onClick={() => setShowScheduler(null)} className="p-1 rounded-lg hover:bg-white/5">
+              <button onClick={() => setShowScheduler(null)} className="p-1 rounded-lg hover:bg-black/5">
                 <X className="w-4 h-4" style={{ color: '#64748B' }} />
               </button>
             </div>

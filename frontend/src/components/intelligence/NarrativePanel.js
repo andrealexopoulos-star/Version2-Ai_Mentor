@@ -61,7 +61,7 @@ const NarrativePanel = () => {
     return (
       <div className="text-center py-12">
         <BookOpen className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--ink-muted, #708499)' }} />
-        <p className="text-sm mb-1" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+        <p className="text-sm mb-1" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
           No strategic narrative yet
         </p>
         <p className="text-xs mb-4" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
@@ -105,7 +105,7 @@ const NarrativePanel = () => {
             <BookOpen className="w-4 h-4" style={{ color: '#E85D00' }} />
             <span className="text-sm font-medium" style={{ color: '#E85D00', fontFamily: fontFamily.body }}>Executive Summary</span>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
             {narrative.executive_summary}
           </p>
           {narrative.data_completeness != null && (
@@ -135,7 +135,7 @@ const NarrativePanel = () => {
                 onClick={() => setExpandedSection(isOpen ? null : key)}>
                 <div className="flex items-center gap-2">
                   <Icon className="w-4 h-4" style={{ color: meta.color }} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+                  <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
                     {meta.label}
                   </span>
                   {Array.isArray(data) && (

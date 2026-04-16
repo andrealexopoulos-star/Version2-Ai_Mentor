@@ -49,7 +49,7 @@ const VerificationBadge = ({ navigate }) => {
     <div className="relative hidden md:block">
       <button
         onClick={() => setShowTooltip(!showTooltip)}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors hover:bg-white/5"
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors hover:bg-black/5"
         data-testid="verification-badge"
       >
         <div className="w-2 h-2 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}50` }} />
@@ -378,12 +378,12 @@ const DashboardLayout = ({ children }) => {
       {/* ═══ TOP BAR ═══ */}
       <header className="fixed top-0 left-0 right-0 h-[60px] px-4 lg:px-6 flex items-center justify-between" style={{ background: 'var(--biqc-sidebar-bg)', backdropFilter: 'saturate(180%) blur(16px)', WebkitBackdropFilter: 'saturate(180%) blur(16px)', borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
         <div className="flex items-center gap-3">
-          <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
+          <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-black/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
             {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: '#E85D00', boxShadow: '0 0 8px rgba(232,93,0,0.4)' }} />
-            <span className="font-semibold text-sm" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)' }}>BIQc</span>
+            <span className="font-semibold text-sm" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)' }}>BIQc</span>
           </div>
         </div>
 
@@ -423,7 +423,7 @@ const DashboardLayout = ({ children }) => {
         </div>
         {/* Mobile: search icon only */}
         <button
-          className="md:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+          className="md:hidden p-1.5 rounded-lg hover:bg-black/5 transition-colors"
           style={{ color: 'var(--biqc-text-2)' }}
           aria-label="Search"
           data-testid="topbar-search-mobile"
@@ -438,7 +438,7 @@ const DashboardLayout = ({ children }) => {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-lg transition-colors hover:bg-white/5"
+            className="p-2 rounded-lg transition-colors hover:bg-black/5"
             style={{ color: 'var(--biqc-text-2)' }}
             aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             title={isDark ? 'Light mode' : 'Dark mode'}
@@ -452,7 +452,7 @@ const DashboardLayout = ({ children }) => {
 
           {/* Notifications */}
           <div className="relative">
-            <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 rounded-lg hover:bg-white/5 transition-colors relative" style={{ color: 'var(--biqc-text-2)' }} aria-label="Notifications">
+            <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 rounded-lg hover:bg-black/5 transition-colors relative" style={{ color: 'var(--biqc-text-2)' }} aria-label="Notifications">
               <Bell className="w-5 h-5" />
               {notifications.total > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full" style={{ background: notifications.high > 0 ? colors.danger : colors.warning }}>
@@ -520,14 +520,14 @@ const DashboardLayout = ({ children }) => {
             )}
           </div>
 
-          <button className="p-2 rounded-lg hover:bg-white/5 hidden md:flex" style={{ color: 'var(--biqc-text-2)' }} aria-label="Help"><HelpCircle className="w-5 h-5" /></button>
+          <button className="p-2 rounded-lg hover:bg-black/5 hidden md:flex" style={{ color: 'var(--biqc-text-2)' }} aria-label="Help"><HelpCircle className="w-5 h-5" /></button>
 
           <div className="w-px h-6 mx-1 hidden md:block" style={{ background: 'rgba(140,170,210,0.15)' }} />
 
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 p-1 pr-3 rounded-xl hover:bg-white/5 transition-colors" aria-label="User menu">
+              <button className="flex items-center gap-2 p-1 pr-3 rounded-xl hover:bg-black/5 transition-colors" aria-label="User menu">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: '#E85D00', fontFamily: fontFamily.body }}>
                   {user?.full_name?.charAt(0).toUpperCase() || 'U'}
                 </div>
@@ -618,7 +618,7 @@ const DashboardLayout = ({ children }) => {
                       aria-current={sectionActive ? 'page' : undefined}
                       style={{
                         fontFamily: fontFamily.body,
-                        color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
+                        color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #0A0A0A)' : 'var(--biqc-text-2, #8FA0B8)',
                         background: sectionActive ? 'var(--surface-sunken)' : 'transparent',
                         borderLeft: sectionActive ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                       }}
@@ -633,7 +633,7 @@ const DashboardLayout = ({ children }) => {
                     {section.items.length > 0 && !sidebarCollapsed && !sectionLocked && (
                       <button
                         onClick={() => toggleSection(section.id)}
-                        className="p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0"
+                        className="p-1.5 rounded-lg hover:bg-black/5 transition-colors shrink-0"
                         style={{ color: sectionActive ? 'var(--lava, #E85D00)' : 'var(--ink-muted, #708499)' }}
                         aria-expanded={isExpanded}
                         aria-controls={`nav-section-items-${section.id}`}
@@ -678,7 +678,7 @@ const DashboardLayout = ({ children }) => {
                           aria-current={active ? 'page' : undefined}
                           style={{
                             fontFamily: fontFamily.body,
-                            color: locked ? '#4A5568' : active ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
+                            color: locked ? '#4A5568' : active ? 'var(--biqc-text, #0A0A0A)' : 'var(--biqc-text-2, #8FA0B8)',
                             background: active ? '#E85D0015' : 'transparent',
                             borderLeft: active ? '2px solid #E85D00' : '2px solid transparent',
                             cursor: 'pointer',
@@ -701,9 +701,9 @@ const DashboardLayout = ({ children }) => {
           <div className="mt-auto pt-2 pb-2" style={{ borderTop: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}>
             <button
               onClick={() => { navigate('/biqc-legal'); closeAll(); }}
-              className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all hover:bg-white/5"
+              className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all hover:bg-black/5"
               style={{
-                color: isActive('/biqc-legal') ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
+                color: isActive('/biqc-legal') ? 'var(--biqc-text, #0A0A0A)' : 'var(--biqc-text-2, #8FA0B8)',
                 background: isActive('/biqc-legal') ? 'var(--surface-sunken)' : 'transparent',
                 borderLeft: isActive('/biqc-legal') ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                 fontFamily: fontFamily.body,
@@ -743,7 +743,7 @@ const DashboardLayout = ({ children }) => {
               <div className="flex-1 min-w-0">
                 <p
                   className="text-sm font-medium truncate"
-                  style={{ color: 'var(--biqc-text, #EDF1F7)', fontFamily: fontFamily.body, lineHeight: 1.3 }}
+                  style={{ color: 'var(--biqc-text, #0A0A0A)', fontFamily: fontFamily.body, lineHeight: 1.3 }}
                 >
                   {user?.full_name || user?.email || 'User'}
                 </p>

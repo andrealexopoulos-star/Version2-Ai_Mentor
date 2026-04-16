@@ -92,7 +92,7 @@ export const ModernIntegrationBanner = () => (
       <p className="text-[11px] uppercase tracking-[0.18em]" style={{ color: '#C65F2E', fontFamily: fontFamily.mono }}>
         Integrations
       </p>
-      <h3 className="mt-2 text-2xl sm:text-3xl font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+      <h3 className="mt-2 text-2xl sm:text-3xl font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
         One connection layer across your operating stack.
       </h3>
       <p className="mt-3 text-sm sm:text-base max-w-2xl mx-auto" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>

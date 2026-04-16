@@ -1804,7 +1804,7 @@ export default function AdvisorWatchtower() {
                 — Watchtower · {greetingDateTime}
               </div>
               <div className="flex flex-wrap items-end gap-3" data-testid="advisor-header-title-row">
-                <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="advisor-header-title">
+                <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="advisor-header-title">
                   Good {displayTimeOfDay}, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{displayName}</em>.
                 </h1>
               </div>
@@ -1824,7 +1824,7 @@ export default function AdvisorWatchtower() {
             <button
               onClick={handleRefresh}
               disabled={snapshotRefreshing || overviewRefreshing}
-              className="inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-colors hover:bg-white/5"
+              className="inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-colors hover:bg-black/5"
               style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)' }}
               data-testid="advisor-refresh-button"
             >
@@ -1904,7 +1904,7 @@ export default function AdvisorWatchtower() {
                   </h2>
                   <Link
                     to="/alerts"
-                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                     style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}
                     data-testid="advisor-view-alerts-link"
                   >
@@ -1932,7 +1932,7 @@ export default function AdvisorWatchtower() {
                             sourceSummary: 'Source: BIQc Advisor state classification.',
                             factPoints: [],
                           })}
-                          className="inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-white/5"
+                          className="inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-black/5"
                           style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                           data-testid="advisor-state-discuss-soundboard"
                         >
@@ -1965,7 +1965,7 @@ export default function AdvisorWatchtower() {
                             sourceSummary: 'Source: BIQc Advisor queue state.',
                             factPoints: [`${openSignals.length} open signals`, `${queuedBeyondThree} queued after top 3`],
                           })}
-                          className="inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-white/5"
+                          className="inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-black/5"
                           style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                           data-testid="advisor-queue-discuss-soundboard"
                         >
@@ -1990,7 +1990,7 @@ export default function AdvisorWatchtower() {
                         <div className="mt-4 flex flex-wrap gap-3">
                           <button
                             onClick={handleRefresh}
-                            className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                            className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                             style={{ borderColor: '#FDE68A55', color: 'var(--warning, #D97706)', fontFamily: fontFamily.mono }}
                             data-testid="advisor-brain-unavailable-refresh-button"
                           >
@@ -1998,7 +1998,7 @@ export default function AdvisorWatchtower() {
                           </button>
                           <Link
                             to={soundboardDiscussHref(`My priorities aren't loading. Help me figure out what's wrong and what I should do next.`)}
-                            className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                            className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                             style={{ borderColor: '#FDE68A55', color: 'var(--warning, #D97706)', fontFamily: fontFamily.mono }}
                             data-testid="advisor-brain-unavailable-discuss-soundboard"
                           >
@@ -2019,7 +2019,7 @@ export default function AdvisorWatchtower() {
                         </p>
                         <Link
                           to={soundboardDiscussHref('BIQc is still loading. What should I focus on while I wait?')}
-                          className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                          className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                           style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                           data-testid="advisor-brain-loading-discuss-soundboard"
                         >
@@ -2039,7 +2039,7 @@ export default function AdvisorWatchtower() {
                         </p>
                         <Link
                           to={soundboardDiscussHref('Nothing urgent right now. What should I proactively work on this week to grow or protect the business?')}
-                          className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                          className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                           style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                           data-testid="advisor-all-clear-discuss-soundboard"
                         >
@@ -2104,7 +2104,7 @@ export default function AdvisorWatchtower() {
 
                                 <button
                                   onClick={() => signal ? setEvidenceDrawerDecision(decision) : null}
-                                  className="mt-4 inline-flex min-h-[36px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                                  className="mt-4 inline-flex min-h-[36px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                                   style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                                   data-testid={`advisor-decision-evidence-toggle-${decision.id}`}
                                   disabled={!signal}
@@ -2137,7 +2137,7 @@ export default function AdvisorWatchtower() {
                                 <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-primary-controls-${decision.id}`}>
                                   <button
                                     onClick={() => signal ? openSoundboardWithBrief(buildSoundboardHandoff(decision)) : null}
-                                    className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                                    className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                                     style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                                     data-testid={`advisor-decision-open-soundboard-${decision.id}`}
                                     disabled={!signal}
@@ -2147,7 +2147,7 @@ export default function AdvisorWatchtower() {
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <button
-                                        className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                                        className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                                         style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                                         data-testid={`advisor-decision-more-actions-${decision.id}`}
                                         disabled={!signal}
@@ -2192,7 +2192,7 @@ export default function AdvisorWatchtower() {
                                   <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate risk if you skip this one for now.'}</p>
                                   <button
                                     onClick={() => handleCardMenuAction(decision, 'ignore')}
-                                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border px-2.5 py-1 text-xs hover:bg-white/5"
+                                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border px-2.5 py-1 text-xs hover:bg-black/5"
                                     style={{ borderColor: '#64748B40', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                                     data-testid={`advisor-decision-ignore-inline-${decision.id}`}
                                     disabled={!signal || Boolean(actionRecord)}
@@ -2293,7 +2293,7 @@ export default function AdvisorWatchtower() {
                   </p>
                   <button
                     onClick={() => setShowAdvancedSections((prev) => !prev)}
-                    className="inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                    className="inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                     style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                     data-testid="advisor-advanced-toggle-button"
                   >
@@ -2403,7 +2403,7 @@ export default function AdvisorWatchtower() {
 
                   <button
                     onClick={exportAuditCsv}
-                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                     style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                     data-testid="advisor-action-audit-export-button"
                   >
@@ -2464,7 +2464,7 @@ export default function AdvisorWatchtower() {
                           </p>
                           <button
                             onClick={() => handleReopenDecision(row.dedupeKey, row.alertId)}
-                            className="inline-flex min-h-[36px] items-center rounded-lg border px-2.5 py-1 text-[10px] hover:bg-white/5"
+                            className="inline-flex min-h-[36px] items-center rounded-lg border px-2.5 py-1 text-[10px] hover:bg-black/5"
                             style={{ borderColor: '#334155', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.mono }}
                             data-testid={`advisor-action-audit-row-reopen-${row.dedupeKey.replace(/\|/g, '-')}`}
                           >
@@ -2517,7 +2517,7 @@ export default function AdvisorWatchtower() {
                             const query = signal.finding || signal.signal_name || signal.event_type || signal.title || 'this signal';
                             navigate(`/war-room?prefill=${encodeURIComponent(query)}`);
                           }}
-                          className="text-xs px-2 py-1 rounded-md border border-white/10 hover:bg-white/5"
+                          className="text-xs px-2 py-1 rounded-md border border-white/10 hover:bg-black/5"
                         >
                           Ask WarRoom
                         </button>

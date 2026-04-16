@@ -162,7 +162,7 @@ function ChatDisplay({ mode, example }) {
     <div ref={ref} style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', maxHeight: 480, paddingRight: 4 }}>
       {/* User bubble */}
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <div style={{ background: `${mode.color}22`, border: `1px solid ${mode.color}40`, borderRadius: '16px 16px 4px 16px', padding: '12px 16px', maxWidth: '78%', fontFamily: fontFamily.body, color: 'var(--ink-display, #EDF1F7)', fontSize: 14, lineHeight: 1.6 }}>
+        <div style={{ background: `${mode.color}22`, border: `1px solid ${mode.color}40`, borderRadius: '16px 16px 4px 16px', padding: '12px 16px', maxWidth: '78%', fontFamily: fontFamily.body, color: 'var(--ink-display, #0A0A0A)', fontSize: 14, lineHeight: 1.6 }}>
           {example.q}
         </div>
       </div>
@@ -217,7 +217,7 @@ export default function SoundboardPage() {
           <Mic size={12} style={{ color: '#C65F2E' }} />
           <span style={{ fontFamily: fontFamily.mono, color: '#C65F2E', fontSize: 11, fontWeight: 700, letterSpacing: '0.18em' }}>SOUNDBOARD â€" LIVE DEMO</span>
         </div>
-        <h1 style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(30px, 5vw, 54px)', lineHeight: 1.08, fontWeight: 700, margin: '0 auto 16px', maxWidth: 700 }}>
+        <h1 style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', fontSize: 'clamp(30px, 5vw, 54px)', lineHeight: 1.08, fontWeight: 700, margin: '0 auto 16px', maxWidth: 700 }}>
           Ask anything.<br />
           <span style={{ background: 'linear-gradient(135deg, #FF8C3A, #C65F2E)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
             Get boardroom-grade answers.
@@ -269,7 +269,7 @@ export default function SoundboardPage() {
             <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: `${mode.color}08` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <mode.icon size={15} style={{ color: mode.color }} />
-                <span style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 14, fontWeight: 700 }}>{mode.label}</span>
+                <span style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', fontSize: 14, fontWeight: 700 }}>{mode.label}</span>
               </div>
               <p style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', fontSize: 12, lineHeight: 1.5, margin: 0 }}>
                 {mode.description}
@@ -302,7 +302,7 @@ export default function SoundboardPage() {
                     }}
                   >
                     <ChevronRight size={12} style={{ color: i === activeExample ? mode.color : '#64748B', flexShrink: 0, marginTop: 2 }} />
-                    <span style={{ fontFamily: fontFamily.body, color: i === activeExample ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8', fontSize: 12, lineHeight: 1.5 }}>
+                    <span style={{ fontFamily: fontFamily.body, color: i === activeExample ? 'var(--ink-display, #0A0A0A)' : '#8FA0B8', fontSize: 12, lineHeight: 1.5 }}>
                       {ex.q}
                     </span>
                   </button>

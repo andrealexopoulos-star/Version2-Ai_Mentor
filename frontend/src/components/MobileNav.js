@@ -121,7 +121,7 @@ const MobileNav = () => {
               </span>
               <button
                 onClick={() => setMoreOpen(false)}
-                className="p-2 rounded-lg hover:bg-white/5"
+                className="p-2 rounded-lg hover:bg-black/5"
                 aria-label="Close more menu"
                 data-testid="close-more-sheet"
               >

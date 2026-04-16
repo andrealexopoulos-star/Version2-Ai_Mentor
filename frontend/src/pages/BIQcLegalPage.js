@@ -60,7 +60,7 @@ export default function BIQcLegalPage() {
             {active.id !== 'overview' && (
               <button
                 onClick={() => setSearchParams({ tab: 'overview' })}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                 style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}
                 data-testid="biqc-legal-back-to-overview"
               >
@@ -74,7 +74,7 @@ export default function BIQcLegalPage() {
                   <button
                     key={tab.id}
                     onClick={() => setSearchParams({ tab: tab.id })}
-                    className="rounded-2xl border px-4 py-4 text-left transition-all hover:bg-white/5"
+                    className="rounded-2xl border px-4 py-4 text-left transition-all hover:bg-black/5"
                     style={{ borderColor: 'var(--biqc-border)', background: 'rgba(255,255,255,0.03)' }}
                     data-testid={`biqc-legal-overview-card-${tab.id}`}
                   >

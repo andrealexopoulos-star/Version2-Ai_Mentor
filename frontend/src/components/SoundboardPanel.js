@@ -1433,13 +1433,13 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                       <button
                         key={mode.id}
                         onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
-                        className="w-full flex items-start gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
+                        className="w-full flex items-start gap-2 px-3 py-2 text-left transition-all hover:bg-black/5"
                         style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
                         data-testid={`soundboard-panel-mode-option-${mode.id}`}
                       >
                         <span className="text-sm shrink-0">{mode.icon}</span>
                         <div>
-                          <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#E85D00' : 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{mode.label}</p>
+                          <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#E85D00' : 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>{mode.label}</p>
                           <p className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.body }}>{mode.desc}</p>
                         </div>
                       </button>
@@ -1475,13 +1475,13 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                       <button
                         key={agent.id}
                         onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all hover:bg-black/5"
                         style={{ borderTop: '1px solid #1E2D3D' }}
                         data-testid={`soundboard-panel-agent-option-${agent.id}`}
                       >
                         <span className="text-sm shrink-0">{agent.icon}</span>
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+                          <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
                             {agent.label}
                           </p>
                           <p className="text-[10px] truncate" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.body }}>
@@ -1519,14 +1519,14 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           <input type="file" ref={fileRef} className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.md,.json,.py,.js" />
           <button
             onClick={() => fileRef.current?.click()}
-            className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0"
+            className="p-2 rounded-xl hover:bg-black/5 transition-colors shrink-0"
             data-testid="sb-upload"
             title="Attach file"
           >
             <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#E85D00' : '#64748B' }} />
           </button>
           <button
-            className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0"
+            className="p-2 rounded-xl hover:bg-black/5 transition-colors shrink-0"
             data-testid="sb-video"
             onClick={() => setShowVoiceChat(true)}>
             <Video className="w-4 h-4 text-[var(--ink-muted)]" />

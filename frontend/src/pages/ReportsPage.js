@@ -249,7 +249,7 @@ const ReportsPage = () => {
           <div className="flex items-center gap-2">
             {hasEvents && (
               <button onClick={handleExportPDF} disabled={generating}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-white/5 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-black/5 disabled:opacity-50"
                 style={{ color: 'var(--ink-secondary)', border: '1px solid var(--border)', fontFamily: 'var(--font-mono)' }}
                 data-testid="export-pdf-btn">
                 <Download className="w-3.5 h-3.5" />

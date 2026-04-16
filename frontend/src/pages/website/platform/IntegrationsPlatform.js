@@ -87,7 +87,7 @@ const IntegrationsPlatform = () => {
           <div className="hidden lg:block w-[340px] shrink-0 rounded-lg overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }} data-testid="integration-detail-panel">
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(140,170,210,0.15)' }}>
               <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{selected.name}</h3>
-              <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-white/5 text-[#64748B]"><X className="w-4 h-4" /></button>
+              <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-black/5 text-[#64748B]"><X className="w-4 h-4" /></button>
             </div>
             <div className="px-5 py-4 space-y-5">
               <div>

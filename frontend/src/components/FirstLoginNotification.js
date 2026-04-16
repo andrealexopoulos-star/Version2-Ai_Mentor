@@ -55,7 +55,7 @@ const FirstLoginNotification = () => {
               <p className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Connect your systems</p>
             </div>
           </div>
-          <button onClick={() => setDismissed(true)} className="p-1 rounded-lg hover:bg-white/5 text-[var(--ink-muted)]">
+          <button onClick={() => setDismissed(true)} className="p-1 rounded-lg hover:bg-black/5 text-[var(--ink-muted)]">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -66,7 +66,7 @@ const FirstLoginNotification = () => {
 
         <div className="space-y-2">
           <button onClick={() => { setDismissed(true); navigate('/connect-email'); }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all hover:bg-white/5"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all hover:bg-black/5"
             style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
             data-testid="connect-email-btn">
             <Mail className="w-4 h-4 text-[#3B82F6]" />
@@ -78,7 +78,7 @@ const FirstLoginNotification = () => {
           </button>
 
           <button onClick={() => { setDismissed(true); navigate('/integrations'); }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all hover:bg-white/5"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all hover:bg-black/5"
             style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
             data-testid="connect-integrations-btn">
             <Plug className="w-4 h-4 text-[#E85D00]" />

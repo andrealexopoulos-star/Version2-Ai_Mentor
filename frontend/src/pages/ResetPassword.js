@@ -44,7 +44,7 @@ const ResetPassword = () => {
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-6">
-        <Link to="/" className="flex items-center gap-3" style={{ color: 'var(--ink-display, #EDF1F7)', textDecoration: 'none' }}>
+        <Link to="/" className="flex items-center gap-3" style={{ color: 'var(--ink-display, #0A0A0A)', textDecoration: 'none' }}>
           <span className="inline-block rounded-full" style={{ width: 10, height: 10, background: 'var(--lava, #E85D00)', boxShadow: '0 0 16px var(--lava, #E85D00)' }} />
           <span className="text-[22px] font-semibold" style={{ fontFamily: DISPLAY }}>BIQc</span>
         </Link>
@@ -62,9 +62,9 @@ const ResetPassword = () => {
                 <div className="w-14 h-14 flex items-center justify-center mx-auto mb-6" style={{ background: 'var(--positive-wash, rgba(16,185,129,0.12))', borderRadius: 'var(--r-lg, 12px)' }}>
                   <CheckCircle2 className="w-7 h-7" style={{ color: 'var(--positive, #10B981)' }} />
                 </div>
-                <h1 className="text-2xl font-semibold mb-3" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1.05 }}>Check your email</h1>
+                <h1 className="text-2xl font-semibold mb-3" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)', lineHeight: 1.05 }}>Check your email</h1>
                 <p className="text-sm leading-relaxed mb-6" style={{ fontFamily: UI, color: 'var(--ink-secondary, #8FA0B8)' }}>
-                  We've sent a password reset link to <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>{email}</strong>. Click the link in the email to set a new password.
+                  We've sent a password reset link to <strong style={{ color: 'var(--ink-display, #0A0A0A)' }}>{email}</strong>. Click the link in the email to set a new password.
                 </p>
                 <p className="text-xs mb-6" style={{ fontFamily: MONO, color: 'var(--ink-muted, #708499)' }}>Didn't receive it? Check spam or try again.</p>
                 <button onClick={() => setSent(false)} className="text-sm transition-colors" style={{ color: 'var(--lava, #E85D00)', fontFamily: UI }} data-testid="reset-try-again">
@@ -76,7 +76,7 @@ const ResetPassword = () => {
                 <div className="w-14 h-14 flex items-center justify-center mb-6" style={{ background: 'var(--lava-wash, rgba(232,93,0,0.12))', borderRadius: 'var(--r-lg, 12px)' }}>
                   <Lock className="w-6 h-6" style={{ color: 'var(--lava, #E85D00)' }} />
                 </div>
-                <h1 className="mb-3" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)', fontSize: '40px', letterSpacing: 'var(--ls-tight, -0.035em)', lineHeight: 1.05, fontWeight: 'var(--fw-display, 400)' }}>
+                <h1 className="mb-3" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)', fontSize: '40px', letterSpacing: 'var(--ls-tight, -0.035em)', lineHeight: 1.05, fontWeight: 'var(--fw-display, 400)' }}>
                   Reset your <em style={{ fontStyle: 'italic', color: 'var(--lava, #E85D00)' }}>password</em>.
                 </h1>
                 <p className="text-base leading-relaxed" style={{ fontFamily: UI, color: 'var(--ink-secondary, #8FA0B8)' }}>
@@ -116,7 +116,7 @@ const ResetPassword = () => {
               <Info className="w-4 h-4" style={{ color: 'var(--lava, #E85D00)' }} />
             </div>
             <p className="text-[13px] leading-relaxed" style={{ fontFamily: UI, color: 'var(--ink-secondary, #8FA0B8)' }}>
-              <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>Heads up.</strong> If you signed up with Google, Microsoft, or SAML, this won't work — use the same SSO button you used originally on the sign-in page.
+              <strong style={{ color: 'var(--ink-display, #0A0A0A)' }}>Heads up.</strong> If you signed up with Google, Microsoft, or SAML, this won't work — use the same SSO button you used originally on the sign-in page.
             </p>
           </div>
         </div>

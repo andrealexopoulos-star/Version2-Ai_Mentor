@@ -114,7 +114,7 @@ const PropagationChain = ({ chain, cognitive }) => {
     <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${ic}25` }}>
       <button
         onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center gap-2 p-3 text-left transition-all hover:bg-white/5"
+        className="w-full flex items-center gap-2 p-3 text-left transition-all hover:bg-black/5"
         style={{ background: ic + '06' }}>
         <div className="flex items-center gap-2 flex-1 flex-wrap">
           <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: 'var(--font-mono)' }}>{src}</span>
@@ -949,7 +949,7 @@ const RiskPage = () => {
             {/* Req 5: Acronym legend */}
             <div className="flex justify-end">
               <button onClick={() => setShowAcronymLegend(v => !v)}
-                className="flex items-center gap-1.5 text-[10px] px-3 py-1.5 rounded-lg transition-colors hover:bg-white/5"
+                className="flex items-center gap-1.5 text-[10px] px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5"
                 style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(140,170,210,0.15)' }}>
                 <Info className="w-3 h-3" /> {showAcronymLegend ? 'Hide' : 'What do RVI, EDS, CDR, ADS mean?'}
               </button>

@@ -134,7 +134,7 @@ export default function UpgradePage({ success = false }) {
               Upgrade successful
             </span>
           </div>
-          <h1 className="text-4xl sm:text-5xl" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+          <h1 className="text-4xl sm:text-5xl" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
             BIQc Foundation is now active
           </h1>
           <p className="mx-auto max-w-2xl text-sm sm:text-base" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
@@ -171,7 +171,7 @@ export default function UpgradePage({ success = false }) {
             <Lock className="h-4 w-4" style={{ color: '#E85D00' }} />
             <span className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Upgrade required</span>
           </div>
-          <h1 className="mt-6 font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display, fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+          <h1 className="mt-6 font-medium" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display, fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
             Unlock <em style={{ fontStyle: 'italic', color: '#E85D00' }}>everything</em>.
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
@@ -193,7 +193,7 @@ export default function UpgradePage({ success = false }) {
             >
               <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: tier.color, fontFamily: fontFamily.mono }}>{tier.name}</p>
               <div className="mt-2 flex items-end gap-2">
-                <span className="text-4xl" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>{tier.price}</span>
+                <span className="text-4xl" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>{tier.price}</span>
                 <span className="pb-1 text-sm" style={{ color: '#64748B' }}>{tier.period}</span>
               </div>
               <p className="mt-2 text-xs" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{tier.subtitle}</p>

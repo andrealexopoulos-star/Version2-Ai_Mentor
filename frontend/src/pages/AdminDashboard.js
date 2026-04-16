@@ -20,7 +20,7 @@ const M = "var(--font-mono)";
 const Pnl = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
-const Mc = ({ label, value, sub, color = 'var(--ink-display, #EDF1F7)', icon: Icon, alert }) => (
+const Mc = ({ label, value, sub, color = 'var(--ink-display, #0A0A0A)', icon: Icon, alert }) => (
   <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: `1px solid ${alert ? '#E85D00' + '40' : 'rgba(140,170,210,0.15)'}` }}>
     <div className="flex items-center justify-between mb-2">
       <span className="text-[10px] text-[var(--ink-muted)] uppercase tracking-wider" style={{ fontFamily: M }}>{label}</span>
@@ -44,7 +44,7 @@ const Badge = ({ text, color = '#64748B' }) => (
   <span className="text-[10px] px-2 py-0.5 rounded uppercase tracking-wider" style={{ fontFamily: M, color, background: color + '15' }}>{text}</span>
 );
 const Row = ({ icon: Icon, label, value, status, onClick }) => (
-  <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${onClick ? 'cursor-pointer hover:bg-white/5' : ''}`} style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }} onClick={onClick}>
+  <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${onClick ? 'cursor-pointer hover:bg-black/5' : ''}`} style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }} onClick={onClick}>
     {Icon && <Icon className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />}
     {status && <StatusDot status={status} />}
     <span className="text-sm text-[var(--ink-display)] flex-1" style={{ fontFamily: B }}>{label}</span>
@@ -175,7 +175,7 @@ const AdminDashboard = () => {
               <h1 className="text-2xl font-normal text-[var(--ink-display)]" style={{ fontFamily: D }}>Super Admin</h1>
               <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: B }}>Enterprise governance & control plane</p>
             </div>
-            <button onClick={loadData} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[var(--ink-secondary)] hover:bg-white/5" style={{ border: '1px solid var(--biqc-border)', fontFamily: B }}>
+            <button onClick={loadData} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[var(--ink-secondary)] hover:bg-black/5" style={{ border: '1px solid var(--biqc-border)', fontFamily: B }}>
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </button>
           </div>
@@ -185,7 +185,7 @@ const AdminDashboard = () => {
             {PAGES.map(p => (
               <button key={p.id} onClick={() => setPage(p.id)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0"
-                style={{ fontFamily: B, color: page === p.id ? 'var(--ink-display, #EDF1F7)' : '#64748B', background: page === p.id ? '#E85D00' + '15' : 'transparent', border: `1px solid ${page === p.id ? '#E85D00' + '30' : 'rgba(140,170,210,0.15)'}` }}
+                style={{ fontFamily: B, color: page === p.id ? 'var(--ink-display, #0A0A0A)' : '#64748B', background: page === p.id ? '#E85D00' + '15' : 'transparent', border: `1px solid ${page === p.id ? '#E85D00' + '30' : 'rgba(140,170,210,0.15)'}` }}
                 data-testid={`admin-page-${p.id}`}>
                 <p.icon className="w-3.5 h-3.5" style={{ color: page === p.id ? '#E85D00' : '#64748B' }} /> {p.label}
               </button>
@@ -250,7 +250,7 @@ const AdminDashboard = () => {
                 <div className="space-y-1">
                   {loading ? <div className="flex justify-center py-16"><RadarSweep compact /></div> :
                   filteredUsers.map(u => (
-                    <button key={u.id} onClick={() => loadUserDetail(u.id)} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left hover:bg-white/5 transition-all" style={{ background: selectedUser === u.id ? '#E85D0010' : 'transparent', border: `1px solid ${selectedUser === u.id ? '#E85D0030' : 'rgba(140,170,210,0.15)'}` }} data-testid={`admin-user-${u.id}`}>
+                    <button key={u.id} onClick={() => loadUserDetail(u.id)} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left hover:bg-black/5 transition-all" style={{ background: selectedUser === u.id ? '#E85D0010' : 'transparent', border: `1px solid ${selectedUser === u.id ? '#E85D0030' : 'rgba(140,170,210,0.15)'}` }} data-testid={`admin-user-${u.id}`}>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0" style={{ background: u.role === 'suspended' ? '#EF444420' : '#E85D0020', color: u.role === 'suspended' ? '#EF4444' : '#E85D00', fontFamily: B }}>{(u.full_name || u.email || '?').charAt(0).toUpperCase()}</div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm text-[var(--ink-display)] block truncate" style={{ fontFamily: B }}>{u.full_name || 'Unnamed'}</span>
@@ -264,7 +264,7 @@ const AdminDashboard = () => {
               <div>
                 {su ? (
                   <Pnl>
-                    <div className="flex justify-between mb-3"><h3 className="text-base text-[var(--ink-display)]" style={{ fontFamily: D }}>{su.full_name || 'User'}</h3><button onClick={() => setSelectedUser(null)} className="text-[var(--ink-muted)] hover:text-white"><X className="w-4 h-4" /></button></div>
+                    <div className="flex justify-between mb-3"><h3 className="text-base text-[var(--ink-display)]" style={{ fontFamily: D }}>{su.full_name || 'User'}</h3><button onClick={() => setSelectedUser(null)} className="text-[var(--ink-muted)] hover:text-[var(--ink-display)]"><X className="w-4 h-4" /></button></div>
                     <div className="space-y-2 mb-4 text-xs">
                       {[['Email', su.email, M], ['Company', su.company_name || 'Not set', B], ['Role', su.role || 'user', M], ['Tier', su.subscription_tier || 'free', M], ['Joined', su.created_at ? new Date(su.created_at).toLocaleDateString() : '—', M]].map(([l, v, f]) => (
                         <div key={l}><span className="text-[10px] text-[var(--ink-muted)] uppercase" style={{ fontFamily: M }}>{l}</span><p className="text-[var(--ink-display)]" style={{ fontFamily: f }}>{v}</p></div>
@@ -273,7 +273,7 @@ const AdminDashboard = () => {
                     {loadingDetail ? <div className="flex justify-center py-4"><RadarSweep compact /></div> : userDetail && (
                       <div className="grid grid-cols-2 gap-2 mb-4" style={{ borderTop: '1px solid var(--biqc-border)', paddingTop: 12 }}>
                         {[['Calibrated', userDetail.operator_profile?.persona_calibration_status || 'No', userDetail.operator_profile?.persona_calibration_status === 'complete' ? '#10B981' : '#F59E0B'],
-                          ['Integrations', `${userDetail.integrations.length}`, '#3B82F6'], ['Snapshots', `${userDetail.snapshots.length}`, 'var(--ink-display, #EDF1F7)'], ['Signals', `${userDetail.signal_count}`, 'var(--ink-display, #EDF1F7)']].map(([l, v, c]) => (
+                          ['Integrations', `${userDetail.integrations.length}`, '#3B82F6'], ['Snapshots', `${userDetail.snapshots.length}`, 'var(--ink-display, #0A0A0A)'], ['Signals', `${userDetail.signal_count}`, 'var(--ink-display, #0A0A0A)']].map(([l, v, c]) => (
                           <div key={l} className="p-2 rounded" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: M }}>{l}</span>
                             <span className="text-xs block" style={{ fontFamily: M, color: c }}>{v}</span>

@@ -9,7 +9,7 @@ export const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>{children}</div>
 );
 
-export const MetricCard = ({ label, value, sub, color = 'var(--ink-display, #EDF1F7)', alert = false }) => (
+export const MetricCard = ({ label, value, sub, color = 'var(--ink-display, #0A0A0A)', alert = false }) => (
   <div className="p-4 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: `1px solid ${alert ? '#E85D00' + '40' : 'rgba(140,170,210,0.15)'}` }}>
     <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>{label}</span>
     <span className="text-xl font-bold block" style={{ fontFamily: fontFamily.mono, color }}>{value}</span>
@@ -80,7 +80,7 @@ export const HeatBar = ({ label, value, max = 100, color = '#E85D00', suffix = '
   <div className="mb-3">
     <div className="flex justify-between mb-1">
       <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{label}</span>
-      <span className="text-xs font-semibold" style={{ fontFamily: fontFamily.mono, color: alert ? '#E85D00' : 'var(--ink-display, #EDF1F7)' }}>{value}{suffix}</span>
+      <span className="text-xs font-semibold" style={{ fontFamily: fontFamily.mono, color: alert ? '#E85D00' : 'var(--ink-display, #0A0A0A)' }}>{value}{suffix}</span>
     </div>
     <div className="h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>
       <div className="h-1.5 rounded-full" style={{ width: `${Math.min((value / max) * 100, 100)}%`, background: color }} />

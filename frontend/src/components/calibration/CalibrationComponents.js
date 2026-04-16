@@ -44,7 +44,7 @@ const PrivacyModal = ({ onClose }) => (
           </div>
           <p className="text-sm font-semibold" style={{ color: CHARCOAL, fontFamily: SERIF }}>BIQc Privacy & AI Commitment</p>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5" style={{ color: '#64748B' }}>
+        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-black/5" style={{ color: '#64748B' }}>
           <X className="w-4 h-4" />
         </button>
       </div>

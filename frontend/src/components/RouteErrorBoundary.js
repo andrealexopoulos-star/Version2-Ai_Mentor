@@ -37,7 +37,7 @@ class RouteErrorBoundary extends React.Component {
           minHeight: '60vh', padding: 40, textAlign: 'center',
         }}>
           <AlertTriangle style={{ width: 48, height: 48, color: 'var(--lava, #E85D00)', marginBottom: 16 }} />
-          <h2 style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 24, marginBottom: 8 }}>
+          <h2 style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', fontSize: 24, marginBottom: 8 }}>
             This section hit a problem
           </h2>
           <p style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', fontSize: 14, marginBottom: 16, maxWidth: 400 }}>

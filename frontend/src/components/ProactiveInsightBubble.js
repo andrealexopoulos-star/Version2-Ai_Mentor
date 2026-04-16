@@ -149,12 +149,12 @@ export const ProactiveInsightBubble = () => {
                     · {insight.source}
                   </span>
                 </div>
-                <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+                <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
                   {insight.title}
                 </p>
               </div>
             </div>
-            <button onClick={() => handleDismiss()} className="p-1 rounded-lg hover:bg-white/5 flex-shrink-0"
+            <button onClick={() => handleDismiss()} className="p-1 rounded-lg hover:bg-black/5 flex-shrink-0"
               style={{ color: '#4A5568' }}>
               <X className="w-3.5 h-3.5" />
             </button>

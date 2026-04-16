@@ -92,7 +92,7 @@ export const DailyBriefCard = () => {
       {/* Dismiss button */}
       <button
         onClick={(e) => { e.stopPropagation(); setDismissed(true); }}
-        className="absolute top-3 right-3 p-1 rounded-lg hover:bg-white/5"
+        className="absolute top-3 right-3 p-1 rounded-lg hover:bg-black/5"
         style={{ color: '#64748B' }}
         data-testid="dismiss-brief"
       >
@@ -193,7 +193,7 @@ export const DailyBriefBanner = ({ onOpen }) => {
         </button>
         <button
           onClick={() => setVisible(false)}
-          className="p-1 hover:bg-white/5 rounded"
+          className="p-1 hover:bg-black/5 rounded"
           data-testid="dismiss-banner"
         >
           <X className="w-3.5 h-3.5" style={{ color: '#64748B' }} />

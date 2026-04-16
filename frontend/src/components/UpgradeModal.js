@@ -31,7 +31,7 @@ const UpgradeModal = ({ isOpen, onClose, featureName = 'this feature', requiredT
           <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(232,93,0,0.08)', border: '1px solid rgba(232,93,0,0.15)', display: 'grid', placeItems: 'center', margin: '0 auto 16px', fontSize: 28 }}>
             <Lock className="w-7 h-7" style={{ color: 'var(--lava, #E85D00)' }} />
           </div>
-          <h2 style={{ fontFamily: fontFamily?.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.01em', marginBottom: 8 }}>Unlock {featureName}</h2>
+          <h2 style={{ fontFamily: fontFamily?.display, fontSize: 22, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.01em', marginBottom: 8 }}>Unlock {featureName}</h2>
           <p style={{ fontFamily: fontFamily.body, fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5, maxWidth: 400, margin: '0 auto' }}>
             This feature requires a {required.name} plan or higher. Upgrade to access {featureName} and more.
           </p>
@@ -42,8 +42,8 @@ const UpgradeModal = ({ isOpen, onClose, featureName = 'this feature', requiredT
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
             {/* Current plan */}
             <div style={{ border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 16, textAlign: 'center' }}>
-              <div style={{ fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', marginBottom: 4 }}>{current.name}</div>
-              <div style={{ fontFamily: fontFamily?.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em', marginBottom: 4 }}>{current.price}</div>
+              <div style={{ fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)', marginBottom: 4 }}>{current.name}</div>
+              <div style={{ fontFamily: fontFamily?.display, fontSize: 28, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.02em', marginBottom: 4 }}>{current.price}</div>
               <div style={{ fontFamily: fontFamily.body, fontSize: 12, color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{current.period}</div>
               <ul style={{ textAlign: 'left', listStyle: 'none', padding: 0, margin: 0 }}>
                 {current.features.map((f, i) => (
@@ -60,8 +60,8 @@ const UpgradeModal = ({ isOpen, onClose, featureName = 'this feature', requiredT
             {/* Required plan (recommended) */}
             <div style={{ border: '1px solid var(--lava, #E85D00)', borderRadius: 12, padding: 16, textAlign: 'center', background: 'linear-gradient(180deg, rgba(232,93,0,0.08) 0%, var(--surface, #0E1628) 100%)', boxShadow: '0 4px 16px rgba(232,93,0,0.12)', position: 'relative' }}>
               <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', padding: '2px 12px', background: 'var(--lava, #E85D00)', color: 'white', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', borderRadius: 999, whiteSpace: 'nowrap' }}>RECOMMENDED</div>
-              <div style={{ fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', marginBottom: 4 }}>{required.name}</div>
-              <div style={{ fontFamily: fontFamily?.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em', marginBottom: 4 }}>{required.price}</div>
+              <div style={{ fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)', marginBottom: 4 }}>{required.name}</div>
+              <div style={{ fontFamily: fontFamily?.display, fontSize: 28, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.02em', marginBottom: 4 }}>{required.price}</div>
               <div style={{ fontFamily: fontFamily.body, fontSize: 12, color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{required.period}</div>
               <ul style={{ textAlign: 'left', listStyle: 'none', padding: 0, margin: 0 }}>
                 {required.features.map((f, i) => (

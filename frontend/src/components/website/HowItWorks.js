@@ -116,7 +116,7 @@ const CategoryCard = ({ cat }) => {
             style={{ background: `${cat.color}15` }}>
             <cat.icon className="w-4 h-4" style={{ color: cat.color }} />
           </div>
-          <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
+          <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #0A0A0A)' }}>
             {cat.title}
           </h3>
         </div>
@@ -163,7 +163,7 @@ export function HowItWorks() {
       <div className="max-w-5xl mx-auto px-6 pt-14 pb-2 text-center">
         <SectionTag>How It Works</SectionTag>
         <h2 className="text-2xl sm:text-3xl font-medium mt-2 mb-3"
-          style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
+          style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #0A0A0A)' }}>
           From disconnected data to&nbsp;
           <span style={{ color: '#E85D00' }}>autonomous intelligence.</span>
         </h2>
@@ -208,7 +208,7 @@ export function HowItWorks() {
           <OrangeLine />
           <SectionTag>The Problem SMBs Face</SectionTag>
           <h3 className="text-xl sm:text-2xl font-medium mt-2 mb-8"
-            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
+            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #0A0A0A)' }}>
             You're running a business with enterprise-level complexity<br className="hidden sm:block" /> on startup-level infrastructure.
           </h3>
 
@@ -222,7 +222,7 @@ export function HowItWorks() {
                 }}>
                 <item.icon className="w-5 h-5 mb-3" style={{ color: '#EF4444' }} />
                 <h4 className="text-sm font-semibold mb-2"
-                  style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
+                  style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #0A0A0A)' }}>
                   {item.title}
                 </h4>
                 <p className="text-xs leading-relaxed"
@@ -244,7 +244,7 @@ export function HowItWorks() {
           <OrangeLine />
           <SectionTag>What BIQc Does</SectionTag>
           <h3 className="text-xl sm:text-2xl font-medium mt-2 mb-8"
-            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
+            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #0A0A0A)' }}>
             Six layers of autonomous intelligence.
           </h3>
 
@@ -266,7 +266,7 @@ export function HowItWorks() {
                   </span>
                 </div>
                 <h4 className="text-sm font-semibold mb-2"
-                  style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
+                  style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #0A0A0A)' }}>
                   {item.title}
                 </h4>
                 <p className="text-xs leading-relaxed"
@@ -288,7 +288,7 @@ export function HowItWorks() {
           <OrangeLine />
           <SectionTag>What BIQc Analyses</SectionTag>
           <h3 className="text-xl sm:text-2xl font-medium mt-2 mb-2"
-            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
+            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #0A0A0A)' }}>
             Six categories of business intelligence.
           </h3>
           <p className="text-sm mb-8"
@@ -313,7 +313,7 @@ export function HowItWorks() {
           <div className="text-center mb-10">
             <SectionTag>Intelligence Pipeline</SectionTag>
             <h3 className="text-xl sm:text-2xl font-medium mt-2"
-              style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
+              style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #0A0A0A)' }}>
               From Raw Data to Executive Briefing
             </h3>
           </div>
@@ -339,7 +339,7 @@ export function HowItWorks() {
                     {step.num}
                   </div>
                   <h4 className="text-base font-semibold mb-2"
-                    style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
+                    style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #0A0A0A)' }}>
                     {step.title}
                   </h4>
                   <p className="text-xs leading-relaxed"
