@@ -109,7 +109,7 @@ export default function BIQcFoundationPage() {
           <section className="rounded-[26px] border p-6 sm:p-8" style={{ borderColor: 'rgba(232,93,0,0.24)', background: 'rgba(232,93,0,0.05)' }} data-testid={`biqc-foundation-feature-detail-${selectedFeature.key}`}>
             <button
               onClick={() => setSearchParams({})}
-              className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+              className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
               style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}
               data-testid="biqc-foundation-detail-back-button"
             >

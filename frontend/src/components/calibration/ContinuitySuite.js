@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CHARCOAL = 'var(--ink-display, #EDF1F7)';
+const CHARCOAL = 'var(--ink-display, #0A0A0A)';
 const MUTED = 'var(--ink-secondary, #8FA0B8)';
 const GOLD = '#E85D00';
 const CARD_BORDER = 'rgba(140,170,210,0.15)';

@@ -164,15 +164,15 @@ const SupportConsolePage = () => {
                         <td className="px-3 py-2">
                           <div className="flex gap-1">
                             <button onClick={() => toggleUser(u.id, !u.is_disabled)} disabled={actionLoading === u.id}
-                              className="p-1 rounded hover:bg-white/5" title={u.is_disabled ? 'Enable' : 'Disable'}>
+                              className="p-1 rounded hover:bg-black/5" title={u.is_disabled ? 'Enable' : 'Disable'}>
                               <UserX className="w-3 h-3" style={{ color: u.is_disabled ? '#10B981' : '#EF4444' }} />
                             </button>
                             <button onClick={() => resetPassword(u.id, u.email)} disabled={actionLoading === u.id}
-                              className="p-1 rounded hover:bg-white/5" title="Reset Password">
+                              className="p-1 rounded hover:bg-black/5" title="Reset Password">
                               <Key className="w-3 h-3 text-[#F59E0B]" />
                             </button>
                             <button onClick={() => impersonate(u.id)} disabled={actionLoading === u.id}
-                              className="p-1 rounded hover:bg-white/5" title="Impersonate">
+                              className="p-1 rounded hover:bg-black/5" title="Impersonate">
                               <Eye className="w-3 h-3 text-[#3B82F6]" />
                             </button>
                           </div>

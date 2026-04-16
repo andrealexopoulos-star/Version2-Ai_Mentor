@@ -396,7 +396,7 @@ const OnboardingWizard = () => {
                   <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ background: 'rgba(232,93,0,0.12)' }}>
                     <Zap className="w-8 h-8" style={{ color: '#E85D00' }} />
                   </div>
-                  <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                  <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
                     Welcome to <em style={{ fontStyle: 'italic', color: '#E85D00' }}>BIQc</em>
                   </h1>
                   <p className="max-w-md mx-auto" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body, fontSize: '18px', lineHeight: 1.5 }}>
@@ -416,7 +416,7 @@ const OnboardingWizard = () => {
                         <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{item.title}</h3>
+                        <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)' }}>{item.title}</h3>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>{item.desc}</p>
                       </div>
                     </div>
@@ -436,7 +436,7 @@ const OnboardingWizard = () => {
 
                 {/* Business type radio cards from mockup */}
                 <div style={{ marginTop: 40 }}>
-                  <h3 style={{ fontFamily: fontFamily.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', marginBottom: 16 }}>Pick what fits closest</h3>
+                  <h3 style={{ fontFamily: fontFamily.display, fontSize: 22, color: 'var(--ink-display, #0A0A0A)', marginBottom: 16 }}>Pick what fits closest</h3>
                   <div className="wiz-radio-grid">
                     {[
                       { value: 'services', title: 'Services / consulting', desc: 'Project-based revenue, billable hours, retainers, proposals in flight.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h20M5 3v18h14V3M9 8h6M9 12h6M9 16h6"/></svg> },
@@ -469,7 +469,7 @@ const OnboardingWizard = () => {
                               width: 36, height: 36, borderRadius: 8,
                               display: 'grid', placeItems: 'center',
                               background: isSelected ? '#E85D00' : 'var(--surface-2, #F1F5F9)',
-                              color: isSelected ? 'white' : 'var(--ink-display, #EDF1F7)',
+                              color: isSelected ? 'white' : 'var(--ink-display, #0A0A0A)',
                             }}>
                               {opt.icon}
                             </div>
@@ -483,7 +483,7 @@ const OnboardingWizard = () => {
                               {isSelected && <Check style={{ width: 12, height: 12 }} />}
                             </div>
                           </div>
-                          <h4 style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{opt.title}</h4>
+                          <h4 style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>{opt.title}</h4>
                           <p style={{ marginTop: 8, color: 'var(--ink-secondary, #8FA0B8)', fontSize: 13, lineHeight: 1.5, fontFamily: fontFamily.body }}>{opt.desc}</p>
                         </button>
                       );
@@ -856,7 +856,7 @@ const OnboardingWizard = () => {
                       <div key={opt.value} className="flex items-start gap-3 p-4 rounded-lg bg-[var(--surface)] border border-[rgba(140,170,210,0.15)] cursor-pointer hover:bg-[var(--surface-2)]">
                         <RadioGroupItem value={opt.value} id={`style-${opt.value}`} className="mt-0.5" />
                         <Label htmlFor={`style-${opt.value}`} className="cursor-pointer">
-                          <div className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{opt.label}</div>
+                          <div className="text-sm font-medium" style={{ color: 'var(--ink-display, #0A0A0A)' }}>{opt.label}</div>
                           <div className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>{opt.desc}</div>
                         </Label>
                       </div>
@@ -900,7 +900,7 @@ const OnboardingWizard = () => {
                   ].map(signal => (
                     <div key={signal.key} className="flex items-center justify-between gap-4 p-5 rounded-xl transition-all" style={{ background: 'var(--surface, #0E1628)', border: `1px solid ${signalToggles[signal.key] ? 'rgba(232,93,0,0.3)' : 'rgba(140,170,210,0.15)'}` }}>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[15px] font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{signal.title}</div>
+                        <div className="text-[15px] font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)' }}>{signal.title}</div>
                         <div className="text-[13px] mt-0.5" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{signal.hint}</div>
                         <div className="text-[11px] mt-2 uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>{signal.threshold}</div>
                       </div>
@@ -951,7 +951,7 @@ const OnboardingWizard = () => {
               {currentStep > 0 ? (
                 <button
                   onClick={handleBack}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-white/5"
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-black/5"
                   style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body, background: 'transparent', border: '1px solid rgba(140,170,210,0.15)', cursor: 'pointer' }}
                   data-testid="btn-back"
                 >
@@ -1007,7 +1007,7 @@ const WizStepHeader = ({ step, total, title, subtitle }) => (
     <div className="text-[11px] uppercase tracking-[0.08em] mb-3" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
       — Step {step} of {total}
     </div>
-    <h1 className="font-medium mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+    <h1 className="font-medium mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
       {title}
     </h1>
     {subtitle && (

@@ -111,7 +111,7 @@ const ExternalIntelFeed = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-sm font-medium truncate" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+                    <span className="text-sm font-medium truncate" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
                       {item.title || item.headline || item.indicator_name || 'Signal'}
                     </span>
                     {item.sentiment && (
@@ -137,7 +137,7 @@ const ExternalIntelFeed = () => {
                 </div>
                 {item.source_url && (
                   <a href={item.source_url} target="_blank" rel="noopener noreferrer"
-                    className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 hover:bg-white/5"
+                    className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 hover:bg-black/5"
                     onClick={e => e.stopPropagation()}>
                     <ExternalLink className="w-3 h-3" style={{ color: 'var(--ink-muted, #708499)' }} />
                   </a>

@@ -147,7 +147,7 @@ const ProactiveAlerts = ({ userId }) => {
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button onClick={(e) => { e.stopPropagation(); setDismissed(prev => new Set([...prev, alert.id])); }}
-                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/5">
+                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-black/5">
                     <X className="w-3 h-3" style={{ color: 'var(--ink-muted, #708499)' }} />
                   </button>
                   <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} style={{ color: 'var(--ink-muted, #708499)' }} />

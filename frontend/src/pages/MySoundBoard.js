@@ -604,7 +604,7 @@ const MySoundBoard = () => {
     lavaWash:    'var(--lava-wash, rgba(232,93,0,0.08))',
     lavaDeep:    'var(--lava-deep, #C44D00)',
     lavaRing:    'var(--lava-ring, rgba(232,93,0,0.15))',
-    inkDisplay:  'var(--ink-display, #EDF1F7)',
+    inkDisplay:  'var(--ink-display, #0A0A0A)',
     ink:         'var(--ink, #C8D4E4)',
     inkSecondary:'var(--ink-secondary, #8FA0B8)',
     inkMuted:    'var(--ink-muted, #708499)',

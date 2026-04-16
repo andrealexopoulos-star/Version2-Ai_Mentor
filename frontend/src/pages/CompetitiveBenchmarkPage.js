@@ -676,7 +676,7 @@ export default function CompetitiveBenchmarkPage() {
                       {analyzingCompetitor === idx ? 'Scanning…' : 'Analyse'}
                     </Button>
                     {competitorInputs.length > 1 && (
-                      <button onClick={() => removeCompetitorInput(idx)} className="p-1.5 rounded hover:bg-white/5" style={{ color: 'var(--ink-muted)' }}>
+                      <button onClick={() => removeCompetitorInput(idx)} className="p-1.5 rounded hover:bg-black/5" style={{ color: 'var(--ink-muted)' }}>
                         <X className="w-3.5 h-3.5" />
                       </button>
                     )}

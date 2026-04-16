@@ -397,7 +397,7 @@ const MarketPage = () => {
             </div>
             <div className="flex items-center gap-2">
               {confidence && <span className="text-xs px-2 py-0.5" style={{ color: st.color, background: `${st.color}15`, fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>{confidence}% confidence</span>}
-              <button onClick={() => { setLoading(true); fetchSnapshot().finally(() => setLoading(false)); }} className="p-1.5 rounded-lg hover:bg-white/5" data-testid="market-refresh">
+              <button onClick={() => { setLoading(true); fetchSnapshot().finally(() => setLoading(false)); }} className="p-1.5 rounded-lg hover:bg-black/5" data-testid="market-refresh">
                 <RefreshCw className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
               </button>
               {canRecalibrate && (
@@ -539,7 +539,7 @@ const MarketPage = () => {
               <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
               <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--border)' }}>
                 <span className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Full reports available under Governance → Reports</span>
-                <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-white/5 transition-colors" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}>
+                <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-black/5 transition-colors" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}>
                   View Reports <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
@@ -1251,27 +1251,27 @@ const MarketPage = () => {
             {recalSubmitted ? (
               <div className="text-center space-y-3 py-4">
                 <CheckCircle2 className="w-10 h-10 mx-auto text-green-400" />
-                <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Request Received</h2>
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)' }}>Request Received</h2>
                 <p className="text-sm" style={{ color: 'var(--ink-secondary, #94A3B8)' }}>Our team will be in touch within 24 hours to schedule your recalibration session.</p>
                 <button onClick={() => { setShowRecalibrateModal(false); setRecalSubmitted(false); }} className="mt-3 px-5 py-2 rounded-lg text-sm font-medium text-white" style={{ background: '#E85D00' }}>Close</button>
               </div>
             ) : (
               <form onSubmit={handleRecalSubmit} className="space-y-4">
                 <div>
-                  <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: 'var(--font-display)' }}>Request Recalibration</h2>
+                  <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: 'var(--font-display)' }}>Request Recalibration</h2>
                   <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary, #94A3B8)' }}>Your business profile was calibrated {daysSinceCalibration} days ago. Submit a request and our team will arrange a fresh calibration session.</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium block mb-1" style={{ color: 'var(--ink-secondary, #94A3B8)' }}>Your name</label>
-                  <input value={recalForm.name} onChange={e => setRecalForm(p => ({ ...p, name: e.target.value }))} required className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--surface-sunken, #060B18)', border: '1px solid var(--border, #1E293B)', color: 'var(--ink-display, #EDF1F7)' }} placeholder="Full name" />
+                  <input value={recalForm.name} onChange={e => setRecalForm(p => ({ ...p, name: e.target.value }))} required className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--surface-sunken, #060B18)', border: '1px solid var(--border, #1E293B)', color: 'var(--ink-display, #0A0A0A)' }} placeholder="Full name" />
                 </div>
                 <div>
                   <label className="text-xs font-medium block mb-1" style={{ color: 'var(--ink-secondary, #94A3B8)' }}>Email</label>
-                  <input value={recalForm.email} onChange={e => setRecalForm(p => ({ ...p, email: e.target.value }))} required type="email" className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--surface-sunken, #060B18)', border: '1px solid var(--border, #1E293B)', color: 'var(--ink-display, #EDF1F7)' }} placeholder="you@company.com" />
+                  <input value={recalForm.email} onChange={e => setRecalForm(p => ({ ...p, email: e.target.value }))} required type="email" className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--surface-sunken, #060B18)', border: '1px solid var(--border, #1E293B)', color: 'var(--ink-display, #0A0A0A)' }} placeholder="you@company.com" />
                 </div>
                 <div>
                   <label className="text-xs font-medium block mb-1" style={{ color: 'var(--ink-secondary, #94A3B8)' }}>Message (optional)</label>
-                  <textarea value={recalForm.message} onChange={e => setRecalForm(p => ({ ...p, message: e.target.value }))} rows={3} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: 'var(--surface-sunken, #060B18)', border: '1px solid var(--border, #1E293B)', color: 'var(--ink-display, #EDF1F7)' }} placeholder="Any details about what's changed in your business..." />
+                  <textarea value={recalForm.message} onChange={e => setRecalForm(p => ({ ...p, message: e.target.value }))} rows={3} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: 'var(--surface-sunken, #060B18)', border: '1px solid var(--border, #1E293B)', color: 'var(--ink-display, #0A0A0A)' }} placeholder="Any details about what's changed in your business..." />
                 </div>
                 <div className="flex gap-3 pt-1">
                   <button type="button" onClick={() => setShowRecalibrateModal(false)} className="flex-1 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--border, #1E293B)', color: 'var(--ink-secondary, #94A3B8)' }}>Cancel</button>

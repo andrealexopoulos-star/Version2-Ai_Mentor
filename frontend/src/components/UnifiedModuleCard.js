@@ -83,7 +83,7 @@ export default function UnifiedModuleCard({
         {secondaryLabel ? (
           <button
             onClick={onSecondary}
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
             style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}
           >
             {secondaryLabel} <ArrowRight className="h-3.5 w-3.5" />

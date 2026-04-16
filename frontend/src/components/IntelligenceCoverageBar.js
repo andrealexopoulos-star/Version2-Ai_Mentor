@@ -38,7 +38,7 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
         onClick={() => navigate('/integrations')}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all hover:bg-white/5"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all hover:bg-black/5"
         style={{ border: '1px solid rgba(140,170,210,0.15)' }}
         data-testid="intelligence-coverage-bar"
         aria-label={`Intelligence coverage ${pct}% — click to inspect live vs stale systems`}

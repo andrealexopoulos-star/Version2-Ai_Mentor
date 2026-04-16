@@ -310,7 +310,7 @@ const LoginSupabase = () => {
             <span className="text-lg font-semibold text-white" style={{ fontFamily: DISPLAY }}>BIQc</span>
           </div>
 
-          <h1 className="mb-2" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)', fontSize: '48px', lineHeight: 1.05, letterSpacing: 'var(--ls-tight, -0.035em)', fontWeight: 'var(--fw-display, 400)' }}>
+          <h1 className="mb-2" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)', fontSize: '48px', lineHeight: 1.05, letterSpacing: 'var(--ls-tight, -0.035em)', fontWeight: 'var(--fw-display, 400)' }}>
             Sign in to <em style={{ fontStyle: 'italic', color: 'var(--lava, #E85D00)' }}>BIQc</em>.
           </h1>
           <p className="text-base mb-2" style={{ fontFamily: UI, color: 'var(--ink-secondary, #8FA0B8)' }}>
@@ -337,7 +337,7 @@ const LoginSupabase = () => {
           <div className="flex flex-col gap-3 mb-6" style={{ marginTop: '28px' }}>
             <button type="button" onClick={() => handleOAuthSignIn('google')} disabled={!hasSupabaseConfig || oauthLoading || loading}
               className="w-full flex items-center justify-center gap-3 text-sm font-medium transition-all disabled:opacity-50"
-              style={{ fontFamily: UI, color: 'var(--ink-display, #EDF1F7)', background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-md, 8px)', padding: '14px 18px', cursor: 'pointer' }}
+              style={{ fontFamily: UI, color: 'var(--ink-display, #0A0A0A)', background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-md, 8px)', padding: '14px 18px', cursor: 'pointer' }}
               data-testid="login-google-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: 'var(--lava, #E85D00)', fontFamily: MONO }}>connecting...</span> : (
                 <>
@@ -348,7 +348,7 @@ const LoginSupabase = () => {
             </button>
             <button type="button" onClick={() => handleOAuthSignIn('azure')} disabled={!hasSupabaseConfig || oauthLoading || loading}
               className="w-full flex items-center justify-center gap-3 text-sm font-medium transition-all disabled:opacity-50"
-              style={{ fontFamily: UI, color: 'var(--ink-display, #EDF1F7)', background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-md, 8px)', padding: '14px 18px', cursor: 'pointer' }}
+              style={{ fontFamily: UI, color: 'var(--ink-display, #0A0A0A)', background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-md, 8px)', padding: '14px 18px', cursor: 'pointer' }}
               data-testid="login-microsoft-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: 'var(--lava, #E85D00)', fontFamily: MONO }}>connecting...</span> : (
                 <>

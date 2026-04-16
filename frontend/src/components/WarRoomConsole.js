@@ -342,7 +342,7 @@ export function WarRoomConsoleBody({
         <div className="flex-1 flex flex-col min-w-0">
           <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
             <div className="flex items-center gap-4">
-              <a href="/advisor" className={`text-xs px-3 py-1.5 rounded-lg hover:bg-white/5 ${focusRingClass}`} style={{ color: colors.textMuted }} data-testid="console-home-btn" aria-label="Return to intelligence platform">
+              <a href="/advisor" className={`text-xs px-3 py-1.5 rounded-lg hover:bg-black/5 ${focusRingClass}`} style={{ color: colors.textMuted }} data-testid="console-home-btn" aria-label="Return to intelligence platform">
                 Intelligence Platform
               </a>
               <span className="text-[11px] uppercase tracking-[0.08em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>— War Room</span>
@@ -359,7 +359,7 @@ export function WarRoomConsoleBody({
 
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
             <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-6 rounded-2xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card, boxShadow: shadow.card }} aria-label="War room briefing card">
-              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Strategic <em style={{ fontStyle: 'italic', color: '#E85D00' }}>console</em>.</h1>
+              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Strategic <em style={{ fontStyle: 'italic', color: '#E85D00' }}>console</em>.</h1>
               <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
                 {c.executive_memo || (connectedSystems.length
                   ? `BIQc can see ${connectedSystems.join(', ')} signals. Ask your highest-stakes question now.`

@@ -119,7 +119,7 @@ const PredictionsPanel = ({ compact = false }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+                    <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
                       {meta.label}
                     </span>
                     <span className="text-lg font-semibold" style={{ color: scoreColor, fontFamily: fontFamily.display }}>

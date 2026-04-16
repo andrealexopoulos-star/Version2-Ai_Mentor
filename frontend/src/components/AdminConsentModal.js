@@ -65,7 +65,7 @@ ${userName}`;
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/5 transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-lg hover:bg-black/5 transition-colors"
           aria-label="Close"
         >
           <X size={18} style={{ color: 'var(--ink-muted, #708499)' }} />
@@ -81,7 +81,7 @@ ${userName}`;
           </div>
           <h2
             className="text-xl font-semibold mb-2"
-            style={{ color: 'var(--ink-display, #EDF1F7)' }}
+            style={{ color: 'var(--ink-display, #0A0A0A)' }}
           >
             Organisation Approval Required
           </h2>
@@ -144,7 +144,7 @@ ${userName}`;
 
           <button
             onClick={handleCopy}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm transition-all hover:bg-white/5"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm transition-all hover:bg-black/5"
             style={{
               background: 'transparent',
               color: 'var(--ink, #C8D4E4)',

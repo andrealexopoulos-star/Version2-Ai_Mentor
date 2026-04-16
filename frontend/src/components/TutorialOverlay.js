@@ -203,7 +203,7 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
               {tutorial.title}
             </span>
           </div>
-          <button onClick={onDismissForNow} className="p-1 rounded-lg hover:bg-white/5 transition-colors"
+          <button onClick={onDismissForNow} className="p-1 rounded-lg hover:bg-black/5 transition-colors"
             data-testid="tutorial-close-btn" aria-label="Close tutorial">
             <X className="w-4 h-4" style={{ color: 'var(--ink-muted)' }} />
           </button>
@@ -234,7 +234,7 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
           <div className="flex gap-2">
             {step > 0 && (
               <button onClick={() => setStep(s => s - 1)}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-white/5"
+                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-black/5"
                 style={{ color: 'var(--biqc-text-2)' }} data-testid="tutorial-prev-btn">
                 <ChevronLeft className="w-3.5 h-3.5" /> Back
               </button>
@@ -337,7 +337,7 @@ export const useTutorial = (pageKey) => {
 // ─── Help button ───
 export const HelpButton = ({ onClick }) => (
   <button onClick={onClick}
-    className="p-2 rounded-lg transition-colors hover:bg-white/5"
+    className="p-2 rounded-lg transition-colors hover:bg-black/5"
     style={{ color: 'var(--ink-muted)' }}
     title="Show page guide" aria-label="Show page guide"
     data-testid="tutorial-help-btn">

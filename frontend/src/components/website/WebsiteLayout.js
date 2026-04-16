@@ -65,7 +65,7 @@ const WebsiteNav = () => {
       {mobileOpen && (
         <div className="md:hidden px-6 pb-6 space-y-1" style={{ background: 'var(--canvas-app, #FAFAFA)' }}>
           {NAV_LINKS.map((link) => (
-            <Link key={link.label} to={link.path} onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-[var(--ink-secondary)] hover:text-[var(--ink-display)] hover:bg-white/5 transition-all" style={{ fontFamily: fontFamily.body }}>{link.label}</Link>
+            <Link key={link.label} to={link.path} onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-[var(--ink-secondary)] hover:text-[var(--ink-display)] hover:bg-black/5 transition-all" style={{ fontFamily: fontFamily.body }}>{link.label}</Link>
           ))}
           <div className="pt-4 space-y-2">
             <Link to="/login-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[var(--ink-secondary)] border border-white/10">Log in</Link>

@@ -73,7 +73,7 @@ const DecisionPatterns = () => {
           <div className="space-y-1.5">
             {pendingReviews.slice(0, 3).map(review => (
               <div key={review.id} className="flex items-center justify-between text-xs">
-                <span className="truncate" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, maxWidth: '70%' }}>
+                <span className="truncate" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, maxWidth: '70%' }}>
                   {review.title}
                 </span>
                 <span style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
@@ -118,7 +118,7 @@ const DecisionPatterns = () => {
         <div className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }}>
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4" style={{ color: '#E85D00' }} />
-            <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+            <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
               Decision Domains
             </span>
           </div>
@@ -129,7 +129,7 @@ const DecisionPatterns = () => {
               return (
                 <div key={domain}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs capitalize" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+                    <span className="text-xs capitalize" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
                       {domain}
                     </span>
                     <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>

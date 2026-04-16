@@ -83,7 +83,7 @@ const MeetingPrepCard = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-sm font-medium truncate" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+                    <span className="text-sm font-medium truncate" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
                       {meeting.subject || meeting.title || 'Meeting'}
                     </span>
                     {startTime && (

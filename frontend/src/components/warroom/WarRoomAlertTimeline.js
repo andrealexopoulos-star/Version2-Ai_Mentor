@@ -48,7 +48,7 @@ export default function WarRoomAlertTimeline({ alerts = [], onSelectDay }) {
       {alertsByDay.map(({ day, alerts: dayAlerts, counts }) => {
         const total = dayAlerts.length;
         return (
-          <button key={day.toISOString()} onClick={() => onSelectDay?.(day)} className="flex-1 min-w-[70px] flex flex-col items-center justify-center h-full rounded-lg hover:bg-white/5 transition-colors focus-visible:ring-2" aria-label={`${formatDay(day)}: ${total} alerts`} data-testid={`war-room-timeline-day-${day.toISOString().split('T')[0]}`}>
+          <button key={day.toISOString()} onClick={() => onSelectDay?.(day)} className="flex-1 min-w-[70px] flex flex-col items-center justify-center h-full rounded-lg hover:bg-black/5 transition-colors focus-visible:ring-2" aria-label={`${formatDay(day)}: ${total} alerts`} data-testid={`war-room-timeline-day-${day.toISOString().split('T')[0]}`}>
             <div className="text-[10px] mb-1" style={{ color: colors.textMuted }}>{formatDay(day)}</div>
             <div className="flex items-end gap-0.5 h-6">
               {counts.critical > 0 && <div className="w-1.5 rounded-sm" style={{ background: SEVERITY_COLORS.critical, height: `${Math.min(100, counts.critical * 20)}%`, minHeight: '4px' }} aria-hidden="true" />}

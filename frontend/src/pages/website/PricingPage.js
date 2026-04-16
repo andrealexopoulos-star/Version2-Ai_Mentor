@@ -240,7 +240,7 @@ const PlanCard = ({ plan }) => {
   const ctaMap = {
     primary: { bg: '#E85D00', color: '#fff', border: 'none' },
     dark: { bg: '#EDF1F7', color: '#FAFAFA', border: 'none' },
-    outline: { bg: 'transparent', color: 'var(--ink-display, #EDF1F7)', border: '1px solid rgba(140,170,210,0.2)' },
+    outline: { bg: 'transparent', color: 'var(--ink-display, #0A0A0A)', border: '1px solid rgba(140,170,210,0.2)' },
   };
   const ctaS = ctaMap[plan.ctaStyle] || ctaMap.outline;
   return (
@@ -260,13 +260,13 @@ const PlanCard = ({ plan }) => {
       >
         {plan.badge}
       </span>
-      <h3 className="text-lg font-bold mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{plan.name}</h3>
+      <h3 className="text-lg font-bold mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)' }}>{plan.name}</h3>
       <div className="flex items-baseline gap-1 mb-1.5">
-        <span className="text-[42px] font-bold leading-none tracking-tight" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{plan.price}</span>
+        <span className="text-[42px] font-bold leading-none tracking-tight" style={{ color: 'var(--ink-display, #0A0A0A)' }}>{plan.price}</span>
         {plan.period && <span className="text-[15px] font-medium" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{plan.period}</span>}
       </div>
       <p className="text-sm mb-6" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5, borderBottom: '1px solid rgba(140,170,210,0.12)', paddingBottom: 24 }}>{plan.desc}</p>
-      <div className="text-[12px] font-semibold uppercase tracking-[0.04em] mb-4" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{plan.includesLabel}</div>
+      <div className="text-[12px] font-semibold uppercase tracking-[0.04em] mb-4" style={{ color: 'var(--ink-display, #0A0A0A)' }}>{plan.includesLabel}</div>
       <ul className="space-y-1.5 flex-1 mb-7">
         {plan.features.map((f, i) => (
           <li key={i} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--ink, #C8D4E4)', lineHeight: 1.4 }}>
@@ -295,7 +295,7 @@ const FaqItem = ({ q, a, open, onToggle }) => {
         className="w-full flex items-center justify-between py-5 text-left"
         style={{ fontFamily: fontFamily.body }}
       >
-        <span className="text-base font-semibold pr-4" style={{ color: 'var(--ink-display, #EDF1F7)', lineHeight: 1.4 }}>{q}</span>
+        <span className="text-base font-semibold pr-4" style={{ color: 'var(--ink-display, #0A0A0A)', lineHeight: 1.4 }}>{q}</span>
         <svg
           width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8FA0B8" strokeWidth="2"
           className="shrink-0 transition-transform duration-200"
@@ -334,7 +334,7 @@ const PricingPage = () => {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>
             Pricing
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-bold tracking-tight mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1.12, letterSpacing: '-0.02em' }}>
+          <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-bold tracking-tight mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', lineHeight: 1.12, letterSpacing: '-0.02em' }}>
             Simple, transparent pricing.
           </h1>
           <p className="text-base sm:text-lg" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
@@ -356,14 +356,14 @@ const PricingPage = () => {
       <section className="py-16 px-4 sm:px-6" style={{ borderTop: '1px solid rgba(140,170,210,0.12)' }} data-testid="pricing-compare">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>Compare all features</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.02em' }}>Compare all features</h2>
             <p className="text-[15px]" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>A detailed breakdown of what's included in every plan.</p>
           </div>
           <div className="flex justify-center mb-6">
             <button
               onClick={() => setShowCompare(!showCompare)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:shadow-lg"
-              style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}
+              style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}
             >
               {showCompare ? 'Hide full comparison' : 'Show full comparison'}
               <ChevronDown className={`w-4 h-4 transition-transform ${showCompare ? 'rotate-180' : ''}`} style={{ color: 'var(--ink-secondary, #8FA0B8)' }} />
@@ -374,11 +374,11 @@ const PricingPage = () => {
               <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
                 <thead style={{ position: 'sticky', top: 64, zIndex: 10 }}>
                   <tr style={{ background: '#FAFAFA' }}>
-                    <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, minWidth: 140, background: '#FAFAFA' }}>Feature</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Free</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Growth</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Pro</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Enterprise</th>
+                    <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, minWidth: 140, background: '#FAFAFA' }}>Feature</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Free</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Growth</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Pro</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Enterprise</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -412,7 +412,7 @@ const PricingPage = () => {
       <section className="py-20 px-6" style={{ borderTop: '1px solid rgba(140,170,210,0.12)' }} data-testid="pricing-faq">
         <div className="max-w-[720px] mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-[32px] font-bold tracking-tight mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>Frequently asked questions</h2>
+            <h2 className="text-2xl sm:text-[32px] font-bold tracking-tight mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.02em' }}>Frequently asked questions</h2>
             <p className="text-base" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>Everything you need to know about BIQc pricing and plans.</p>
           </div>
           <div>
@@ -424,7 +424,7 @@ const PricingPage = () => {
       {/* BOTTOM CTA */}
       <section className="py-20 px-6 text-center" style={{ borderTop: '1px solid rgba(140,170,210,0.12)' }} data-testid="pricing-bottom-cta">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>Start your 14-day trial today</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.02em' }}>Start your 14-day trial today</h2>
           <p className="text-base mb-8" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>No credit card required. Full access to Growth features. Cancel anytime.</p>
           <Link
             to="/register-supabase"

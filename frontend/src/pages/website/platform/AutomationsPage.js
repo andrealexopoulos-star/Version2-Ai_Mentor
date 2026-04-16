@@ -27,8 +27,8 @@ const AutomationCard = ({ auto }) => (
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={() => window.location.assign('/login-supabase')} className="p-1.5 rounded-md hover:bg-white/5 text-[#64748B]"><Edit className="w-3.5 h-3.5" /></button>
-        <button onClick={() => window.location.assign('/login-supabase')} className="p-1.5 rounded-md hover:bg-white/5 text-[#64748B]"><FileText className="w-3.5 h-3.5" /></button>
+        <button onClick={() => window.location.assign('/login-supabase')} className="p-1.5 rounded-md hover:bg-black/5 text-[#64748B]"><Edit className="w-3.5 h-3.5" /></button>
+        <button onClick={() => window.location.assign('/login-supabase')} className="p-1.5 rounded-md hover:bg-black/5 text-[#64748B]"><FileText className="w-3.5 h-3.5" /></button>
         {auto.active ? (
           <div onClick={() => window.location.assign('/login-supabase')} className="w-9 h-5 rounded-full cursor-pointer flex items-center px-0.5" style={{ background: '#E85D00' }}>
             <div className="w-4 h-4 rounded-full bg-white ml-auto" />

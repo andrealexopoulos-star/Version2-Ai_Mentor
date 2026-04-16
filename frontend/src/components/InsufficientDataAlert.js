@@ -41,7 +41,7 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
         <span className="text-[10px] px-2 py-0.5 rounded-full shrink-0" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: fontFamily.mono }}>
           {alerts.length} action{alerts.length > 1 ? 's' : ''}
         </span>
-        <button onClick={(e) => { e.stopPropagation(); setDismissed(true); }} className="p-1 rounded-lg hover:bg-white/5 shrink-0" data-testid="dismiss-data-alert">
+        <button onClick={(e) => { e.stopPropagation(); setDismissed(true); }} className="p-1 rounded-lg hover:bg-black/5 shrink-0" data-testid="dismiss-data-alert">
           <X className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
         </button>
       </div>

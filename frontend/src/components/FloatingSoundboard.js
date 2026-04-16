@@ -345,7 +345,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
             <p className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Brainstorm on your data</p>
           </div>
         </div>
-        <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-white/5 text-[var(--ink-muted)]" data-testid="soundboard-close">
+        <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-black/5 text-[var(--ink-muted)]" data-testid="soundboard-close">
           <X className="w-4 h-4" />
         </button>
       </div>

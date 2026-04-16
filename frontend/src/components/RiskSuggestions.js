@@ -236,7 +236,7 @@ export const RiskSuggestions = () => {
 
             {/* Dismiss */}
             <button onClick={() => handleDismiss(risk.id)}
-              className="absolute top-3 right-3 p-1 rounded hover:bg-white/5 transition-colors"
+              className="absolute top-3 right-3 p-1 rounded hover:bg-black/5 transition-colors"
               style={{ color: '#4A5568' }}>
               <X className="w-3.5 h-3.5" />
             </button>
@@ -263,7 +263,7 @@ export const RiskSuggestions = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+                <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.display }}>
                   {risk.title}
                 </p>
               </div>
@@ -287,7 +287,7 @@ export const RiskSuggestions = () => {
                 <p className="text-[11px] font-semibold" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                   RECOMMENDED ACTION
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
                   {risk.action}
                 </p>
               </div>

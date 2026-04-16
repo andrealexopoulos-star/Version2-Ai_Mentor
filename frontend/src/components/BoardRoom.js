@@ -427,7 +427,7 @@ export function BoardRoomBody({
       <div className="flex-1 flex flex-col" role="main" aria-label="Boardroom main content">
         <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-4">
-            <a href="/advisor" data-testid="boardroom-home" className={`text-xs px-3 py-1.5 rounded-lg hover:bg-white/5 ${focusRingClass}`} style={{ color: colors.textMuted }} aria-label="Return to intelligence platform">
+            <a href="/advisor" data-testid="boardroom-home" className={`text-xs px-3 py-1.5 rounded-lg hover:bg-black/5 ${focusRingClass}`} style={{ color: colors.textMuted }} aria-label="Return to intelligence platform">
               Intelligence Platform
             </a>
             <span className="text-sm font-semibold" style={{ color: colors.text }}>Boardroom</span>
