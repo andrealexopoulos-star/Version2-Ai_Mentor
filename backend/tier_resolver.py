@@ -192,7 +192,7 @@ def resolve_tier(user: dict) -> str:
     role = (user.get('role') or '').lower().strip()
 
     # SUPER ADMIN OVERRIDE — cannot be restricted
-    if email == SUPER_ADMIN_EMAIL.lower():
+    if SUPER_ADMIN_EMAIL and email == SUPER_ADMIN_EMAIL.lower():
         return 'super_admin'
     if role in {'superadmin', 'super_admin'}:
         return 'super_admin'
