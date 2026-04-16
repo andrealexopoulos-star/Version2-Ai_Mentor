@@ -266,7 +266,7 @@ const LoginSupabase = () => {
   return (
     <div className="min-h-screen flex" style={{ background: '#FAFAFA' }}>
       {/* Left: Brand Panel — #0A0A0A hardcoded per mockup auth spec */}
-      <aside className="hidden lg:flex flex-col justify-between flex-1 relative overflow-hidden" style={{ background: '#0A0A0A', color: '#FFFFFF', padding: '48px 40px' }}>
+      <aside className="hidden lg:flex flex-col justify-between flex-1 relative overflow-hidden" style={{ background: 'var(--surface, #FFFFFF)', color: '#FFFFFF', padding: '48px 40px' }}>
         {/* Animated orbs */}
         <div className="absolute -top-[200px] -left-[200px] w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #E85D00 0%, transparent 60%)', opacity: 0.3, filter: 'blur(80px)', animation: 'orbDrift 16s ease-in-out infinite' }} />
         <div className="absolute -bottom-[200px] -right-[200px] w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #C0C8D4 0%, transparent 60%)', opacity: 0.2, filter: 'blur(60px)', animation: 'orbDrift 20s ease-in-out infinite reverse' }} />

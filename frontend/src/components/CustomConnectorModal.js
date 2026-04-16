@@ -57,7 +57,7 @@ export default function CustomConnectorModal({ open, onClose }) {
       <div
         className="relative w-full max-w-md mx-4 rounded-2xl border p-6 shadow-2xl"
         style={{
-          background: '#1A1A1A',
+          background: 'var(--surface, #FFFFFF)',
           borderColor: '#2D3E50',
         }}
         role="dialog"
@@ -101,7 +101,7 @@ export default function CustomConnectorModal({ open, onClose }) {
                 placeholder="Full name"
                 required
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                style={{ background: '#0F0F0F', border: '1px solid #2D3E50', color: '#FFFFFF', fontFamily: fontFamily.body }}
+                style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid #2D3E50', color: '#FFFFFF', fontFamily: fontFamily.body }}
                 autoComplete="name"
               />
             </div>
@@ -117,7 +117,7 @@ export default function CustomConnectorModal({ open, onClose }) {
                 placeholder="you@company.com"
                 required
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                style={{ background: '#0F0F0F', border: '1px solid #2D3E50', color: '#FFFFFF', fontFamily: fontFamily.body }}
+                style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid #2D3E50', color: '#FFFFFF', fontFamily: fontFamily.body }}
                 autoComplete="email"
               />
             </div>
@@ -133,7 +133,7 @@ export default function CustomConnectorModal({ open, onClose }) {
                 required
                 rows={4}
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
-                style={{ background: '#0F0F0F', border: '1px solid #2D3E50', color: '#FFFFFF', fontFamily: fontFamily.body }}
+                style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid #2D3E50', color: '#FFFFFF', fontFamily: fontFamily.body }}
               />
             </div>
             {error && (

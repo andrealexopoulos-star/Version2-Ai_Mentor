@@ -234,7 +234,7 @@ export default function SoundboardPage() {
       </section>
 
       {/* â"€â"€ Mode selector â"€â"€ */}
-      <div style={{ background: '#0B1120', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 16px' }}>
+      <div style={{ background: 'var(--canvas-app, #FAFAFA)', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 16px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 8, overflowX: 'auto', padding: '12px 0', scrollbarWidth: 'none' }}>
           {MODES.map((m, i) => (
             <button

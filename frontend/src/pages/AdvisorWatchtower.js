@@ -2493,7 +2493,7 @@ export default function AdvisorWatchtower() {
                       <div className="mb-2 flex flex-wrap items-center gap-2">
                         <h3 className="text-base" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-signal-title-${signal.signalType}`}>{signal.title}</h3>
                         {signal.occurrences > 1 && (
-                          <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: '#1E293B', color: 'var(--ink, #171717)', fontFamily: fontFamily.mono }} data-testid={`advisor-signal-duplicates-${signal.signalType}`}>
+                          <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: 'var(--surface-sunken, #F5F5F5)', color: 'var(--ink, #171717)', fontFamily: fontFamily.mono }} data-testid={`advisor-signal-duplicates-${signal.signalType}`}>
                             x{signal.occurrences}
                           </span>
                         )}

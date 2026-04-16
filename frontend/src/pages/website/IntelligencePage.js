@@ -152,7 +152,7 @@ export default function IntelligencePage() {
                 <div className="flex flex-wrap gap-2 justify-center">
                   {step.badges.map((b) => (
                     <span key={b} className="px-3 py-1 rounded-full text-xs font-medium"
-                      style={{ background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary)' }}>
+                      style={{ background: 'var(--canvas-app, #FAFAFA)', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary)' }}>
                       {b}
                     </span>
                   ))}
@@ -163,7 +163,7 @@ export default function IntelligencePage() {
                     style={{
                       top: '50%', right: -14, transform: 'translateY(-50%)',
                       width: 28, height: 28, borderRadius: '50%',
-                      background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)',
+                      background: 'var(--canvas-app, #FAFAFA)', border: '1px solid rgba(140,170,210,0.12)',
                       color: '#5C6E82', fontSize: 14, fontWeight: 600,
                     }}>
                     &rarr;
@@ -292,7 +292,7 @@ export default function IntelligencePage() {
             </p>
           </div>
           {/* pipeline-wrap container */}
-          <div className="rounded-2xl p-10 md:p-12" style={{ background: '#0B1120' }}>
+          <div className="rounded-2xl p-10 md:p-12" style={{ background: 'var(--canvas-app, #FAFAFA)' }}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {PIPELINE.map((step, i) => (
                 <div key={step.num} className="rounded-xl p-6 text-center relative"
@@ -322,7 +322,7 @@ export default function IntelligencePage() {
                       style={{
                         top: '50%', right: -12, transform: 'translateY(-50%)',
                         width: 24, height: 24, borderRadius: '50%',
-                        background: '#0B1120', color: '#5C6E82', fontSize: 13,
+                        background: 'var(--canvas-app, #FAFAFA)', color: '#5C6E82', fontSize: 13,
                       }}>
                       &rarr;
                     </div>

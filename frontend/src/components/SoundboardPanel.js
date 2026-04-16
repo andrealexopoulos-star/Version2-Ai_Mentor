@@ -809,7 +809,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       .slice(-1)[0]?.content || '';
 
     return (
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.02)', borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'var(--surface-sunken, #F5F5F5)', borderLeft: '1px solid var(--border, rgba(10,10,10,0.08))' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <div
             style={{
@@ -924,7 +924,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           style={{
             maxWidth: '70%',
             padding: '12px 16px',
-            background: '#1E293B',
+            background: 'var(--surface-sunken, #F5F5F5)',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '18px 18px 4px 18px',
             fontSize: 14,
@@ -945,7 +945,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       style={{
         display: 'flex',
         height: '100vh',
-        background: '#0a0f1a',
+        background: 'var(--surface, #FFFFFF)',
         color: '#fff',
         overflow: 'hidden',
         fontFamily: "var(--font-ui)",
@@ -957,7 +957,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           width: sidebarCollapsed ? '0px' : '260px',
           minWidth: sidebarCollapsed ? '0px' : '260px',
           height: '100vh',
-          background: '#0d1421',
+          background: 'var(--surface-sunken, #F5F5F5)',
           borderRight: '1px solid rgba(255,255,255,0.08)',
           display: 'flex',
           flexDirection: 'column',
@@ -1093,7 +1093,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             padding: '0 20px',
             gap: 12,
             flexShrink: 0,
-            background: '#0a0f1a',
+            background: 'var(--surface, #FFFFFF)',
           }}
         >
           <button

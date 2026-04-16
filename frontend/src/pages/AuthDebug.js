@@ -63,14 +63,14 @@ const AuthDebug = () => {
       padding: '20px', 
       fontFamily: 'var(--font-mono)',
       fontSize: '14px',
-      background: '#1a1a2e',
+      background: 'var(--surface-sunken, #F5F5F5)',
       color: '#00ff00',
       minHeight: '100vh'
     }}>
       <h1 style={{ color: '#00ff00', marginBottom: '20px' }}>🔍 Auth Debug Page</h1>
       
       <div style={{ 
-        background: '#16213e', 
+        background: 'var(--surface-sunken, #F5F5F5)', 
         padding: '15px', 
         borderRadius: '8px',
         marginBottom: '20px'
@@ -84,7 +84,7 @@ const AuthDebug = () => {
       </div>
 
       <div style={{ 
-        background: '#16213e', 
+        background: 'var(--surface-sunken, #F5F5F5)', 
         padding: '15px', 
         borderRadius: '8px',
         marginBottom: '20px'
@@ -134,14 +134,14 @@ const AuthDebug = () => {
       </div>
 
       <div style={{ 
-        background: '#16213e', 
+        background: 'var(--surface-sunken, #F5F5F5)', 
         padding: '15px', 
         borderRadius: '8px',
         marginBottom: '20px'
       }}>
         <h2 style={{ color: '#e94560', marginBottom: '10px' }}>Logs</h2>
         <div style={{ 
-          background: '#0d1117', 
+          background: 'var(--surface, #FFFFFF)', 
           padding: '10px', 
           borderRadius: '4px',
           maxHeight: '300px',
@@ -154,13 +154,13 @@ const AuthDebug = () => {
       </div>
 
       <div style={{ 
-        background: '#16213e', 
+        background: 'var(--surface-sunken, #F5F5F5)', 
         padding: '15px', 
         borderRadius: '8px'
       }}>
         <h2 style={{ color: '#e94560', marginBottom: '10px' }}>User Object</h2>
         <pre style={{ 
-          background: '#0d1117', 
+          background: 'var(--surface, #FFFFFF)', 
           padding: '10px', 
           borderRadius: '4px',
           overflow: 'auto',

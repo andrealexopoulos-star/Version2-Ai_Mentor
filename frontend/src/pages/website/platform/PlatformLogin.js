@@ -45,11 +45,11 @@ const PlatformLogin = () => (
         <div className="space-y-4 mb-6">
           <div>
             <label className="text-xs font-medium text-[#8FA0B8] block mb-1.5" style={{ fontFamily: fontFamily.body }}>EMAIL</label>
-            <input type="email" placeholder="you@company.com" className="w-full px-3.5 py-2.5 rounded-lg text-sm text-[#EDF1F7] outline-none transition-all focus:border-[#E85D00]" style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid rgba(140,170,210,0.15)' }} data-testid="email-input" />
+            <input type="email" placeholder="you@company.com" className="w-full px-3.5 py-2.5 rounded-lg text-sm text-[#EDF1F7] outline-none transition-all focus:border-[#E85D00]" style={{ fontFamily: fontFamily.body, background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }} data-testid="email-input" />
           </div>
           <div>
             <label className="text-xs font-medium text-[#8FA0B8] block mb-1.5" style={{ fontFamily: fontFamily.body }}>PASSWORD</label>
-            <input type="password" placeholder="••••••••" className="w-full px-3.5 py-2.5 rounded-lg text-sm text-[#EDF1F7] outline-none transition-all focus:border-[#E85D00]" style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid rgba(140,170,210,0.15)' }} data-testid="password-input" />
+            <input type="password" placeholder="••••••••" className="w-full px-3.5 py-2.5 rounded-lg text-sm text-[#EDF1F7] outline-none transition-all focus:border-[#E85D00]" style={{ fontFamily: fontFamily.body, background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }} data-testid="password-input" />
           </div>
         </div>
 
@@ -64,7 +64,7 @@ const PlatformLogin = () => (
     </div>
 
     {/* Right: Trust Panel */}
-    <div className="hidden lg:flex flex-1 items-center justify-center px-12" style={{ background: '#0A1018', borderLeft: '1px solid rgba(140,170,210,0.15)' }}>
+    <div className="hidden lg:flex flex-1 items-center justify-center px-12" style={{ background: 'var(--surface-sunken, #F5F5F5)', borderLeft: '1px solid rgba(140,170,210,0.15)' }}>
       <div className="max-w-sm">
         <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#E85D00] block mb-4" style={{ fontFamily: fontFamily.mono }}>Sovereign Intelligence</span>
         <h2 className="text-2xl font-semibold text-[#EDF1F7] mb-3 leading-tight" style={{ fontFamily: fontFamily.display }}>Your business intelligence, protected by design.</h2>

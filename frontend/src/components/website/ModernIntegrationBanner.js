@@ -61,7 +61,7 @@ const LogoChip = ({ name }) => (
 );
 
 export const ModernIntegrationBanner = () => (
-  <section className="py-14 sm:py-18 overflow-hidden" style={{ background: '#0B1120' }} data-testid="modern-integration-banner">
+  <section className="py-14 sm:py-18 overflow-hidden" style={{ background: 'var(--canvas-app, #FAFAFA)' }} data-testid="modern-integration-banner">
     <style>{`
       @keyframes modernTrackLeft {
         0% { transform: translateX(0); }

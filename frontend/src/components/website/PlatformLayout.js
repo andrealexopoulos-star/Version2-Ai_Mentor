@@ -49,7 +49,7 @@ const PlatformLayout = ({ children, title }) => {
   const Sidebar = ({ mobile = false }) => (
     <aside className={`${mobile ? 'fixed inset-0 z-50' : 'hidden lg:flex'} flex-col`} style={{ width: mobile ? '100%' : 260 }}>
       {mobile && <div className="absolute inset-0 bg-black/60" onClick={() => setMobileSidebar(false)} />}
-      <div className={`${mobile ? 'relative z-10 w-[280px] h-full' : 'h-full'} flex flex-col overflow-y-auto`} style={{ background: '#0A1018', borderRight: '1px solid rgba(140,170,210,0.15)' }}>
+      <div className={`${mobile ? 'relative z-10 w-[280px] h-full' : 'h-full'} flex flex-col overflow-y-auto`} style={{ background: 'var(--surface-sunken, #F5F5F5)', borderRight: '1px solid rgba(140,170,210,0.15)' }}>
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 h-16 shrink-0" style={{ borderBottom: '1px solid rgba(140,170,210,0.15)' }}>
           <img src={brandLogoHead} alt="BIQc logo mark" className="h-8 w-auto object-contain" />
@@ -105,7 +105,7 @@ const PlatformLayout = ({ children, title }) => {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-16 flex items-center justify-between px-6 shrink-0" style={{ background: '#0A1018', borderBottom: '1px solid rgba(140,170,210,0.15)' }} data-testid="platform-topbar">
+        <header className="h-16 flex items-center justify-between px-6 shrink-0" style={{ background: 'var(--surface-sunken, #F5F5F5)', borderBottom: '1px solid rgba(140,170,210,0.15)' }} data-testid="platform-topbar">
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileSidebar(true)} className="lg:hidden p-1.5 rounded-md hover:bg-white/5 text-[#8FA0B8]">
               <Menu className="w-5 h-5" />
