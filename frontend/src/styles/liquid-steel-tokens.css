@@ -37,6 +37,17 @@
   --silver-4:      #A8B1BD;
   --silver-5:      #717884;
 
+  /* Liquid Steel accents (light) */
+  --steel-100:     #8FA0B8;
+  --steel-200:     #6E8AAE;
+  --steel-300:     #4A6A90;
+  --steel-400:     #2E4A6E;
+  --steel-500:     #1E3552;
+  --steel-highlight: rgba(140, 170, 210, 0.10);
+  --steel-border:  rgba(140, 170, 210, 0.15);
+  --steel-sheen:   linear-gradient(135deg, rgba(140,170,210,0.10) 0%, rgba(140,170,210,0.04) 45%, rgba(140,170,210,0.14) 100%);
+  --chrome-glint:  linear-gradient(105deg, rgba(140,170,210,0.00) 0%, rgba(140,170,210,0.12) 45%, rgba(140,170,210,0.00) 60%);
+
   /* ─── BORDERS ─── */
   --border:        rgba(10, 10, 10, 0.08);
   --border-strong: rgba(10, 10, 10, 0.14);

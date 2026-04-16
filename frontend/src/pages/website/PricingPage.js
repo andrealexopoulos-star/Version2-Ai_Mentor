@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { ArrowRight, Check, ChevronDown } from 'lucide-react';
-import { fontFamily } from '../../design-system/tokens';
+
+const WEBSITE_FONTS = {
+  display: 'var(--font-display)',
+  body: 'var(--font-ui)',
+  mono: 'var(--font-mono)',
+};
 
 /* ─── PLAN DATA (from approved mockup) ─── */
 const PLANS = [
@@ -238,39 +243,39 @@ const FAQS = [
 /* ─── COMPONENTS ─── */
 const PlanCard = ({ plan }) => {
   const ctaMap = {
-    primary: { bg: '#E85D00', color: '#fff', border: 'none' },
-    dark: { bg: '#EDF1F7', color: '#FAFAFA', border: 'none' },
-    outline: { bg: 'transparent', color: 'var(--ink-display, #0A0A0A)', border: '1px solid rgba(140,170,210,0.2)' },
+    primary: { bg: 'var(--lava)', color: 'var(--ink-inverse)', border: 'none' },
+    dark: { bg: 'var(--ink-display)', color: 'var(--ink-inverse)', border: 'none' },
+    outline: { bg: 'transparent', color: 'var(--ink-display)', border: '1px solid var(--border-strong)' },
   };
   const ctaS = ctaMap[plan.ctaStyle] || ctaMap.outline;
   return (
     <div
-      className={`relative rounded-2xl p-6 flex flex-col ${plan.highlight ? 'ring-2 ring-[#E85D00]' : ''}`}
+      className="relative rounded-2xl p-6 flex flex-col"
       style={{
         background: plan.highlight
           ? 'linear-gradient(105deg, rgba(200,220,240,0.0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0.0) 55%), rgba(232,93,0,0.025)'
           : 'linear-gradient(105deg, rgba(200,220,240,0.0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0.0) 55%), linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
-        border: `1px solid ${plan.highlight ? 'rgba(232,93,0,0.2)' : 'rgba(140,170,210,0.12)'}`,
+        border: `1px solid ${plan.highlight ? 'var(--lava-ring)' : 'var(--border)'}`,
       }}
       data-testid={`plan-${plan.name.toLowerCase()}`}
     >
       <span
         className="text-[10px] font-semibold tracking-[0.08em] uppercase px-3 py-1 rounded-full inline-block mb-4 self-start"
-        style={{ background: plan.badgeBg, color: plan.badgeColor, fontFamily: fontFamily.mono }}
+        style={{ background: plan.badgeBg, color: plan.badgeColor, fontFamily: WEBSITE_FONTS.mono }}
       >
         {plan.badge}
       </span>
-      <h3 className="text-lg font-bold mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)' }}>{plan.name}</h3>
+      <h3 className="text-lg font-bold mb-2" style={{ fontFamily: WEBSITE_FONTS.display, color: 'var(--ink-display)' }}>{plan.name}</h3>
       <div className="flex items-baseline gap-1 mb-1.5">
-        <span className="text-[42px] font-bold leading-none tracking-tight" style={{ color: 'var(--ink-display, #0A0A0A)' }}>{plan.price}</span>
-        {plan.period && <span className="text-[15px] font-medium" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{plan.period}</span>}
+        <span className="text-[42px] font-bold leading-none tracking-tight" style={{ color: 'var(--ink-display)' }}>{plan.price}</span>
+        {plan.period && <span className="text-[15px] font-medium" style={{ color: 'var(--ink-secondary)' }}>{plan.period}</span>}
       </div>
-      <p className="text-sm mb-6" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5, borderBottom: '1px solid rgba(140,170,210,0.12)', paddingBottom: 24 }}>{plan.desc}</p>
-      <div className="text-[12px] font-semibold uppercase tracking-[0.04em] mb-4" style={{ color: 'var(--ink-display, #0A0A0A)' }}>{plan.includesLabel}</div>
+      <p className="text-sm mb-6" style={{ fontFamily: WEBSITE_FONTS.body, color: 'var(--ink-secondary)', lineHeight: 1.5, borderBottom: '1px solid var(--border)', paddingBottom: 24 }}>{plan.desc}</p>
+      <div className="text-[12px] font-semibold uppercase tracking-[0.04em] mb-4" style={{ color: 'var(--ink-display)' }}>{plan.includesLabel}</div>
       <ul className="space-y-1.5 flex-1 mb-7">
         {plan.features.map((f, i) => (
-          <li key={i} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--ink, #C8D4E4)', lineHeight: 1.4 }}>
-            <Check className="w-4 h-4 shrink-0 mt-0.5 text-[#16A34A]" />
+          <li key={i} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--ink)', lineHeight: 1.4 }}>
+            <Check className="w-4 h-4 shrink-0 mt-0.5 text-[var(--positive)]" />
             {f}
           </li>
         ))}
@@ -278,7 +283,7 @@ const PlanCard = ({ plan }) => {
       <Link
         to={plan.link}
         className="w-full block text-center py-3 rounded-lg text-sm font-semibold transition-all hover:brightness-110"
-        style={{ background: ctaS.bg, color: ctaS.color, border: ctaS.border, fontFamily: fontFamily.body }}
+        style={{ background: ctaS.bg, color: ctaS.color, border: ctaS.border, fontFamily: WEBSITE_FONTS.body }}
         data-testid={`cta-${plan.name.toLowerCase()}`}
       >
         {plan.cta}
@@ -289,15 +294,15 @@ const PlanCard = ({ plan }) => {
 
 const FaqItem = ({ q, a, open, onToggle }) => {
   return (
-    <div style={{ borderBottom: '1px solid rgba(140,170,210,0.12)' }}>
+    <div style={{ borderBottom: '1px solid var(--border)' }}>
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between py-5 text-left"
-        style={{ fontFamily: fontFamily.body }}
+        style={{ fontFamily: WEBSITE_FONTS.body }}
       >
-        <span className="text-base font-semibold pr-4" style={{ color: 'var(--ink-display, #0A0A0A)', lineHeight: 1.4 }}>{q}</span>
+        <span className="text-base font-semibold pr-4" style={{ color: 'var(--ink-display)', lineHeight: 1.4 }}>{q}</span>
         <svg
-          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8FA0B8" strokeWidth="2"
+          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-secondary)" strokeWidth="2"
           className="shrink-0 transition-transform duration-200"
           style={{ transform: open ? 'rotate(45deg)' : 'rotate(0deg)' }}
         >
@@ -308,7 +313,7 @@ const FaqItem = ({ q, a, open, onToggle }) => {
         className="overflow-hidden transition-all"
         style={{ maxHeight: open ? 400 : 0, opacity: open ? 1 : 0 }}
       >
-        <p className="pb-5 text-[15px]" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>{a}</p>
+        <p className="pb-5 text-[15px]" style={{ fontFamily: WEBSITE_FONTS.body, color: 'var(--ink-secondary)', lineHeight: 1.6 }}>{a}</p>
       </div>
     </div>
   );
@@ -330,14 +335,14 @@ const PricingPage = () => {
       {/* HERO */}
       <section className="pt-16 sm:pt-28 pb-12 px-6 text-center" data-testid="pricing-hero">
         <div className="max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full mb-6 text-[13px] font-semibold" style={{ background: 'rgba(232,93,0,0.06)', color: '#E85D00' }}>
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full mb-6 text-[13px] font-semibold" style={{ background: 'var(--lava-soft)', color: 'var(--lava)' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>
             Pricing
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-bold tracking-tight mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', lineHeight: 1.12, letterSpacing: '-0.02em' }}>
+          <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-bold tracking-tight mb-4" style={{ fontFamily: WEBSITE_FONTS.display, color: 'var(--ink-display)', lineHeight: 1.12, letterSpacing: '-0.02em' }}>
             Simple, transparent pricing.
           </h1>
-          <p className="text-base sm:text-lg" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
+          <p className="text-base sm:text-lg" style={{ fontFamily: WEBSITE_FONTS.body, color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
             Start free. Upgrade when you're ready. No surprises, no hidden fees.
           </p>
         </div>
@@ -353,48 +358,48 @@ const PricingPage = () => {
       </section>
 
       {/* COMPARISON TABLE */}
-      <section className="py-16 px-4 sm:px-6" style={{ borderTop: '1px solid rgba(140,170,210,0.12)' }} data-testid="pricing-compare">
+      <section className="py-16 px-4 sm:px-6" style={{ borderTop: '1px solid var(--border)' }} data-testid="pricing-compare">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.02em' }}>Compare all features</h2>
-            <p className="text-[15px]" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>A detailed breakdown of what's included in every plan.</p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3" style={{ fontFamily: WEBSITE_FONTS.display, color: 'var(--ink-display)', letterSpacing: '-0.02em' }}>Compare all features</h2>
+            <p className="text-[15px]" style={{ fontFamily: WEBSITE_FONTS.body, color: 'var(--ink-secondary)' }}>A detailed breakdown of what's included in every plan.</p>
           </div>
           <div className="flex justify-center mb-6">
             <button
               onClick={() => setShowCompare(!showCompare)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:shadow-lg"
-              style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--ink-display)', fontFamily: WEBSITE_FONTS.body }}
             >
               {showCompare ? 'Hide full comparison' : 'Show full comparison'}
-              <ChevronDown className={`w-4 h-4 transition-transform ${showCompare ? 'rotate-180' : ''}`} style={{ color: 'var(--ink-secondary, #8FA0B8)' }} />
+              <ChevronDown className={`w-4 h-4 transition-transform ${showCompare ? 'rotate-180' : ''}`} style={{ color: 'var(--ink-secondary)' }} />
             </button>
           </div>
           {showCompare && (
-            <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid rgba(140,170,210,0.12)' }}>
+            <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid var(--border)' }}>
               <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
                 <thead style={{ position: 'sticky', top: 64, zIndex: 10 }}>
-                  <tr style={{ background: '#FAFAFA' }}>
-                    <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, minWidth: 140, background: '#FAFAFA' }}>Feature</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Free</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Growth</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Pro</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Enterprise</th>
+                  <tr style={{ background: 'var(--canvas-app)' }}>
+                    <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--ink-display)', fontFamily: WEBSITE_FONTS.body, minWidth: 140, background: 'var(--canvas-app)' }}>Feature</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display)', fontFamily: WEBSITE_FONTS.body, background: 'var(--canvas-app)' }}>Free</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display)', fontFamily: WEBSITE_FONTS.body, background: 'var(--canvas-app)' }}>Growth</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display)', fontFamily: WEBSITE_FONTS.body, background: 'var(--canvas-app)' }}>Pro</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display)', fontFamily: WEBSITE_FONTS.body, background: 'var(--canvas-app)' }}>Enterprise</th>
                   </tr>
                 </thead>
                 <tbody>
                   {COMPARE_GROUPS.map(group => (
                     <React.Fragment key={group.label}>
                       <tr>
-                        <td colSpan={5} className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono, background: '#FAFAFA', borderTop: '1px solid rgba(140,170,210,0.12)' }}>
+                        <td colSpan={5} className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-secondary)', fontFamily: WEBSITE_FONTS.mono, background: 'var(--canvas-app)', borderTop: '1px solid var(--border)' }}>
                           {group.label}
                         </td>
                       </tr>
                       {group.rows.map(([feature, ...tiers], ri) => (
-                        <tr key={ri} className="biqc-compare-row" style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
-                          <td className="py-2.5 px-4" style={{ color: 'var(--ink, #C8D4E4)', fontFamily: fontFamily.body }}>{feature}</td>
+                        <tr key={ri} className="biqc-compare-row" style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td className="py-2.5 px-4" style={{ color: 'var(--ink)', fontFamily: WEBSITE_FONTS.body }}>{feature}</td>
                           {tiers.map((v, ti) => (
                             <td key={ti} className="py-2.5 px-4 text-center">
-                              {v === true ? <Check className="w-4 h-4 mx-auto text-[#16A34A]" /> : v === false ? <span className="text-[#3D4B5C]">—</span> : <span className="text-sm" style={{ color: 'var(--ink, #C8D4E4)', fontFamily: fontFamily.body }}>{v}</span>}
+                              {v === true ? <Check className="w-4 h-4 mx-auto text-[var(--positive)]" /> : v === false ? <span className="text-[var(--ink-muted)]">—</span> : <span className="text-sm" style={{ color: 'var(--ink)', fontFamily: WEBSITE_FONTS.body }}>{v}</span>}
                             </td>
                           ))}
                         </tr>
@@ -409,11 +414,11 @@ const PricingPage = () => {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 px-6" style={{ borderTop: '1px solid rgba(140,170,210,0.12)' }} data-testid="pricing-faq">
+      <section className="py-20 px-6" style={{ borderTop: '1px solid var(--border)' }} data-testid="pricing-faq">
         <div className="max-w-[720px] mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-[32px] font-bold tracking-tight mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.02em' }}>Frequently asked questions</h2>
-            <p className="text-base" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>Everything you need to know about BIQc pricing and plans.</p>
+            <h2 className="text-2xl sm:text-[32px] font-bold tracking-tight mb-3" style={{ fontFamily: WEBSITE_FONTS.display, color: 'var(--ink-display)', letterSpacing: '-0.02em' }}>Frequently asked questions</h2>
+            <p className="text-base" style={{ fontFamily: WEBSITE_FONTS.body, color: 'var(--ink-secondary)' }}>Everything you need to know about BIQc pricing and plans.</p>
           </div>
           <div>
             {FAQS.map((faq, i) => <FaqItem key={i} q={faq.q} a={faq.a} open={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />)}
@@ -422,14 +427,14 @@ const PricingPage = () => {
       </section>
 
       {/* BOTTOM CTA */}
-      <section className="py-20 px-6 text-center" style={{ borderTop: '1px solid rgba(140,170,210,0.12)' }} data-testid="pricing-bottom-cta">
+      <section className="py-20 px-6 text-center" style={{ borderTop: '1px solid var(--border)' }} data-testid="pricing-bottom-cta">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.02em' }}>Start your 14-day trial today</h2>
-          <p className="text-base mb-8" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>No credit card required. Full access to Growth features. Cancel anytime.</p>
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style={{ fontFamily: WEBSITE_FONTS.display, color: 'var(--ink-display)', letterSpacing: '-0.02em' }}>Start your 14-day trial today</h2>
+          <p className="text-base mb-8" style={{ fontFamily: WEBSITE_FONTS.body, color: 'var(--ink-secondary)' }}>No credit card required. Full access to Growth features. Cancel anytime.</p>
           <Link
             to="/register-supabase"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg text-base font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: '#E85D00', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}
+            style={{ background: 'var(--lava)', fontFamily: WEBSITE_FONTS.body, boxShadow: '0 4px 16px var(--lava-ring)' }}
           >
             Start 14-Day Trial <ArrowRight className="w-4 h-4" />
           </Link>

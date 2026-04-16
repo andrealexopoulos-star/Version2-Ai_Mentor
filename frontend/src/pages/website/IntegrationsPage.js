@@ -129,9 +129,9 @@ const IntegrationCard = ({ integration, categoryTitle }) => (
         <span
           className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
           style={{
-            color: '#4ADE80',
-            background: 'rgba(22,163,74,0.12)',
-            border: '1px solid rgba(22,163,74,0.2)',
+            color: 'var(--positive)',
+            background: 'var(--positive-wash)',
+            border: '1px solid var(--border)',
           }}
         >
           Available
@@ -140,9 +140,9 @@ const IntegrationCard = ({ integration, categoryTitle }) => (
         <span
           className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
           style={{
-            color: '#5C6E82',
-            background: 'rgba(140,170,210,0.08)',
-            border: '1px solid rgba(140,170,210,0.12)',
+            color: 'var(--ink-secondary)',
+            background: 'var(--surface-tint)',
+            border: '1px solid var(--border)',
           }}
         >
           Coming Soon
@@ -163,7 +163,7 @@ const IntegrationCard = ({ integration, categoryTitle }) => (
     {/* Category badge */}
     <span
       className="text-[11px] font-semibold rounded-full px-2.5 py-0.5 mt-1 w-fit"
-      style={{ color: '#5C6E82', background: 'var(--canvas-app, #FAFAFA)' }}
+      style={{ color: 'var(--ink-secondary)', background: 'var(--canvas-app)' }}
     >
       {categoryTitle}
     </span>
@@ -178,7 +178,7 @@ const IntegrationsPage = () => {
       {/* ── HERO (center-aligned, no CTA buttons) ── */}
       <section className="relative overflow-hidden" data-testid="integrations-hero"
         style={{
-          background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)',
+          background: 'radial-gradient(ellipse 60% 40% at 50% 0%, var(--steel-highlight) 0%, transparent 60%), linear-gradient(180deg, var(--canvas) 0%, var(--surface-tint) 100%)',
         }}>
         <div className="max-w-7xl mx-auto px-6 pt-20 pb-14 relative z-10 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4"
@@ -191,9 +191,9 @@ const IntegrationsPage = () => {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-8 mt-8">
             <span className="text-[15px] font-semibold" style={{ color: 'var(--ink-display)' }}>40+ integrations</span>
-            <span className="w-1 h-1 rounded-full" style={{ background: '#5C6E82' }} />
+            <span className="w-1 h-1 rounded-full" style={{ background: 'var(--ink-muted)' }} />
             <span className="text-[15px] font-semibold" style={{ color: 'var(--ink-display)' }}>8 categories</span>
-            <span className="w-1 h-1 rounded-full" style={{ background: '#5C6E82' }} />
+            <span className="w-1 h-1 rounded-full" style={{ background: 'var(--ink-muted)' }} />
             <span className="text-[15px] font-semibold" style={{ color: 'var(--ink-display)' }}>5-minute setup</span>
           </div>
         </div>

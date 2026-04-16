@@ -9,8 +9,8 @@ import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle, Do
 // ─── Reusable card wrappers ───────────────────────────────────────────────────
 
 const GlassCard = ({ children, className = '' }) => (
-  <div className={`rounded-xl p-6 transition-all duration-300 hover:border-[#E85D00]/30 hover:translate-y-[-2px] ${className}`}
-    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(232,93,0,0.15)', borderRadius: 12 }}>
+  <div className={`rounded-xl p-6 transition-all duration-300 hover:translate-y-[-2px] ${className}`}
+    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
     {children}
   </div>
 );
@@ -19,17 +19,17 @@ const StatCard = ({ number, stat, body, biqc }) => (
   <div
     className="rounded-2xl p-7 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1"
     style={{
-      background: 'rgba(20,28,38,0.85)',
-      border: '1px solid rgba(232,93,0,0.25)',
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
       borderRadius: 18,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(232,93,0,0.08), inset 0 1px 0 rgba(255,255,255,0.04)',
+      boxShadow: 'var(--elev-2)',
       backdropFilter: 'blur(12px)',
     }}
   >
-    <p style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 700, color: '#E85D00', lineHeight: 1.1, marginBottom: 0 }}>{number}</p>
-    <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: 'var(--font-ui)' }}>{stat}</p>
+    <p style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 700, color: 'var(--lava)', lineHeight: 1.1, marginBottom: 0 }}>{number}</p>
+    <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{stat}</p>
     <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{body}</p>
-    <p className="text-sm italic leading-relaxed" style={{ color: '#E85D00', fontFamily: 'var(--font-ui)' }}>{biqc}</p>
+    <p className="text-sm italic leading-relaxed" style={{ color: 'var(--lava)', fontFamily: 'var(--font-ui)' }}>{biqc}</p>
   </div>
 );
 
@@ -37,7 +37,7 @@ const STATS = [
   {
     number: '90%',
     stat: 'of data is created every two years',
-    body: <>Yet most businesses use less than <strong style={{ color: 'var(--ink-display, #0A0A0A)' }}>10% of it.</strong></>,
+    body: <>Yet most businesses use less than <strong style={{ color: 'var(--ink-display)' }}>10% of it.</strong></>,
     biqc: 'BIQc transforms scattered data into practical business intelligence.',
   },
   {
@@ -49,7 +49,7 @@ const STATS = [
   {
     number: '75%',
     stat: 'of businesses are experimenting with AI',
-    body: <>But fewer than <strong style={{ color: 'var(--ink-display, #0A0A0A)' }}>5% see real operational value.</strong></>,
+    body: <>But fewer than <strong style={{ color: 'var(--ink-display)' }}>5% see real operational value.</strong></>,
     biqc: 'BIQc delivers practical AI insights for everyday decisions.',
   },
   {

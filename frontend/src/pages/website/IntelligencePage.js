@@ -101,7 +101,7 @@ export default function IntelligencePage() {
     <WebsiteLayout>
       {/* Hero */}
       <section className="py-20 md:py-24 text-center px-6"
-        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)' }}>
+        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, var(--steel-highlight) 0%, transparent 60%), linear-gradient(180deg, var(--canvas) 0%, var(--surface-tint) 100%)' }}>
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-[48px] font-bold leading-[1.15] tracking-tight mb-4"
             style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
@@ -113,7 +113,7 @@ export default function IntelligencePage() {
           </p>
           <Link to="/platform"
             className="inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: 'var(--lava)', borderRadius: 'var(--r-md)', boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}>
+            style={{ background: 'var(--lava)', borderRadius: 'var(--r-md)', boxShadow: '0 4px 16px var(--lava-ring)' }}>
             See It In Action <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

@@ -17,21 +17,21 @@ import { Shield, Zap, Users, Eye, ArrowRight, Lock, Heart, Layers, Smile, MinusC
 
 /* ═══ PALETTE CONSTANTS ═══ */
 const C = {
-  bgPrimary:    '#FAFAFA',
-  bgSecondary:  '#0B1120',
-  bgCard:       'rgba(140,165,200,0.04)',
-  borderCard:   'rgba(160,185,220,0.12)',
-  steelBorder:  'rgba(140,170,210,0.15)',
-  textH:        '#EDF1F7',
-  textB:        '#8FA0B8',
-  textM:        '#5C6E82',
+  bgPrimary:    'var(--canvas)',
+  bgSecondary:  'var(--surface-tint)',
+  bgCard:       'var(--steel-highlight)',
+  borderCard:   'var(--border)',
+  steelBorder:  'var(--border)',
+  textH:        'var(--ink-display)',
+  textB:        'var(--ink-secondary)',
+  textM:        'var(--ink-muted)',
   steel100:     'var(--ink)',
-  steel300:     '#6E8AAE',
-  brand:        '#FF7A18',
-  brandDark:    '#E85D00',
-  brandGlow:    'rgba(255,122,24,0.25)',
-  chromeGlint:  'linear-gradient(105deg, rgba(200,220,240,0.0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0.0) 55%, rgba(200,220,240,0.0) 100%)',
-  steelSheen:   'linear-gradient(135deg, rgba(160,185,220,0.06) 0%, rgba(160,185,220,0.02) 40%, rgba(160,185,220,0.08) 100%)',
+  steel300:     'var(--steel-300)',
+  brand:        'var(--lava-warm)',
+  brandDark:    'var(--lava)',
+  brandGlow:    'var(--lava-ring)',
+  chromeGlint:  'var(--chrome-glint)',
+  steelSheen:   'var(--steel-sheen)',
 };
 
 /* ═══ SCROLL-REVEAL HOOK ═══ */
@@ -191,9 +191,9 @@ export default function AboutPage() {
           position: 'relative',
           padding: '80px 0 72px',
           background: [
-            'radial-gradient(ellipse 80% 50% at 20% 80%, rgba(46,74,110,0.12) 0%, transparent 60%)',
-            'radial-gradient(ellipse 60% 60% at 80% 20%, rgba(74,106,144,0.08) 0%, transparent 50%)',
-            `radial-gradient(ellipse 100% 80% at 50% 0%, rgba(14,22,40,1) 0%, ${C.bgPrimary} 100%)`,
+            'radial-gradient(ellipse 80% 50% at 20% 80%, var(--steel-highlight) 0%, transparent 60%)',
+            'radial-gradient(ellipse 60% 60% at 80% 20%, var(--steel-highlight) 0%, transparent 50%)',
+            `radial-gradient(ellipse 100% 80% at 50% 0%, ${C.bgSecondary} 0%, ${C.bgPrimary} 100%)`,
           ].join(','),
           overflow: 'hidden',
           display: 'flex',
