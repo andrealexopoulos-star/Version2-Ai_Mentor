@@ -734,7 +734,7 @@ const Advisor = () => {
                         <h2 className="mt-3" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 'var(--lh-display)', letterSpacing: '-0.025em', color: 'white' }}>
                           Start getting <em style={{ color: 'var(--lava-warm)', fontStyle: 'italic' }}>intelligence</em>.
                         </h2>
-                        <p className="mt-4 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'var(--size-sm)' }}>
+                        <p className="mt-4 leading-relaxed" style={{ color: 'var(--ink-secondary, #525252)', fontSize: 'var(--size-sm)' }}>
                           Ask BIQc any question about your business right now — strategy, pricing, hiring, cash flow.
                           Connect your inbox and CRM to turn on live brief updates and real-time signals.
                         </p>
@@ -768,21 +768,21 @@ const Advisor = () => {
                       <h2 className="mt-3" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 'var(--lh-display)', letterSpacing: '-0.025em', color: 'white' }}>
                         {headline} <em style={{ color: 'var(--lava-warm)', fontStyle: 'italic' }}>{headlineEmphasis}</em>.
                       </h2>
-                      <p className="mt-4 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'var(--size-sm)' }}>
+                      <p className="mt-4 leading-relaxed" style={{ color: 'var(--ink-secondary, #525252)', fontSize: 'var(--size-sm)' }}>
                         {memo || (decideNow?.signal_summary) || 'Your intelligence brief is being assembled.'}
                       </p>
                       <div className="grid grid-cols-3 mt-6 pt-5" style={{ gap: 'var(--sp-4)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                         <div>
                           <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: urgentCount > 0 ? 'var(--lava)' : 'white', lineHeight: 1 }}>{urgentCount}</div>
-                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.5)', letterSpacing: 'var(--ls-caps)' }}>Need attention</div>
+                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted, #737373)', letterSpacing: 'var(--ls-caps)' }}>Need attention</div>
                         </div>
                         <div>
                           <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'white', lineHeight: 1 }}>{totalOverdue > 0 ? `$${Math.round(totalOverdue / 1000)}k` : '\u2014'}</div>
-                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.5)', letterSpacing: 'var(--ls-caps)' }}>At risk</div>
+                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted, #737373)', letterSpacing: 'var(--ls-caps)' }}>At risk</div>
                         </div>
                         <div>
                           <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'white', lineHeight: 1 }}>{stalledDeals > 0 ? stalledDeals : overdueInvoices > 0 ? overdueInvoices : '\u2014'}</div>
-                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.5)', letterSpacing: 'var(--ls-caps)' }}>{stalledDeals > 0 ? 'Stalled deals' : overdueInvoices > 0 ? 'Overdue' : 'Signals'}</div>
+                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted, #737373)', letterSpacing: 'var(--ls-caps)' }}>{stalledDeals > 0 ? 'Stalled deals' : overdueInvoices > 0 ? 'Overdue' : 'Signals'}</div>
                         </div>
                       </div>
                     </>

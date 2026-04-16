@@ -281,11 +281,11 @@ const LoginSupabase = () => {
           <h2 className="font-medium leading-[1.05] mb-4" style={{ fontFamily: DISPLAY, color: '#FFFFFF', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: 'var(--ls-tight, -0.035em)' }}>
             Welcome back to your <em style={{ fontStyle: 'italic', color: 'var(--lava-warm, #FF7A1A)' }}>operator brain</em>.
           </h2>
-          <p className="text-base leading-relaxed mb-8" style={{ fontFamily: UI, color: 'rgba(255,255,255,0.65)', maxWidth: 420 }}>
+          <p className="text-base leading-relaxed mb-8" style={{ fontFamily: UI, color: 'var(--ink-secondary, #525252)', maxWidth: 420 }}>
             Two clicks away from the only quiet feed that knows what changed in your business while you slept.
           </p>
           <div className="pl-5 rounded-r-xl" style={{ borderLeft: '2px solid var(--lava, #E85D00)', padding: '20px 20px 20px 20px', background: 'rgba(255,255,255,0.04)' }}>
-            <p className="text-sm leading-relaxed mb-2" style={{ fontFamily: UI, color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>
+            <p className="text-sm leading-relaxed mb-2" style={{ fontFamily: UI, color: 'var(--ink, #171717)', fontStyle: 'italic' }}>
               "We replaced four dashboards and a Notion page with BIQc. I now read one feed a day and that is the entire job."
             </p>
             <span className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--lava-warm, #FF7A1A)' }}>
@@ -296,7 +296,7 @@ const LoginSupabase = () => {
 
         <div className="relative z-10 flex items-center gap-6 flex-wrap">
           {['SOC 2 Type II in progress', 'Sovereign AU data', 'Read-only by default'].map((t, i) => (
-            <span key={i} className="text-[11px] uppercase tracking-[0.04em]" style={{ fontFamily: MONO, color: 'rgba(255,255,255,0.4)' }}>{t}</span>
+            <span key={i} className="text-[11px] uppercase tracking-[0.04em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #737373)' }}>{t}</span>
           ))}
         </div>
       </aside>
