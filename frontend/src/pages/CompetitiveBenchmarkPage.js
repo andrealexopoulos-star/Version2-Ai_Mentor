@@ -210,16 +210,16 @@ const PillarBar = ({ pillar, score, isReal, isWeakest, enrichmentDetail }) => {
           {enrichmentDetail && (
             <div className="mt-2 pt-2 space-y-1.5" style={{ borderTop: '1px solid #243140' }}>
               {enrichmentDetail.status && (
-                <p className="text-[10px]" style={{ fontFamily: fontFamily.mono }}>
+                <p className="text-[10px]" style={{ fontFamily: 'var(--font-mono)' }}>
                   <span className="text-[#64748B]">Status: </span>
                   <span style={{ color: enrichmentDetail.status === 'strong' ? '#10B981' : '#F59E0B' }}>{enrichmentDetail.status}</span>
                 </p>
               )}
               {enrichmentDetail.channels && (
-                <p className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Active: {enrichmentDetail.channels.join(', ')}</p>
+                <p className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: 'var(--font-mono)' }}>Active: {enrichmentDetail.channels.join(', ')}</p>
               )}
               {enrichmentDetail.signals && enrichmentDetail.signals.length > 0 && (
-                <p className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Signals: {enrichmentDetail.signals.join(', ')}</p>
+                <p className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: 'var(--font-mono)' }}>Signals: {enrichmentDetail.signals.join(', ')}</p>
               )}
               {enrichmentDetail.strengths?.map((s, i) => (
                 <p key={`s${i}`} className="text-[10px] text-[#9FB0C3] flex items-start gap-1"><CheckCircle2 className="w-3 h-3 text-[#10B981] shrink-0 mt-0.5" />{s}</p>
@@ -415,11 +415,11 @@ export default function CompetitiveBenchmarkPage() {
             </p>
             {enrichmentData?.scanned_at && (
               <div className="flex items-center gap-3 mt-2">
-                <span className="text-[10px] text-[#64748B] flex items-center gap-1" style={{ fontFamily: fontFamily.mono }}>
+                <span className="text-[10px] text-[#64748B] flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)' }}>
                   Scan: {new Date(enrichmentData.scanned_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
                 {enrichmentData.next_update_available && (
-                  <span className="text-[10px] text-[#4A5568] flex items-center gap-1" style={{ fontFamily: fontFamily.mono }}>
+                  <span className="text-[10px] text-[#4A5568] flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)' }}>
                     Next update: {new Date(enrichmentData.next_update_available).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                   </span>
                 )}
