@@ -466,7 +466,7 @@ const MarketPage = () => {
                     </div>
                   ) : (
                     <p className="mt-2 text-sm text-[#CBD5E1]">Complete calibration to generate your scan data.</p>
-                  )
+                  )}
                 </div>
               </div>
             </SurfaceCard>
