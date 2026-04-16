@@ -58,7 +58,7 @@ function ConversationResumeCard({ field, value, resuming }) {
           Saved {fieldLabel ? `${fieldLabel}: ` : ''}{value}
         </p>
         {resuming && (
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '2px 0 0' }}>
+          <p style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', margin: '2px 0 0' }}>
             Updating analysis with new context...
           </p>
         )}
@@ -153,10 +153,10 @@ function InlineIntegrationConnect({ req, onDismiss }) {
       }}
     >
       <div>
-        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+        <span style={{ fontSize: 13, color: 'var(--ink, #171717)', fontWeight: 500 }}>
           {req.label}
         </span>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: '2px 0 0' }}>
+        <p style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', margin: '2px 0 0' }}>
           {req.why}
         </p>
       </div>
@@ -183,7 +183,7 @@ function InlineIntegrationConnect({ req, onDismiss }) {
             padding: '6px 10px',
             borderRadius: 8,
             background: 'none',
-            color: 'rgba(255,255,255,0.3)',
+            color: 'var(--ink-muted, #737373)',
             border: '1px solid rgba(255,255,255,0.1)',
             fontSize: 12,
             cursor: 'pointer',
@@ -227,10 +227,10 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
         }}
       >
         <div>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+          <span style={{ fontSize: 13, color: 'var(--ink, #171717)', fontWeight: 500 }}>
             {req.label}
           </span>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginLeft: 8 }}>
+          <span style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', marginLeft: 8 }}>
             — {req.why}
           </span>
         </div>
@@ -263,7 +263,7 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
                 background: 'rgba(255,255,255,0.06)',
                 border: '1px solid rgba(255,255,255,0.12)',
                 borderRadius: 8,
-                color: 'rgba(255,255,255,0.9)',
+                color: 'var(--ink-display, #0A0A0A)',
                 fontSize: 13,
                 cursor: 'pointer',
               }}
@@ -289,7 +289,7 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
                 background: 'rgba(255,255,255,0.06)',
                 border: '1px solid rgba(255,255,255,0.12)',
                 borderRadius: 8,
-                color: 'rgba(255,255,255,0.9)',
+                color: 'var(--ink-display, #0A0A0A)',
                 fontSize: 13,
                 boxSizing: 'border-box',
               }}
@@ -318,7 +318,7 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
                 padding: '6px 12px',
                 borderRadius: 8,
                 background: 'none',
-                color: 'rgba(255,255,255,0.3)',
+                color: 'var(--ink-muted, #737373)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 fontSize: 12,
                 cursor: 'pointer',
@@ -387,7 +387,7 @@ function InlineDataRequirements({ requirements, originalMessage, conversationId,
         borderRadius: 12,
       }}
     >
-      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12, fontWeight: 500, letterSpacing: '0.05em' }}>
+      <p style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', marginBottom: 12, fontWeight: 500, letterSpacing: '0.05em' }}>
         SHARPEN THIS RESPONSE
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -828,17 +828,17 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           >
             B
           </div>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 500, fontFamily: fontFamily.body }}>
+          <span style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', fontWeight: 500, fontFamily: fontFamily.body }}>
             BIQc
             {msg.agent_name && msg.agent_name !== 'BIQc' && (
-              <span style={{ color: 'rgba(255,255,255,0.2)' }}> {'\u00B7'} {msg.agent_name}</span>
+              <span style={{ color: 'var(--ink-subtle, #A3A3A3)' }}> {'\u00B7'} {msg.agent_name}</span>
             )}
           </span>
           {coveragePct !== null && coveragePct < 50 && (
             <span
               style={{
                 fontSize: 10,
-                color: 'rgba(255,255,255,0.25)',
+                color: 'var(--ink-subtle, #A3A3A3)',
                 padding: '1px 8px',
                 borderRadius: 20,
                 border: '1px solid rgba(255,255,255,0.1)',
@@ -855,7 +855,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           )}
         </div>
 
-        <div className="markdown-body" style={{ lineHeight: 1.75, color: 'rgba(255,255,255,0.88)', fontSize: 14, fontFamily: fontFamily.body }}>
+        <div className="markdown-body" style={{ lineHeight: 1.75, color: 'var(--ink-display, #0A0A0A)', fontSize: 14, fontFamily: fontFamily.body }}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {content}
           </ReactMarkdown>
@@ -870,7 +870,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             gap: 8,
             fontFamily: fontFamily.mono,
             fontSize: 10,
-            color: 'rgba(255,255,255,0.25)',
+            color: 'var(--ink-subtle, #A3A3A3)',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
           }}>
@@ -928,7 +928,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '18px 18px 4px 18px',
             fontSize: 14,
-            color: 'rgba(255,255,255,0.95)',
+            color: 'var(--ink-display, #0A0A0A)',
             lineHeight: 1.5,
             wordBreak: 'break-word',
             fontFamily: fontFamily.body,
@@ -976,10 +976,10 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontFamily: fontFamily.display }}>Ask BIQc</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.display }}>Ask BIQc</span>
           <button
             onClick={() => setSidebarCollapsed(true)}
-            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: 4 }}
+            style={{ background: 'none', border: 'none', color: 'var(--ink-muted, #737373)', cursor: 'pointer', padding: 4 }}
             title="Collapse sidebar"
           >
             ✕
@@ -1010,12 +1010,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>
           {conversations.length === 0 ? (
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '16px 8px', textAlign: 'center' }}>
+            <p style={{ fontSize: 12, color: 'var(--ink-subtle, #A3A3A3)', padding: '16px 8px', textAlign: 'center' }}>
               No conversations yet
             </p>
           ) : (
             <>
-              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', padding: '8px 8px 4px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: fontFamily.mono }}>
+              <p style={{ fontSize: 10, color: 'var(--ink-muted, #737373)', padding: '8px 8px 4px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: fontFamily.mono }}>
                 Recent conversations
               </p>
               {conversations.map((conv) => (
@@ -1051,7 +1051,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   >
                     {conv.title || 'New Conversation'}
                   </p>
-                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', margin: '2px 0 0', fontFamily: fontFamily.mono }}>
+                  <p style={{ fontSize: 10, color: 'var(--ink-subtle, #A3A3A3)', margin: '2px 0 0', fontFamily: fontFamily.mono }}>
                     {conv.updated_at ? new Date(conv.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : ''}
                   </p>
                 </button>
@@ -1073,7 +1073,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 8,
             padding: '6px 10px',
-            color: 'rgba(255,255,255,0.6)',
+            color: 'var(--ink-secondary, #525252)',
             cursor: 'pointer',
             fontSize: 16,
           }}
@@ -1107,12 +1107,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           {sidebarCollapsed && (
             <button
               onClick={() => setSidebarCollapsed(false)}
-              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 4, fontSize: 18 }}
+              style={{ background: 'none', border: 'none', color: 'var(--ink-muted, #737373)', cursor: 'pointer', padding: 4, fontSize: 18 }}
             >
               ☰
             </button>
           )}
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.7)', fontFamily: fontFamily.display }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.display }}>
             {activeConversationTitle || 'Ask BIQc'}
           </span>
         </div>
@@ -1146,7 +1146,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 B
               </div>
               <p style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 8, fontFamily: fontFamily.display }}>Ask BIQc anything</p>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', maxWidth: 340, fontFamily: fontFamily.body, marginBottom: 28 }}>
+              <p style={{ fontSize: 13, color: 'var(--ink-muted, #737373)', textAlign: 'center', maxWidth: 340, fontFamily: fontFamily.body, marginBottom: 28 }}>
                 Ask about your pipeline, cash flow, risks, or what needs attention this week.
               </p>
               {/* Suggested prompts grid */}
@@ -1196,7 +1196,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                       alignItems: 'center',
                       gap: 10,
                       fontSize: 13,
-                      color: 'rgba(255,255,255,0.7)',
+                      color: 'var(--ink-secondary, #525252)',
                       fontFamily: fontFamily.body,
                     }}
                   >
@@ -1235,7 +1235,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                         borderRadius: 10,
                         background: 'rgba(255,255,255,0.04)',
                         border: '1px solid rgba(255,255,255,0.08)',
-                        color: 'rgba(255,255,255,0.45)',
+                        color: 'var(--ink-muted, #737373)',
                         fontSize: 12,
                       }}
                     >
@@ -1285,7 +1285,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                         padding: '2px 8px',
                         borderRadius: 20,
                         background: 'rgba(255,255,255,0.08)',
-                        color: 'rgba(255,255,255,0.5)',
+                        color: 'var(--ink-muted, #737373)',
                       }}
                     >
                       {source}
@@ -1302,7 +1302,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   border: '1px solid rgba(255,255,255,0.08)',
                 }}
               >
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+                <p style={{ fontSize: 13, color: 'var(--ink-secondary, #525252)', margin: 0 }}>
                   {activeBoardroomCheck.line}
                 </p>
               </div>
@@ -1347,11 +1347,11 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 >
                   B
                 </div>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
+                <span style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', fontWeight: 500 }}>
                   BIQc <span style={{ color: '#E85D00', marginLeft: 8 }}>thinking...</span>
                 </span>
               </div>
-              <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>BIQc is thinking...</p>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--ink, #171717)' }}>BIQc is thinking...</p>
             </div>
           )}
         </div>
@@ -1567,7 +1567,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             )}
           </button>
         </div>
-        <p className="text-[9px] text-center mt-1.5" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.2)' }}>
+        <p className="text-[9px] text-center mt-1.5" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-subtle, #A3A3A3)' }}>
           <span style={{ padding: '1px 5px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, marginRight: 2 }}>{'\u21B5'}</span> Send {'\u00B7'} <span style={{ padding: '1px 5px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, marginRight: 2, marginLeft: 2 }}>{'\u21E7\u21B5'}</span> New line {'\u00B7'} BIQc uses connected data only
         </p>
       </div>

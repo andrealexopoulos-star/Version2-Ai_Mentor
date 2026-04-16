@@ -105,7 +105,7 @@ export default function BlogPage() {
                 <div className="min-h-[280px] md:min-h-[320px] flex items-center justify-center relative overflow-hidden"
                   style={{ background: 'linear-gradient(135deg, #E85D00 0%, #FF8A3D 40%, #FFB980 100%)' }}>
                   <span className="text-[56px] font-bold relative z-10"
-                    style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-display)' }}>
+                    style={{ color: 'var(--ink-subtle, #A3A3A3)', fontFamily: 'var(--font-display)' }}>
                     BIQc
                   </span>
                   <div className="absolute w-[200px] h-[200px] border-2 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -161,7 +161,7 @@ export default function BlogPage() {
                   {/* Gradient image */}
                   <div className="h-40 flex items-center justify-center relative overflow-hidden" style={{ background: grad }}>
                     <span className="text-[32px] font-bold relative z-10"
-                      style={{ color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-display)' }}>
+                      style={{ color: 'var(--ink-muted, #737373)', fontFamily: 'var(--font-display)' }}>
                       {String(i + 1).padStart(2, '0')}
                     </span>
                   </div>

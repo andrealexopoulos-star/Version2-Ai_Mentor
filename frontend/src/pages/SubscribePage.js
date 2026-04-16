@@ -344,7 +344,7 @@ const SubscribePage = () => {
         <h3 className="font-medium relative mb-4" style={{ fontFamily: 'var(--font-display)', color: '#FFFFFF', fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', lineHeight: 1.05, letterSpacing: 'var(--ls-display, -0.02em)' }}>
           Still exploring?
         </h3>
-        <p className="relative text-sm mb-6 mx-auto" style={{ color: 'rgba(255,255,255,0.7)', maxWidth: '48ch', fontFamily: 'var(--font-ui)' }}>
+        <p className="relative text-sm mb-6 mx-auto" style={{ color: 'var(--ink-secondary, #525252)', maxWidth: '48ch', fontFamily: 'var(--font-ui)' }}>
           Every feature is unlocked during your trial — use them, break them, ask BIQc anything. When you're ready, pick the plan that fits.
         </p>
         <Link to="/advisor" className="relative inline-flex items-center gap-2 text-sm font-semibold text-white transition-all hover:-translate-y-0.5" style={{ padding: '14px 28px', background: 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF7A1A))', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-ui)', boxShadow: '0 4px 20px rgba(232,93,0,0.4)' }}>

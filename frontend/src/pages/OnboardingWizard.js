@@ -310,7 +310,7 @@ const OnboardingWizard = () => {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAFAFA' }}>
         <div className="text-center space-y-4">
           <CognitiveMesh compact />
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Loading your profile...</p>
+          <p className="text-sm" style={{ color: 'var(--ink-muted, #737373)' }}>Loading your profile...</p>
         </div>
       </div>
     );
@@ -340,7 +340,7 @@ const OnboardingWizard = () => {
       `}</style>
       <div className="wiz-shell">
         {/* ── Wizard Sidebar ── */}
-        <aside className="wiz-sidebar flex-col justify-between relative overflow-hidden" style={{ background: '#0A0A0A', color: '#FFFFFF', padding: '40px 32px' }}>
+        <aside className="wiz-sidebar flex-col justify-between relative overflow-hidden" style={{ background: 'var(--surface, #FFFFFF)', color: '#FFFFFF', padding: '40px 32px' }}>
           {/* Animated lava orb */}
           <div className="absolute -bottom-[100px] -left-[100px] w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #E85D00 0%, transparent 60%)', opacity: 0.25, filter: 'blur(60px)', animation: 'wizOrbDrift 18s ease-in-out infinite' }} />
           <style>{`@keyframes wizOrbDrift { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(40px, -30px); } }`}</style>
@@ -370,7 +370,7 @@ const OnboardingWizard = () => {
                     </div>
                     <div className="flex-1 pt-1">
                       <div className="text-sm font-medium" style={{ color: isActive ? '#FF8C33' : '#FFFFFF' }}>{s.name}</div>
-                      <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #737373)' }}>
                         {isDone && s.num === 1 ? (user?.email || 'Done') : s.hint}
                       </div>
                     </div>
@@ -380,7 +380,7 @@ const OnboardingWizard = () => {
             </div>
           </div>
 
-          <div className="relative z-[1] text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.4)' }}>
+          <div className="relative z-[1] text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #737373)' }}>
             Skip any step. Resume anytime. Your account is already created.
           </div>
         </aside>

@@ -418,13 +418,13 @@ const RegisterSupabase = () => {
           <h2 className="font-medium leading-[1.05] mb-4" style={{ fontFamily: DISPLAY, color: '#FFFFFF', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: 'var(--ls-tight, -0.035em)' }}>
             The only feed that <em style={{ fontStyle: 'italic', color: 'var(--lava-warm, #FF7A1A)' }}>knows what changed</em> while you slept.
           </h2>
-          <p className="text-base leading-relaxed mb-7" style={{ fontFamily: UI, color: 'rgba(255,255,255,0.65)', maxWidth: 420 }}>
+          <p className="text-base leading-relaxed mb-7" style={{ fontFamily: UI, color: 'var(--ink-secondary, #525252)', maxWidth: 420 }}>
             Two minutes from sign-up to your first quiet brief. No setup calls. No 14-step wizard. Just connect your inbox and watch the room.
           </p>
 
           <div className="flex flex-col gap-3 mb-8">
             {['14 days of Pro features, no credit card', 'Auto-detects 19 of the 23 most common SMB risks', 'Read-only by default — we never write to your tools', 'Cancel in two clicks. Export your data anytime.'].map((item, i) => (
-              <div key={i} className="flex items-start gap-3 text-sm" style={{ color: 'rgba(255,255,255,0.9)' }}>
+              <div key={i} className="flex items-start gap-3 text-sm" style={{ color: 'var(--ink-display, #0A0A0A)' }}>
                 <div className="w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'var(--lava, #E85D00)' }}>
                   <Check className="w-3 h-3 text-white" />
                 </div>
@@ -434,7 +434,7 @@ const RegisterSupabase = () => {
           </div>
 
           <div className="p-5 rounded-r-xl" style={{ borderLeft: '2px solid var(--lava, #E85D00)', background: 'rgba(255,255,255,0.04)' }}>
-            <p className="text-sm leading-relaxed mb-3" style={{ fontFamily: UI, color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>
+            <p className="text-sm leading-relaxed mb-3" style={{ fontFamily: UI, color: 'var(--ink, #171717)', fontStyle: 'italic' }}>
               "I signed up on a Tuesday. By Wednesday morning BIQc had already flagged a $12k churn risk we'd missed in the inbox. Paid for itself the first week."
             </p>
             <span className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--lava-warm, #FF7A1A)' }}>
@@ -445,7 +445,7 @@ const RegisterSupabase = () => {
 
         <div className="relative z-10 flex items-center gap-6 flex-wrap">
           {['SOC 2 in progress', 'Sovereign AU', 'Read-only default'].map((t, i) => (
-            <span key={i} className="text-[11px] uppercase tracking-[0.04em]" style={{ fontFamily: MONO, color: 'rgba(255,255,255,0.4)' }}>{t}</span>
+            <span key={i} className="text-[11px] uppercase tracking-[0.04em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #737373)' }}>{t}</span>
           ))}
         </div>
       </aside>
