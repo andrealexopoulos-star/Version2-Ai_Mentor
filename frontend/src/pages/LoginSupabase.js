@@ -264,7 +264,7 @@ const LoginSupabase = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#080C14' }}>
+    <div className="min-h-screen flex" style={{ background: '#FAFAFA' }}>
       {/* Left: Brand Panel — #0A0A0A hardcoded per mockup auth spec */}
       <aside className="hidden lg:flex flex-col justify-between flex-1 relative overflow-hidden" style={{ background: '#0A0A0A', color: '#FFFFFF', padding: '48px 40px' }}>
         {/* Animated orbs */}
@@ -302,7 +302,7 @@ const LoginSupabase = () => {
       </aside>
 
       {/* Right: Login Form */}
-      <div className="flex-[1.1] flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12" style={{ background: '#080C14' }}>
+      <div className="flex-[1.1] flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12" style={{ background: '#FAFAFA' }}>
         <div className="max-w-[420px] w-full mx-auto">
           {/* Mobile-only brand */}
           <div className="flex items-center gap-2 mb-10 lg:hidden">

@@ -17,7 +17,7 @@ import { Shield, Zap, Users, Eye, ArrowRight, Lock, Heart, Layers, Smile, MinusC
 
 /* ═══ PALETTE CONSTANTS ═══ */
 const C = {
-  bgPrimary:    '#080C14',
+  bgPrimary:    '#FAFAFA',
   bgSecondary:  '#0B1120',
   bgCard:       'rgba(140,165,200,0.04)',
   borderCard:   'rgba(160,185,220,0.12)',

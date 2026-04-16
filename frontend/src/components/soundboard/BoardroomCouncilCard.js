@@ -85,7 +85,7 @@ const BoardroomCouncilCard = ({
         className={`${compact ? 'rounded-lg px-2.5 py-2 mb-2' : 'rounded-xl px-3 py-3 mb-3'}`}
         style={{ background: 'rgba(30, 41, 59, 0.75)', border: '1px solid rgba(96,165,250,0.35)' }}
       >
-        <p className={`${compact ? 'text-[10px]' : 'text-xs'} font-semibold mb-1`} style={{ color: '#DBEAFE', fontFamily: fontFamily.mono }}>
+        <p className={`${compact ? 'text-[10px]' : 'text-xs'} font-semibold mb-1`} style={{ color: 'var(--info, #2563EB)', fontFamily: fontFamily.mono }}>
           {selected?.role || 'Boardroom'}
         </p>
         <p className={`${compact ? 'text-xs' : 'text-sm'} leading-relaxed`} style={{ color: 'var(--ink, #171717)', fontFamily: fontFamily.body }}>

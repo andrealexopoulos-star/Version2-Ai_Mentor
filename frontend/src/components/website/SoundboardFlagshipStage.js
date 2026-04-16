@@ -78,7 +78,7 @@ const SoundboardFlagshipStage = () => (
                   <Icon className="h-3 w-3" style={{ color: '#5B8FA8' }} />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-[11px] font-semibold" style={{ color: '#E7EEF7', fontFamily: fontFamily.body }}>{item.label}</p>
+                  <p className="truncate text-[11px] font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>{item.label}</p>
                   <p className="truncate text-[10px]" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{item.detail}</p>
                 </div>
               </div>
@@ -90,7 +90,7 @@ const SoundboardFlagshipStage = () => (
       <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(91,143,168,0.25)', background: 'rgba(15,23,32,0.82)' }}>
         <div className="space-y-2">
           <div className="ml-auto max-w-[92%] rounded-xl border px-3 py-2" style={{ borderColor: 'rgba(91,143,168,0.25)', background: 'rgba(20,28,38,0.9)' }}>
-            <p className="text-xs sm:text-sm" style={{ color: '#E7EEF7', fontFamily: fontFamily.body }}>
+            <p className="text-xs sm:text-sm" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body }}>
               &ldquo;Our competitor just cut pricing by 12%. Should we respond this week?&rdquo;
             </p>
           </div>

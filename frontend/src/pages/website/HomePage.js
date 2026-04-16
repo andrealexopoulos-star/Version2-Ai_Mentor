@@ -153,7 +153,7 @@ const HomePage = () => {
     ══════════════════════════════════════════════════════════ */}
     <section
       className="relative overflow-hidden"
-      style={{ background: '#080C14' }}
+      style={{ background: '#FAFAFA' }}
       data-testid="hero-section"
     >
       <style>{`
@@ -548,7 +548,7 @@ const HomePage = () => {
             <div key={b.label} className="flex items-center gap-3 p-4 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <span className="text-2xl">{b.icon}</span>
               <div>
-                <p className="text-xs font-semibold" style={{ color: '#E6EEF7', fontFamily: 'var(--font-mono)' }}>{b.label}</p>
+                <p className="text-xs font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: 'var(--font-mono)' }}>{b.label}</p>
                 <p className="text-[11px] mt-0.5 leading-snug" style={{ color: '#6B7B8D', fontFamily: 'var(--font-ui)' }}>{b.sub}</p>
               </div>
             </div>
@@ -562,7 +562,7 @@ const HomePage = () => {
       <div className="max-w-5xl mx-auto px-6">
         <div className="mb-10 sm:mb-12 text-center">
           <p className="text-xs font-medium tracking-widest uppercase mb-4" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>What Cognition-as-a-Service Delivers</p>
-          <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: 'var(--font-display)', color: '#E6EEF7' }}>
+          <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display, #0A0A0A)' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
           <p className="text-base max-w-xl mx-auto" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>Businesses embedding AI-driven decision systems experience:</p>
@@ -581,7 +581,7 @@ const HomePage = () => {
               <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(232,93,0,0.08)' }}>
                 <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
               </div>
-              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: 'var(--font-display)', color: '#E6EEF7' }}>{item.title}</h3>
+              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display, #0A0A0A)' }}>{item.title}</h3>
               <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>{item.desc}</p>
             </GlassCard>
           ))}
@@ -590,7 +590,7 @@ const HomePage = () => {
     </section>
 
     {/* SOCIAL PROOF */}
-    <section className="py-14 sm:py-20" style={{ background: 'radial-gradient(ellipse 60% 50% at 70% 30%, rgba(46,74,110,0.06) 0%, transparent 60%), linear-gradient(180deg, #0B1120 0%, #080C14 100%)' }} data-testid="testimonials-section">
+    <section className="py-14 sm:py-20" style={{ background: 'radial-gradient(ellipse 60% 50% at 70% 30%, rgba(46,74,110,0.06) 0%, transparent 60%), linear-gradient(180deg, #0B1120 0%, #FAFAFA 100%)' }} data-testid="testimonials-section">
       <style>{`
         .testimonial-card-enhanced:hover {
           box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(140,170,210,0.08) !important;
@@ -604,7 +604,7 @@ const HomePage = () => {
             <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>What Australian SMBs Say</span>
             <div className="w-8 h-[2px]" style={{ background: '#E85D00' }} />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-medium" style={{ fontFamily: 'var(--font-display)', color: '#E6EEF7' }}>
+          <h2 className="text-2xl sm:text-3xl font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display, #0A0A0A)' }}>
             Built for operators, not analysts.
           </h2>
         </div>
@@ -676,7 +676,7 @@ const HomePage = () => {
     </section>
 
     {/* CTA */}
-    <section className="relative py-20 sm:py-24 overflow-hidden" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }} data-testid="cta-section">
+    <section className="relative py-20 sm:py-24 overflow-hidden" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)' }} data-testid="cta-section">
       {/* Decorative orb behind content */}
       <div className="absolute pointer-events-none" style={{
         width: 600, height: 600, borderRadius: '50%',

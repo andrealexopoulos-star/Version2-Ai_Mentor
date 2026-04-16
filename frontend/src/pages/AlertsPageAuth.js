@@ -35,7 +35,7 @@ const AlertItem = ({ alert, onAction }) => {
     <div
       className="overflow-hidden mb-3"
       style={{
-        background: isResolved ? 'var(--surface-2, #121D30)' : 'var(--surface)',
+        background: isResolved ? 'var(--surface-2, #F1F5F9)' : 'var(--surface)',
         border: '1px solid var(--border)',
         borderLeft: `4px solid ${borderColor}`,
         borderRadius: 'var(--r-lg, 12px)',
@@ -49,7 +49,7 @@ const AlertItem = ({ alert, onAction }) => {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] uppercase px-2.5 py-0.5 font-semibold" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', color: borderColor, background: sevPillBg[alert.severity] || 'rgba(100,116,139,0.12)', borderRadius: 'var(--r-pill, 100px)' }}>{s.label}</span>
-            {alert.source && <span className="text-[10px] px-2 py-0.5" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-secondary)', background: 'var(--surface-2, #121D30)', borderRadius: 'var(--r-xs, 4px)' }}>{alert.source}</span>}
+            {alert.source && <span className="text-[10px] px-2 py-0.5" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-secondary)', background: 'var(--surface-2, #F1F5F9)', borderRadius: 'var(--r-xs, 4px)' }}>{alert.source}</span>}
           </div>
           <span className="text-[11px] shrink-0" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)' }}>{alert.time}</span>
         </div>
@@ -65,7 +65,7 @@ const AlertItem = ({ alert, onAction }) => {
 
       {/* Evidence block */}
       {(alert.evidence || alert.action) && (
-        <div className="mx-5 mt-1 mb-3 px-4 py-3 flex flex-wrap gap-4" style={{ background: 'var(--surface-2, #121D30)', borderRadius: 'var(--r-md, 8px)' }}>
+        <div className="mx-5 mt-1 mb-3 px-4 py-3 flex flex-wrap gap-4" style={{ background: 'var(--surface-2, #F1F5F9)', borderRadius: 'var(--r-md, 8px)' }}>
           {alert.evidence ? (
             (Array.isArray(alert.evidence) ? alert.evidence : [{ label: 'Recommended action', value: alert.action }]).map((ev, i) => (
               <div key={i} className="flex flex-col gap-0.5">
@@ -264,7 +264,7 @@ const AlertsPageAuth = () => {
               {label}
             </button>
           ))}
-          <div className="flex-1 min-w-[200px] flex items-center gap-2" style={{ background: 'var(--surface-2, #121D30)', border: '1px solid var(--border)', borderRadius: 'var(--r-md, 8px)', padding: '8px 14px' }}>
+          <div className="flex-1 min-w-[200px] flex items-center gap-2" style={{ background: 'var(--surface-2, #F1F5F9)', border: '1px solid var(--border)', borderRadius: 'var(--r-md, 8px)', padding: '8px 14px' }}>
             <input
               type="text"
               value={searchQuery}
@@ -332,7 +332,7 @@ const AlertsPageAuth = () => {
                     { label: 'Connect Accounting', desc: 'Monitor cash flow gaps, overdue invoices, margin compression', color: 'var(--positive, #10B981)', example: '"Invoice $4,200 overdue 14 days"' },
                     { label: 'Connect Email', desc: 'Detect client disengagement, escalation patterns', color: '#8B5CF6', example: '"3 unanswered client emails this week"' },
                   ].map(item => (
-                    <div key={item.label} className="p-4" style={{ background: 'var(--surface-sunken, #0A1018)', border: `1px solid ${item.color}20`, borderRadius: 'var(--r-lg, 12px)' }}>
+                    <div key={item.label} className="p-4" style={{ background: 'var(--surface-sunken, #F8FAFC)', border: `1px solid ${item.color}20`, borderRadius: 'var(--r-lg, 12px)' }}>
                       <p className="text-xs font-semibold mb-1" style={{ color: item.color, fontFamily: 'var(--font-mono)' }}>{item.label}</p>
                       <p className="text-xs mb-2" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>{item.desc}</p>
                       <p className="text-[10px] italic" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>e.g. {item.example}</p>

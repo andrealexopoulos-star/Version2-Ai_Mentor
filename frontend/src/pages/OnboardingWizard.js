@@ -307,7 +307,7 @@ const OnboardingWizard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#080C14' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAFAFA' }}>
         <div className="text-center space-y-4">
           <CognitiveMesh compact />
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Loading your profile...</p>
@@ -325,7 +325,7 @@ const OnboardingWizard = () => {
   const sidebarActive = currentStep >= 8 ? 4 : 2;
 
   return (
-    <div className="min-h-screen flex flex-col relative" style={{ background: '#080C14' }} data-testid="onboarding-wizard">
+    <div className="min-h-screen flex flex-col relative" style={{ background: '#FAFAFA' }} data-testid="onboarding-wizard">
       {/* Background glow */}
       <div className="fixed -top-[300px] -right-[200px] w-[700px] h-[700px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,0,0.15) 0%, transparent 60%)', opacity: 0.4, filter: 'blur(100px)' }} />
 
@@ -468,7 +468,7 @@ const OnboardingWizard = () => {
                             <div style={{
                               width: 36, height: 36, borderRadius: 8,
                               display: 'grid', placeItems: 'center',
-                              background: isSelected ? '#E85D00' : 'var(--surface-2, #121D30)',
+                              background: isSelected ? '#E85D00' : 'var(--surface-2, #F1F5F9)',
                               color: isSelected ? 'white' : 'var(--ink-display, #EDF1F7)',
                             }}>
                               {opt.icon}
@@ -942,7 +942,7 @@ const OnboardingWizard = () => {
             )}
 
             {/* Progress bar */}
-            <div className="mt-6 h-1 rounded-full overflow-hidden" style={{ background: 'var(--surface-2, #121D30)' }}>
+            <div className="mt-6 h-1 rounded-full overflow-hidden" style={{ background: 'var(--surface-2, #F1F5F9)' }}>
               <div className="h-full rounded-full transition-all duration-500" style={{ background: 'linear-gradient(90deg, #E85D00, #FF8C33)', width: `${completeness}%` }} />
             </div>
 

@@ -59,7 +59,7 @@ const PLANS = [
   {
     name: 'Pro',
     badge: 'Full Platform',
-    badgeBg: '#EDF1F7', badgeColor: '#080C14',
+    badgeBg: '#EDF1F7', badgeColor: '#FAFAFA',
     price: '$199',
     period: '/mo',
     desc: 'Everything in Growth, plus enterprise-grade intelligence tools.',
@@ -239,7 +239,7 @@ const FAQS = [
 const PlanCard = ({ plan }) => {
   const ctaMap = {
     primary: { bg: '#E85D00', color: '#fff', border: 'none' },
-    dark: { bg: '#EDF1F7', color: '#080C14', border: 'none' },
+    dark: { bg: '#EDF1F7', color: '#FAFAFA', border: 'none' },
     outline: { bg: 'transparent', color: 'var(--ink-display, #EDF1F7)', border: '1px solid rgba(140,170,210,0.2)' },
   };
   const ctaS = ctaMap[plan.ctaStyle] || ctaMap.outline;
@@ -373,19 +373,19 @@ const PricingPage = () => {
             <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid rgba(140,170,210,0.12)' }}>
               <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
                 <thead style={{ position: 'sticky', top: 64, zIndex: 10 }}>
-                  <tr style={{ background: '#080C14' }}>
-                    <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, minWidth: 140, background: '#080C14' }}>Feature</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#080C14' }}>Free</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#080C14' }}>Growth</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#080C14' }}>Pro</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#080C14' }}>Enterprise</th>
+                  <tr style={{ background: '#FAFAFA' }}>
+                    <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, minWidth: 140, background: '#FAFAFA' }}>Feature</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Free</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Growth</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Pro</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Enterprise</th>
                   </tr>
                 </thead>
                 <tbody>
                   {COMPARE_GROUPS.map(group => (
                     <React.Fragment key={group.label}>
                       <tr>
-                        <td colSpan={5} className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono, background: '#080C14', borderTop: '1px solid rgba(140,170,210,0.12)' }}>
+                        <td colSpan={5} className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono, background: '#FAFAFA', borderTop: '1px solid rgba(140,170,210,0.12)' }}>
                           {group.label}
                         </td>
                       </tr>

@@ -1071,7 +1071,7 @@ const MySoundBoard = () => {
                       borderRadius: 999, fontSize: 12, fontWeight: 600, fontFamily: fontFamily.mono,
                       background: selectedAgent === 'general' ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.1)',
                       border: `1px solid ${selectedAgent === 'general' ? 'rgba(129,140,248,0.55)' : 'rgba(99,102,241,0.25)'}`,
-                      color: '#C7D2FE', cursor: 'pointer',
+                      color: 'var(--info, #2563EB)', cursor: 'pointer',
                     }}
                   >
                     <span>&#9678;</span><span>Advisor</span>
@@ -1203,7 +1203,7 @@ const MySoundBoard = () => {
                       display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px',
                       borderRadius: 999, fontSize: 11, fontWeight: 600,
                       background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
-                      color: '#C7D2FE', fontFamily: fontFamily.mono, cursor: 'pointer',
+                      color: 'var(--info, #2563EB)', fontFamily: fontFamily.mono, cursor: 'pointer',
                     }}>
                       <input
                         type="checkbox"

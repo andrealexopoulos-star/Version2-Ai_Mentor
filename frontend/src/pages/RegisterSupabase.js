@@ -245,9 +245,9 @@ const RegisterSupabase = () => {
   const inputStyle = { fontFamily: UI, background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink, #C8D4E4)', caretColor: 'var(--ink-display, #EDF1F7)' };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#080C14' }}>
+    <div className="min-h-screen flex" style={{ background: '#FAFAFA' }}>
       {/* Left: Registration Form */}
-      <div className="flex-[1.1] flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12 overflow-y-auto" style={{ background: '#080C14' }}>
+      <div className="flex-[1.1] flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12 overflow-y-auto" style={{ background: '#FAFAFA' }}>
         <div className="max-w-[460px] w-full mx-auto">
           {/* Mobile-only brand */}
           <div className="flex items-center gap-2 mb-8 lg:hidden">

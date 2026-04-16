@@ -1377,7 +1377,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               style={{
                 background: selectedAgent === 'general' ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.1)',
                 border: `1px solid ${selectedAgent === 'general' ? 'rgba(129,140,248,0.55)' : 'rgba(99,102,241,0.25)'}`,
-                color: '#C7D2FE',
+                color: 'var(--info, #2563EB)',
                 fontFamily: fontFamily.mono
               }}
             >
@@ -1495,7 +1495,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               </div>
               <label
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold"
-                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#C7D2FE', fontFamily: fontFamily.mono }}
+                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: 'var(--info, #2563EB)', fontFamily: fontFamily.mono }}
               >
                 <input
                   type="checkbox"

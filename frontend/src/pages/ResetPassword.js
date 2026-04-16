@@ -36,7 +36,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-x-hidden" style={{ background: '#080C14' }}>
+    <div className="min-h-screen flex flex-col relative overflow-x-hidden" style={{ background: '#FAFAFA' }}>
       {/* Background orbs */}
       <div className="fixed -top-[300px] -right-[200px] w-[700px] h-[700px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,0,0.15) 0%, transparent 60%)', opacity: 0.5, filter: 'blur(80px)', animation: 'orbDriftSlow 20s ease-in-out infinite' }} />
       <div className="fixed -bottom-[300px] -left-[200px] w-[700px] h-[700px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(192,200,212,0.1) 0%, transparent 60%)', opacity: 0.6, filter: 'blur(80px)', animation: 'orbDriftSlow 24s ease-in-out infinite reverse' }} />
@@ -111,7 +111,7 @@ const ResetPassword = () => {
           </div>
 
           {/* SSO info aside */}
-          <div className="flex items-start gap-4 mt-6 p-5" style={{ background: 'var(--surface-2, #121D30)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-lg, 12px)' }}>
+          <div className="flex items-start gap-4 mt-6 p-5" style={{ background: 'var(--surface-2, #F1F5F9)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-lg, 12px)' }}>
             <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ background: 'var(--lava-wash, rgba(232,93,0,0.12))', borderRadius: 'var(--r-md, 8px)' }}>
               <Info className="w-4 h-4" style={{ color: 'var(--lava, #E85D00)' }} />
             </div>

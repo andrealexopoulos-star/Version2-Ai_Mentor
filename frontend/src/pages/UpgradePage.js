@@ -152,7 +152,7 @@ export default function UpgradePage({ success = false }) {
             <button
               onClick={() => navigate('/subscribe?section=foundation')}
               className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl border text-sm font-semibold"
-              style={{ borderColor: 'rgba(140,170,210,0.15)', color: '#C9D5E2', fontFamily: fontFamily.body }}
+              style={{ borderColor: 'rgba(140,170,210,0.15)', color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}
               data-testid="upgrade-success-open-foundation"
             >
               View Subscription
@@ -205,7 +205,7 @@ export default function UpgradePage({ success = false }) {
           <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>{selectedTier.toUpperCase()} included capabilities</p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {(TIER_FEATURES[selectedTier] || TIER_FEATURES.starter).map((feature) => (
-              <div key={feature} className="flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: 'rgba(140,170,210,0.15)', color: '#C9D5E2' }}>
+              <div key={feature} className="flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: 'rgba(140,170,210,0.15)', color: 'var(--ink-secondary, #525252)' }}>
                 <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: '#E85D00' }} />
                 <span>{feature}</span>
               </div>

@@ -72,7 +72,7 @@ const PLANS = [
     name: 'Pro',
     badge: 'Full Platform',
     badgeBg: 'var(--ink-display)',
-    badgeColor: '#080C14',
+    badgeColor: '#FAFAFA',
     price: '$199',
     period: '/mo',
     description: 'Everything in Growth, plus enterprise-grade intelligence tools.',
@@ -262,7 +262,7 @@ const CellValue = ({ value }) => {
 
 const ctaStyles = {
   primary: { background: 'var(--lava)', color: '#fff', border: 'none' },
-  dark: { background: 'var(--ink-display)', color: '#080C14', border: 'none' },
+  dark: { background: 'var(--ink-display)', color: '#FAFAFA', border: 'none' },
   outline: { background: 'transparent', color: 'var(--ink-display)', border: '1px solid rgba(140,170,210,0.2)' },
 };
 
@@ -285,7 +285,7 @@ export default function Pricing() {
     <WebsiteLayout>
       {/* ── Hero ── */}
       <section className="py-20 md:py-24 text-center px-6"
-        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }}>
+        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)' }}>
         <div className="max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-semibold mb-6"
             style={{ background: 'rgba(232,93,0,0.06)', color: 'var(--lava)' }}>

@@ -338,7 +338,7 @@ const SubscribePage = () => {
       <FAQAccordion />
 
       {/* Bottom CTA — gradient hero */}
-      <div className="w-full max-w-4xl mt-14 text-center relative overflow-hidden" style={{ padding: 'var(--sp-12, 48px) var(--sp-6, 24px)', background: 'linear-gradient(160deg, #111827, #1A1A2E)', borderRadius: 'var(--r-2xl)' }}>
+      <div className="w-full max-w-4xl mt-14 text-center relative overflow-hidden" style={{ padding: 'var(--sp-12, 48px) var(--sp-6, 24px)', background: 'linear-gradient(160deg, #F8FAFC, #F0F4F8)', borderRadius: 'var(--r-2xl)' }}>
         {/* Lava radial glow */}
         <div style={{ position: 'absolute', top: '-40%', right: '-20%', width: 400, height: 400, background: 'radial-gradient(circle, var(--lava) 0%, transparent 60%)', opacity: 0.35, pointerEvents: 'none' }} />
         <h3 className="font-medium relative mb-4" style={{ fontFamily: 'var(--font-display)', color: '#FFFFFF', fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', lineHeight: 1.05, letterSpacing: 'var(--ls-display, -0.02em)' }}>

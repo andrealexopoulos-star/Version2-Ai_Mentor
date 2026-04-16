@@ -151,7 +151,7 @@ const CognitiveSnapshotV2Mockup = () => {
         </div>
 
         <div className="max-w-5xl mx-auto px-6 py-8">
-          <h1 className="text-3xl font-semibold mb-6" style={{ color: '#111827', fontFamily: fontFamily.display }}>Good morning, Andre.</h1>
+          <h1 className="text-3xl font-semibold mb-6" style={{ color: '#F8FAFC', fontFamily: fontFamily.display }}>Good morning, Andre.</h1>
 
           {/* ═══ 5 COGNITION TABS ═══ */}
           <div className="flex gap-2 mb-6 overflow-x-auto pb-2" data-testid="cognition-tabs">
@@ -194,7 +194,7 @@ const CognitiveSnapshotV2Mockup = () => {
                 <group.icon className="w-4 h-4" style={{ color: group.color }} />
               </div>
               <div>
-                <h2 className="text-lg font-bold" style={{ color: '#111827', fontFamily: fontFamily.display }}>{group.label}</h2>
+                <h2 className="text-lg font-bold" style={{ color: '#F8FAFC', fontFamily: fontFamily.display }}>{group.label}</h2>
                 <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{group.description}</p>
               </div>
             </div>

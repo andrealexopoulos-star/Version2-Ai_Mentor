@@ -702,7 +702,7 @@ const Advisor = () => {
           <div className="flex flex-col gap-5">
 
             {/* ── Morning Brief Card (matches approved mockup) ── */}
-            <div className="relative overflow-hidden" style={{ padding: 'var(--sp-7)', background: 'linear-gradient(160deg, #111827, #1A1A2E)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--r-xl)' }}>
+            <div className="relative overflow-hidden" style={{ padding: 'var(--sp-7)', background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--r-xl)' }}>
               {/* Animated orb */}
               <style>{`
                 @keyframes orbDrift { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(40px, 30px); } }

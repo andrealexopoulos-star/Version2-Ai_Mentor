@@ -55,7 +55,7 @@ const HeroLayer = ({ variant, phase, zIndex }) => {
       ...layerStyle,
     }}>
       <h1 className="text-[22px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-[1.18] mb-5 tracking-tight max-w-[800px] mx-auto px-4"
-        style={{ fontFamily: fontFamily.body, fontWeight: 400, color: '#E6EEF7', letterSpacing: '-0.01em' }}>
+        style={{ fontFamily: fontFamily.body, fontWeight: 400, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.01em' }}>
         <RichText text={variant.h1} />
       </h1>
       {variant.h2 && (
