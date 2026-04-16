@@ -459,7 +459,7 @@ export default function AboutPage() {
                   fontSize: 15,
                   fontWeight: 500,
                   fontFamily: 'var(--font-ui)',
-                  color: '#9BB0CC',
+                  color: 'var(--ink-secondary, #525252)',
                   background: 'transparent',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--r-md)',
@@ -467,7 +467,7 @@ export default function AboutPage() {
                   transition: 'color 0.2s, border-color 0.2s, background 0.2s',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.color = C.textH; e.currentTarget.style.borderColor = 'rgba(140,170,210,0.3)'; e.currentTarget.style.background = 'rgba(140,170,210,0.04)'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#9BB0CC'; e.currentTarget.style.borderColor = C.steelBorder; e.currentTarget.style.background = 'transparent'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = ''; e.currentTarget.style.borderColor = C.steelBorder; e.currentTarget.style.background = 'transparent'; }}
               >
                 Talk to us
               </Link>
