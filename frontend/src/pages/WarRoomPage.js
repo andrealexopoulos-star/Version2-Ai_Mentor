@@ -327,8 +327,8 @@ export default function WarRoomPage() {
                     borderColor = '#DC2626';
                     textColor = '#FFFFFF';
                   } else if (isActive) {
-                    bg = '#1E293B';
-                    borderColor = '#1E293B';
+                    bg = 'var(--ink-display)';
+                    borderColor = 'var(--ink-display)';
                     textColor = '#FFFFFF';
                   }
 

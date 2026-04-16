@@ -327,7 +327,7 @@ export function WarRoomConsoleBody({
   }, [appendMessage, c, conversation, create, onConversationChange, question, refreshConversations, session?.access_token, warRoomStream, warRoomStreaming]);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: colors.bg, fontFamily: fontFamily.display }} aria-label="War room shell">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: 'var(--canvas-app)', fontFamily: fontFamily.display }} aria-label="War room shell">
       <div className="flex flex-1 min-h-0">
         <BoardroomConversationList
           mode="war_room"
@@ -340,7 +340,7 @@ export function WarRoomConsoleBody({
         />
 
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: colors.border }}>
+          <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
             <div className="flex items-center gap-4">
               <a href="/advisor" className={`text-xs px-3 py-1.5 rounded-lg hover:bg-white/5 ${focusRingClass}`} style={{ color: colors.textMuted }} data-testid="console-home-btn" aria-label="Return to intelligence platform">
                 Intelligence Platform
@@ -351,14 +351,14 @@ export function WarRoomConsoleBody({
                 <span className="text-[10px] font-semibold" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
               </div>
             </div>
-            <button onClick={refresh} disabled={refreshing || loading} className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ color: colors.textSecondary, borderColor: colors.border }} aria-label="Refresh strategic snapshot">
+            <button onClick={refresh} disabled={refreshing || loading} className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ color: colors.textSecondary, borderColor: 'var(--border)' }} aria-label="Refresh strategic snapshot">
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               {cacheAge != null && cacheAge > 0 ? `${cacheAge}m ago` : 'Refresh'}
             </button>
           </header>
 
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
-            <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-6 rounded-2xl border" style={{ borderColor: colors.border, background: colors.bgCard, boxShadow: shadow.card }} aria-label="War room briefing card">
+            <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-6 rounded-2xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card, boxShadow: shadow.card }} aria-label="War room briefing card">
               <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Strategic <em style={{ fontStyle: 'italic', color: '#E85D00' }}>console</em>.</h1>
               <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
                 {c.executive_memo || (connectedSystems.length
@@ -388,13 +388,13 @@ export function WarRoomConsoleBody({
               className="grid grid-cols-1 lg:grid-cols-2 gap-3"
               aria-label="War room strategic guidance"
             >
-              <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+              <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}>
                 <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
                   Suggested prompts
                 </h3>
                 <ul className="space-y-2" role="list">
                   {STRATEGIC_PROMPTS.map((prompt, index) => (
-                    <li key={prompt} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }}>
+                    <li key={prompt} className="rounded-lg border px-3 py-2" style={{ borderColor: 'var(--border)' }}>
                       <p className="text-[11px]" style={{ color: colors.textSecondary }}>
                         {index + 1}. {prompt}
                       </p>
@@ -403,13 +403,13 @@ export function WarRoomConsoleBody({
                 </ul>
               </div>
 
-              <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+              <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}>
                 <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
                   Response rubric
                 </h3>
                 <ul className="space-y-2" role="list">
                   {RESPONSE_RUBRIC.map((rule) => (
-                    <li key={rule.id} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }} aria-label={`Response rubric ${rule.title}`}>
+                    <li key={rule.id} className="rounded-lg border px-3 py-2" style={{ borderColor: 'var(--border)' }} aria-label={`Response rubric ${rule.title}`}>
                       <p className="text-xs font-semibold" style={{ color: colors.text }}>
                         {rule.title}
                       </p>
@@ -474,13 +474,13 @@ export function WarRoomConsoleBody({
               className="grid grid-cols-1 lg:grid-cols-2 gap-3"
               aria-label="War room decision timing section"
             >
-              <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+              <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}>
                 <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
                   Decision windows
                 </h3>
                 <ul className="space-y-2" role="list">
                   {DECISION_WINDOWS.map((window) => (
-                    <li key={window.label} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }} aria-label={`Decision window ${window.label}`}>
+                    <li key={window.label} className="rounded-lg border px-3 py-2" style={{ borderColor: 'var(--border)' }} aria-label={`Decision window ${window.label}`}>
                       <p className="text-xs font-semibold" style={{ color: colors.text }}>
                         {window.label}
                       </p>
@@ -492,13 +492,13 @@ export function WarRoomConsoleBody({
                 </ul>
               </div>
 
-              <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+              <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}>
                 <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
                   Escalation rules
                 </h3>
                 <ul className="space-y-2" role="list">
                   {ESCALATION_RULES.map((rule, idx) => (
-                    <li key={rule} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }} aria-label={`Escalation rule ${idx + 1}`}>
+                    <li key={rule} className="rounded-lg border px-3 py-2" style={{ borderColor: 'var(--border)' }} aria-label={`Escalation rule ${idx + 1}`}>
                       <p className="text-[11px]" style={{ color: colors.textSecondary }}>
                         {idx + 1}. {rule}
                       </p>
@@ -513,7 +513,7 @@ export function WarRoomConsoleBody({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: 0.026 }}
               className="p-4 rounded-xl border"
-              style={{ borderColor: colors.border, background: colors.bgCard }}
+              style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}
               aria-label="War room follow-up checklist section"
             >
               <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
@@ -521,7 +521,7 @@ export function WarRoomConsoleBody({
               </h3>
               <ul className="space-y-2" role="list">
                 {FOLLOW_UP_CHECKS.map((check, idx) => (
-                  <li key={check} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }} aria-label={`Follow-up check ${idx + 1}`}>
+                  <li key={check} className="rounded-lg border px-3 py-2" style={{ borderColor: 'var(--border)' }} aria-label={`Follow-up check ${idx + 1}`}>
                     <p className="text-[11px]" style={{ color: colors.textSecondary }}>
                       {idx + 1}. {check}
                     </p>
@@ -531,9 +531,9 @@ export function WarRoomConsoleBody({
             </motion.section>
           </div>
 
-          <div className="shrink-0 px-6 py-4 border-t" style={{ borderColor: colors.border, background: colors.bgCard }}>
+          <div className="shrink-0 px-6 py-4 border-t" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}>
             <form onSubmit={askQuestion} className="w-full" aria-label="War room question form">
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgInput }}>
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Input }}>
                 <input
                   type="text"
                   value={question}
@@ -553,13 +553,13 @@ export function WarRoomConsoleBody({
           </div>
         </div>
 
-        <aside className="w-80 border-l flex flex-col" style={{ borderColor: colors.border, background: colors.bgCard }} aria-label="Live alerts feed">
-          <div className="p-4 border-b" style={{ borderColor: colors.border }}>
+        <aside className="w-80 border-l flex flex-col" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }} aria-label="Live alerts feed">
+          <div className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
             <h2 className="text-sm font-semibold" style={{ color: colors.text }}>Live Alerts</h2>
             <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
               {alertsLoading ? 'Connecting to realtime feed...' : `${filteredAlerts.length} visible alerts`}
             </p>
-            <div className="mt-2 px-2 py-1 rounded-md border inline-flex items-center gap-2" style={{ borderColor: colors.border, background: colors.infoDim }} aria-label={`Active threat level ${activeThreatLevel}`}>
+            <div className="mt-2 px-2 py-1 rounded-md border inline-flex items-center gap-2" style={{ borderColor: 'var(--border)', background: colors.infoDim }} aria-label={`Active threat level ${activeThreatLevel}`}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: activeThreatLevel === 'Critical' ? colors.danger : activeThreatLevel === 'High' ? colors.warning : colors.success }} />
               <span className="text-[10px]" style={{ color: colors.textSecondary }}>
                 Threat level: {activeThreatLevel}
@@ -573,7 +573,7 @@ export function WarRoomConsoleBody({
               ))}
             </AnimatePresence>
             {!filteredAlerts.length && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs p-3 rounded-lg border" style={{ color: colors.textMuted, borderColor: colors.border }} aria-label="No live alerts message">
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs p-3 rounded-lg border" style={{ color: colors.textMuted, borderColor: 'var(--border)' }} aria-label="No live alerts message">
                 No live alerts right now.
               </motion.p>
             )}
@@ -590,8 +590,8 @@ export function WarRoomConsoleBody({
         className="px-6 pb-4"
         aria-label="War room execution footer guidance"
       >
-        <div className="p-4 rounded-xl border grid grid-cols-1 md:grid-cols-3 gap-3" style={{ borderColor: colors.border, background: colors.bgCard }}>
-          <div className="rounded-lg border p-3" style={{ borderColor: colors.border }}>
+        <div className="p-4 rounded-xl border grid grid-cols-1 md:grid-cols-3 gap-3" style={{ borderColor: 'var(--border)', background: 'var(--canvas-app)'Card }}>
+          <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border)' }}>
             <p className="text-[10px] uppercase tracking-widest" style={{ color: colors.textMuted }}>
               Decision pace
             </p>
@@ -599,7 +599,7 @@ export function WarRoomConsoleBody({
               Prefer one irreversible decision per session when threat level is high.
             </p>
           </div>
-          <div className="rounded-lg border p-3" style={{ borderColor: colors.border }}>
+          <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border)' }}>
             <p className="text-[10px] uppercase tracking-widest" style={{ color: colors.textMuted }}>
               Signal discipline
             </p>
@@ -607,7 +607,7 @@ export function WarRoomConsoleBody({
               Review one lead metric and one lag metric before closing the loop.
             </p>
           </div>
-          <div className="rounded-lg border p-3" style={{ borderColor: colors.border }}>
+          <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border)' }}>
             <p className="text-[10px] uppercase tracking-widest" style={{ color: colors.textMuted }}>
               Escalation trigger
             </p>
