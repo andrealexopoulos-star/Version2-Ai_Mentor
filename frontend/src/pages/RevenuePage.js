@@ -493,7 +493,7 @@ const RevenuePage = () => {
                               itemStyle={{ color: '#E85D00' }}
                               formatter={(v) => [`$${v.toLocaleString()}`, 'MRR']}
                             />
-                            <Area type="monotone" dataKey="mrr" stroke="#E85D00" strokeWidth={2.5} fill="url(#revGrad)" dot={{ r: 4, fill: '#1A2332', stroke: '#E85D00', strokeWidth: 2 }} activeDot={{ r: 5, fill: '#E85D00', stroke: '#1A2332', strokeWidth: 2 }} />
+                            <Area type="monotone" dataKey="mrr" stroke="#E85D00" strokeWidth={2.5} fill="url(#revGrad)" dot={{ r: 4, fill: '#FAFAFA', stroke: '#E85D00', strokeWidth: 2 }} activeDot={{ r: 5, fill: '#E85D00', stroke: '#FAFAFA', strokeWidth: 2 }} />
                           </AreaChart>
                         </ResponsiveContainer>
                       );
