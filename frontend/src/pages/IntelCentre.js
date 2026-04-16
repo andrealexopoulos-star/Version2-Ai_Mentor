@@ -10,22 +10,22 @@ import { apiClient } from '../lib/api';
    CATEGORY CONFIG
    --------------------------------------------------------------- */
 const CATEGORY_COLORS = {
-  Competitor:  { bg: '#FEE2E2', text: '#991B1B', accent: '#DC2626' },
-  Market:      { bg: 'rgba(59,130,246,0.10)', text: '#2563EB', accent: '#2563EB' },
-  Regulatory:  { bg: '#F3E8FF', text: '#7C3AED', accent: '#7C3AED' },
-  Industry:    { bg: 'rgba(34,197,94,0.10)', text: '#16A34A', accent: '#0891B2' },
-  Technology:  { bg: 'rgba(245,158,11,0.10)', text: '#D97706', accent: '#16A34A' },
-  finance:     { bg: 'rgba(245,158,11,0.10)', text: '#D97706', accent: '#F59E0B' },
-  sales:       { bg: 'rgba(59,130,246,0.10)', text: '#2563EB', accent: '#2563EB' },
-  operations:  { bg: 'rgba(34,197,94,0.10)', text: '#16A34A', accent: '#16A34A' },
-  team:        { bg: '#F3E8FF', text: '#7C3AED', accent: '#7C3AED' },
-  market:      { bg: 'rgba(59,130,246,0.10)', text: '#2563EB', accent: '#2563EB' },
+  Competitor:  { bg: 'var(--danger-wash)', text: 'var(--danger)', accent: 'var(--danger)' },
+  Market:      { bg: 'var(--info-wash)', text: 'var(--info)', accent: 'var(--info)' },
+  Regulatory:  { bg: 'var(--surface-sunken)', text: 'var(--ink-secondary)', accent: 'var(--ink-secondary)' },
+  Industry:    { bg: 'var(--positive-wash)', text: 'var(--positive)', accent: 'var(--positive)' },
+  Technology:  { bg: 'var(--warning-wash)', text: 'var(--warning)', accent: 'var(--warning)' },
+  finance:     { bg: 'var(--warning-wash)', text: 'var(--warning)', accent: 'var(--warning)' },
+  sales:       { bg: 'var(--info-wash)', text: 'var(--info)', accent: 'var(--info)' },
+  operations:  { bg: 'var(--positive-wash)', text: 'var(--positive)', accent: 'var(--positive)' },
+  team:        { bg: 'var(--surface-sunken)', text: 'var(--ink-secondary)', accent: 'var(--ink-secondary)' },
+  market:      { bg: 'var(--info-wash)', text: 'var(--info)', accent: 'var(--info)' },
 };
 
 const RELEVANCE_STYLES = {
-  High:   { bg: '#FEE2E2', text: '#991B1B' },
-  Medium: { bg: '#FEF3C7', text: '#92400E' },
-  Low:    { bg: 'rgba(140,170,210,0.08)', text: 'var(--ink-muted)' },
+  High:   { bg: 'var(--danger-wash)', text: 'var(--danger)' },
+  Medium: { bg: 'var(--warning-wash)', text: 'var(--warning)' },
+  Low:    { bg: 'var(--surface-sunken)', text: 'var(--ink-muted)' },
 };
 
 const TABS = ['All', 'Competitor', 'Market', 'Regulatory', 'Industry', 'Technology'];
@@ -178,12 +178,12 @@ const IntelCentre = () => {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '10px 20px', borderRadius: 'var(--r-md)',
-              background: 'linear-gradient(135deg, ' + lava + ', #FF7A1A)',
-              color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-ui)',
+              background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))',
+              color: 'var(--ink-inverse)', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-ui)',
               border: 'none', cursor: 'pointer',
               transition: 'box-shadow 0.2s, transform 0.2s',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,93,0,0.35)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 20px var(--lava-ring)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
           >
             <FileText size={16} />
@@ -242,9 +242,9 @@ const IntelCentre = () => {
         {error && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            background: 'var(--danger-wash)', border: '1px solid rgba(220,38,38,0.3)',
+            background: 'var(--danger-wash)', border: '1px solid var(--danger)',
             borderRadius: 'var(--r-xl)', padding: 16, marginBottom: 24,
-            fontSize: 13, color: '#F87171', fontFamily: 'var(--font-ui)',
+            fontSize: 13, color: 'var(--danger)', fontFamily: 'var(--font-ui)',
           }}>
             <AlertCircle size={16} />
             {error}
@@ -275,14 +275,14 @@ const IntelCentre = () => {
                       fontFamily: 'var(--font-mono)',
                       textTransform: 'uppercase',
                       letterSpacing: 'var(--ls-caps)',
-                      color: isActive ? '#fff' : 'var(--ink-muted)',
-                      background: isActive ? '#1E293B' : 'transparent',
+                      color: isActive ? 'var(--ink-inverse)' : 'var(--ink-muted)',
+                      background: isActive ? 'var(--ink-display)' : 'transparent',
                       border: 'none',
                       borderRadius: 999,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
                     }}
-                    onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = 'rgba(140,170,210,0.08)'; e.currentTarget.style.color = 'var(--ink-display)'; } }}
+                    onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = 'var(--surface-sunken)'; e.currentTarget.style.color = 'var(--ink-display)'; } }}
                     onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-muted)'; } }}
                   >
                     {tab}
@@ -332,7 +332,7 @@ const IntelCentre = () => {
                         cursor: 'pointer',
                         transition: 'border-color 0.15s, box-shadow 0.15s',
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.3)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.boxShadow = 'var(--elev-2)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.borderColor = borderColor; e.currentTarget.style.boxShadow = 'none'; }}
                     >
                       {/* Left content */}

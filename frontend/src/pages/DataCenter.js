@@ -351,10 +351,10 @@ const DataCenter = () => {
                             </div>
                             <button
                               onClick={() => setDeleteFileId(file.id)}
-                              className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-50 rounded-sm transition-all"
+                              className="opacity-0 group-hover:opacity-100 p-2 hover:bg-[var(--danger-wash)] rounded-sm transition-all"
                               data-testid={`delete-file-${file.id}`}
                             >
-                              <Trash2 className="w-4 h-4 text-red-500" />
+                              <Trash2 className="w-4 h-4 text-[var(--danger)]" />
                             </button>
                           </div>
                           <h3 className="font-medium text-[var(--ink-display)] truncate mb-1">{file.filename}</h3>
@@ -370,7 +370,7 @@ const DataCenter = () => {
                           </div>
                           {file.extracted_text && (
                             <div className="mt-3 pt-3 border-t border-[var(--border)]">
-                              <div className="flex items-center gap-1 text-xs text-green-600">
+                              <div className="flex items-center gap-1 text-xs text-[var(--positive)]">
                                 <Check className="w-3 h-3" />
                                 Text extracted for AI
                               </div>
@@ -385,7 +385,7 @@ const DataCenter = () => {
                 <Card className="rounded-lg">
                   <CardContent className="p-12 text-center">
                     <Database className="w-16 h-16 text-[var(--ink-display)]/20 mx-auto mb-4" />
-                    <h3 className="text-xl font-serif text-[var(--ink-display)] mb-2">No files yet</h3>
+                    <h3 className="text-xl text-[var(--ink-display)] mb-2" style={{ fontFamily: 'var(--font-display)' }}>No files yet</h3>
                     <p className="text-[var(--ink-secondary)] mb-6">
                       Upload your business documents to help the AI understand your business better
                     </p>
@@ -401,7 +401,7 @@ const DataCenter = () => {
             <TabsContent value="profile">
               <Card className="rounded-lg">
                 <CardHeader>
-                  <CardTitle className="font-serif flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'var(--font-display)' }}>
                     <Building2 className="w-5 h-5" />
                     Business Profile
                   </CardTitle>
@@ -556,7 +556,7 @@ const DataCenter = () => {
             <TabsContent value="upload">
               <Card className="rounded-lg">
                 <CardHeader>
-                  <CardTitle className="font-serif">Upload Documents</CardTitle>
+                  <CardTitle style={{ fontFamily: 'var(--font-display)' }}>Upload Documents</CardTitle>
                   <p className="text-sm text-[var(--ink-secondary)]">
                     Supported formats: PDF, Word, Excel, CSV, TXT, JSON (Max 10MB)
                   </p>
@@ -575,11 +575,11 @@ const DataCenter = () => {
                     <Upload className="w-12 h-12 text-[var(--ink-display)]/30 mx-auto mb-4" />
                     {uploadForm.file ? (
                       <div className="flex items-center justify-center gap-2">
-                        <Check className="w-5 h-5 text-green-600" />
+                        <Check className="w-5 h-5 text-[var(--positive)]" />
                         <span className="font-medium">{uploadForm.file.name}</span>
                         <button 
                           onClick={() => setUploadForm({ ...uploadForm, file: null })}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-[var(--danger)] hover:opacity-80"
                         >
                           ×
                         </button>
@@ -670,7 +670,7 @@ const DataCenter = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteFile} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction onClick={handleDeleteFile} className="bg-[var(--danger)] text-[var(--ink-inverse)] hover:opacity-90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

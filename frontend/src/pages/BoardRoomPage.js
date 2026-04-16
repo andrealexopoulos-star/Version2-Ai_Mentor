@@ -139,7 +139,7 @@ export default function BoardRoomPage() {
                   padding: '8px 16px',
                   borderRadius: 'var(--r-md)',
                   background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))',
-                  color: 'white',
+                  color: 'var(--ink-inverse)',
                   fontSize: 12,
                   fontWeight: 600,
                   fontFamily: 'var(--font-ui)',

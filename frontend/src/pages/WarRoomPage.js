@@ -67,9 +67,9 @@ const mapEventToAlert = (event) => ({
 });
 
 const SEVERITY_COLORS = {
-  critical: '#DC2626',
-  high: '#D97706',
-  medium: '#2563EB',
+  critical: 'var(--danger)',
+  high: 'var(--warning)',
+  medium: 'var(--info)',
 };
 
 const FILTER_TABS = ['All', 'Critical', 'High', 'Medium'];
@@ -138,7 +138,7 @@ function AlertCard({ alert, isSelected, onClick }) {
         marginBottom: '6px',
         borderRadius: '10px',
         borderLeft: `3px solid ${sevColor}`,
-        background: isSelected ? 'rgba(140,170,210,0.08)' : 'transparent',
+        background: isSelected ? 'var(--surface-sunken)' : 'transparent',
         cursor: 'pointer',
         transition: 'background 0.15s ease',
         border: 'none',
@@ -146,7 +146,7 @@ function AlertCard({ alert, isSelected, onClick }) {
         borderLeftWidth: '3px',
         borderLeftColor: sevColor,
       }}
-      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'rgba(140,170,210,0.05)'; }}
+      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--surface-tint)'; }}
       onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
     >
       {/* Severity + icon row */}
@@ -320,16 +320,16 @@ export default function WarRoomPage() {
                   const isActive = activeFilter === tab;
                   const isCritical = tab === 'Critical';
                   let bg = 'transparent';
-                  let borderColor = 'rgba(140,170,210,0.15)';
+                  let borderColor = 'var(--border)';
                   let textColor = 'var(--ink-muted)';
                   if (isActive && isCritical) {
-                    bg = '#DC2626';
-                    borderColor = '#DC2626';
-                    textColor = '#FFFFFF';
+                    bg = 'var(--danger)';
+                    borderColor = 'var(--danger)';
+                    textColor = 'var(--ink-inverse)';
                   } else if (isActive) {
                     bg = 'var(--ink-display)';
                     borderColor = 'var(--ink-display)';
-                    textColor = '#FFFFFF';
+                    textColor = 'var(--ink-inverse)';
                   }
 
                   return (
@@ -397,7 +397,7 @@ export default function WarRoomPage() {
                 color: 'var(--ink-muted)',
               }}
             >
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', animation: 'warRoomPulse 2s ease-in-out infinite', flexShrink: 0 }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--positive)', animation: 'warRoomPulse 2s ease-in-out infinite', flexShrink: 0 }} />
               Realtime &middot; {filteredAlerts.length} active alert{filteredAlerts.length !== 1 ? 's' : ''}
             </div>
           </div>
@@ -445,7 +445,7 @@ export default function WarRoomPage() {
                       padding: '3px 10px',
                       borderRadius: 'var(--r-pill)',
                       background: SEVERITY_COLORS[selectedAlert.severity] || 'var(--ink-muted)',
-                      color: '#FFFFFF',
+                      color: 'var(--ink-inverse)',
                       whiteSpace: 'nowrap',
                       fontFamily: 'var(--font-mono)',
                     }}
@@ -466,8 +466,8 @@ export default function WarRoomPage() {
                     textTransform: 'uppercase',
                     padding: '4px 12px',
                     borderRadius: 'var(--r-pill)',
-                    background: '#FEE2E2',
-                    color: '#991B1B',
+                    background: 'var(--danger-wash)',
+                    color: 'var(--danger)',
                     fontFamily: 'var(--font-mono)',
                   }}
                 >
@@ -476,7 +476,7 @@ export default function WarRoomPage() {
                       width: '6px',
                       height: '6px',
                       borderRadius: '50%',
-                      background: '#DC2626',
+                      background: 'var(--danger)',
                       animation: 'warRoomPulse 1.5s ease-in-out infinite',
                     }}
                   />
@@ -490,13 +490,11 @@ export default function WarRoomPage() {
                       fontSize: '12px',
                       fontWeight: 600,
                       background: 'var(--danger)',
-                      color: '#FFFFFF',
+                      color: 'var(--ink-inverse)',
                       border: 'none',
                       cursor: 'pointer',
                       transition: 'background 0.15s ease',
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#991B1B'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--danger)'; }}
                   >
                     Escalate
                   </button>
@@ -532,8 +530,8 @@ export default function WarRoomPage() {
         {/* Pulse animation for elevated alert badge */}
         <style>{`
           @keyframes warRoomPulse {
-            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
-            50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(220,38,38,0); }
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--danger-wash); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 4px transparent; }
           }
           @media (max-width: 900px) {
             .war-room-sidebar { display: none !important; }
