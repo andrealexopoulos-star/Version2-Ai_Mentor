@@ -397,7 +397,7 @@ const MarketPage = () => {
             </div>
             <div className="flex items-center gap-2">
                 {confidence && <span className="text-xs px-2 py-0.5" style={{ color: st.color, background: st.bg, fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}>{confidence}% confidence</span>}
-              <button onClick={() => { setLoading(true); fetchSnapshot().finally(() => setLoading(false)); }} className="p-1.5 rounded-lg hover:bg-black/5" data-testid="market-refresh">
+              <button onClick={() => { setLoading(true); fetchSnapshot().finally(() => setLoading(false)); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-tint)]" data-testid="market-refresh">
                 <RefreshCw className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
               </button>
               {canRecalibrate && (
@@ -539,7 +539,7 @@ const MarketPage = () => {
               <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
               <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--border)' }}>
                 <span className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Full reports available under Governance → Reports</span>
-                <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-black/5 transition-colors" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}>
+                <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-[var(--surface-tint)] transition-colors" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}>
                   View Reports <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
@@ -736,7 +736,7 @@ const MarketPage = () => {
                     <button onClick={() => handleStatusChange(item.id, statusCycle[item.status])}
                       className="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors"
                       style={{ borderColor: statusColors[item.status], background: item.status === 'done' ? statusColors.done : 'transparent' }}>
-                      {item.status === 'done' && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      {item.status === 'done' && <CheckCircle2 className="w-3 h-3 text-[var(--ink-inverse)]" />}
                       {item.status === 'in_progress' && <div className="w-2 h-2 rounded-full" style={{ background: statusColors.in_progress }} />}
                     </button>
                     <div className="flex-1 min-w-0">
@@ -782,7 +782,7 @@ const MarketPage = () => {
                 <Layers className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
                 <p className="text-sm mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Complete calibration to unlock saturation analysis.</p>
                 <p className="text-xs mb-4" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>BIQc needs your business context to assess market density, positioning, and competitive pressure.</p>
-                <button onClick={() => navigate('/market/calibration')} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: 'var(--info)' }} data-testid="saturation-calibrate-cta">
+                <button onClick={() => navigate('/market/calibration')} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--ink-inverse)]" style={{ background: 'var(--info)' }} data-testid="saturation-calibrate-cta">
                   <Eye className="w-4 h-4" /> Start Calibration
                 </button>
               </Panel>
@@ -924,7 +924,7 @@ const MarketPage = () => {
                 <Crosshair className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
                 <p className="text-sm mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Connect CRM to analyse demand capture.</p>
                 <p className="text-xs mb-4" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Demand capture analysis requires CRM data (deals, contacts) and calibration to assess market opportunity.</p>
-                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: 'var(--info)' }} data-testid="demand-connect-cta">
+                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--ink-inverse)]" style={{ background: 'var(--info)' }} data-testid="demand-connect-cta">
                   <Plug className="w-4 h-4" /> Connect CRM
                 </a>
               </Panel>
@@ -1023,7 +1023,7 @@ const MarketPage = () => {
                 <Filter className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
                 <p className="text-sm mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Connect CRM to analyse funnel friction.</p>
                 <p className="text-xs mb-4" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Funnel analysis requires deal stage data from your CRM to identify where deals stall, drop off, or slow down.</p>
-                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: 'var(--warning)' }} data-testid="friction-connect-cta">
+                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--ink-inverse)]" style={{ background: 'var(--warning)' }} data-testid="friction-connect-cta">
                   <Plug className="w-4 h-4" /> Connect CRM
                 </a>
               </Panel>
@@ -1203,7 +1203,7 @@ const MarketPage = () => {
                 <p className="text-[10px] mb-3" style={{ color: 'var(--ink-muted)' }}>Executive PDF with Digital Footprint, SWOT, CMO actions, competitive landscape, and SEO analysis.</p>
                 <button onClick={() => handleDownloadPdf('market-position')} disabled={pdfGenerating === 'market-position' || !hasEnrichment}
                   className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors w-full justify-center"
-                  style={{ background: hasEnrichment ? 'var(--lava)' : 'var(--surface-sunken)', color: hasEnrichment ? 'white' : 'var(--ink-muted)', opacity: pdfGenerating === 'market-position' ? 0.6 : 1, fontFamily: 'var(--font-mono)' }}>
+                  style={{ background: hasEnrichment ? 'var(--lava)' : 'var(--surface-sunken)', color: hasEnrichment ? 'var(--ink-inverse)' : 'var(--ink-muted)', opacity: pdfGenerating === 'market-position' ? 0.6 : 1, fontFamily: 'var(--font-mono)' }}>
                   {pdfGenerating === 'market-position' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                   {pdfGenerating === 'market-position' ? 'Generating...' : hasEnrichment ? 'Download PDF' : 'Complete calibration first'}
                 </button>
@@ -1216,7 +1216,7 @@ const MarketPage = () => {
                 <p className="text-[10px] mb-3" style={{ color: 'var(--ink-muted)' }}>Executive PDF with competitor landscape, 5-pillar breakdown, SEO analysis, social media, and review reputation.</p>
                 <button onClick={() => handleDownloadPdf('benchmark')} disabled={pdfGenerating === 'benchmark' || !hasEnrichment}
                   className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors w-full justify-center"
-                  style={{ background: hasEnrichment ? 'var(--info)' : 'var(--surface-sunken)', color: hasEnrichment ? 'white' : 'var(--ink-muted)', opacity: pdfGenerating === 'benchmark' ? 0.6 : 1, fontFamily: 'var(--font-mono)' }}>
+                  style={{ background: hasEnrichment ? 'var(--info)' : 'var(--surface-sunken)', color: hasEnrichment ? 'var(--ink-inverse)' : 'var(--ink-muted)', opacity: pdfGenerating === 'benchmark' ? 0.6 : 1, fontFamily: 'var(--font-mono)' }}>
                   {pdfGenerating === 'benchmark' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                   {pdfGenerating === 'benchmark' ? 'Generating...' : hasEnrichment ? 'Download PDF' : 'Complete calibration first'}
                 </button>
@@ -1231,7 +1231,7 @@ const MarketPage = () => {
               </div>
             )}
             {reports.map((r, i) => (
-              <div key={i} className="p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl, 16px)' }}
+              <div key={i} className="p-5 cursor-pointer hover:bg-[var(--surface-tint)] transition-colors" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl, 16px)' }}
                 onClick={() => sendToChat(`Summarise my ${r.type}`)}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2"><FileText className="w-4 h-4" style={{ color: 'var(--lava)' }} /><span className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>{r.type}</span></div>
@@ -1246,14 +1246,14 @@ const MarketPage = () => {
         </>}
       </div>
       {showRecalibrateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { if (!recalSubmitting) setShowRecalibrateModal(false); }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" style={{ background: 'color-mix(in srgb, var(--surface-sunken) 72%, transparent)' }} onClick={() => { if (!recalSubmitting) setShowRecalibrateModal(false); }}>
           <div className="w-full max-w-md rounded-2xl p-6 space-y-4 mx-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
             {recalSubmitted ? (
               <div className="text-center space-y-3 py-4">
                 <CheckCircle2 className="w-10 h-10 mx-auto" style={{ color: 'var(--positive)' }} />
                 <h2 className="text-lg font-semibold" style={{ color: 'var(--ink-display)' }}>Request Received</h2>
                 <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>Our team will be in touch within 24 hours to schedule your recalibration session.</p>
-                <button onClick={() => { setShowRecalibrateModal(false); setRecalSubmitted(false); }} className="mt-3 px-5 py-2 rounded-lg text-sm font-medium text-white" style={{ background: 'var(--lava)' }}>Close</button>
+                <button onClick={() => { setShowRecalibrateModal(false); setRecalSubmitted(false); }} className="mt-3 px-5 py-2 rounded-lg text-sm font-medium text-[var(--ink-inverse)]" style={{ background: 'var(--lava)' }}>Close</button>
               </div>
             ) : (
               <form onSubmit={handleRecalSubmit} className="space-y-4">
@@ -1275,7 +1275,7 @@ const MarketPage = () => {
                 </div>
                 <div className="flex gap-3 pt-1">
                   <button type="button" onClick={() => setShowRecalibrateModal(false)} className="flex-1 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--border)', color: 'var(--ink-secondary)' }}>Cancel</button>
-                  <button type="submit" disabled={recalSubmitting} className="flex-1 py-2 rounded-lg text-sm font-medium text-white" style={{ background: 'var(--lava)', opacity: recalSubmitting ? 0.6 : 1 }}>{recalSubmitting ? 'Submitting...' : 'Contact Sales'}</button>
+                  <button type="submit" disabled={recalSubmitting} className="flex-1 py-2 rounded-lg text-sm font-medium text-[var(--ink-inverse)]" style={{ background: 'var(--lava)', opacity: recalSubmitting ? 0.6 : 1 }}>{recalSubmitting ? 'Submitting...' : 'Contact Sales'}</button>
                 </div>
               </form>
             )}
@@ -1303,7 +1303,7 @@ const FrictionItem = ({ label, detail, impact }) => {
 // ═══ Gaps Section Component ═══
 const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, navigate }) => (
   <div data-testid="gaps-section">
-    <button onClick={() => setGapsOpen(!gapsOpen)} className="w-full flex items-center justify-between p-4 transition-colors hover:bg-white/[0.02]" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl, 16px)' }}>
+    <button onClick={() => setGapsOpen(!gapsOpen)} className="w-full flex items-center justify-between p-4 transition-colors hover:bg-[var(--surface-tint)]" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl, 16px)' }}>
       <div className="flex items-center gap-3">
         <Link2 className="w-4 h-4" style={{ color: 'var(--info)' }} />
         <div className="text-left">
@@ -1321,7 +1321,7 @@ const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, na
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {(channelsData?.channels || []).map(ch => (
           <div key={ch.key} className="p-3 flex items-center gap-3" style={{ background: 'var(--surface)', border: `1px solid ${ch.status === 'connected' ? 'var(--positive)' : 'var(--border)'}`, borderRadius: 'var(--r-lg, 12px)' }}>
-            <div className="w-8 h-8 flex items-center justify-center shrink-0 text-white font-bold text-xs" style={{ background: ch.color, borderRadius: 'var(--r-md, 8px)' }}>{ch.name[0]}</div>
+            <div className="w-8 h-8 flex items-center justify-center shrink-0 text-[var(--ink-inverse)] font-bold text-xs" style={{ background: ch.color, borderRadius: 'var(--r-md, 8px)' }}>{ch.name[0]}</div>
             <span className="text-sm flex-1" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{ch.name}</span>
             {ch.status === 'connected' ? (
               <span className="text-[11px] px-2 py-1 flex items-center gap-1" style={{ color: 'var(--positive)', background: 'var(--positive-wash)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-pill, 100px)' }}><CheckCircle2 className="w-3 h-3" /> Connected</span>
@@ -1360,7 +1360,7 @@ const ForensicCalibrationCard = ({ isSuperAdmin, navigate }) => {
           {forensicResult ? (
             <button onClick={() => navigate('/market/calibration')} className="text-xs hover:underline" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)' }}>View results</button>
           ) : isSuperAdmin ? (
-            <button onClick={() => navigate('/market/calibration')} className="text-xs px-4 py-2 rounded-lg text-white mt-2" style={{ background: 'var(--lava)' }}>
+            <button onClick={() => navigate('/market/calibration')} className="text-xs px-4 py-2 rounded-lg text-[var(--ink-inverse)] mt-2" style={{ background: 'var(--lava)' }}>
               Complete calibration <ArrowRight className="w-3 h-3 inline ml-1" />
             </button>
           ) : (
