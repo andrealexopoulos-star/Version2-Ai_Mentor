@@ -48,20 +48,6 @@ const CalibrationAdvisor = () => {
     return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
-
-  // If we're redirecting, render a minimal loading state — no heavy components
-  if (redirecting) {
-    return (
-      <div className="h-screen flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }}>
-        <div className="text-center">
-          <div className="w-10 h-10 rounded-full mx-auto mb-3" style={{ background: '#FF6A00', animation: 'pulse 1.5s infinite' }} />
-          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Redirecting to your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Handle OAuth return from email connect — resume at integration_connect step
   // Must fire regardless of current cal.entry to prevent loop after OAuth redirect
   useEffect(() => {
@@ -96,10 +82,25 @@ const CalibrationAdvisor = () => {
     cal.setEntry("welcome");
   }, [cal]);
 
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
+
   const tutorialKey = cal.entry === 'welcome' ? 'calibration-welcome'
     : (cal.entry === 'calibrating') ? 'calibration-chat'
     : (cal.entry === 'wow_cards' || cal.entry === 'strategic_roadmap' || cal.entry === 'wow_summary') ? 'calibration-wow'
     : null;
+
+  // If we're redirecting because calibration is already complete,
+  // render a minimal loading state — no heavy components
+  if (redirecting) {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }}>
+        <div className="text-center">
+          <div className="w-10 h-10 rounded-full mx-auto mb-3" style={{ background: '#FF6A00', animation: 'pulse 1.5s infinite' }} />
+          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Redirecting to your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--biqc-bg)' }} data-testid="calibration-page">
