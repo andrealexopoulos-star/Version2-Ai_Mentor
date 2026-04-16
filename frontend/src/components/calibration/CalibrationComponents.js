@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Shield, Lock, Database, RefreshCw, X, ChevronRight, DollarSign, Target, Eye, Zap, Clock, ChevronDown } from 'lucide-react';
 
-const CREAM = '#0F1720';
-const CHARCOAL = 'var(--ink-display, #EDF1F7)';
-const MUTED = 'var(--ink-secondary, #8FA0B8)';
+const CREAM = 'var(--surface, #FFFFFF)';
+const CHARCOAL = 'var(--ink-display, #0A0A0A)';
+const MUTED = 'var(--ink-secondary, #525252)';
 const GOLD = '#E85D00';
-const CARD_BG = 'var(--surface, #0E1628)';
-const CARD_BORDER = 'rgba(140,170,210,0.15)';
+const CARD_BG = 'var(--surface, #FFFFFF)';
+const CARD_BORDER = 'var(--border, rgba(10,10,10,0.08))';
 const SERIF = "var(--font-display)";
 const AZ = '#E85D00';
 
@@ -33,9 +33,9 @@ export const CalibrationLoading = () => (
 // ── Privacy Commitment Modal ──────────────────────────────────────────────────
 const PrivacyModal = ({ onClose }) => (
   <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4"
-    style={{ background: 'rgba(7,14,24,0.88)', backdropFilter: 'blur(12px)' }}>
+    style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(12px)' }}>
     <div className="w-full max-w-md rounded-2xl overflow-hidden"
-      style={{ background: '#0F1720', border: '1px solid #1E2D3D', boxShadow: '0 24px 60px rgba(0,0,0,0.6)', maxHeight: '85vh', overflowY: 'auto' }}>
+      style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid var(--border, rgba(10,10,10,0.08))', boxShadow: '0 24px 60px rgba(0,0,0,0.6)', maxHeight: '85vh', overflowY: 'auto' }}>
 
       <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #1E2D3D' }}>
         <div className="flex items-center gap-2.5">
@@ -82,7 +82,7 @@ const PrivacyModal = ({ onClose }) => (
             body: 'BIQc uses your data only to generate intelligence for YOU — alerts, recommendations and briefings specific to your business. We do not sell your data, share it with other businesses, or use it to train general AI models. Your intelligence is yours alone.',
           },
         ].map((item, i) => (
-          <div key={i} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #1E2D3D' }}>
+          <div key={i} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border, rgba(10,10,10,0.08))' }}>
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${item.color}15` }}>
                 <item.icon className="w-4 h-4" style={{ color: item.color }} />
@@ -364,7 +364,7 @@ export const AuditProgress = ({ onManualFallback = null }) => {
       <div
         className="relative mb-8 w-full max-w-2xl rounded-2xl overflow-hidden"
         style={{
-          background: 'linear-gradient(160deg, #0A111A 0%, #0E1824 45%, #111D2B 100%)',
+          background: 'var(--canvas-app, #FAFAFA)',
           border: '1px solid #27374A',
           animation: 'panelGlow 3.2s ease-in-out infinite',
         }}
@@ -427,15 +427,15 @@ export const AuditProgress = ({ onManualFallback = null }) => {
 
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-2 text-[11px]" style={{ color: '#B9C8D8', fontFamily: "var(--font-mono)" }}>
-              <div className="rounded-lg px-2.5 py-2" style={{ background: '#0B141F', border: '1px solid #223243' }}>
+              <div className="rounded-lg px-2.5 py-2" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid var(--border, rgba(10,10,10,0.08))' }}>
                 <div style={{ color: '#6C8095' }}>SIGNAL</div>
                 <div style={{ color: '#FFB06E' }}>{signalStrength}%</div>
               </div>
-              <div className="rounded-lg px-2.5 py-2" style={{ background: '#0B141F', border: '1px solid #223243' }}>
+              <div className="rounded-lg px-2.5 py-2" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid var(--border, rgba(10,10,10,0.08))' }}>
                 <div style={{ color: '#6C8095' }}>CONFIDENCE</div>
                 <div style={{ color: '#FFB06E' }}>{confidence}%</div>
               </div>
-              <div className="rounded-lg px-2.5 py-2" style={{ background: '#0B141F', border: '1px solid #223243' }}>
+              <div className="rounded-lg px-2.5 py-2" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid var(--border, rgba(10,10,10,0.08))' }}>
                 <div style={{ color: '#6C8095' }}>PACKETS/S</div>
                 <div style={{ color: '#FFB06E' }}>{packetsPerSecond}</div>
               </div>
@@ -445,7 +445,7 @@ export const AuditProgress = ({ onManualFallback = null }) => {
               {Array.from({ length: 8 }).map((_, i) => {
                 const active = ((tick + i * 3) % 10) + 2;
                 return (
-                  <div key={i} className="h-2 rounded-full overflow-hidden" style={{ background: '#142130' }}>
+                  <div key={i} className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--silver-2, #E8ECF1)' }}>
                     <div
                       className="h-full rounded-full"
                       style={{
@@ -664,15 +664,15 @@ const RoadmapPhase = ({ label, days, moves, color, delay }) => {
       {expanded && (
         <div className="px-5 pb-4 space-y-3" style={{ background: CARD_BG }}>
           {moves.map((move, i) => (
-            <div key={i} className="rounded-lg p-4" style={{ background: '#0B141F', border: `1px solid ${CARD_BORDER}` }}>
+            <div key={i} className="rounded-lg p-4" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: `1px solid ${CARD_BORDER}` }}>
               <p className="text-xs font-medium leading-relaxed mb-3" style={{ color: CHARCOAL }}>{move.action}</p>
               <div className="flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px]"
-                  style={{ background: '#1A2332', color: MUTED }}>
+                  style={{ background: 'var(--surface-tint, #FAFAFA)', color: MUTED }}>
                   Owner: <span style={{ color: CHARCOAL }}>{move.owner}</span>
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px]"
-                  style={{ background: '#1A2332', color: MUTED }}>
+                  style={{ background: 'var(--surface-tint, #FAFAFA)', color: MUTED }}>
                   Effort: <span style={{ color: EFFORT_COLORS[move.effort] || MUTED }}>{move.effort}</span>
                 </span>
                 <ConfidenceBadge level={move.confidence} />
