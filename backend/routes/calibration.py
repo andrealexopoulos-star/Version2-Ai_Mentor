@@ -1788,6 +1788,59 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             cached = await get_domain_scan(scan_domain)
             if cached:
                 logger.info("[enrichment/website] cache HIT for %s", scan_domain)
+
+                # Persist cached enrichment to business_dna_enrichment so
+                # Market & Position / Benchmark pages can read it for this user.
+                # Without this, cache hits bypass the persistence block and the
+                # user never gets enrichment data in the database.
+                try:
+                    if user_id:
+                        profile_for_cache = await get_business_profile_supabase(get_sb(), user_id)
+                        cache_profile_id = profile_for_cache.get("id") if profile_for_cache else None
+                        if not cache_profile_id:
+                            biz_name = cached.get("business_name") or cached.get("title") or "Business"
+                            try:
+                                new_p = get_sb().table("business_profiles").insert({
+                                    "user_id": user_id,
+                                    "business_name": biz_name,
+                                    "website": url,
+                                    "industry": cached.get("industry") or "",
+                                }).execute()
+                                if new_p.data:
+                                    cache_profile_id = new_p.data[0]["id"]
+                            except Exception:
+                                pass
+                        if cache_profile_id:
+                            # Compute digital_footprint if not already in cached data
+                            cached_fp = cached.get("digital_footprint") or {}
+                            if not cached_fp.get("score"):
+                                seo = cached.get("seo_analysis", {})
+                                social = cached.get("social_media_analysis", {})
+                                website = cached.get("website_health", {})
+                                seo_s = seo.get("score", 0) if isinstance(seo, dict) else 0
+                                social_s = social.get("channel_count", 0) * 25 if isinstance(social, dict) else 0
+                                website_s = website.get("score", 0) if isinstance(website, dict) else 0
+                                scores = [s for s in [seo_s, social_s, website_s] if s]
+                                cached_fp = {
+                                    "score": round(sum(scores) / len(scores)) if scores else 0,
+                                    "seo_score": seo_s,
+                                    "social_score": min(social_s, 100),
+                                    "content_score": website_s,
+                                    "computed_at": datetime.now(timezone.utc).isoformat(),
+                                }
+                                cached["digital_footprint"] = cached_fp
+                            get_sb().table("business_dna_enrichment").upsert({
+                                "user_id": user_id,
+                                "business_profile_id": cache_profile_id,
+                                "website_url": url,
+                                "enrichment": cached,
+                                "digital_footprint": cached_fp,
+                                "updated_at": datetime.now(timezone.utc).isoformat(),
+                            }, on_conflict="user_id,business_profile_id").execute()
+                            logger.info("[enrichment/website] cache HIT persisted to business_dna_enrichment for user %s", user_id)
+                except Exception as cache_persist_err:
+                    logger.error("[enrichment/website] cache HIT persistence failed: %s", cache_persist_err)
+
                 return {
                     "status": "draft",
                     "url": url,
