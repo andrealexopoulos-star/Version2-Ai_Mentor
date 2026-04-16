@@ -139,7 +139,7 @@ const ObservabilityPage = () => {
                 <div className="rounded-lg p-2" style={{ border: '1px solid var(--biqc-border)' }}><p className="text-[10px] text-[var(--ink-muted)]">Working</p><p className="text-sm text-[#10B981] font-semibold" style={{ fontFamily: fontFamily.mono }}>{audit.summary?.working ?? 0}</p></div>
                 <div className="rounded-lg p-2" style={{ border: '1px solid var(--biqc-border)' }}><p className="text-[10px] text-[var(--ink-muted)]">Partial</p><p className="text-sm text-[#F59E0B] font-semibold" style={{ fontFamily: fontFamily.mono }}>{audit.summary?.partial ?? 0}</p></div>
                 <div className="rounded-lg p-2" style={{ border: '1px solid var(--biqc-border)' }}><p className="text-[10px] text-[var(--ink-muted)]">Missing</p><p className="text-sm text-[#EF4444] font-semibold" style={{ fontFamily: fontFamily.mono }}>{audit.summary?.missing ?? 0}</p></div>
-                <div className="rounded-lg p-2" style={{ border: '1px solid var(--biqc-border)' }}><p className="text-[10px] text-[var(--ink-muted)]">Total checks</p><p className="text-sm text-[#CBD5E1] font-semibold" style={{ fontFamily: fontFamily.mono }}>{audit.summary?.total_checks ?? 0}</p></div>
+                <div className="rounded-lg p-2" style={{ border: '1px solid var(--biqc-border)' }}><p className="text-[10px] text-[var(--ink-muted)]">Total checks</p><p className="text-sm text-[var(--ink-secondary)] font-semibold" style={{ fontFamily: fontFamily.mono }}>{audit.summary?.total_checks ?? 0}</p></div>
               </div>
 
               <div data-testid="cognition-platform-audit-table-wrap" className="overflow-x-auto">
@@ -176,7 +176,7 @@ const ObservabilityPage = () => {
                     }))].map((row, idx) => (
                       <tr key={`${row.layer}-${row.component}-${idx}`} style={{ borderBottom: '1px solid var(--biqc-border)' }} data-testid={`cognition-platform-audit-row-${idx}`}>
                         <td className="py-2 text-[var(--ink-secondary)]">{row.layer}</td>
-                        <td className="py-2 text-[#CBD5E1]" style={{ fontFamily: fontFamily.mono }}>{row.component}</td>
+                        <td className="py-2 text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>{row.component}</td>
                         <td className="py-2">
                           <span className="px-1.5 py-0.5 rounded" style={{
                             background: row.status === 'working' ? 'rgba(16,185,129,0.12)' : row.status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',

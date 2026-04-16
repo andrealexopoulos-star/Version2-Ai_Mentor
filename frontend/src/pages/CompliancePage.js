@@ -153,7 +153,7 @@ const FrameworkCard = ({ fw }) => {
             {item.done
               ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: '#16A34A' }} />
               : <X className="h-4 w-4 flex-shrink-0" style={{ color: '#EF4444' }} />}
-            <span style={{ color: item.done ? '#CBD5E1' : '#94A3B8' }}>{item.text}</span>
+            <span style={{ color: item.done ? 'var(--ink, #171717)' : 'var(--ink-secondary, #525252)' }}>{item.text}</span>
           </div>
         ))}
       </div>
@@ -413,7 +413,7 @@ const CompliancePage = () => {
               {spofs.length > 0 ? (
                 <div className="mt-3 space-y-2" data-testid="compliance-spof-list">
                   {spofs.slice(0, 4).map((item, index) => (
-                    <div key={`${item}-${index}`} className="rounded-xl border px-3 py-2 text-sm text-[#CBD5E1]" style={{ borderColor: 'rgba(239,68,68,0.24)', background: 'rgba(239,68,68,0.08)' }} data-testid={`compliance-spof-item-${index}`}>
+                    <div key={`${item}-${index}`} className="rounded-xl border px-3 py-2 text-sm text-[var(--ink-secondary)]" style={{ borderColor: 'rgba(239,68,68,0.24)', background: 'rgba(239,68,68,0.08)' }} data-testid={`compliance-spof-item-${index}`}>
                       {item}
                     </div>
                   ))}
@@ -425,7 +425,7 @@ const CompliancePage = () => {
 
             <SurfaceCard testId="compliance-alignment-card">
               <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>Strategic alignment</p>
-              <p className="mt-3 text-sm text-[#CBD5E1]" data-testid="compliance-alignment-narrative">
+              <p className="mt-3 text-sm text-[var(--ink-secondary)]" data-testid="compliance-alignment-narrative">
                 {alignment.narrative || 'No live alignment narrative is available in this cycle.'}
               </p>
               {contradictions.length > 0 ? (
