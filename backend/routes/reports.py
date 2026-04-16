@@ -158,7 +158,7 @@ async def download_report(filename: str, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=400, detail="Invalid report filename")
     if ".." in safe_filename or "/" in safe_filename or "\\" in safe_filename:
         raise HTTPException(status_code=400, detail="Invalid report filename")
-    if not re.fullmatch(r"biqc_report_[a-zA-Z0-9]{1,8}_\d{8}_\d{6}\.pdf", safe_filename):
+    if not re.fullmatch(r"biqc_report_[a-zA-Z0-9_]{1,30}_\d{8}_\d{6}\.pdf", safe_filename):
         raise HTTPException(status_code=404, detail="Report not found")
 
     workspace_prefix = f"biqc_report_{(current_user.get('id') or '')[:8]}_"
@@ -173,3 +173,387 @@ async def download_report(filename: str, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=404, detail="Report not found")
 
     return FileResponse(filepath, media_type="application/pdf", filename=safe_filename)
+
+
+# ═══ EXECUTIVE PDF REPORTS — Market Position & Benchmark ═══
+
+def _build_executive_pdf(title: str, business_name: str, enrichment: dict,
+                         scan_date: str, sections: list) -> 'FPDF':
+    """Build a formatted executive PDF report from enrichment data.
+
+    Args:
+        title: Report title (e.g. "Market & Position Report")
+        business_name: Business name from enrichment
+        enrichment: Full enrichment dict from business_dna_enrichment
+        scan_date: ISO date string of when scan was performed
+        sections: List of (section_title, content_fn) tuples
+    Returns:
+        FPDF instance ready for output()
+    """
+    from fpdf import FPDF
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    # ── Cover page ──
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 24)
+    pdf.ln(30)
+    pdf.cell(0, 14, "BIQc", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.set_font("Helvetica", "", 12)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 8, "Cognition as a Platform", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(20)
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 12, title, new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(8)
+    pdf.set_font("Helvetica", "", 12)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(0, 8, business_name, new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(4)
+    generated_at = datetime.now(timezone.utc).strftime("%d %B %Y, %H:%M UTC")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 6, f"Generated: {generated_at}", new_x="LMARGIN", new_y="NEXT", align="C")
+    if scan_date:
+        pdf.cell(0, 6, f"Scan date: {scan_date}", new_x="LMARGIN", new_y="NEXT", align="C")
+
+    # ── Content pages ──
+    for section_title, content_fn in sections:
+        pdf.add_page()
+        pdf.set_font("Helvetica", "B", 16)
+        pdf.set_text_color(0, 0, 0)
+        pdf.cell(0, 10, section_title, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(4)
+        content_fn(pdf, enrichment)
+
+    return pdf
+
+
+def _section_kpi_strip(pdf, enrichment):
+    """Digital Footprint KPI strip."""
+    fp = enrichment.get('digital_footprint', {})
+    pdf.set_font("Helvetica", "", 10)
+    metrics = [
+        ('Overall Score', fp.get('score')),
+        ('SEO Visibility', fp.get('seo_score')),
+        ('Social Engagement', fp.get('social_score')),
+        ('Content Authority', fp.get('content_score')),
+    ]
+    for label, value in metrics:
+        display = f"{value}/100" if value is not None else "No data"
+        pdf.cell(0, 7, f"  {label}: {display}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+    conf = enrichment.get('confidence', 'N/A')
+    pdf.set_font("Helvetica", "I", 9)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 6, f"Confidence level: {conf}", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+
+
+def _section_executive_summary(pdf, enrichment):
+    """Executive summary section."""
+    pdf.set_font("Helvetica", "", 10)
+    summary = enrichment.get('executive_summary', '')
+    if summary:
+        pdf.multi_cell(0, 6, summary)
+    else:
+        pdf.cell(0, 6, "No executive summary available.", new_x="LMARGIN", new_y="NEXT")
+    brief = enrichment.get('cmo_executive_brief', '')
+    if brief:
+        pdf.ln(4)
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(0, 8, "CMO Brief", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 10)
+        pdf.multi_cell(0, 6, brief)
+
+
+def _section_swot(pdf, enrichment):
+    """SWOT analysis section — 4 quadrants."""
+    swot = enrichment.get('swot', {})
+    pdf.set_font("Helvetica", "", 10)
+    for quadrant, label in [
+        ('strengths', 'Strengths'),
+        ('weaknesses', 'Weaknesses'),
+        ('opportunities', 'Opportunities'),
+        ('threats', 'Threats'),
+    ]:
+        items = swot.get(quadrant, [])
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(0, 8, label, new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 10)
+        if items:
+            for item in items:
+                text = item if len(item) <= 120 else item[:117] + '...'
+                pdf.cell(0, 6, f"  - {text}", new_x="LMARGIN", new_y="NEXT")
+        else:
+            pdf.cell(0, 6, "  No data", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+
+def _section_cmo_actions(pdf, enrichment):
+    """CMO Priority Actions section."""
+    actions = enrichment.get('cmo_priority_actions', [])
+    industry = enrichment.get('industry_action_items', [])
+    pdf.set_font("Helvetica", "", 10)
+    if actions:
+        for i, action in enumerate(actions, 1):
+            text = action if len(action) <= 120 else action[:117] + '...'
+            pdf.cell(0, 7, f"  {i}. {text}", new_x="LMARGIN", new_y="NEXT")
+    else:
+        pdf.cell(0, 6, "  No CMO actions available.", new_x="LMARGIN", new_y="NEXT")
+    if industry:
+        pdf.ln(4)
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(0, 8, "Industry-Specific Actions", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 10)
+        for i, action in enumerate(industry, 1):
+            text = action if len(action) <= 120 else action[:117] + '...'
+            pdf.cell(0, 7, f"  {i}. {text}", new_x="LMARGIN", new_y="NEXT")
+
+
+def _section_market_position(pdf, enrichment):
+    """Market position statement."""
+    pos = enrichment.get('market_position', '')
+    pdf.set_font("Helvetica", "", 10)
+    if pos:
+        pdf.multi_cell(0, 6, pos)
+    else:
+        pdf.cell(0, 6, "No market position data available.", new_x="LMARGIN", new_y="NEXT")
+
+
+def _section_competitors(pdf, enrichment):
+    """Competitor SWOT landscape."""
+    comp_swot = enrichment.get('competitor_swot', [])
+    pdf.set_font("Helvetica", "", 10)
+    if not comp_swot:
+        pdf.cell(0, 6, "No competitor data available.", new_x="LMARGIN", new_y="NEXT")
+        return
+    for comp in comp_swot[:5]:
+        name = comp.get('name', 'Unknown')
+        threat = comp.get('threat_level', 'unknown')
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(0, 8, f"{name} (Threat: {threat})", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        for s in comp.get('strengths', [])[:2]:
+            text = s if len(s) <= 100 else s[:97] + '...'
+            pdf.cell(0, 5, f"    + {text}", new_x="LMARGIN", new_y="NEXT")
+        for w in comp.get('weaknesses', [])[:2]:
+            text = w if len(w) <= 100 else w[:97] + '...'
+            pdf.cell(0, 5, f"    - {text}", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+
+def _section_seo(pdf, enrichment):
+    """SEO analysis section."""
+    seo = enrichment.get('seo_analysis', {})
+    pdf.set_font("Helvetica", "", 10)
+    if not seo:
+        pdf.cell(0, 6, "No SEO analysis data available.", new_x="LMARGIN", new_y="NEXT")
+        return
+    score = seo.get('score')
+    status = seo.get('status', 'unknown')
+    pdf.cell(0, 7, f"  Score: {score}/100 ({status})" if score else "  Score: N/A", new_x="LMARGIN", new_y="NEXT")
+    strengths = seo.get('strengths', [])
+    if strengths:
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 7, "  Strengths:", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        for s in strengths:
+            pdf.cell(0, 5, f"    + {s}", new_x="LMARGIN", new_y="NEXT")
+    gaps = seo.get('gaps', [])
+    if gaps:
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 7, "  Gaps:", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        for g in gaps:
+            pdf.cell(0, 5, f"    ! {g}", new_x="LMARGIN", new_y="NEXT")
+    actions = seo.get('priority_actions', [])
+    if actions:
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 7, "  Priority Actions:", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        for i, a in enumerate(actions, 1):
+            text = a if len(a) <= 100 else a[:97] + '...'
+            pdf.cell(0, 5, f"    {i}. {text}", new_x="LMARGIN", new_y="NEXT")
+
+
+def _section_social(pdf, enrichment):
+    """Social media analysis section."""
+    social = enrichment.get('social_media_analysis', {})
+    pdf.set_font("Helvetica", "", 10)
+    if not social:
+        pdf.cell(0, 6, "No social media analysis data available.", new_x="LMARGIN", new_y="NEXT")
+        return
+    channels = social.get('active_channels', [])
+    pdf.cell(0, 7, f"  Active channels ({social.get('channel_count', 0)}): {', '.join(channels)}", new_x="LMARGIN", new_y="NEXT")
+    signals = social.get('content_signals_detected', [])
+    if signals:
+        pdf.cell(0, 7, f"  Content signals: {', '.join(signals)}", new_x="LMARGIN", new_y="NEXT")
+    actions = social.get('priority_actions', [])
+    if actions:
+        pdf.ln(2)
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 7, "  Priority Actions:", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        for i, a in enumerate(actions, 1):
+            text = a if len(a) <= 100 else a[:97] + '...'
+            pdf.cell(0, 5, f"    {i}. {text}", new_x="LMARGIN", new_y="NEXT")
+
+
+def _section_reviews(pdf, enrichment):
+    """Review aggregation section."""
+    reviews = enrichment.get('review_aggregation', {})
+    pdf.set_font("Helvetica", "", 10)
+    if not reviews or not reviews.get('has_data'):
+        pdf.cell(0, 6, "No review data available.", new_x="LMARGIN", new_y="NEXT")
+        return
+    pdf.cell(0, 7, f"  Positive reviews: {reviews.get('positive_count', 0)}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 7, f"  Negative reviews: {reviews.get('negative_count', 0)}", new_x="LMARGIN", new_y="NEXT")
+    top = reviews.get('top_recent', [])
+    if top:
+        pdf.ln(2)
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 7, "  Recent Reviews:", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 9)
+        for r in top[:3]:
+            text = r if len(r) <= 100 else r[:97] + '...'
+            pdf.cell(0, 5, f"    - {text}", new_x="LMARGIN", new_y="NEXT")
+
+
+@router.post("/reports/market-position/pdf")
+async def generate_market_position_pdf(current_user: dict = Depends(get_current_user)):
+    """Generate Market & Position executive PDF from enrichment data."""
+    from supabase_client import get_supabase_client
+    sb = get_supabase_client()
+
+    # Check tier — block free users
+    user_row = sb.table('users').select('subscription_tier').eq('id', current_user['id']).maybe_single().execute()
+    tier = (user_row.data or {}).get('subscription_tier', 'free')
+    if tier == 'free':
+        raise HTTPException(status_code=403, detail='PDF reports are available on Pro plan and above.')
+
+    bde = sb.table('business_dna_enrichment') \
+        .select('enrichment, created_at') \
+        .eq('user_id', current_user['id']) \
+        .order('created_at', desc=True) \
+        .limit(1) \
+        .maybe_single() \
+        .execute()
+    if not bde.data or not bde.data.get('enrichment'):
+        raise HTTPException(status_code=404, detail='No enrichment data. Complete calibration first.')
+
+    enrichment = bde.data['enrichment']
+    business_name = enrichment.get('business_name', 'Your Business')
+    scan_date = enrichment.get('digital_footprint', {}).get('computed_at', bde.data.get('created_at', ''))
+    if scan_date and isinstance(scan_date, str):
+        try:
+            scan_date = datetime.fromisoformat(scan_date.replace('Z', '+00:00')).strftime('%d %B %Y')
+        except Exception:
+            pass
+
+    try:
+        pdf = _build_executive_pdf(
+            title="Market & Position Report",
+            business_name=business_name,
+            enrichment=enrichment,
+            scan_date=scan_date,
+            sections=[
+                ("Digital Footprint", _section_kpi_strip),
+                ("Executive Summary", _section_executive_summary),
+                ("SWOT Analysis", _section_swot),
+                ("CMO Priority Actions", _section_cmo_actions),
+                ("Market Position", _section_market_position),
+                ("Competitive Landscape", _section_competitors),
+                ("SEO Analysis", _section_seo),
+            ],
+        )
+
+        os.makedirs("/tmp/reports", exist_ok=True)
+        workspace_id = current_user.get('id', 'unknown')
+        ts = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+        filename = f"biqc_report_{workspace_id[:8]}_{ts}.pdf"
+        filepath = f"/tmp/reports/{filename}"
+        pdf.output(filepath)
+
+        backend_url = os.environ.get("BACKEND_URL", "")
+        return {
+            "status": "generated",
+            "filename": filename,
+            "pdf_url": f"{backend_url}/api/reports/download/{filename}",
+            "report_type": "market_position",
+        }
+
+    except ImportError:
+        raise HTTPException(status_code=500, detail="PDF generation library not available")
+    except Exception as e:
+        logger.error(f"Market position PDF generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/reports/benchmark/pdf")
+async def generate_benchmark_pdf(current_user: dict = Depends(get_current_user)):
+    """Generate Competitive Benchmark executive PDF from enrichment data."""
+    from supabase_client import get_supabase_client
+    sb = get_supabase_client()
+
+    user_row = sb.table('users').select('subscription_tier').eq('id', current_user['id']).maybe_single().execute()
+    tier = (user_row.data or {}).get('subscription_tier', 'free')
+    if tier == 'free':
+        raise HTTPException(status_code=403, detail='PDF reports are available on Pro plan and above.')
+
+    bde = sb.table('business_dna_enrichment') \
+        .select('enrichment, created_at') \
+        .eq('user_id', current_user['id']) \
+        .order('created_at', desc=True) \
+        .limit(1) \
+        .maybe_single() \
+        .execute()
+    if not bde.data or not bde.data.get('enrichment'):
+        raise HTTPException(status_code=404, detail='No enrichment data. Complete calibration first.')
+
+    enrichment = bde.data['enrichment']
+    business_name = enrichment.get('business_name', 'Your Business')
+    scan_date = enrichment.get('digital_footprint', {}).get('computed_at', bde.data.get('created_at', ''))
+    if scan_date and isinstance(scan_date, str):
+        try:
+            scan_date = datetime.fromisoformat(scan_date.replace('Z', '+00:00')).strftime('%d %B %Y')
+        except Exception:
+            pass
+
+    try:
+        pdf = _build_executive_pdf(
+            title="Competitive Benchmark Report",
+            business_name=business_name,
+            enrichment=enrichment,
+            scan_date=scan_date,
+            sections=[
+                ("Digital Footprint", _section_kpi_strip),
+                ("Competitive Landscape", _section_competitors),
+                ("SEO Analysis", _section_seo),
+                ("Social Media Analysis", _section_social),
+                ("Review Reputation", _section_reviews),
+                ("Market Position", _section_market_position),
+            ],
+        )
+
+        os.makedirs("/tmp/reports", exist_ok=True)
+        workspace_id = current_user.get('id', 'unknown')
+        ts = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+        filename = f"biqc_report_{workspace_id[:8]}_{ts}.pdf"
+        filepath = f"/tmp/reports/{filename}"
+        pdf.output(filepath)
+
+        backend_url = os.environ.get("BACKEND_URL", "")
+        return {
+            "status": "generated",
+            "filename": filename,
+            "pdf_url": f"{backend_url}/api/reports/download/{filename}",
+            "report_type": "benchmark",
+        }
+
+    except ImportError:
+        raise HTTPException(status_code=500, detail="PDF generation library not available")
+    except Exception as e:
+        logger.error(f"Benchmark PDF generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -449,6 +449,12 @@ api_router.include_router(memory_router)
 from routes.marketing_intel import router as marketing_intel_router
 api_router.include_router(marketing_intel_router)
 
+from routes.enrichment import router as enrichment_router
+api_router.include_router(enrichment_router)
+
+from routes.action_items import router as action_items_router
+api_router.include_router(action_items_router)
+
 from routes.rag_service import router as rag_router
 api_router.include_router(rag_router)
 

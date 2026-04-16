@@ -13,7 +13,9 @@ import { fontFamily } from '../design-system/tokens';
 import {
   TrendingUp, ArrowRight, Target, Shield, AlertTriangle,
   Zap, CheckCircle2, Eye, ChevronDown, ChevronUp, Link2, RefreshCw,
-  MessageSquare, FileText, Layers, Crosshair, Filter, BarChart3, Plug, Activity
+  MessageSquare, FileText, Layers, Crosshair, Filter, BarChart3, Plug, Activity,
+  Download, Clock, UserPlus, Calendar, Circle, PlayCircle, Loader2,
+  Globe, Star, Search as SearchIcon
 } from 'lucide-react';
 import { EmptyStateCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 import LineageBadge from '../components/LineageBadge';
@@ -62,6 +64,10 @@ const MarketPage = () => {
   const [pressure, setPressure] = useState(null);
   const [freshness, setFreshness] = useState(null);
   const [cognitionMarket, setCognitionMarket] = useState(null);
+  const [enrichmentData, setEnrichmentData] = useState(null);
+  const [actionItems, setActionItems] = useState([]);
+  const [pdfGenerating, setPdfGenerating] = useState(null);
+  const [seedingActions, setSeedingActions] = useState(false);
   const { status: integrationStatus } = useIntegrationStatus();
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
@@ -97,6 +103,12 @@ const MarketPage = () => {
       if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
         setCognitionMarket(res.data);
       }
+    }).catch(() => {});
+    apiClient.get('/enrichment/latest').then(res => {
+      if (res.data?.has_data) setEnrichmentData(res.data);
+    }).catch(() => {});
+    apiClient.get('/action-items').then(res => {
+      if (res.data?.items) setActionItems(res.data.items);
     }).catch(() => {});
   }, []);
 
@@ -229,6 +241,73 @@ const MarketPage = () => {
   const saturationScore = mi.misalignment_index != null ? Math.max(0, 100 - mi.misalignment_index) : null;
   const demandCapture = mi.probability_of_goal_achievement || null;
   const positionVerdict = mi.positioning_verdict || stateStatus || null;
+
+  // Enrichment data extraction
+  const enr = enrichmentData?.enrichment || {};
+  const swot = enr.swot || {};
+  const cmoActions = enr.cmo_priority_actions || [];
+  const cmoBrief = enr.cmo_executive_brief || '';
+  const execSummary = enr.executive_summary || '';
+  const competitorSwot = enr.competitor_swot || [];
+  const marketPosition = enr.market_position || '';
+  const seoAnalysis = enr.seo_analysis || {};
+  const websiteHealth = enr.website_health || {};
+  const socialAnalysis = enr.social_media_analysis || {};
+  const paidMedia = enr.paid_media_analysis || {};
+  const reviewAgg = enr.review_aggregation || {};
+  const trustSignals = enr.trust_signals || [];
+  const aeoStrategy = enr.aeo_strategy || [];
+  const industryActions = enr.industry_action_items || [];
+  const recommendedKeywords = enr.recommended_keywords || [];
+  const customerReviews = enr.customer_review_intelligence || {};
+  const staffReviews = enr.staff_review_intelligence || {};
+  const scanTimestamp = enrichmentData?.scanned_at;
+  const nextUpdate = enrichmentData?.next_update_available;
+  const hasEnrichment = enrichmentData?.has_data;
+
+  // Action item helpers
+  const handleStatusChange = async (itemId, newStatus) => {
+    try {
+      await apiClient.patch(`/action-items/${itemId}`, { status: newStatus });
+      setActionItems(prev => prev.map(it => it.id === itemId ? { ...it, status: newStatus } : it));
+    } catch (err) { console.error('Failed to update action item:', err); }
+  };
+  const handleAssign = async (itemId, assignee) => {
+    try {
+      await apiClient.patch(`/action-items/${itemId}`, { assigned_to: assignee });
+      setActionItems(prev => prev.map(it => it.id === itemId ? { ...it, assigned_to: assignee } : it));
+    } catch (err) { console.error('Failed to assign action item:', err); }
+  };
+  const handleSeedActions = async () => {
+    setSeedingActions(true);
+    try {
+      const res = await apiClient.post('/action-items/seed');
+      if (res.data?.seeded) {
+        const refreshed = await apiClient.get('/action-items');
+        if (refreshed.data?.items) setActionItems(refreshed.data.items);
+      }
+    } catch (err) { console.error('Failed to seed actions:', err); }
+    setSeedingActions(false);
+  };
+  const handleDownloadPdf = async (type) => {
+    setPdfGenerating(type);
+    try {
+      const res = await apiClient.post(`/reports/${type}/pdf`);
+      if (res.data?.pdf_url) {
+        window.open(res.data.pdf_url, '_blank');
+      }
+    } catch (err) {
+      const detail = err?.response?.data?.detail || 'PDF generation failed.';
+      console.error('PDF generation error:', detail);
+      alert(detail);
+    }
+    setPdfGenerating(null);
+  };
+
+  const statusColors = { pending: '#F59E0B', in_progress: '#3B82F6', done: '#10B981' };
+  const statusLabels = { pending: 'Pending', in_progress: 'In Progress', done: 'Done' };
+  const statusCycle = { pending: 'in_progress', in_progress: 'done', done: 'pending' };
+  const priorityColors = { urgent: '#EF4444', high: '#FF6A00', medium: '#F59E0B', low: '#64748B' };
 
   const TABS = [
     { id: 'intelligence', label: 'Focus', icon: Zap },
@@ -379,8 +458,15 @@ const MarketPage = () => {
                   </div>
                 </div>
                 <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }} data-testid="market-channel-separation-note">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>Internal channel context</p>
-                  <p className="mt-2 text-sm text-[#CBD5E1]">The performance strip below is intentionally internal — useful, but separate from the external market narrative.</p>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>Scan status</p>
+                  {scanTimestamp ? (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-sm text-[#CBD5E1] flex items-center gap-1.5"><Clock className="w-3 h-3 text-[#64748B]" /> Last scan: {new Date(scanTimestamp).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      {nextUpdate && <p className="text-[10px] text-[#64748B]" style={{ fontFamily: 'var(--font-mono)' }}>Next update: {new Date(nextUpdate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-[#CBD5E1]">Complete calibration to generate your scan data.</p>
+                  )
                 </div>
               </div>
             </SurfaceCard>
@@ -538,17 +624,142 @@ const MarketPage = () => {
           )}
           <GapsSection channelsData={channelsData} hasCRM={hasCRM} pipeline={pipeline} gapsOpen={gapsOpen} setGapsOpen={setGapsOpen} navigate={navigate} />
 
-          {/* Forensic Calibration and Exposure Scan blocks moved to Governance → Reports */}
-          <Panel>
-            <div className="flex items-center gap-2 mb-2">
-              <Shield className="w-3.5 h-3.5" style={{ color: 'var(--ink-muted)' }} />
-              <h3 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Forensic Reports</h3>
+          {/* ═══ SWOT ANALYSIS ═══ */}
+          {hasEnrichment && (swot.strengths?.length > 0 || swot.weaknesses?.length > 0 || swot.opportunities?.length > 0 || swot.threats?.length > 0) && (
+            <div data-testid="swot-section" style={{ animation: 'snapFade 0.6s ease-out' }}>
+              <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>SWOT Analysis</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { key: 'strengths', label: 'Strengths', color: '#10B981', icon: CheckCircle2 },
+                  { key: 'weaknesses', label: 'Weaknesses', color: '#EF4444', icon: AlertTriangle },
+                  { key: 'opportunities', label: 'Opportunities', color: '#3B82F6', icon: TrendingUp },
+                  { key: 'threats', label: 'Threats', color: '#F59E0B', icon: Shield },
+                ].map(q => {
+                  const items = swot[q.key] || [];
+                  const QIcon = q.icon;
+                  return (
+                    <div key={q.key} className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${q.color}20` }}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <QIcon className="w-4 h-4" style={{ color: q.color }} />
+                        <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{q.label}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: q.color + '15', color: q.color, fontFamily: fontFamily.mono }}>{items.length}</span>
+                      </div>
+                      <div className="space-y-2">
+                        {items.map((item, i) => (
+                          <p key={i} className="text-xs text-[#9FB0C3] leading-relaxed flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: q.color }} />
+                            {item.length > 150 ? item.substring(0, 147) + '...' : item}
+                          </p>
+                        ))}
+                        {items.length === 0 && <p className="text-[10px] text-[#4A5568] italic">No data available</p>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <p className="text-xs mb-3" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Forensic Calibration and Market Exposure Scan reports have been moved to the Reports section for download as Board-ready PDFs.</p>
-            <button onClick={() => navigate('/reports')} className="flex items-center gap-1.5 text-xs px-3 py-1.5" style={{ background: 'var(--lava-wash, rgba(232,93,0,0.08))', color: 'var(--lava)', border: '1px solid var(--lava)33', borderRadius: 'var(--r-lg, 12px)' }}>
-              <ArrowRight className="w-3 h-3" /> Go to Governance Reports
-            </button>
-          </Panel>
+          )}
+
+          {/* ═══ CMO PRIORITY ACTIONS (Interactive) ═══ */}
+          {hasEnrichment && cmoActions.length > 0 && (
+            <div data-testid="cmo-actions-section" style={{ animation: 'snapFade 0.6s ease-out' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>CMO Priority Actions</h2>
+                {cmoBrief && <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }}>FROM SCAN</span>}
+              </div>
+              <div className="space-y-2">
+                {cmoActions.map((action, i) => {
+                  const tracked = actionItems.find(it => it.source === 'cmo' && it.title === action);
+                  return (
+                    <div key={i} className="rounded-xl p-4 flex items-start gap-3" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+                      <span className="text-sm font-bold text-[#FF6A00] mt-0.5 shrink-0" style={{ fontFamily: fontFamily.mono }}>#{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#F4F7FA] leading-relaxed">{action}</p>
+                        {tracked && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <button onClick={() => handleStatusChange(tracked.id, statusCycle[tracked.status])}
+                              className="text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors"
+                              style={{ background: statusColors[tracked.status] + '15', color: statusColors[tracked.status], fontFamily: fontFamily.mono }}>
+                              <Circle className="w-2.5 h-2.5" /> {statusLabels[tracked.status]}
+                            </button>
+                            {tracked.due_date && <span className="text-[10px] text-[#64748B] flex items-center gap-1" style={{ fontFamily: fontFamily.mono }}><Calendar className="w-2.5 h-2.5" /> {new Date(tracked.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>}
+                            {tracked.assigned_to && <span className="text-[10px] text-[#64748B] flex items-center gap-1" style={{ fontFamily: fontFamily.mono }}><UserPlus className="w-2.5 h-2.5" /> {tracked.assigned_to}</span>}
+                            <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: priorityColors[tracked.priority] + '15', color: priorityColors[tracked.priority], fontFamily: fontFamily.mono }}>{tracked.priority}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {actionItems.filter(it => it.source === 'cmo').length === 0 && (
+                <button onClick={handleSeedActions} disabled={seedingActions}
+                  className="flex items-center gap-2 mt-3 text-xs px-4 py-2 rounded-lg transition-colors"
+                  style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030', opacity: seedingActions ? 0.6 : 1, fontFamily: fontFamily.mono }}>
+                  {seedingActions ? <Loader2 className="w-3 h-3 animate-spin" /> : <PlayCircle className="w-3 h-3" />}
+                  {seedingActions ? 'Generating...' : 'Generate 90-Day Action Plan'}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ═══ INDUSTRY ACTION ITEMS ═══ */}
+          {hasEnrichment && industryActions.length > 0 && (
+            <Panel data-testid="industry-actions-section">
+              <div className="flex items-center gap-2 mb-3">
+                <Target className="w-3.5 h-3.5 text-[#7C3AED]" />
+                <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Industry-Specific Actions</h3>
+              </div>
+              <div className="space-y-2">
+                {industryActions.map((action, i) => (
+                  <p key={i} className="text-xs text-[#9FB0C3] leading-relaxed flex items-start gap-2">
+                    <span className="text-[10px] font-bold text-[#7C3AED] mt-0.5 shrink-0" style={{ fontFamily: fontFamily.mono }}>{i + 1}.</span>
+                    {action}
+                  </p>
+                ))}
+              </div>
+            </Panel>
+          )}
+
+          {/* ═══ 90-DAY ACTION PLAN TIMELINE ═══ */}
+          {actionItems.length > 0 && (
+            <div data-testid="action-plan-timeline" style={{ animation: 'snapFade 0.6s ease-out' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>90-Day Action Plan</h2>
+                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                  {actionItems.filter(it => it.status === 'done').length}/{actionItems.length} complete
+                </span>
+              </div>
+              <div className="space-y-2">
+                {actionItems.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '')).map(item => (
+                  <div key={item.id} className="rounded-lg p-3 flex items-center gap-3" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', opacity: item.status === 'done' ? 0.6 : 1 }}>
+                    <button onClick={() => handleStatusChange(item.id, statusCycle[item.status])}
+                      className="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors"
+                      style={{ borderColor: statusColors[item.status], background: item.status === 'done' ? statusColors.done : 'transparent' }}>
+                      {item.status === 'done' && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      {item.status === 'in_progress' && <div className="w-2 h-2 rounded-full" style={{ background: statusColors.in_progress }} />}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs text-[#F4F7FA] truncate ${item.status === 'done' ? 'line-through' : ''}`}>{item.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: priorityColors[item.priority] + '15', color: priorityColors[item.priority], fontFamily: fontFamily.mono }}>{item.priority}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#24314050', color: '#94A3B8', fontFamily: fontFamily.mono }}>{item.source.replace('_', ' ')}</span>
+                        {item.due_date && <span className="text-[9px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{new Date(item.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>}
+                      </div>
+                    </div>
+                    {item.assigned_to ? (
+                      <span className="text-[9px] text-[#64748B] shrink-0" style={{ fontFamily: fontFamily.mono }}>{item.assigned_to}</span>
+                    ) : (
+                      <button onClick={() => { const name = prompt('Assign to (name or email):'); if (name) handleAssign(item.id, name); }}
+                        className="text-[9px] text-[#64748B] shrink-0 hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.mono }}>
+                        <UserPlus className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>}
 
         {/* ═══════════════════════════════════════════════════ */}
@@ -558,6 +769,13 @@ const MarketPage = () => {
           <div className="space-y-6" data-testid="saturation-tab">
             <h2 className="text-lg font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-display, -0.035em)' }}>Market Saturation Analysis</h2>
             <p className="text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>How crowded is your market and where do you stand relative to competitors.</p>
+            {marketPosition && (
+              <Panel className="mt-3" data-testid="market-position-statement">
+                <div className="flex items-center gap-2 mb-2"><Globe className="w-3.5 h-3.5 text-[#7C3AED]" /><span className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>Market Position</span></div>
+                <p className="text-sm text-[#CBD5E1] leading-relaxed">{marketPosition}</p>
+                {scanTimestamp && <p className="text-[9px] text-[#4A5568] mt-2" style={{ fontFamily: fontFamily.mono }}>Last scanned: {new Date(scanTimestamp).toLocaleDateString('en-AU')}</p>}
+              </Panel>
+            )}
 
             {!snapshot && !watchtower ? (
               <Panel className="text-center py-10">
@@ -601,10 +819,66 @@ const MarketPage = () => {
                         </div>
                       ))}
                     </div>
+                  ) : competitorSwot.length > 0 ? (
+                    <div className="space-y-3">
+                      {competitorSwot.slice(0, 5).map((comp, i) => (
+                        <div key={i} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-[#F4F7FA] font-medium" style={{ fontFamily: fontFamily.display }}>{comp.name}</span>
+                            {comp.threat_level && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: comp.threat_level === 'high' ? '#EF4444' : comp.threat_level === 'medium' ? '#F59E0B' : '#10B981', background: (comp.threat_level === 'high' ? '#EF4444' : comp.threat_level === 'medium' ? '#F59E0B' : '#10B981') + '15', fontFamily: fontFamily.mono }}>{comp.threat_level} threat</span>}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            <div>
+                              <p className="text-[9px] text-[#10B981] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Strengths</p>
+                              {(comp.strengths || []).slice(0, 2).map((s, j) => <p key={j} className="text-[10px] text-[#9FB0C3] leading-snug">{s.length > 80 ? s.substring(0, 77) + '...' : s}</p>)}
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-[#EF4444] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Weaknesses</p>
+                              {(comp.weaknesses || []).slice(0, 2).map((w, j) => <p key={j} className="text-[10px] text-[#9FB0C3] leading-snug">{w.length > 80 ? w.substring(0, 77) + '...' : w}</p>)}
+                            </div>
+                          </div>
+                          {comp.opportunities_against_them?.length > 0 && (
+                            <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--biqc-border)' }}>
+                              <p className="text-[9px] text-[#3B82F6] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Your opportunities against them</p>
+                              {comp.opportunities_against_them.slice(0, 1).map((o, j) => <p key={j} className="text-[10px] text-[#9FB0C3] leading-snug">{o.length > 100 ? o.substring(0, 97) + '...' : o}</p>)}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <p className="text-xs text-[var(--ink-muted)]">No competitor data from calibration. Complete calibration to identify your competitive landscape.</p>
                   )}
                 </Panel>
+
+                {/* SEO Analysis */}
+                {seoAnalysis.score != null && (
+                  <Panel data-testid="saturation-seo">
+                    <div className="flex items-center gap-2 mb-3">
+                      <SearchIcon className="w-4 h-4 text-[#10B981]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SEO Analysis</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: seoAnalysis.status === 'strong' ? '#10B981' : '#F59E0B', background: (seoAnalysis.status === 'strong' ? '#10B981' : '#F59E0B') + '15', fontFamily: fontFamily.mono }}>{seoAnalysis.score}/100 — {seoAnalysis.status}</span>
+                    </div>
+                    {seoAnalysis.strengths?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-[9px] text-[#10B981] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Strengths</p>
+                        {seoAnalysis.strengths.map((s, i) => <p key={i} className="text-[10px] text-[#9FB0C3] flex items-start gap-1.5"><CheckCircle2 className="w-3 h-3 text-[#10B981] shrink-0 mt-0.5" />{s}</p>)}
+                      </div>
+                    )}
+                    {seoAnalysis.gaps?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-[9px] text-[#F59E0B] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Gaps</p>
+                        {seoAnalysis.gaps.map((g, i) => <p key={i} className="text-[10px] text-[#9FB0C3] flex items-start gap-1.5"><AlertTriangle className="w-3 h-3 text-[#F59E0B] shrink-0 mt-0.5" />{g}</p>)}
+                      </div>
+                    )}
+                    {seoAnalysis.priority_actions?.length > 0 && (
+                      <div>
+                        <p className="text-[9px] text-[#FF6A00] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Priority Actions</p>
+                        {seoAnalysis.priority_actions.map((a, i) => <p key={i} className="text-[10px] text-[#9FB0C3] flex items-start gap-1.5"><Zap className="w-3 h-3 text-[#FF6A00] shrink-0 mt-0.5" />{a}</p>)}
+                      </div>
+                    )}
+                  </Panel>
+                )}
 
                 {/* Watchtower Positions */}
                 {watchtower?.positions && Object.keys(watchtower.positions).length > 0 && (
@@ -699,6 +973,38 @@ const MarketPage = () => {
 
                 {/* Channel Gaps */}
                 <GapsSection channelsData={channelsData} hasCRM={hasCRM} pipeline={pipeline} gapsOpen={gapsOpen} setGapsOpen={setGapsOpen} navigate={navigate} />
+
+                {/* Paid Media Analysis */}
+                {paidMedia.maturity && (
+                  <Panel data-testid="demand-paid-media">
+                    <div className="flex items-center gap-2 mb-3">
+                      <BarChart3 className="w-4 h-4 text-[#F59E0B]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Paid Media Analysis</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: paidMedia.maturity === 'unknown_or_low_visibility' ? '#F59E0B' : '#10B981', background: (paidMedia.maturity === 'unknown_or_low_visibility' ? '#F59E0B' : '#10B981') + '15', fontFamily: fontFamily.mono }}>{paidMedia.maturity.replace(/_/g, ' ')}</span>
+                    </div>
+                    {paidMedia.assessment && <p className="text-xs text-[#9FB0C3] leading-relaxed mb-3">{paidMedia.assessment}</p>}
+                    {paidMedia.priority_actions?.length > 0 && (
+                      <div>
+                        <p className="text-[9px] text-[#FF6A00] uppercase mb-1" style={{ fontFamily: fontFamily.mono }}>Priority Actions</p>
+                        {paidMedia.priority_actions.map((a, i) => <p key={i} className="text-[10px] text-[#9FB0C3] flex items-start gap-1.5 mb-1"><Zap className="w-3 h-3 text-[#FF6A00] shrink-0 mt-0.5" />{a}</p>)}
+                      </div>
+                    )}
+                  </Panel>
+                )}
+
+                {/* AEO Strategy */}
+                {aeoStrategy.length > 0 && (
+                  <Panel data-testid="demand-aeo">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Eye className="w-4 h-4 text-[#8B5CF6]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>AI Engine Optimisation</h3>
+                    </div>
+                    <p className="text-[10px] text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>Actions to improve your visibility in AI-powered search and answer engines.</p>
+                    <div className="space-y-2">
+                      {aeoStrategy.map((action, i) => <p key={i} className="text-xs text-[#9FB0C3] leading-relaxed flex items-start gap-2"><span className="text-[10px] font-bold text-[#8B5CF6] mt-0.5 shrink-0" style={{ fontFamily: fontFamily.mono }}>{i + 1}.</span>{action}</p>)}
+                    </div>
+                  </Panel>
+                )}
               </>
             )}
           </div>
@@ -781,6 +1087,64 @@ const MarketPage = () => {
                   )}
                 </Panel>
 
+                {/* Website Health */}
+                {websiteHealth.score != null && (
+                  <Panel data-testid="friction-website-health">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Globe className="w-4 h-4 text-[#3B82F6]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Website Health</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: websiteHealth.status === 'strong' ? '#10B981' : '#F59E0B', background: (websiteHealth.status === 'strong' ? '#10B981' : '#F59E0B') + '15', fontFamily: fontFamily.mono }}>{websiteHealth.score}/100 — {websiteHealth.status}</span>
+                    </div>
+                    {websiteHealth.summary && <p className="text-xs text-[#9FB0C3] leading-relaxed">{websiteHealth.summary}</p>}
+                  </Panel>
+                )}
+
+                {/* Trust Signals */}
+                {trustSignals.length > 0 && (
+                  <Panel data-testid="friction-trust-signals">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Shield className="w-4 h-4 text-[#10B981]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Trust Signals</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: fontFamily.mono }}>{trustSignals.length} detected</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {trustSignals.map((signal, i) => (
+                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-lg flex items-center gap-1.5" style={{ background: '#10B98108', border: '1px solid #10B98120', color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+                          <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> {signal}
+                        </span>
+                      ))}
+                    </div>
+                  </Panel>
+                )}
+
+                {/* Review Aggregation */}
+                {reviewAgg.has_data && (
+                  <Panel data-testid="friction-reviews">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Star className="w-4 h-4 text-[#F59E0B]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Review Reputation</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid #10B98120' }}>
+                        <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Positive</span>
+                        <span className="text-lg font-bold text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>{reviewAgg.positive_count || 0}</span>
+                      </div>
+                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid #EF444420' }}>
+                        <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Negative</span>
+                        <span className="text-lg font-bold text-[#EF4444]" style={{ fontFamily: fontFamily.mono }}>{reviewAgg.negative_count || 0}</span>
+                      </div>
+                    </div>
+                    {reviewAgg.top_recent?.length > 0 && (
+                      <div>
+                        <p className="text-[9px] text-[#94A3B8] uppercase mb-2" style={{ fontFamily: fontFamily.mono }}>Recent reviews</p>
+                        {reviewAgg.top_recent.slice(0, 2).map((r, i) => (
+                          <p key={i} className="text-[10px] text-[#9FB0C3] leading-snug mb-1 pl-2" style={{ borderLeft: '2px solid #F59E0B30' }}>{r.length > 120 ? r.substring(0, 117) + '...' : r}</p>
+                        ))}
+                      </div>
+                    )}
+                  </Panel>
+                )}
+
                 {/* Conversion Intelligence */}
                 {(goalProb != null || mi.misalignment_index != null) && (
                   <Panel>
@@ -815,10 +1179,55 @@ const MarketPage = () => {
         {activeTab === 'reports' && (
           <div className="space-y-4" data-testid="reports-tab">
             <h2 className="text-lg font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-display, -0.035em)' }}>Intelligence Reports</h2>
-            {reports.length === 0 && (
+
+            {/* Scan metadata */}
+            {scanTimestamp && (
+              <Panel>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5" style={{ color: 'var(--ink-muted)' }} />
+                    <span className="text-xs" style={{ color: 'var(--ink-secondary)' }}>Last calibration scan: <strong style={{ color: 'var(--ink-display)' }}>{new Date(scanTimestamp).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></span>
+                  </div>
+                  {nextUpdate && <span className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Next update: {new Date(nextUpdate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>}
+                </div>
+              </Panel>
+            )}
+
+            {/* PDF Download buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="w-4 h-4" style={{ color: 'var(--lava)' }} />
+                  <span className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Market & Position Report</span>
+                </div>
+                <p className="text-[10px] mb-3" style={{ color: 'var(--ink-muted)' }}>Executive PDF with Digital Footprint, SWOT, CMO actions, competitive landscape, and SEO analysis.</p>
+                <button onClick={() => handleDownloadPdf('market-position')} disabled={pdfGenerating === 'market-position' || !hasEnrichment}
+                  className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors w-full justify-center"
+                  style={{ background: hasEnrichment ? 'var(--lava)' : '#243140', color: hasEnrichment ? 'white' : 'var(--ink-muted)', opacity: pdfGenerating === 'market-position' ? 0.6 : 1, fontFamily: 'var(--font-mono)' }}>
+                  {pdfGenerating === 'market-position' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  {pdfGenerating === 'market-position' ? 'Generating...' : hasEnrichment ? 'Download PDF' : 'Complete calibration first'}
+                </button>
+              </div>
+              <div className="rounded-xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart3 className="w-4 h-4 text-[#7C3AED]" />
+                  <span className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Competitive Benchmark Report</span>
+                </div>
+                <p className="text-[10px] mb-3" style={{ color: 'var(--ink-muted)' }}>Executive PDF with competitor landscape, 5-pillar breakdown, SEO analysis, social media, and review reputation.</p>
+                <button onClick={() => handleDownloadPdf('benchmark')} disabled={pdfGenerating === 'benchmark' || !hasEnrichment}
+                  className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors w-full justify-center"
+                  style={{ background: hasEnrichment ? '#7C3AED' : '#243140', color: hasEnrichment ? 'white' : 'var(--ink-muted)', opacity: pdfGenerating === 'benchmark' ? 0.6 : 1, fontFamily: 'var(--font-mono)' }}>
+                  {pdfGenerating === 'benchmark' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  {pdfGenerating === 'benchmark' ? 'Generating...' : hasEnrichment ? 'Download PDF' : 'Complete calibration first'}
+                </button>
+              </div>
+            </div>
+
+            {/* Existing snapshot reports */}
+            {reports.length === 0 && !hasEnrichment && (
               <div className="p-8 text-center" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl, 16px)' }}>
                 <FileText className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)', opacity: 0.3 }} />
-                <p className="text-sm" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Reports will appear here after your first cognitive snapshot.</p>
+                <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>Complete calibration to generate downloadable reports.</p>
               </div>
             )}
             {reports.map((r, i) => (
