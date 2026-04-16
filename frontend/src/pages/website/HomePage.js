@@ -27,7 +27,7 @@ const StatCard = ({ number, stat, body, biqc }) => (
     }}
   >
     <p style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 700, color: '#E85D00', lineHeight: 1.1, marginBottom: 0 }}>{number}</p>
-    <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: '#FFFFFF', fontFamily: 'var(--font-ui)' }}>{stat}</p>
+    <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: 'var(--font-ui)' }}>{stat}</p>
     <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{body}</p>
     <p className="text-sm italic leading-relaxed" style={{ color: '#E85D00', fontFamily: 'var(--font-ui)' }}>{biqc}</p>
   </div>
@@ -37,7 +37,7 @@ const STATS = [
   {
     number: '90%',
     stat: 'of data is created every two years',
-    body: <>Yet most businesses use less than <strong style={{ color: '#FFFFFF' }}>10% of it.</strong></>,
+    body: <>Yet most businesses use less than <strong style={{ color: 'var(--ink-display, #0A0A0A)' }}>10% of it.</strong></>,
     biqc: 'BIQc transforms scattered data into practical business intelligence.',
   },
   {
@@ -49,7 +49,7 @@ const STATS = [
   {
     number: '75%',
     stat: 'of businesses are experimenting with AI',
-    body: <>But fewer than <strong style={{ color: '#FFFFFF' }}>5% see real operational value.</strong></>,
+    body: <>But fewer than <strong style={{ color: 'var(--ink-display, #0A0A0A)' }}>5% see real operational value.</strong></>,
     biqc: 'BIQc delivers practical AI insights for everyday decisions.',
   },
   {
