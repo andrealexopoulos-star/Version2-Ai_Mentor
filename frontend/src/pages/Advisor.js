@@ -61,6 +61,7 @@ const Advisor = () => {
   const [watchtowerEvents, setWatchtowerEvents] = useState([]);
   const [loadingWatchtower, setLoadingWatchtower] = useState(true);
   const [runningAnalysis, setRunningAnalysis] = useState(false);
+  const [refreshingIntel, setRefreshingIntel] = useState(false);
   
   // Integration state
   const [integrationData, setIntegrationData] = useState({
@@ -523,11 +524,18 @@ const Advisor = () => {
     // Narrative will update via useEffect
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    setRefreshingIntel(true);
     setNarrativeState(prev => ({ ...prev, loading: true }));
     setSelectedFocus(null);
-    // Trigger re-fetch
-    window.location.reload();
+    try {
+      await apiClient.post('/intelligence/proactive-scan');
+      // Re-fetch data after scan completes
+      window.location.reload();
+    } catch {
+      // Fallback to simple reload
+      window.location.reload();
+    }
   };
 
   /* Greeting time */
@@ -594,10 +602,10 @@ const Advisor = () => {
             const runway = snapshotData?.cognitive?.capital?.runway;
             const highPriorityThreads = executiveSurface?.snapshot?.high_priority_threads;
             const kpis = [
-              { label: 'Open signals', value: watchtowerEvents.length || '\u2014', hasData: true, color: 'var(--lava)', showDot: true },
-              { label: 'Pipeline at risk', value: pipeline != null ? `$${Number(pipeline).toLocaleString()}` : '\u2014', hasData: pipeline != null, color: 'var(--danger)', showDot: false, noDataHint: 'Connect CRM' },
-              { label: 'Cash runway', value: runway != null ? String(runway) : '\u2014', valueSuffix: runway != null ? 'mo' : '', hasData: runway != null, color: 'var(--positive)', showDot: false, noDataHint: 'Connect accounting' },
-              { label: 'Inbox decisions', value: highPriorityThreads != null ? String(highPriorityThreads) : emailStats.highPriority > 0 ? String(emailStats.highPriority) : '\u2014', hasData: highPriorityThreads != null || emailStats.highPriority > 0, color: 'var(--positive)', showDot: false, noDataHint: 'Connect inbox' },
+              { label: 'Open signals', value: watchtowerEvents.length || '0', hasData: true, color: 'var(--lava)', showDot: true },
+              { label: 'Pipeline at risk', value: pipeline != null ? `$${Number(pipeline).toLocaleString()}` : null, hasData: pipeline != null, color: 'var(--danger)', showDot: false, noDataHint: 'Connect CRM to see pipeline' },
+              { label: 'Cash runway', value: runway != null ? String(runway) : null, valueSuffix: runway != null ? 'mo' : '', hasData: runway != null, color: 'var(--positive)', showDot: false, noDataHint: 'Connect accounting to see runway' },
+              { label: 'Inbox decisions', value: highPriorityThreads != null ? String(highPriorityThreads) : emailStats.highPriority > 0 ? String(emailStats.highPriority) : null, hasData: highPriorityThreads != null || emailStats.highPriority > 0, color: 'var(--positive)', showDot: false, noDataHint: 'Connect inbox to see priorities' },
             ];
             return kpis.map((kpi, i) => (
               <div key={i} className="p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', boxShadow: 'var(--elev-1)' }}>
@@ -610,13 +618,12 @@ const Advisor = () => {
                 <div className="text-3xl font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', lineHeight: 1 }}>
                   {advisorLoading ? (
                     <span className="inline-block w-16 h-8 rounded animate-pulse" style={{ background: 'var(--surface-2)' }} />
-                  ) : (
+                  ) : kpi.value != null ? (
                     <>{kpi.value}{kpi.valueSuffix && <span style={{ fontSize: '0.5em', color: 'var(--ink-secondary)' }}>{kpi.valueSuffix}</span>}</>
+                  ) : (
+                    <span className="text-sm" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-muted)' }}>{kpi.noDataHint || 'Generating...'}</span>
                   )}
                 </div>
-                {!advisorLoading && !kpi.hasData && kpi.noDataHint && (
-                  <div className="text-[11px] mt-2.5" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)' }}>{kpi.noDataHint}</div>
-                )}
               </div>
             ));
           })()}
