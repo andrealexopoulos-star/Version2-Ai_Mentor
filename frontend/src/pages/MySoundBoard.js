@@ -878,13 +878,14 @@ const MySoundBoard = () => {
                   <p style={{ fontSize: 12, color: SB.inkMuted, marginBottom: 20, textAlign: 'center' }}>
                     {advisorHandoff ? 'or choose a BIQc next move below' : 'pick a prompt or type your own'}
                   </p>
-                  {/* Suggestion chips - 2x2 grid like mockup */}
+                  {/* Quick-start suggestion chips */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, maxWidth: 560, width: '100%' }}>
                     {(advisorHandoff ? buildAdvisorSuggestedOptions(advisorHandoff) : [
-                      { label: "What's the one thing I should focus on?", prompt: "What's the one thing I should focus on?" },
-                      { label: 'Summarise my risks', prompt: 'Summarise my risks' },
-                      { label: 'Show me my pipeline', prompt: 'Show me my pipeline' },
-                      { label: "How's my revenue looking?", prompt: "How's my revenue looking?" },
+                      { label: 'What are my top email priorities today?', prompt: 'What are my top email priorities today?' },
+                      { label: 'Summarize my CRM pipeline health', prompt: 'Summarize my CRM pipeline health' },
+                      { label: 'Which invoices are overdue?', prompt: 'Which invoices are overdue?' },
+                      { label: 'What should I focus on this week?', prompt: 'What should I focus on this week?' },
+                      { label: 'What risks should I be aware of?', prompt: 'What risks should I be aware of?' },
                     ]).map((q) => (
                       <button
                         key={q.label}

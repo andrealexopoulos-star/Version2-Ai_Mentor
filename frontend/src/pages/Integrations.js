@@ -653,9 +653,10 @@ export default function Integrations() {
     );
     const meta = key ? mergeIntegrations[key] : null;
     // Flag as stale if last_sync is > 24 hours ago or sync_status indicates error
-    if (meta?.sync_status === 'token_expired' || meta?.sync_status === 'error') return true;
+    if (meta?.sync_status === 'token_expired' || meta?.sync_status === 'error' || meta?.sync_status === 'needs_reconnect') return true;
     const statusRow = integrationStatusRows.find((row) => rowMatchesIntegration(row, integration));
-    if (statusRow?.truth_state === 'stale' || statusRow?.truth_state === 'error') return true;
+    if (statusRow?.truth_state === 'stale' || statusRow?.truth_state === 'error' || statusRow?.truth_state === 'needs_reconnect') return true;
+    if (statusRow?.sync_status === 'needs_reconnect' || statusRow?.sync_status === 'error') return true;
     return false;
   }, [mergeIntegrations, integrationStatusRows, isConnected]);
 
@@ -924,12 +925,21 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
       <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="flex items-center gap-1.5">
           {connected ? (
-            <>
-              <span className="inline-block w-2 h-2 rounded-full" style={{ background: 'var(--positive)', boxShadow: '0 0 8px var(--positive)' }} />
-              <span className="text-[10px] font-semibold uppercase" style={{ color: 'var(--positive)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }}>
-                Connected
-              </span>
-            </>
+            isStale ? (
+              <>
+                <span className="inline-block w-2 h-2 rounded-full" style={{ background: 'var(--warning)', boxShadow: '0 0 8px var(--warning)' }} />
+                <span className="text-[10px] font-semibold uppercase" style={{ color: 'var(--warning)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }}>
+                  Needs reconnect
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="inline-block w-2 h-2 rounded-full" style={{ background: 'var(--positive)', boxShadow: '0 0 8px var(--positive)' }} />
+                <span className="text-[10px] font-semibold uppercase" style={{ color: 'var(--positive)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }}>
+                  Connected
+                </span>
+              </>
+            )
           ) : (
             <>
               <span className="inline-block w-2 h-2 rounded-full" style={{ background: 'var(--silver-4)' }} />
@@ -939,42 +949,59 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
             </>
           )}
         </div>
-        <button
-          onClick={() => {
-            if (comingSoon) onConnect(integration);
-            else if (connected) {
-              if (isStale) onConnect(integration);
-              else onDisconnect(integration);
-            } else {
-              onConnect(integration);
-            }
-          }}
-          disabled={disconnecting || openingMerge || (!connected && !comingSoon && !canConnectMore)}
-          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold"
-          style={{
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border)',
-            color: (!connected && !comingSoon && !canConnectMore) ? 'var(--ink-muted)' : 'var(--ink-display)',
-          }}
-          data-testid={
-            connected
-              ? `disconnect-${integration.id}`
-              : comingSoon
-                ? `notify-${integration.id}`
-                : `connect-${integration.id}`
-          }
-        >
-          {(disconnecting || openingMerge) ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : connected ? (
-            isStale ? <RefreshCw className="w-3 h-3" /> : <LogOut className="w-3 h-3" />
-          ) : comingSoon ? (
-            <Clock className="w-3 h-3" />
-          ) : (
-            <Plug className="w-3 h-3" />
+        <div className="flex items-center gap-1.5">
+          {connected && isStale && (
+            <button
+              onClick={() => onConnect(integration)}
+              disabled={disconnecting || openingMerge}
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold"
+              style={{
+                background: 'var(--warning-wash)',
+                border: '1px solid var(--warning)',
+                color: 'var(--ink-display)',
+              }}
+              data-testid={`reconnect-${integration.id}`}
+            >
+              {openingMerge ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              {openingMerge ? 'Working...' : 'Reconnect'}
+            </button>
           )}
-          {disconnecting || openingMerge ? 'Working...' : actionLabel}
-        </button>
+          <button
+            onClick={() => {
+              if (comingSoon) onConnect(integration);
+              else if (connected) {
+                onDisconnect(integration);
+              } else {
+                onConnect(integration);
+              }
+            }}
+            disabled={disconnecting || openingMerge || (!connected && !comingSoon && !canConnectMore)}
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold"
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: (!connected && !comingSoon && !canConnectMore) ? 'var(--ink-muted)' : 'var(--ink-display)',
+            }}
+            data-testid={
+              connected
+                ? `disconnect-${integration.id}`
+                : comingSoon
+                  ? `notify-${integration.id}`
+                  : `connect-${integration.id}`
+            }
+          >
+            {(disconnecting || openingMerge) ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : connected ? (
+              <LogOut className="w-3 h-3" />
+            ) : comingSoon ? (
+              <Clock className="w-3 h-3" />
+            ) : (
+              <Plug className="w-3 h-3" />
+            )}
+            {disconnecting || (openingMerge && !isStale) ? 'Working...' : (connected ? 'Disconnect' : (comingSoon ? 'Notify me' : (!canConnectMore ? 'Free limit reached' : 'Connect')))}
+          </button>
+        </div>
       </div>
       {connected && (
         <span className="inline-block mt-1.5 text-[10px] uppercase" style={{ color: truthState === 'live' ? 'var(--positive)' : 'var(--warning)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }} data-testid={`integration-truth-state-${integration.id}`}>
