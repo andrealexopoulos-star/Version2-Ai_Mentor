@@ -135,6 +135,30 @@ TIER_LIMITS = {
     },
 }
 
+# ─── Tier-based data lookback windows ──────────────────────────────────────────
+# Controls how far back each tier can look into historical data (emails, signals,
+# observation events). -1 means unlimited (no cutoff).
+TIER_LOOKBACK_DAYS = {
+    "free": 30,
+    "starter": 90,
+    "pro": 180,
+    "business": 365,
+    "enterprise": -1,       # unlimited
+    "custom_build": -1,     # unlimited
+    "super_admin": -1,      # unlimited
+}
+
+
+def get_lookback_days(tier: str) -> int:
+    """Returns lookback days for a given tier. -1 means unlimited.
+
+    Falls back to free-tier (30 days) for unknown tiers.
+    Normalizes the tier name first to handle aliases.
+    """
+    canonical = _normalize_subscription_tier(tier)
+    return TIER_LOOKBACK_DAYS.get(canonical, 30)
+
+
 RATE_LIMIT_FEATURE_LABELS = {
     "soundboard_daily": "Soundboard",
     "trinity_daily": "Trinity Soundboard",

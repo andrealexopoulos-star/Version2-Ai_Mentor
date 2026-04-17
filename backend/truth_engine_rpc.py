@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional, List
 from uuid import uuid4
 
 from cognitive_core_supabase import CognitiveCore, get_cognitive_core
+from routes.deps import get_lookback_days, _normalize_subscription_tier
 
 logger = logging.getLogger(__name__)
 
@@ -266,10 +267,13 @@ async def _build_revenue_risk(context: Dict[str, Any], supabase_admin: Any) -> O
         return None
 
     threshold = _get_threshold_days(priority.get("threshold_sensitivity"))
+    # Use tier-based lookback; -1 (unlimited) maps to a large window for the RPC
+    _lookback = context.get("lookback_days", 180)
+    rpc_lookback = 3650 if _lookback == -1 else _lookback  # ~10 years for unlimited tiers
     try:
         response = supabase_admin.rpc('analyze_ghosted_vips', {
             'target_user_id': context["user_id"],
-            'lookback_days': 180,
+            'lookback_days': rpc_lookback,
             'silence_threshold_days': threshold
         }).execute()
     except Exception as e:
@@ -614,6 +618,15 @@ async def generate_cold_read(
     cognitive_context = await _get_cognitive_context(user_id, supabase_admin)
     delivery_window = _derive_delivery_window(cognitive_context["delivery_preference"], progress_cadence)
 
+    # Resolve user tier for lookback window
+    try:
+        user_row = supabase_admin.table("users").select("subscription_tier").eq("id", user_id).maybe_single().execute()
+        raw_tier = (user_row.data or {}).get("subscription_tier", "free")
+    except Exception:
+        raw_tier = "free"
+    tier = _normalize_subscription_tier(raw_tier)
+    lookback_days = get_lookback_days(tier)
+
     context = {
         "user_id": user_id,
         "account_id": account_id,
@@ -624,7 +637,9 @@ async def generate_cold_read(
         "delivery_preference": cognitive_context["delivery_preference"],
         "behavioural_truth": cognitive_context["behavioural_truth"],
         "immutable_reality": cognitive_context["immutable_reality"],
-        "delivery_window": delivery_window
+        "delivery_window": delivery_window,
+        "tier": tier,
+        "lookback_days": lookback_days,
     }
 
     revenue_event = await _build_revenue_risk(context, supabase_admin)
