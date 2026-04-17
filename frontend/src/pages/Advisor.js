@@ -596,6 +596,14 @@ const Advisor = () => {
         </div>
 
         {/* ── KPI Row — ALL values from real APIs ── */}
+        {snapshotData?.generated_at && (
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px]" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)' }}>
+              Intelligence updated {snapshotData.cache_age_minutes != null ? `${snapshotData.cache_age_minutes}m ago` : new Date(snapshotData.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+            {snapshotData.cached && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'var(--surface-sunken)', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>cached</span>}
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {(() => {
             const pipeline = advisorData?.revenue_summary?.pipeline;
