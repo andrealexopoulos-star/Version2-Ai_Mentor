@@ -193,10 +193,10 @@ const DashboardLayout = ({ children }) => {
     };
   }, [activeResizeTarget, sidebarCollapsed]);
 
-  // Theme management — dark (default) or light, persisted to localStorage
+  // Theme management — light (default) or dark, persisted to localStorage
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('biqc_theme');
-    return saved ? saved === 'dark' : true; // default dark
+    return saved ? saved === 'dark' : false; // default light
   });
 
   useEffect(() => {
