@@ -212,7 +212,7 @@ export default function SoundboardPage() {
       `}</style>
 
       {/* â"€â"€ Hero â"€â"€ */}
-      <section style={{ background: 'linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)', padding: '80px 24px 56px', textAlign: 'center' }}>
+      <section style={{ background: 'linear-gradient(180deg, #FAFAFA 0%, var(--canvas-app, #FAFAFA) 100%)', padding: '80px 24px 56px', textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(198,95,46,0.08)', border: '1px solid rgba(198,95,46,0.25)', borderRadius: 20, padding: '6px 14px', marginBottom: 20 }}>
           <Mic size={12} style={{ color: '#C65F2E' }} />
           <span style={{ fontFamily: fontFamily.mono, color: '#C65F2E', fontSize: 11, fontWeight: 700, letterSpacing: '0.18em' }}>SOUNDBOARD â€" LIVE DEMO</span>

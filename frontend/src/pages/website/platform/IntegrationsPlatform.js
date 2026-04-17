@@ -28,12 +28,12 @@ const IntegrationsPlatform = () => {
         <div className="flex-1 space-y-6">
           {/* Stats */}
           <div className="flex gap-4">
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <Link2 className="w-4 h-4 text-[#10B981]" />
               <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Connected</span>
               <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{connected.length}</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <Clock className="w-4 h-4 text-[#8FA0B8]" />
               <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Last sync</span>
               <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>1 min ago</span>
@@ -45,7 +45,7 @@ const IntegrationsPlatform = () => {
             <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>Connected Systems</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {connected.map(i => (
-                <button key={i.name} onClick={() => setSelected(i)} className="flex items-center gap-3 px-4 py-3.5 rounded-lg text-left transition-all hover:border-[#E85D00]/30 group" style={{ background: 'var(--surface, #0E1628)', border: `1px solid ${selected?.name === i.name ? '#E85D00' + '50' : 'rgba(140,170,210,0.15)'}` }}>
+                <button key={i.name} onClick={() => setSelected(i)} className="flex items-center gap-3 px-4 py-3.5 rounded-lg text-left transition-all hover:border-[#E85D00]/30 group" style={{ background: 'var(--surface, #FFFFFF)', border: `1px solid ${selected?.name === i.name ? '#E85D00' + '50' : 'rgba(140,170,210,0.15)'}` }}>
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <span className="text-sm font-bold text-[#8FA0B8] group-hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.mono }}>{i.name.charAt(0)}</span>
                   </div>
@@ -67,7 +67,7 @@ const IntegrationsPlatform = () => {
             <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>Available to Connect</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {disconnected.map(i => (
-                <div key={i.name} className="flex items-center gap-3 px-4 py-3.5 rounded-lg" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)', opacity: 0.6 }}>
+                <div key={i.name} className="flex items-center gap-3 px-4 py-3.5 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)', opacity: 0.6 }}>
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <span className="text-sm font-bold text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{i.name.charAt(0)}</span>
                   </div>
@@ -84,7 +84,7 @@ const IntegrationsPlatform = () => {
 
         {/* Slide panel */}
         {selected && (
-          <div className="hidden lg:block w-[340px] shrink-0 rounded-lg overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }} data-testid="integration-detail-panel">
+          <div className="hidden lg:block w-[340px] shrink-0 rounded-lg overflow-hidden" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }} data-testid="integration-detail-panel">
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(140,170,210,0.15)' }}>
               <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{selected.name}</h3>
               <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-black/5 text-[#64748B]"><X className="w-4 h-4" /></button>

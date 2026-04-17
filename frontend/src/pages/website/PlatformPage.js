@@ -633,7 +633,7 @@ export default function PlatformPage() {
       `}</style>
 
       {/* ── Hero ── */}
-      <section style={{ background: 'linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)', paddingTop: 80, paddingBottom: 48 }}>
+      <section style={{ background: 'linear-gradient(180deg, #FAFAFA 0%, var(--canvas-app, #FAFAFA) 100%)', paddingTop: 80, paddingBottom: 48 }}>
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
           <span style={{ fontFamily: 'var(--font-mono)', color: O, fontSize: 11, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase' }}>
             The Platform
