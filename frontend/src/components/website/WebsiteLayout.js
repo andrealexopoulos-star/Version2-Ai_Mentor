@@ -125,8 +125,19 @@ const WebsiteFooter = () => (
 );
 
 const WebsiteLayout = ({ children }) => {
-  // Marketing website respects user's theme preference (light is default).
-  // Previously forced dark mode — removed to match platform light default.
+  // Marketing website FORCES light theme. Without this, a user who has
+  // toggled dark mode in the app (which persists data-theme="dark" on <html>)
+  // would see the marketing site inherit dark-mode token values — making
+  // text nearly invisible on the sage/light canvas. Restore previous theme
+  // on unmount so we don't affect the app after navigation.
+  useEffect(() => {
+    const prev = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', 'light');
+    return () => {
+      if (prev) document.documentElement.setAttribute('data-theme', prev);
+      else document.documentElement.removeAttribute('data-theme');
+    };
+  }, []);
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--canvas, #FFFFFF)', color: 'var(--ink-display, #0A0A0A)' }}>
