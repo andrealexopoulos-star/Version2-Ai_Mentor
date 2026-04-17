@@ -1190,6 +1190,14 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
 
     logger.info(f"✅ Outlook integration successful for user {user_id}")
 
+    # Auto-sync calendar after Outlook connect
+    try:
+        calendar_response = await get_calendar_events(days_ahead=30, days_back=28, current_user={"id": user_id})
+        events = calendar_response.get("events", [])
+        logger.info("Auto calendar sync after Outlook connect: %d events", len(events))
+    except Exception as e:
+        logger.warning("Auto calendar sync failed (non-fatal): %s", e)
+
     # Redirect back with success
     # Build redirect URL — use & if return_to already has query params
     sep = '&' if '?' in return_to else '?'
