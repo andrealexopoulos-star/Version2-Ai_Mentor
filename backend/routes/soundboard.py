@@ -3080,6 +3080,48 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         logger.warning(f"[soundboard] Merge API fetch failed (non-fatal, using cached signals): {e}")
         # integration_context already has observation_events from above — don't clear it
 
+    # ═══ ENRICHMENT + SNAPSHOT + PRIORITY INBOX (2D.1) ═══
+    try:
+        # Latest intelligence snapshot summary
+        snapshot = sb.table("intelligence_snapshots").select("summary").eq(
+            "user_id", user_id
+        ).order("generated_at", desc=True).limit(1).maybe_single().execute()
+        if snapshot and snapshot.data and snapshot.data.get("summary"):
+            integration_context += "\n═══ LATEST INTELLIGENCE SNAPSHOT ═══\n"
+            integration_context += json.dumps(snapshot.data["summary"], default=str)[:3000] + "\n"
+
+        # Top high-priority emails from priority inbox
+        emails = sb.table("priority_inbox").select(
+            "subject, from_address, priority_level, reason"
+        ).eq("user_id", user_id).eq(
+            "priority_level", "high"
+        ).order("analyzed_at", desc=True).limit(5).execute()
+        if emails and emails.data:
+            integration_context += f"\n═══ HIGH PRIORITY EMAILS ({len(emails.data)}) ═══\n"
+            integration_context += json.dumps(emails.data, default=str)[:1500] + "\n"
+
+        # Business DNA enrichment data
+        enrichment = sb.table("business_dna_enrichment").select(
+            "enrichment_type, data, enriched_at"
+        ).eq("user_id", user_id).order("enriched_at", desc=True).limit(5).execute()
+        if enrichment and enrichment.data:
+            integration_context += "\n═══ BUSINESS DNA ENRICHMENT ═══\n"
+            for row in enrichment.data:
+                etype = row.get("enrichment_type", "unknown")
+                edata = row.get("data", {})
+                integration_context += f"- {etype}: {json.dumps(edata, default=str)[:500]}\n"
+
+        # Connected integrations summary
+        int_accts = sb.table("integration_accounts").select(
+            "provider, category, connected_at"
+        ).eq("user_id", user_id).execute()
+        if int_accts and int_accts.data:
+            integration_context += "\n═══ CONNECTED INTEGRATIONS ═══\n"
+            for acct in int_accts.data:
+                integration_context += f"- {acct.get('provider', '?')} ({acct.get('category', '?')}) connected {acct.get('connected_at', '?')}\n"
+    except Exception as enrich_err:
+        logger.debug("[soundboard] Enrichment/snapshot context injection (non-fatal): %s", enrich_err)
+
     # ═══ MARKETING BENCHMARK DATA ═══
     marketing_context = ""
     try:
