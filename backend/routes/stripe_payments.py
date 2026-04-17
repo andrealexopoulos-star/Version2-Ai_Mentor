@@ -1138,6 +1138,34 @@ async def stripe_webhook(request: Request):
                 sub = event.data.object
                 _downgrade_user_tier(sb, getattr(sub, "customer", None), getattr(sub, "id", None))
 
+            elif event.type == "charge.refunded":
+                charge = event.data.object
+                customer_id = getattr(charge, "customer", None) or ""
+                charge_id = getattr(charge, "id", None) or ""
+                amount_refunded = getattr(charge, "amount_refunded", 0)
+                fully_refunded = getattr(charge, "refunded", False)
+                logger.info("charge.refunded: charge=%s customer=%s amount=%s full=%s",
+                            charge_id, customer_id, amount_refunded, fully_refunded)
+                if customer_id:
+                    user_id = _resolve_user_by_customer_id(sb, customer_id)
+                    if user_id:
+                        try:
+                            sb.table("payment_transactions").update({
+                                "payment_status": "refunded" if fully_refunded else "partial_refund",
+                            }).eq("stripe_customer_id", customer_id).eq("payment_status", "paid").execute()
+                        except Exception as e:
+                            logger.warning("Refund update failed: %s", e)
+                        if fully_refunded:
+                            subscription_id = getattr(charge, "subscription", None) or ""
+                            _downgrade_user_tier(sb, customer_id, subscription_id)
+                            logger.info("Full refund → tier downgraded for %s", customer_id)
+
+            elif event.type in ("charge.dispute.created", "charge.dispute.closed"):
+                dispute = event.data.object
+                logger.warning("Stripe dispute %s: reason=%s status=%s amount=%s",
+                               getattr(dispute, "id", ""), getattr(dispute, "reason", ""),
+                               getattr(dispute, "status", ""), getattr(dispute, "amount", ""))
+
             else:
                 # Recognised event we don't act on yet — record but no-op.
                 pass

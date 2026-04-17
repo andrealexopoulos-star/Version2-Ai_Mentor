@@ -472,6 +472,23 @@ async def trigger_stripe_reconcile(current_user: dict = Depends(get_current_user
         )
 
 
+# ═══ MERGE INTEGRATION HEALTH CHECK ══════════════════════════════════
+#
+# Validates all Merge.dev account tokens are still active by pinging
+# their APIs. Marks stale integrations as 'needs_reconnect'. Run via
+# pg_cron every 4 hours or manually via this endpoint.
+@router.post("/admin/merge/health-check")
+async def admin_merge_health_check(current_user: dict = Depends(get_current_user)):
+    """Run Merge.dev integration health check. Super-admin only."""
+    _require_super_admin(current_user)
+    try:
+        from jobs.merge_health_check import run_merge_health_check
+        result = await run_merge_health_check(_get_service_client())
+        return {"ok": True, **result}
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Health check failed: {exc}")
+
+
 # ═══ AI PRICING GAP DAILY ALERT (Step 15 / P1-11) ════════════════════
 #
 # Queries v_ai_pricing_gaps and emails ops via Resend if any rows exist.
