@@ -5,8 +5,10 @@ import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
 import { KeyRound, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import BiqcLogoCard from '../components/BiqcLogoCard';
 
-const DISPLAY = "var(--font-display)";
+const DISPLAY = 'var(--font-marketing-display, "Geist", sans-serif)';
+const UI      = 'var(--font-marketing-ui, "Geist", sans-serif)';
 
 const UpdatePassword = () => {
   const navigate = useNavigate();
@@ -47,65 +49,67 @@ const UpdatePassword = () => {
     }
   };
 
+  const inputStyle = { fontFamily: UI, background: '#FFFFFF', border: '1px solid rgba(10,10,10,0.1)', color: 'var(--ink-display, #0A0A0A)' };
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-12" style={{ background: 'var(--biqc-bg)' }}>
+    <div className="min-h-screen flex items-center justify-center px-6 py-12" style={{ background: 'var(--canvas-sage, #F2F4EC)' }}>
       <div className="max-w-sm w-full">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#E85D00' }}>
-            <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
-          </div>
-          <span className="text-xl font-semibold text-[var(--ink-display)]" style={{ fontFamily: DISPLAY }}>BIQc</span>
+        {/* Hovering BIQc.ai logo card */}
+        <div className="mb-8">
+          <BiqcLogoCard size="sm" to="/" />
         </div>
 
-        {done ? (
-          <div className="text-center" data-testid="password-updated">
-            <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
-            <h1 className="text-2xl font-normal text-[var(--ink-display)] mb-2" style={{ fontFamily: DISPLAY }}>Password updated</h1>
-            <p className="text-sm text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>Redirecting to your dashboard...</p>
-          </div>
-        ) : !sessionReady ? (
-          <div className="text-center" data-testid="password-loading">
-            <KeyRound className="w-8 h-8 text-[#E85D00] mx-auto mb-4" />
-            <h1 className="text-xl font-normal text-[var(--ink-display)] mb-2" style={{ fontFamily: DISPLAY }}>Verifying reset link...</h1>
-            <p className="text-sm text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.body }}>If this takes too long, the link may have expired.</p>
-          </div>
-        ) : (
-          <>
-            <h1 className="text-2xl font-normal text-[var(--ink-display)] mb-2" style={{ fontFamily: DISPLAY }}>Set new password</h1>
-            <p className="text-sm text-[var(--ink-secondary)] mb-8" style={{ fontFamily: fontFamily.body }}>Choose a strong password for your account.</p>
+        <div style={{ background: 'linear-gradient(135deg, #F6F7F9 0%, #E8ECF1 60%, #DDE3EB 100%)', border: '1px solid rgba(10,10,10,0.06)', borderRadius: '20px', padding: '32px', boxShadow: '0 14px 40px rgba(10,10,10,0.08), inset 0 1px 0 rgba(255,255,255,0.5)' }}>
+          {done ? (
+            <div className="text-center" data-testid="password-updated">
+              <CheckCircle2 className="w-12 h-12 mx-auto mb-4" style={{ color: '#16A34A' }} />
+              <h1 className="mb-2" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)', fontSize: '24px', fontWeight: 600, letterSpacing: '-0.025em' }}>Password updated</h1>
+              <p className="text-sm" style={{ fontFamily: UI, color: 'var(--ink-secondary, #525252)' }}>Redirecting to your dashboard...</p>
+            </div>
+          ) : !sessionReady ? (
+            <div className="text-center" data-testid="password-loading">
+              <KeyRound className="w-8 h-8 mx-auto mb-4" style={{ color: 'var(--lava, #E85D00)' }} />
+              <h1 className="mb-2" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)', fontSize: '20px', fontWeight: 600, letterSpacing: '-0.02em' }}>Verifying reset link...</h1>
+              <p className="text-sm" style={{ fontFamily: UI, color: 'var(--ink-muted, #737373)' }}>If this takes too long, the link may have expired.</p>
+            </div>
+          ) : (
+            <>
+              <h1 className="mb-2" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)', fontSize: '24px', fontWeight: 600, letterSpacing: '-0.025em' }}>Set new password</h1>
+              <p className="text-sm mb-8" style={{ fontFamily: UI, color: 'var(--ink-secondary, #525252)' }}>Choose a strong password for your account.</p>
 
-            <form onSubmit={handleUpdate} className="space-y-5" data-testid="update-password-form">
-              <div>
-                <label className="text-xs font-medium text-[var(--ink-secondary)] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>New Password</label>
-                <div className="relative">
-                  <Input type={showPwd ? 'text' : 'password'} value={password}
-                    onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" required minLength={8}
-                    className="h-12 pr-12 text-sm rounded-xl"
-                    style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
-                    data-testid="new-password-input" />
-                  <button type="button" onClick={() => setShowPwd(!showPwd)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]">
-                    {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+              <form onSubmit={handleUpdate} className="space-y-5" data-testid="update-password-form">
+                <div>
+                  <label className="text-xs font-semibold block mb-1.5 uppercase tracking-wider" style={{ fontFamily: UI, color: 'var(--ink-muted, #737373)' }}>New Password</label>
+                  <div className="relative">
+                    <Input type={showPwd ? 'text' : 'password'} value={password}
+                      onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" required minLength={8}
+                      className="h-12 pr-12 text-sm rounded-xl"
+                      style={inputStyle}
+                      data-testid="new-password-input" />
+                    <button type="button" onClick={() => setShowPwd(!showPwd)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--ink-muted, #737373)' }}>
+                      {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-[var(--ink-secondary)] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Confirm Password</label>
-                <Input type="password" value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)} placeholder="Confirm password" required
-                  className="h-12 text-sm rounded-xl"
-                  style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
-                  data-testid="confirm-password-input" />
-              </div>
-              <button type="submit" disabled={loading}
-                className="w-full h-12 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 disabled:opacity-50"
-                style={{ background: '#E85D00', fontFamily: fontFamily.body }}
-                data-testid="update-password-btn">
-                {loading ? 'Updating...' : 'Update password'}
-              </button>
-            </form>
-          </>
-        )}
+                <div>
+                  <label className="text-xs font-semibold block mb-1.5 uppercase tracking-wider" style={{ fontFamily: UI, color: 'var(--ink-muted, #737373)' }}>Confirm Password</label>
+                  <Input type="password" value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)} placeholder="Confirm password" required
+                    className="h-12 text-sm rounded-xl"
+                    style={inputStyle}
+                    data-testid="confirm-password-input" />
+                </div>
+                <button type="submit" disabled={loading}
+                  className="w-full h-12 text-sm font-medium transition-all disabled:opacity-50"
+                  style={{ background: '#0A0A0A', color: '#FFFFFF', fontFamily: UI, border: '1px solid #0A0A0A', borderRadius: '999px', cursor: 'pointer', letterSpacing: '-0.005em', boxShadow: '0 4px 12px rgba(10,10,10,0.12)' }}
+                  data-testid="update-password-btn">
+                  {loading ? 'Updating...' : 'Update password'}
+                </button>
+              </form>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
