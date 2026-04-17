@@ -12,7 +12,7 @@ const automations = [
 ];
 
 const AutomationCard = ({ auto }) => (
-  <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: `1px solid ${auto.active ? 'rgba(140,170,210,0.15)' : 'rgba(140,170,210,0.15)'}`, opacity: auto.active ? 1 : 0.7 }} data-testid={`automation-${auto.id}`}>
+  <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface, #FFFFFF)', border: `1px solid ${auto.active ? 'rgba(140,170,210,0.15)' : 'rgba(140,170,210,0.15)'}`, opacity: auto.active ? 1 : 0.7 }} data-testid={`automation-${auto.id}`}>
     <div className="flex items-center justify-between px-5 py-4">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-md flex items-center justify-center" style={{ background: auto.active ? '#E85D00' + '15' : 'rgba(140,170,210,0.15)' }}>
@@ -74,15 +74,15 @@ const AutomationsPage = () => (
 
       {/* Summary */}
       <div className="flex gap-4">
-        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
           <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Active</span>
           <span className="text-sm font-semibold text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>{automations.filter(a => a.active).length}</span>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
           <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Paused</span>
           <span className="text-sm font-semibold text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{automations.filter(a => !a.active).length}</span>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>
           <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Total Runs</span>
           <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{automations.reduce((s, a) => s + a.runs, 0)}</span>
         </div>

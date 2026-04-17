@@ -178,7 +178,7 @@ const IntegrationsPage = () => {
       {/* ── HERO (center-aligned, no CTA buttons) ── */}
       <section className="relative overflow-hidden" data-testid="integrations-hero"
         style={{
-          background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)',
+          background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, var(--canvas-app, #FAFAFA) 100%)',
         }}>
         <div className="max-w-7xl mx-auto px-6 pt-20 pb-14 relative z-10 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4"

@@ -19,7 +19,7 @@ const StatCard = ({ number, stat, body, biqc }) => (
   <div
     className="rounded-2xl p-7 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1"
     style={{
-      background: 'rgba(20,28,38,0.85)',
+      background: 'var(--surface)',
       border: '1px solid rgba(232,93,0,0.25)',
       borderRadius: 18,
       boxShadow: '0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(232,93,0,0.08), inset 0 1px 0 rgba(255,255,255,0.04)',
@@ -590,7 +590,7 @@ const HomePage = () => {
     </section>
 
     {/* SOCIAL PROOF */}
-    <section className="py-14 sm:py-20" style={{ background: 'radial-gradient(ellipse 60% 50% at 70% 30%, rgba(46,74,110,0.06) 0%, transparent 60%), linear-gradient(180deg, #0B1120 0%, #FAFAFA 100%)' }} data-testid="testimonials-section">
+    <section className="py-14 sm:py-20" style={{ background: 'radial-gradient(ellipse 60% 50% at 70% 30%, rgba(46,74,110,0.06) 0%, transparent 60%), linear-gradient(180deg, var(--canvas-app, #FAFAFA) 0%, #FAFAFA 100%)' }} data-testid="testimonials-section">
       <style>{`
         .testimonial-card-enhanced:hover {
           box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(140,170,210,0.08) !important;
@@ -676,7 +676,7 @@ const HomePage = () => {
     </section>
 
     {/* CTA */}
-    <section className="relative py-20 sm:py-24 overflow-hidden" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)' }} data-testid="cta-section">
+    <section className="relative py-20 sm:py-24 overflow-hidden" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, var(--canvas-app, #FAFAFA) 100%)' }} data-testid="cta-section">
       {/* Decorative orb behind content */}
       <div className="absolute pointer-events-none" style={{
         width: 600, height: 600, borderRadius: '50%',

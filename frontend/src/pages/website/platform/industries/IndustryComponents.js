@@ -6,7 +6,7 @@ import { fontFamily } from '../../../../design-system/tokens';
 
 // Shared components for all industry pages
 export const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(140,170,210,0.15)' }}>{children}</div>
 );
 
 export const MetricCard = ({ label, value, sub, color = 'var(--ink-display, #0A0A0A)', alert = false }) => (
@@ -35,7 +35,7 @@ export const Inevitability = ({ title, why, impact, window: w, severity = 'high'
   const sevC = { high: '#E85D00', medium: '#F59E0B', low: '#3B82F6' };
   const c = sevC[severity];
   return (
-    <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: `1px solid ${c}20` }}>
+    <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface, #FFFFFF)', border: `1px solid ${c}20` }}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
         <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c, boxShadow: `0 0 8px ${c}50` }} />
         <span className="text-sm font-medium text-[#EDF1F7] flex-1" style={{ fontFamily: fontFamily.display }}>{title}</span>
