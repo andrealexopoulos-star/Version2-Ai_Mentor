@@ -410,20 +410,20 @@ const RegisterSupabase = () => {
         <div className="absolute -bottom-[220px] -left-[220px] w-[520px] h-[520px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(168,177,189,0.35) 0%, transparent 60%)', opacity: 0.5, filter: 'blur(80px)', animation: 'orbDrift 22s ease-in-out infinite reverse' }} />
         <style>{`@keyframes orbDrift { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-24px, 32px) scale(1.12); } }`}</style>
 
-        {/* Hovering BIQc.ai logo card */}
-        <div className="relative z-10">
+        {/* Hovering BIQc.ai logo card — centered */}
+        <div className="relative z-10 flex justify-center">
           <BiqcLogoCard size="md" to="/" />
         </div>
 
-        <div className="relative z-10 max-w-[480px] mt-12">
+        <div className="relative z-10 max-w-[520px] mt-12 mx-auto text-center">
           <h2 className="font-semibold leading-[1.05] mb-4" style={{ fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)', color: 'var(--ink-display, #0A0A0A)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.035em' }}>
             The only feed that <em style={{ fontStyle: 'italic', color: 'var(--lava, #E85D00)' }}>knows what changed</em> while you slept.
           </h2>
-          <p className="text-base leading-relaxed mb-7" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-secondary, #525252)', maxWidth: 420 }}>
+          <p className="text-base leading-relaxed mb-7 mx-auto" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-secondary, #525252)', maxWidth: 440 }}>
             Two minutes from sign-up to your first quiet brief. No setup calls. No 14-step wizard. Just connect your inbox and watch the room.
           </p>
 
-          <div className="flex flex-col gap-3 mb-8">
+          <div className="flex flex-col gap-3 mb-8 max-w-[440px] mx-auto text-left">
             {['14 days of Pro features, no credit card', 'Auto-detects 19 of the 23 most common SMB risks', 'Read-only by default — we never write to your tools', 'Cancel in two clicks. Export your data anytime.'].map((item, i) => (
               <div key={i} className="flex items-start gap-3 text-sm" style={{ color: 'var(--ink-display, #0A0A0A)' }}>
                 <div className="w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'var(--lava, #E85D00)' }}>
@@ -434,17 +434,18 @@ const RegisterSupabase = () => {
             ))}
           </div>
 
-          <div className="p-5 rounded-r-xl" style={{ borderLeft: '2px solid var(--lava, #E85D00)', background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+          <div className="mx-auto max-w-[440px] relative" style={{ padding: '28px 24px', background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid rgba(10,10,10,0.06)', borderRadius: '16px', boxShadow: '0 4px 14px rgba(10,10,10,0.04)' }}>
+            <div aria-hidden="true" style={{ position: 'absolute', top: -18, left: '50%', transform: 'translateX(-50%)', width: 40, height: 40, borderRadius: '50%', background: 'var(--lava, #E85D00)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', fontSize: 22, fontWeight: 800, fontFamily: 'Georgia, serif', lineHeight: 1, boxShadow: '0 4px 12px rgba(232,93,0,0.3)' }}>“</div>
             <p className="text-sm leading-relaxed mb-3" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink, #171717)', fontStyle: 'italic' }}>
-              "I signed up on a Tuesday. By Wednesday morning BIQc had already flagged a $12k churn risk we'd missed in the inbox. Paid for itself the first week."
+              I signed up on a Tuesday. By Wednesday morning BIQc had already flagged a $12k churn risk we'd missed in the inbox. Paid for itself the first week.
             </p>
-            <span className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-secondary, #525252)', fontWeight: 600 }}>
+            <span className="block text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-secondary, #525252)', fontWeight: 600 }}>
               — Marcus Tate, founder · Northbridge Logistics
             </span>
           </div>
         </div>
 
-        <div className="relative z-10 flex items-center gap-6 flex-wrap">
+        <div className="relative z-10 flex items-center gap-6 flex-wrap justify-center">
           {['SOC 2 in progress', 'Sovereign AU', 'Read-only default'].map((t, i) => (
             <span key={i} className="text-[11px] uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-muted, #737373)', fontWeight: 500 }}>{t}</span>
           ))}

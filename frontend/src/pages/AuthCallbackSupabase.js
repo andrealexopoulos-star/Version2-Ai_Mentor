@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../context/SupabaseAuthContext';
 import { getBackendUrl } from '../config/urls';
+import BiqcLogoCard from '../components/BiqcLogoCard';
 
 /**
  * AuthCallbackSupabase — handles both PKCE and implicit OAuth flows.
@@ -160,22 +161,17 @@ const AuthCallbackSupabase = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--canvas-sage, #F2F4EC)' }}>
       <style>{`
-        @keyframes biqcPulse{0%,100%{opacity:0.4;transform:scale(0.95)}50%{opacity:1;transform:scale(1.05)}}
         @keyframes biqcBar{0%{width:0}100%{width:100%}}
       `}</style>
-      <div className="text-center space-y-5">
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto"
-          style={{ background: '#E85D00', animation: 'biqcPulse 2s ease-in-out infinite' }}
-        >
-          <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-mono)" }}>B</span>
-        </div>
-        <p className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: "var(--font-ui)" }}>{status}</p>
-        <div className="w-40 mx-auto">
-          <div className="h-0.5 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
-            <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg,#E85D00,#FF8C33)', animation: 'biqcBar 3s ease-in-out infinite' }} />
+      <div className="text-center flex flex-col items-center gap-6">
+        {/* Hovering BIQc.ai logo card — replaces the pulsing orange circle */}
+        <BiqcLogoCard size="md" to={null} static />
+        <p className="text-sm" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', maxWidth: 300 }}>{status}</p>
+        <div className="w-48 mx-auto">
+          <div className="h-0.5 rounded-full overflow-hidden" style={{ background: 'rgba(10,10,10,0.08)' }}>
+            <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, #E85D00, #FF8C33)', animation: 'biqcBar 3s ease-in-out infinite' }} />
           </div>
         </div>
       </div>
