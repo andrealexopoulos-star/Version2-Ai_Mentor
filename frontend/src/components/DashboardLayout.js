@@ -127,6 +127,9 @@ const DashboardLayout = ({ children }) => {
   const [feedbackForm, setFeedbackForm] = useState({ rating: 8, sentiment: 'positive', message: '' });
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
+  // Token budget warning banner (free tier users nearing quota)
+  const [budgetWarning, setBudgetWarning] = useState(null);
+
   useEffect(() => { localStorage.setItem('sidebar-collapsed', sidebarCollapsed); }, [sidebarCollapsed]);
   useEffect(() => { localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(sidebarWidthPx)); }, [sidebarWidthPx]);
 
@@ -239,6 +242,48 @@ const DashboardLayout = ({ children }) => {
       setNotifications(response.data.summary || { total: 0, high: 0 });
       setNotificationsList(response.data.notifications || []);
     } catch {}
+  };
+
+  // Budget warning — check free tier usage (once per session, cached)
+  useEffect(() => {
+    if (sessionStorage.getItem('biqc_budget_warning_dismissed')) return;
+    const cached = sessionStorage.getItem('biqc_billing_overview');
+    if (cached) {
+      try {
+        const data = JSON.parse(cached);
+        checkBudgetThreshold(data);
+      } catch { /* ignore bad cache */ }
+      return;
+    }
+    apiClient.get('/billing/overview')
+      .then(res => {
+        const data = res.data;
+        if (data) {
+          sessionStorage.setItem('biqc_billing_overview', JSON.stringify(data));
+          checkBudgetThreshold(data);
+        }
+      })
+      .catch(() => { /* fail silently */ });
+  }, []);
+
+  const checkBudgetThreshold = (data) => {
+    const tier = String(data?.usage?.tier || data?.subscription?.tier || user?.subscription_tier || 'free').toLowerCase();
+    if (!['free', 'trial', ''].includes(tier)) return; // only for free tier
+    const features = data?.usage?.features || {};
+    let maxPct = 0;
+    for (const feat of Object.values(features)) {
+      if (feat.unlimited || !feat.limit || feat.limit <= 0) continue;
+      const pct = Math.round((feat.used / feat.limit) * 100);
+      if (pct > maxPct) maxPct = pct;
+    }
+    if (maxPct > 80) {
+      setBudgetWarning(maxPct);
+    }
+  };
+
+  const dismissBudgetWarning = () => {
+    setBudgetWarning(null);
+    sessionStorage.setItem('biqc_budget_warning_dismissed', 'true');
   };
 
   // Multi-expand sections — collapsed by default until a paid item is active.
@@ -819,6 +864,40 @@ const DashboardLayout = ({ children }) => {
                 {currentPageLabel}
               </p>
             </div>
+            {/* Budget warning banner — free tier users nearing quota */}
+            {budgetWarning !== null && (
+              <div
+                className="flex items-center justify-between gap-3 mb-4 px-4 py-2.5 rounded-lg"
+                style={{
+                  background: 'rgba(245,158,11,0.12)',
+                  border: '1px solid rgba(245,158,11,0.3)',
+                  fontFamily: fontFamily.body,
+                }}
+                data-testid="budget-warning-banner"
+                role="alert"
+              >
+                <p className="text-sm" style={{ color: 'var(--ink-display, #0A0A0A)' }}>
+                  <AlertTriangle className="w-4 h-4 inline-block mr-1.5 -mt-0.5" style={{ color: '#D97706' }} />
+                  You've used <strong>{budgetWarning}%</strong> of your free AI quota.{' '}
+                  <a
+                    href="/subscribe"
+                    onClick={(e) => { e.preventDefault(); navigate('/subscribe'); }}
+                    style={{ color: 'var(--lava, #E85D00)', fontWeight: 600, textDecoration: 'underline' }}
+                  >
+                    Upgrade for unlimited.
+                  </a>
+                </p>
+                <button
+                  onClick={dismissBudgetWarning}
+                  className="shrink-0 p-1 rounded hover:bg-black/5 transition-colors"
+                  style={{ color: 'var(--ink-muted, #737373)' }}
+                  aria-label="Dismiss budget warning"
+                  data-testid="budget-warning-dismiss"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
             {children}
           </div>
         </main>
