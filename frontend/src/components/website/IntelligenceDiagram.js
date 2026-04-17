@@ -107,15 +107,15 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
         }
       `}</style>
 
-      {/* Subtle grid */}
+      {/* Subtle grid — was orange, now neutral shade */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'linear-gradient(rgba(232,93,0,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(232,93,0,0.018) 1px, transparent 1px)',
+        backgroundImage: 'linear-gradient(rgba(10,10,10,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(10,10,10,0.018) 1px, transparent 1px)',
         backgroundSize: '60px 60px',
       }} />
-      {/* Central energy wave */}
+      {/* Central energy wave — was orange, now soft silver */}
       <div className="absolute left-1/2 -translate-x-1/2 hidden sm:block pointer-events-none" style={{
         top: '35%', width: 1000, height: 320,
-        background: 'radial-gradient(ellipse, rgba(232,93,0,0.06) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse, rgba(168,177,189,0.12) 0%, transparent 70%)',
         animation: 'waveFloat 10s ease-in-out infinite',
       }} />
 
@@ -145,15 +145,17 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
               style={{
                 borderRadius: 14,
                 padding: '20px 20px',
-                background: 'rgba(255,255,255,0.025)',
+                /* Liquid steel silver gradient — replaces transparent white on dark */
+                background: 'linear-gradient(135deg, #F6F7F9 0%, #E8ECF1 60%, #DDE3EB 100%)',
                 border: `1px solid ${cat.color}35`,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 10,
-                transition: 'border-color 0.2s',
+                transition: 'border-color 0.2s, transform 0.2s',
+                boxShadow: '0 2px 8px rgba(10,10,10,0.03), inset 0 1px 0 rgba(255,255,255,0.5)',
               }}
             >
-              {/* Icon dot + label */}
+              {/* Icon dot + label — colors kept per product design */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{
                   width: 10, height: 10, borderRadius: '50%',
@@ -174,25 +176,25 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
                 </span>
               </div>
 
-              {/* Description */}
+              {/* Description — darkened from transparent blue-gray for legibility on silver */}
               <p style={{
                 fontFamily: fontFamily.body,
-                color: 'rgba(159,176,195,0.65)',
-                fontSize: 12,
+                color: 'var(--ink-secondary, #525252)',
+                fontSize: 12.5,
                 lineHeight: 1.55,
                 margin: 0,
               }}>
                 {cat.desc}
               </p>
 
-              {/* Tool pills */}
+              {/* Tool pills — was transparent on dark, now white on silver with shade border */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 'auto' }}>
                 {cat.tools.map(t => (
                   <span key={t} style={{
                     fontFamily: fontFamily.mono,
-                    color: 'var(--ink-secondary, #8FA0B8)',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'var(--ink, #171717)',
+                    background: '#FFFFFF',
+                    border: '1px solid rgba(10,10,10,0.1)',
                     fontSize: 11,
                     padding: '3px 8px',
                     borderRadius: 5,
@@ -236,28 +238,30 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
               padding: '28px 80px',
               borderRadius: 20,
               textAlign: 'center',
-              background: 'linear-gradient(135deg, rgba(38,50,65,0.97), rgba(12,20,30,0.97))',
+              /* Liquid steel silver gradient — was black/navy gradient */
+              background: 'linear-gradient(135deg, #F6F7F9 0%, #E4EAF2 45%, #C8D4E4 100%)',
               border: '2px solid rgba(232,93,0,0.5)',
               animation: 'coreGlow 6s ease-in-out infinite',
+              boxShadow: '0 8px 24px rgba(10,10,10,0.08), inset 0 1px 0 rgba(255,255,255,0.7)',
             }}>
               <span style={{
                 fontFamily: fontFamily.mono, color: '#E85D00',
                 fontSize: 30, fontWeight: 800, display: 'block',
-                textShadow: '0 0 28px rgba(232,93,0,0.6)',
               }}>
                 BIQc
               </span>
               <span style={{
                 display: 'block', marginTop: 4,
-                fontFamily: fontFamily.mono, color: 'var(--ink-secondary, #8FA0B8)',
+                fontFamily: fontFamily.mono, color: 'var(--ink, #171717)',
                 fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase',
+                fontWeight: 600,
               }}>
                 Your AI Executive Team
               </span>
               <span style={{
                 display: 'block', marginTop: 8,
                 fontFamily: fontFamily.body,
-                color: 'rgba(159,176,195,0.6)',
+                color: 'var(--ink-secondary, #525252)',
                 fontSize: 11,
               }}>
                 Powered By BIQc Trinity Intelligence Layer
