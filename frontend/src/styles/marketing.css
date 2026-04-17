@@ -909,3 +909,129 @@ textarea.form-input { min-height: 120px; padding: var(--sp-3) var(--sp-4); resiz
   background: var(--canvas-sage-soft);
   position: relative;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   GLOBAL MARKETING THEME OVERRIDES (2026-04-18)
+   Scoped to .biqc-marketing (WebsiteLayout root) so ONLY public pages
+   get the Merge-inspired reskin. Platform app untouched.
+   These use !important to win against legacy inline styles that hardcoded
+   Source Serif 4 / orange / dark-mode text colours across 14+ pages.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Force marketing display font on every heading inside the website */
+.biqc-marketing h1,
+.biqc-marketing h2,
+.biqc-marketing h3,
+.biqc-marketing h4,
+.biqc-marketing h5,
+.biqc-marketing h6 {
+  font-family: var(--font-marketing-display) !important;
+  letter-spacing: -0.03em;
+}
+
+/* Force marketing UI font on body/paragraph/list text */
+.biqc-marketing p,
+.biqc-marketing li,
+.biqc-marketing label,
+.biqc-marketing button,
+.biqc-marketing a,
+.biqc-marketing .prose,
+.biqc-marketing .lead,
+.biqc-marketing .small,
+.biqc-marketing .xsmall,
+.biqc-marketing .eyebrow,
+.biqc-marketing .chip {
+  font-family: var(--font-marketing-ui) !important;
+}
+
+/* Override canvas-app backgrounds (old dark-mode token default) with sage */
+.biqc-marketing section[style*="var(--canvas-app"],
+.biqc-marketing [style*="#FAFAFA"] {
+  background: var(--canvas-sage) !important;
+}
+
+/* Rescue dark-mode-only text colours so they read on sage light bg
+   (covers the most common hardcoded values used across the 14 pages) */
+.biqc-marketing [style*="rgba(159,176,195"],
+.biqc-marketing [style*="rgba(140,170,210"],
+.biqc-marketing [style*="#9BB0CC"],
+.biqc-marketing [style*="#8FA0B8"],
+.biqc-marketing [style*="#6B7B8D"],
+.biqc-marketing [style*="#64748B"],
+.biqc-marketing [style*="#5C6E82"] {
+  color: var(--ink-secondary) !important;
+}
+
+/* Soften gratuitously-used orange display text (kept for arrows, dots,
+   eyebrow markers — explicit .lava-* classes still win) */
+.biqc-marketing h1[style*="#E85D00"],
+.biqc-marketing h2[style*="#E85D00"],
+.biqc-marketing h3[style*="#E85D00"],
+.biqc-marketing h4[style*="#E85D00"] {
+  color: var(--ink-display) !important;
+}
+
+/* Ensure sections with "dark mode" radial gradients (old designs) fall
+   back to clean sage on marketing */
+.biqc-marketing section[style*="rgba(46,74,110"],
+.biqc-marketing section[style*="radial-gradient"][style*="rgba(140"] {
+  background: var(--canvas-sage) !important;
+}
+
+/* Normalise orange gradient CTAs to Merge-style black pills.
+   Any <a>/<button> that still uses the legacy orange gradient bg
+   gets converted, while keeping the link functional. */
+.biqc-marketing a[style*="linear-gradient(135deg, #FF7A18"],
+.biqc-marketing button[style*="linear-gradient(135deg, #FF7A18"],
+.biqc-marketing a[style*="linear-gradient(135deg,#FF7A18"],
+.biqc-marketing button[style*="linear-gradient(135deg,#FF7A18"],
+.biqc-marketing a[style*="background: var(--lava)"],
+.biqc-marketing button[style*="background: var(--lava)"] {
+  background: #0A0A0A !important;
+  color: #FFFFFF !important;
+  border-radius: 999px !important;
+  border: 1px solid #0A0A0A !important;
+  box-shadow: 0 4px 12px rgba(10,10,10,0.08) !important;
+  transition: background 0.2s ease, transform 0.2s ease !important;
+}
+.biqc-marketing a[style*="linear-gradient(135deg, #FF7A18"]:hover,
+.biqc-marketing button[style*="linear-gradient(135deg, #FF7A18"]:hover,
+.biqc-marketing a[style*="linear-gradient(135deg,#FF7A18"]:hover,
+.biqc-marketing button[style*="linear-gradient(135deg,#FF7A18"]:hover,
+.biqc-marketing a[style*="background: var(--lava)"]:hover,
+.biqc-marketing button[style*="background: var(--lava)"]:hover {
+  background: #1F1F1F !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Hero blocks / headlines that hardcode an orange-tinted background */
+.biqc-marketing [style*="rgba(232,93,0,0.05"],
+.biqc-marketing [style*="rgba(232,93,0,0.06"],
+.biqc-marketing [style*="rgba(232,93,0,0.08"] {
+  background: var(--canvas-sage-deep) !important;
+}
+
+/* Stat numbers / big display numbers that hardcode the lava orange —
+   demote to plain ink so the Merge aesthetic holds across all pages */
+.biqc-marketing p[style*="color: #E85D00"],
+.biqc-marketing p[style*="color:#E85D00"],
+.biqc-marketing p[style*="color: #FF7A18"],
+.biqc-marketing p[style*="color: var(--lava)"],
+.biqc-marketing p[style*="color: #C65F2E"],
+.biqc-marketing p[style*="color: #FF9C45"] {
+  color: var(--ink-display) !important;
+}
+
+/* Stat card / testimonial metrics that use display font with orange */
+.biqc-marketing [style*="fontSize: '36px'"][style*="#E85D00"],
+.biqc-marketing [style*="fontSize: '28px'"][style*="#FF7A18"],
+.biqc-marketing [style*="fontSize: '40px'"][style*="#E85D00"] {
+  color: var(--ink-display) !important;
+}
+
+/* Border over-saturation: old cards with orange-ring borders get shade */
+.biqc-marketing [style*="border: 1px solid rgba(232,93,0,0.25)"],
+.biqc-marketing [style*="border: 1px solid rgba(232,93,0,0.15)"],
+.biqc-marketing [style*="border: 1px solid rgba(232,93,0,0.18)"] {
+  border-color: rgba(10,10,10,0.08) !important;
+}
