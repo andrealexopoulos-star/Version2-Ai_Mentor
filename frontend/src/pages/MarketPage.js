@@ -143,6 +143,9 @@ const MarketPage = () => {
   const stateStatus = typeof c.system_state === 'object' ? c.system_state?.status : c.system_state;
   const confidence = typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level;
   const interpretation = typeof c.system_state === 'object' ? c.system_state?.interpretation : null;
+  // Clamp velocity: if status is STABLE (On Track), velocity cannot be "worsening"
+  const rawVelocity = typeof c.system_state === 'object' ? c.system_state?.velocity : null;
+  const velocity = (stateStatus === 'STABLE' && rawVelocity === 'worsening') ? 'stable' : rawVelocity;
   const st = STATUS_MAP[stateStatus] || STATUS_MAP.STABLE;
   const memo = c.executive_memo || c.memo || '';
   const alignment = c.alignment?.narrative || '';
