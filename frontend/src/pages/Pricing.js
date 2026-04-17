@@ -285,15 +285,15 @@ export default function Pricing() {
     <WebsiteLayout>
       {/* ── Hero ── */}
       <section className="py-20 md:py-24 text-center px-6"
-        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)' }}>
+        style={{ background: 'var(--canvas-sage)' }}>
         <div className="max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-semibold mb-6"
-            style={{ background: 'rgba(232,93,0,0.06)', color: 'var(--lava)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a4 4 0 0 0-8 0v2" /></svg>
+            style={{ background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(10,10,10,0.08)', color: 'var(--ink-secondary)' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--lava)', display: 'inline-block' }} />
             Pricing
           </div>
           <h1 className="text-4xl md:text-[52px] font-bold leading-[1.1] tracking-tight mb-4"
-            style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)', letterSpacing: 'var(--ls-display)' }}>
+            style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-display)', letterSpacing: '-0.035em' }}>
             Simple, transparent pricing.
           </h1>
           <p className="text-lg max-w-[480px] mx-auto leading-relaxed"
