@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
+import BiqcLogoCard from '../BiqcLogoCard';
 
 const NAV_LINKS = [
   { label: 'Platform', path: '/platform' },
@@ -82,9 +83,10 @@ const WebsiteFooter = () => (
     <div className="max-w-7xl mx-auto px-6 py-16">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
         <div>
-          <span className="text-[30px] leading-none font-semibold tracking-tight block mb-6" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)' }}>
-            BIQc
-          </span>
+          {/* Hovering BIQc.ai brand card */}
+          <div className="mb-6">
+            <BiqcLogoCard size="sm" to="/" />
+          </div>
           <p className="text-xs text-[var(--ink-secondary)]/60 leading-relaxed" style={{ fontFamily: fontFamily.body }}>Business Intelligence that works while you sleep. One intelligence layer for every decision that matters.</p>
           <div className="mt-6 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />

@@ -274,29 +274,31 @@ const LoginSupabase = () => {
         <div className="absolute -bottom-[220px] -right-[220px] w-[520px] h-[520px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(168,177,189,0.35) 0%, transparent 60%)', opacity: 0.5, filter: 'blur(80px)', animation: 'orbDrift 22s ease-in-out infinite reverse' }} />
         <style>{`@keyframes orbDrift { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-24px, 32px) scale(1.12); } }`}</style>
 
-        {/* Hovering BIQc.ai logo card */}
-        <div className="relative z-10">
+        {/* Hovering BIQc.ai logo card — centered */}
+        <div className="relative z-10 flex justify-center">
           <BiqcLogoCard size="md" to="/" />
         </div>
 
-        <div className="relative z-10 max-w-[480px] mt-12">
+        <div className="relative z-10 max-w-[520px] mt-12 mx-auto text-center">
           <h2 className="font-semibold leading-[1.05] mb-4" style={{ fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)', color: 'var(--ink-display, #0A0A0A)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.035em' }}>
             Welcome back to your <em style={{ fontStyle: 'italic', color: 'var(--lava, #E85D00)' }}>operator brain</em>.
           </h2>
-          <p className="text-base leading-relaxed mb-8" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-secondary, #525252)', maxWidth: 420 }}>
+          <p className="text-base leading-relaxed mb-8 mx-auto" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-secondary, #525252)', maxWidth: 420 }}>
             Two clicks away from the only quiet feed that knows what changed in your business while you slept.
           </p>
-          <div className="pl-5 rounded-r-xl" style={{ borderLeft: '2px solid var(--lava, #E85D00)', padding: '20px 20px 20px 20px', background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
-            <p className="text-sm leading-relaxed mb-2" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink, #171717)', fontStyle: 'italic' }}>
-              "We replaced four dashboards and a Notion page with BIQc. I now read one feed a day and that is the entire job."
+          <div className="mx-auto max-w-[440px] relative" style={{ padding: '28px 24px', background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid rgba(10,10,10,0.06)', borderRadius: '16px', boxShadow: '0 4px 14px rgba(10,10,10,0.04)' }}>
+            {/* Centered quote mark */}
+            <div aria-hidden="true" style={{ position: 'absolute', top: -18, left: '50%', transform: 'translateX(-50%)', width: 40, height: 40, borderRadius: '50%', background: 'var(--lava, #E85D00)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', fontSize: 22, fontWeight: 800, fontFamily: 'Georgia, serif', lineHeight: 1, boxShadow: '0 4px 12px rgba(232,93,0,0.3)' }}>“</div>
+            <p className="text-sm leading-relaxed mb-3" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink, #171717)', fontStyle: 'italic' }}>
+              We replaced four dashboards and a Notion page with BIQc. I now read one feed a day and that is the entire job.
             </p>
-            <span className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-secondary, #525252)', fontWeight: 600 }}>
+            <span className="block text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-secondary, #525252)', fontWeight: 600 }}>
               — Eleanor Cho, founder · Olive Lane Studios
             </span>
           </div>
         </div>
 
-        <div className="relative z-10 flex items-center gap-6 flex-wrap">
+        <div className="relative z-10 flex items-center gap-6 flex-wrap justify-center">
           {['SOC 2 Type II in progress', 'Sovereign AU data', 'Read-only by default'].map((t, i) => (
             <span key={i} className="text-[11px] uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-muted, #737373)', fontWeight: 500 }}>{t}</span>
           ))}

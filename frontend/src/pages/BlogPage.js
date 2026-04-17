@@ -10,6 +10,7 @@ import WebsiteLayout from '../components/website/WebsiteLayout';
 import usePageMeta from '../hooks/usePageMeta';
 import { BLOG_ARTICLES } from '../data/blogArticles';
 import { Clock, ArrowRight, Search } from 'lucide-react';
+import BiqcLogoCard from '../components/BiqcLogoCard';
 /* design tokens consumed via CSS custom properties — see liquid-steel-tokens.css */
 
 const CATEGORIES = ['All', ...new Set(BLOG_ARTICLES.map(a => a.category))];
@@ -51,10 +52,10 @@ export default function BlogPage() {
     <WebsiteLayout>
       {/* Hero */}
       <section className="py-20 md:py-24 text-center px-6"
-        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, #0B1120 100%)' }}>
+        style={{ background: 'var(--canvas-sage, #F2F4EC)' }}>
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-[48px] font-bold leading-[1.15] tracking-tight mb-4"
-            style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
+            style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)' }}>
             Blog
           </h1>
           <p className="text-lg max-w-[580px] mx-auto leading-relaxed mb-10"
@@ -103,15 +104,16 @@ export default function BlogPage() {
               data-testid="blog-featured">
               <div className="grid md:grid-cols-2">
                 <div className="min-h-[280px] md:min-h-[320px] flex items-center justify-center relative overflow-hidden"
-                  style={{ background: 'linear-gradient(135deg, #E85D00 0%, #FF8A3D 40%, #FFB980 100%)' }}>
-                  <span className="text-[56px] font-bold relative z-10"
-                    style={{ color: 'var(--ink-subtle, #A3A3A3)', fontFamily: 'var(--font-display)' }}>
-                    BIQc
-                  </span>
-                  <div className="absolute w-[200px] h-[200px] border-2 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                    style={{ borderColor: 'rgba(255,255,255,0.15)' }} />
-                  <div className="absolute w-[300px] h-[300px] border-2 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                    style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+                  style={{ background: 'linear-gradient(135deg, #F6F7F9 0%, #E4EAF2 45%, #C8D4E4 100%)' }}>
+                  {/* Hovering BIQc.ai logo card */}
+                  <div className="relative z-10">
+                    <BiqcLogoCard size="md" to={null} static />
+                  </div>
+                  {/* Subtle concentric rings behind the card */}
+                  <div className="absolute w-[200px] h-[200px] border rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    style={{ borderColor: 'rgba(10,10,10,0.08)' }} />
+                  <div className="absolute w-[300px] h-[300px] border rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    style={{ borderColor: 'rgba(10,10,10,0.05)' }} />
                 </div>
                 <div className="p-10 flex flex-col justify-center">
                   <span className="inline-block self-start text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded mb-4"
@@ -119,7 +121,7 @@ export default function BlogPage() {
                     {featured.category}
                   </span>
                   <h2 className="text-[26px] font-bold leading-snug tracking-tight mb-3.5"
-                    style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
+                    style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)' }}>
                     {featured.title}
                   </h2>
                   <p className="text-[15px] leading-relaxed mb-5" style={{ color: 'var(--ink-secondary)' }}>
@@ -145,7 +147,7 @@ export default function BlogPage() {
         <div className="max-w-[1120px] mx-auto">
           {rest.length > 0 && (
             <h2 className="text-[28px] font-semibold tracking-tight mb-8"
-              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)' }}>
               Latest articles
             </h2>
           )}
@@ -161,7 +163,7 @@ export default function BlogPage() {
                   {/* Gradient image */}
                   <div className="h-40 flex items-center justify-center relative overflow-hidden" style={{ background: grad }}>
                     <span className="text-[32px] font-bold relative z-10"
-                      style={{ color: 'var(--ink-muted, #737373)', fontFamily: 'var(--font-display)' }}>
+                      style={{ color: 'var(--ink-muted, #737373)', fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)' }}>
                       {String(i + 1).padStart(2, '0')}
                     </span>
                   </div>
@@ -210,7 +212,7 @@ export default function BlogPage() {
               boxShadow: 'var(--elev-1)',
             }}>
             <h2 className="text-[28px] font-semibold tracking-tight mb-2.5"
-              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)' }}>
               Stay informed
             </h2>
             <p className="text-base mb-7 max-w-[440px] mx-auto" style={{ color: 'var(--ink-secondary)' }}>
@@ -234,8 +236,8 @@ export default function BlogPage() {
                 style={{ background: 'var(--canvas-app)', border: '1px solid var(--border)', color: 'var(--ink)' }} />
               <button type="submit"
                 disabled={subscribeStatus !== 'idle'}
-                className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white whitespace-nowrap transition-all hover:brightness-110 disabled:opacity-70 disabled:cursor-not-allowed"
-                style={{ background: subscribeStatus === 'subscribed' ? '#16A34A' : 'var(--lava)' }}>
+                className="px-6 py-2.5 text-sm font-medium whitespace-nowrap transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                style={{ background: subscribeStatus === 'subscribed' ? '#16A34A' : '#0A0A0A', color: '#FFFFFF', border: '1px solid ' + (subscribeStatus === 'subscribed' ? '#16A34A' : '#0A0A0A'), borderRadius: '999px', letterSpacing: '-0.005em', boxShadow: '0 4px 12px rgba(10,10,10,0.08)' }}>
                 {subscribeStatus === 'subscribing' ? 'Subscribing...' : subscribeStatus === 'subscribed' ? 'Subscribed' : 'Subscribe'}
               </button>
             </form>
