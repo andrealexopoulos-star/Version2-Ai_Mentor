@@ -15,6 +15,8 @@ from typing import Any, Dict, List
 from uuid import uuid4
 import logging
 
+from routes.deps import get_lookback_days, _normalize_subscription_tier
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,6 +34,20 @@ class PredictiveIntelligenceEngine:
 
     def __init__(self, sb_client):
         self.sb = sb_client
+
+    def _get_user_lookback_days(self, user_id: str, fallback: int = 180) -> int:
+        """Resolve the tier-based lookback window for a user.
+
+        Returns the number of days (or a large value for unlimited tiers).
+        Falls back to *fallback* if the user row cannot be read.
+        """
+        try:
+            row = self.sb.table("users").select("subscription_tier").eq("id", user_id).maybe_single().execute()
+            raw_tier = (row.data or {}).get("subscription_tier", "free")
+            days = get_lookback_days(raw_tier)
+            return 3650 if days == -1 else days  # ~10 years for unlimited
+        except Exception:
+            return fallback
 
     # ═══════════════════════════════════════════════════════════════
     # PUBLIC API
@@ -188,17 +204,18 @@ class PredictiveIntelligenceEngine:
 
     def _predict_cash_runway(self, user_id: str) -> Dict[str, Any]:
         """
-        Analyze finance domain observation_events over 180 days.
+        Analyze finance domain observation_events using tier-based lookback.
         Compare income vs expense signal rates.
         """
         try:
+            lookback = self._get_user_lookback_days(user_id, fallback=180)
             now = datetime.now(timezone.utc)
-            one_eighty_ago = (now - timedelta(days=180)).isoformat()
+            cutoff = (now - timedelta(days=lookback)).isoformat()
 
             result = self.sb.table("observation_events").select(
                 "id, signal_type, detail, confidence, created_at"
             ).eq("user_id", user_id).eq("domain", "finance").gte(
-                "created_at", one_eighty_ago
+                "created_at", cutoff
             ).execute()
 
             rows = result.data or []
@@ -206,7 +223,7 @@ class PredictiveIntelligenceEngine:
                 return _insufficient_data_result(
                     "Not enough finance data for cash runway prediction. "
                     "Connect accounting integrations (Xero, QuickBooks) for insights.",
-                    horizon_days=180,
+                    horizon_days=lookback,
                 )
 
             income_keywords = ("revenue", "income", "payment_received", "invoice_paid", "deposit")
@@ -261,7 +278,7 @@ class PredictiveIntelligenceEngine:
             if score >= 0.6:
                 reasoning = (
                     f"Cash position appears healthy. {len(income_signals)} income signals "
-                    f"vs {len(expense_signals)} expense signals over 180 days. "
+                    f"vs {len(expense_signals)} expense signals over {lookback} days. "
                     f"{'Income trend is improving.' if trend_factor > 1 else 'Income trend is stable.'}"
                 )
             elif score >= 0.3:

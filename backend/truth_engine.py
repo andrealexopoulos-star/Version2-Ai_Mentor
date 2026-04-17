@@ -18,6 +18,8 @@ from uuid import uuid4
 from collections import defaultdict, Counter
 import logging
 
+from routes.deps import get_lookback_days, _normalize_subscription_tier
+
 logger = logging.getLogger(__name__)
 
 
@@ -424,24 +426,29 @@ async def generate_cold_read(
     user_id: str,
     email_store: Any,
     watchtower_store: Any,
-    lookback_days: int = 90
+    lookback_days: int = 90,
+    tier: str | None = None,
 ) -> Dict[str, Any]:
     """
     WATCHTOWER COLD READ - Hybrid Intelligence Bridge
-    
+
     INPUT: outlook_emails datastore (read-only)
     OUTPUT: Supabase watchtower_events (write-only)
     INTELLIGENCE: Multi-message pattern detection
-    
+
     FIRST-RUN MODE: Automatically uses adaptive thresholds when no events exist
-    
+
     Args:
         account_id: Workspace ID
         user_id: User ID for email query
         email_store: datastore instance exposing outlook_emails access
         watchtower_store: Supabase watchtower store
-        lookback_days: Analysis window (default 90 days)
-        
+        lookback_days: Analysis window (default 90 days). Overridden by tier
+            when tier is supplied.
+        tier: User subscription tier. When provided, lookback_days is derived
+            from TIER_LOOKBACK_DAYS (deps.py) unless the caller passed an
+            explicit value that differs from the default.
+
     Returns:
         {
             "events_created": int,
@@ -451,6 +458,14 @@ async def generate_cold_read(
             "status": "complete" | "insufficient_data" | "failed"
         }
     """
+    # Override lookback with tier-based value when tier is known and
+    # the caller did not pass an explicit lookback_days override.
+    if tier is not None and lookback_days == 90:
+        tier_days = get_lookback_days(tier)
+        if tier_days != -1:
+            lookback_days = tier_days
+        else:
+            lookback_days = 3650  # ~10 years for unlimited tiers
     logger.info(f"🔍 WATCHTOWER COLD READ: Starting for account {account_id}, user {user_id}")
     
     all_events = []
