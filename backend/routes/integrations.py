@@ -846,6 +846,18 @@ async def exchange_merge_account_token(
             pass
         await invalidate_cached_integration_status(user_id)
 
+        # Trigger intelligence snapshot in background after new integration connects (1C.3)
+        try:
+            await enqueue_job(
+                "cognitive-refresh",
+                {"user_id": user_id, "trigger": "integration_connected"},
+                company_id=user_id,
+                window_seconds=300,
+            )
+            logger.info("Queued cognitive-refresh after %s integration connect for user %s", integration_name, user_id)
+        except Exception as e:
+            logger.warning("Failed to queue cognitive-refresh: %s", e)
+
         return {
             "success": True,
             "provider": integration_name,
