@@ -106,23 +106,24 @@ class PredictiveIntelligenceEngine:
 
     def _predict_churn_risk(self, user_id: str) -> Dict[str, Any]:
         """
-        Analyze email frequency per client over 90 days.
+        Analyze email frequency per client using tier-based lookback.
         Clients with declining frequency = higher churn risk.
         """
         try:
+            lookback = self._get_user_lookback_days(user_id, fallback=90)
             now = datetime.now(timezone.utc)
-            ninety_ago = (now - timedelta(days=90)).isoformat()
+            cutoff = (now - timedelta(days=lookback)).isoformat()
 
             result = self.sb.table("outlook_emails").select(
                 "from_address, received_date"
-            ).eq("user_id", user_id).gte("received_date", ninety_ago).execute()
+            ).eq("user_id", user_id).gte("received_date", cutoff).execute()
 
             rows = result.data or []
             if len(rows) < MIN_DATA_POINTS:
                 return _insufficient_data_result(
                     "Not enough email data for churn prediction. "
                     "Connect your email integration for better insights.",
-                    horizon_days=90,
+                    horizon_days=lookback,
                 )
 
             # Group emails by sender, then by month bucket
@@ -158,7 +159,7 @@ class PredictiveIntelligenceEngine:
             if total_senders == 0:
                 return _insufficient_data_result(
                     "No sender data available for churn analysis.",
-                    horizon_days=90,
+                    horizon_days=lookback,
                 )
 
             churn_ratio = (declining_senders + silent_senders) / total_senders
@@ -187,7 +188,7 @@ class PredictiveIntelligenceEngine:
                 "confidence": confidence,
                 "reasoning": reasoning,
                 "data_points": len(rows),
-                "horizon_days": 90,
+                "horizon_days": lookback,
                 "details": {
                     "total_senders": total_senders,
                     "declining_senders": declining_senders,
@@ -199,7 +200,7 @@ class PredictiveIntelligenceEngine:
             logger.error(f"[predictive] _predict_churn_risk failed: {e}")
             return _insufficient_data_result(
                 f"Churn analysis encountered an error. Check email integration.",
-                horizon_days=90,
+                horizon_days=90,  # fallback: no lookback var in except scope
             )
 
     def _predict_cash_runway(self, user_id: str) -> Dict[str, Any]:
@@ -298,7 +299,7 @@ class PredictiveIntelligenceEngine:
                 "confidence": confidence,
                 "reasoning": reasoning,
                 "data_points": len(rows),
-                "horizon_days": 180,
+                "horizon_days": lookback,
                 "details": {
                     "income_signals": len(income_signals),
                     "expense_signals": len(expense_signals),
@@ -311,18 +312,19 @@ class PredictiveIntelligenceEngine:
             logger.error(f"[predictive] _predict_cash_runway failed: {e}")
             return _insufficient_data_result(
                 "Cash runway analysis encountered an error. Check finance integrations.",
-                horizon_days=180,
+                horizon_days=180,  # fallback: no user_id available in except
             )
 
     def _predict_deal_closure(self, user_id: str) -> Dict[str, Any]:
         """
         Analyze sales domain events. Active deal movements in last 14 days
-        = healthy pipeline.
+        = healthy pipeline. Respects tier-based lookback.
         """
         try:
+            lookback = self._get_user_lookback_days(user_id, fallback=30)
             now = datetime.now(timezone.utc)
-            fourteen_ago = (now - timedelta(days=14)).isoformat()
-            thirty_ago = (now - timedelta(days=30)).isoformat()
+            fourteen_ago = (now - timedelta(days=min(14, lookback))).isoformat()
+            thirty_ago = (now - timedelta(days=min(30, lookback))).isoformat()
 
             # Recent 14 days
             recent_result = self.sb.table("observation_events").select(
@@ -416,11 +418,13 @@ class PredictiveIntelligenceEngine:
         """
         Compare signal volume in last 30 days vs prior 30 days
         across sales+finance+market domains.
+        Respects tier-based lookback (skips prior period if lookback < 60).
         """
         try:
+            lookback = self._get_user_lookback_days(user_id, fallback=60)
             now = datetime.now(timezone.utc)
             thirty_ago = (now - timedelta(days=30)).isoformat()
-            sixty_ago = (now - timedelta(days=60)).isoformat()
+            sixty_ago = (now - timedelta(days=min(60, lookback))).isoformat()
 
             target_domains = ("sales", "finance", "market")
 
@@ -525,16 +529,17 @@ class PredictiveIntelligenceEngine:
     def _predict_attrition_risk(self, user_id: str) -> Dict[str, Any]:
         """
         Analyze team domain events for negative signals
-        (departures, satisfaction decline).
+        (departures, satisfaction decline). Uses tier-based lookback.
         """
         try:
+            lookback = self._get_user_lookback_days(user_id, fallback=90)
             now = datetime.now(timezone.utc)
-            ninety_ago = (now - timedelta(days=90)).isoformat()
+            cutoff = (now - timedelta(days=lookback)).isoformat()
 
             result = self.sb.table("observation_events").select(
                 "id, signal_type, detail, confidence, created_at"
             ).eq("user_id", user_id).eq("domain", "team").gte(
-                "created_at", ninety_ago
+                "created_at", cutoff
             ).execute()
 
             rows = result.data or []
@@ -542,7 +547,7 @@ class PredictiveIntelligenceEngine:
                 return _insufficient_data_result(
                     "Not enough team data for attrition prediction. "
                     "Connect HR/team integrations for workforce insights.",
-                    horizon_days=90,
+                    horizon_days=lookback,
                 )
 
             negative_keywords = (
@@ -579,7 +584,7 @@ class PredictiveIntelligenceEngine:
                         f"More specific team data would improve this prediction."
                     ),
                     "data_points": len(rows),
-                    "horizon_days": 90,
+                    "horizon_days": lookback,
                     "details": {
                         "total_team_signals": len(rows),
                         "classified": 0,
@@ -603,7 +608,7 @@ class PredictiveIntelligenceEngine:
             if score > 0.5:
                 reasoning = (
                     f"Attrition risk is elevated. {len(negative_signals)} negative team signals "
-                    f"vs {len(positive_signals)} positive signals in 90 days. "
+                    f"vs {len(positive_signals)} positive signals in {lookback} days. "
                     f"{'Trend is worsening recently.' if trend_worsening else 'Trend appears stable.'}"
                 )
             elif score > 0.2:
@@ -622,7 +627,7 @@ class PredictiveIntelligenceEngine:
                 "confidence": confidence,
                 "reasoning": reasoning,
                 "data_points": len(rows),
-                "horizon_days": 90,
+                "horizon_days": lookback,
                 "details": {
                     "negative_signals": len(negative_signals),
                     "positive_signals": len(positive_signals),
@@ -635,7 +640,7 @@ class PredictiveIntelligenceEngine:
             logger.error(f"[predictive] _predict_attrition_risk failed: {e}")
             return _insufficient_data_result(
                 "Attrition analysis encountered an error. Check team integrations.",
-                horizon_days=90,
+                horizon_days=90,  # fallback: no lookback var in except scope
             )
 
 
