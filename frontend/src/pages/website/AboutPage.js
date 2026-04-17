@@ -15,23 +15,26 @@ import usePageMeta from '../../hooks/usePageMeta';
 /* design tokens consumed via CSS custom properties — see liquid-steel-tokens.css */
 import { Shield, Zap, Users, Eye, ArrowRight, Lock, Heart, Layers, Smile, MinusCircle } from 'lucide-react';
 
-/* ═══ PALETTE CONSTANTS ═══ */
+/* ═══ PALETTE CONSTANTS — Merge-aligned light theme (2026-04-18) ═══
+   Was designed for a dark #0B1120 bg. Now runs on sage light canvas
+   — all text colours flipped for readability, brand accents preserved.
+   ═══ */
 const C = {
-  bgPrimary:    '#FAFAFA',
-  bgSecondary:  '#0B1120',
-  bgCard:       'rgba(140,165,200,0.04)',
-  borderCard:   'rgba(160,185,220,0.12)',
-  steelBorder:  'rgba(140,170,210,0.15)',
-  textH:        '#EDF1F7',
-  textB:        '#8FA0B8',
-  textM:        '#5C6E82',
+  bgPrimary:    'var(--canvas-sage)',           /* was #FAFAFA */
+  bgSecondary:  '#FFFFFF',                        /* was #0B1120 (dark) — now white card break */
+  bgCard:       'linear-gradient(135deg, #F6F7F9 0%, #E8ECF1 60%, #DDE3EB 100%)', /* liquid steel */
+  borderCard:   'rgba(10,10,10,0.06)',            /* was rgba(160,185,220,0.12) on dark */
+  steelBorder:  'rgba(10,10,10,0.08)',            /* was rgba(140,170,210,0.15) on dark */
+  textH:        'var(--ink-display)',             /* was #EDF1F7 (near-white on dark) */
+  textB:        'var(--ink-secondary)',           /* was #8FA0B8 (slate on dark) */
+  textM:        'var(--ink-muted)',               /* was #5C6E82 (deep slate on dark) */
   steel100:     'var(--ink)',
-  steel300:     '#6E8AAE',
-  brand:        '#FF7A18',
-  brandDark:    '#E85D00',
-  brandGlow:    'rgba(255,122,24,0.25)',
-  chromeGlint:  'linear-gradient(105deg, rgba(200,220,240,0.0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0.0) 55%, rgba(200,220,240,0.0) 100%)',
-  steelSheen:   'linear-gradient(135deg, rgba(160,185,220,0.06) 0%, rgba(160,185,220,0.02) 40%, rgba(160,185,220,0.08) 100%)',
+  steel300:     'var(--ink-secondary)',           /* was #6E8AAE */
+  brand:        '#E85D00',                        /* lava — primary accent */
+  brandDark:    '#C24D00',                        /* deeper lava for pressed */
+  brandGlow:    'rgba(232,93,0,0.15)',             /* softer glow */
+  chromeGlint:  'linear-gradient(105deg, rgba(10,10,10,0.0) 0%, rgba(10,10,10,0.03) 45%, rgba(10,10,10,0.0) 55%, rgba(10,10,10,0.0) 100%)',
+  steelSheen:   'linear-gradient(135deg, rgba(10,10,10,0.04) 0%, rgba(10,10,10,0.02) 40%, rgba(10,10,10,0.05) 100%)',
 };
 
 /* ═══ SCROLL-REVEAL HOOK ═══ */
