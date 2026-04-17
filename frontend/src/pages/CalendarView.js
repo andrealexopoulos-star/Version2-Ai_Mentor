@@ -447,10 +447,13 @@ const CalendarView = () => {
               <CalendarIcon className="w-8 h-8" style={{ color: 'var(--ink-muted)' }} />
             </div>
             <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
-              No Calendar Events
+              {syncing ? 'Syncing your calendar...' : 'No Calendar Events Yet'}
             </h3>
             <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
-              Sync your {calendarProvider === 'gmail' ? 'Gmail' : 'Outlook'} calendar to see upcoming meetings and let BIQc reason over your schedule.
+              {syncing
+                ? 'Fetching your meetings from ' + (calendarProvider === 'gmail' ? 'Gmail' : 'Outlook') + '...'
+                : 'Connect and sync your ' + (calendarProvider === 'gmail' ? 'Gmail' : 'Outlook') + ' calendar to see meetings, prep briefs, and schedule intelligence.'
+              }
             </p>
             <Button onClick={syncCalendar} disabled={syncing} className="btn-primary">
               <RefreshCw className="w-4 h-4 mr-2" />
