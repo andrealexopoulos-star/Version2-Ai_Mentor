@@ -3,10 +3,34 @@ Supabase Email & Calendar Helper Functions
 Supabase query helpers for email and calendar data
 """
 from typing import Optional, Dict, Any, List
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 
+from routes.deps import get_lookback_days, _normalize_subscription_tier
+
 logger = logging.getLogger(__name__)
+
+
+def _apply_tier_date_filter(query, supabase_client, user_id: str):
+    """Apply tier-based lookback date filter to an email query.
+
+    Resolves the user's subscription tier, computes the cutoff date, and
+    adds a ``gte("received_date", ...)`` clause to *query*.  For unlimited
+    tiers (-1) no filter is applied.  Returns the (possibly modified) query.
+    """
+    try:
+        row = supabase_client.table("users").select("subscription_tier").eq("id", user_id).maybe_single().execute()
+        raw_tier = (row.data or {}).get("subscription_tier", "free")
+        days = get_lookback_days(raw_tier)
+    except Exception:
+        days = 30  # default to free on error
+
+    if days == -1:
+        return query  # unlimited — no date filter
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    return query.gte("received_date", cutoff)
+
 
 # =============================================
 # EMAIL OPERATIONS
@@ -29,20 +53,21 @@ async def store_email_supabase(supabase_client, email_data: Dict[str, Any]) -> b
 
 
 async def get_user_emails_supabase(
-    supabase_client, 
-    user_id: str, 
+    supabase_client,
+    user_id: str,
     limit: int = 50,
     folder: Optional[str] = None
 ) -> List[Dict[str, Any]]:
-    """Get user's emails from Supabase"""
+    """Get user's emails from Supabase (tier-based lookback applied)."""
     try:
         query = supabase_client.table("outlook_emails").select("*").eq("user_id", user_id)
-        
+        query = _apply_tier_date_filter(query, supabase_client, user_id)
+
         if folder:
             query = query.eq("folder", folder)
-        
+
         result = query.order("received_date", desc=True).limit(limit).execute()
-        
+
         return result.data if result.data else []
     except Exception as e:
         logger.error(f"Error fetching emails from Supabase: {e}")
@@ -57,11 +82,12 @@ async def get_user_emails_page_supabase(
     limit: int = 50,
     offset: int = 0,
 ) -> List[Dict[str, Any]]:
-    """Get paginated user emails with optional provider/folder filters."""
+    """Get paginated user emails with optional provider/folder filters (tier-based lookback)."""
     try:
         safe_limit = max(1, min(int(limit), 200))
         safe_offset = max(0, int(offset))
         query = supabase_client.table("outlook_emails").select("*").eq("user_id", user_id)
+        query = _apply_tier_date_filter(query, supabase_client, user_id)
         if provider:
             query = query.eq("provider", provider)
         if folder:
