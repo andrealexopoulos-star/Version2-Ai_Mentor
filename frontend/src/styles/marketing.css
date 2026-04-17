@@ -1035,3 +1035,140 @@ textarea.form-input { min-height: 120px; padding: var(--sp-3) var(--sp-4); resiz
 .biqc-marketing [style*="border: 1px solid rgba(232,93,0,0.18)"] {
   border-color: rgba(10,10,10,0.08) !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   BIQc.ai STYLE GUIDE — Liquid steel card + alternating section rhythm
+   Locked 2026-04-18 per Andreas approval. This is the definitive treatment
+   for the whole marketing website.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── REUSABLE SECTION CLASSES ─── */
+.section-steel {
+  background: linear-gradient(135deg, #F6F7F9 0%, #E8ECF1 50%, #DDE3EB 100%) !important;
+  position: relative;
+}
+.section-steel-soft {
+  background: linear-gradient(180deg, #F6F7F9 0%, #EDF0F5 100%) !important;
+  position: relative;
+}
+.section-white-break { background: #FFFFFF !important; }
+.section-sage-break { background: var(--canvas-sage) !important; }
+
+/* ─── REUSABLE CARD CLASSES ─── */
+.card-steel {
+  background: linear-gradient(135deg, #F6F7F9 0%, #E8ECF1 60%, #DDE3EB 100%) !important;
+  border: 1px solid rgba(10,10,10,0.06) !important;
+  box-shadow: 0 2px 8px rgba(10,10,10,0.03), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+}
+.card-steel-raised {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F1F4F8 50%, #E4EAF2 100%) !important;
+  border: 1px solid rgba(10,10,10,0.06) !important;
+  box-shadow: 0 8px 24px rgba(10,10,10,0.06), inset 0 1px 0 rgba(255,255,255,0.7) !important;
+}
+.card-white-break {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(10,10,10,0.06) !important;
+}
+
+/* ─── AUTO-APPLY STEEL TO HERO-SHAPE CARDS ACROSS PAGES ─── */
+
+/* Pain-point cards (What You Get section on HomePage) */
+.biqc-marketing [data-testid="what-you-get"] .wyg-card-enhanced {
+  background: linear-gradient(135deg, #F6F7F9 0%, #E8ECF1 60%, #DDE3EB 100%) !important;
+  box-shadow: 0 2px 8px rgba(10,10,10,0.03), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+}
+.biqc-marketing [data-testid="what-you-get"] .wyg-card-enhanced:hover {
+  box-shadow: 0 12px 32px rgba(10,10,10,0.08), inset 0 1px 0 rgba(255,255,255,0.6) !important;
+  transform: translateY(-3px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Testimonial cards — liquid steel for premium feel */
+.biqc-marketing [data-testid="testimonials-section"] .testimonial-card-enhanced {
+  background: linear-gradient(135deg, #F6F7F9 0%, #E8ECF1 60%, #DDE3EB 100%) !important;
+  border: 1px solid rgba(10,10,10,0.06) !important;
+  box-shadow: 0 2px 8px rgba(10,10,10,0.03), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+}
+
+/* Glass cards (cognition grid) — alternating: odd=steel, even=white */
+.biqc-marketing [data-testid="cognition-section"] .rounded-xl:nth-child(odd) {
+  background: linear-gradient(135deg, #F6F7F9 0%, #E8ECF1 100%) !important;
+  border: 1px solid rgba(10,10,10,0.06) !important;
+}
+.biqc-marketing [data-testid="cognition-section"] .rounded-xl:nth-child(even) {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(10,10,10,0.06) !important;
+}
+
+/* ─── ALTERNATING SECTION BACKGROUNDS FOR VISUAL RHYTHM ─── */
+
+/* AI Era (stats) section — WHITE break between two sage sections */
+.biqc-marketing [data-testid="ai-era-section"] {
+  background: #FFFFFF !important;
+  border-top: 1px solid rgba(10,10,10,0.04);
+  border-bottom: 1px solid rgba(10,10,10,0.04);
+}
+
+/* Stat cards on AI Era — subtle steel gradient */
+.biqc-marketing [data-testid="ai-era-section"] .stat-card,
+.biqc-marketing [data-testid="ai-era-section"] > div > div > div > .rounded-2xl {
+  background: linear-gradient(135deg, #FAFBFC 0%, #F2F4F7 100%) !important;
+  border: 1px solid rgba(10,10,10,0.06) !important;
+}
+
+/* Social proof section — WHITE break */
+.biqc-marketing [data-testid="testimonials-section"] {
+  background: #FFFFFF !important;
+  border-top: 1px solid rgba(10,10,10,0.04);
+  border-bottom: 1px solid rgba(10,10,10,0.04);
+}
+
+/* Trust badges — subtle steel strip */
+.biqc-marketing [data-testid="trust-badges"] {
+  background: linear-gradient(180deg, #F6F7F9 0%, #EDF0F5 100%) !important;
+  border-top: 1px solid rgba(10,10,10,0.06);
+  border-bottom: 1px solid rgba(10,10,10,0.06);
+}
+.biqc-marketing [data-testid="trust-badges"] .rounded-xl {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(10,10,10,0.06) !important;
+  box-shadow: 0 2px 6px rgba(10,10,10,0.03) !important;
+}
+
+/* ─── FOOTER TREATMENT ─── */
+.biqc-marketing footer {
+  background: linear-gradient(180deg, var(--canvas-sage) 0%, #ECEEE7 100%) !important;
+  border-top: 1px solid rgba(10,10,10,0.08) !important;
+}
+.biqc-marketing footer h2,
+.biqc-marketing footer p,
+.biqc-marketing footer span,
+.biqc-marketing footer a {
+  color: var(--ink-secondary) !important;
+}
+.biqc-marketing footer a:hover {
+  color: var(--ink-display) !important;
+}
+.biqc-marketing footer > div > div > div > span:first-child {
+  color: var(--ink-display) !important;
+}
+
+/* ─── NAV NORMALISATION: pill CTAs (covers marketing nav in WebsiteLayout) ─── */
+.biqc-marketing nav[data-testid="website-nav"] {
+  background: #FFFFFF !important;
+}
+.biqc-marketing [data-testid="nav-get-started"] {
+  background: #0A0A0A !important;
+  color: #FFFFFF !important;
+  border-radius: 999px !important;
+  box-shadow: 0 4px 12px rgba(10,10,10,0.08) !important;
+  transition: background 0.2s ease, transform 0.2s ease !important;
+}
+.biqc-marketing [data-testid="nav-get-started"]:hover {
+  background: #1F1F1F !important;
+  transform: translateY(-1px) !important;
+}
+.biqc-marketing [data-testid="nav-login"],
+.biqc-marketing [data-testid="nav-mobile-login"] {
+  color: var(--ink) !important;
+}

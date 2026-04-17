@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
@@ -102,7 +102,7 @@ const WebsiteFooter = () => (
         <div>
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[var(--ink-secondary)]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Legal</h2>
           <div className="space-y-2.5">
-            {[['Privacy Policy', '/trust/privacy'], ['Terms of Service', '/trust/terms'], ['Refund Policy', '/trust/refund-policy'], ['Trust & Security', '/trust/security']].map(([l, p]) => (
+            {[['Privacy Policy', '/trust/privacy'], ['Terms of Service', '/trust/terms'], ['Data Processing Agreement', '/trust/dpa'], ['Refund Policy', '/trust/refund-policy'], ['Trust & Security', '/trust/security']].map(([l, p]) => (
               <Link key={p} to={p} className="block text-sm text-[var(--ink-secondary)] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.body }}>{l}</Link>
             ))}
           </div>
@@ -110,7 +110,7 @@ const WebsiteFooter = () => (
         <div>
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[var(--ink-secondary)]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Company</h2>
           <div className="space-y-2.5">
-            {[['Blog', '/blog'], ['Contact', '/contact'], ['Log In', '/login-supabase'], ['Start Free Trial', '/register-supabase']].map(([l, p]) => (
+            {[['About', '/about'], ['Blog', '/blog'], ['Knowledge Base', '/knowledge-base'], ['Contact', '/contact'], ['Log In', '/login-supabase'], ['Start Free Trial', '/register-supabase']].map(([l, p]) => (
               <Link key={l} to={p} className="block text-sm text-[var(--ink-secondary)] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.body }}>{l}</Link>
             ))}
           </div>
@@ -125,6 +125,8 @@ const WebsiteFooter = () => (
 );
 
 const WebsiteLayout = ({ children }) => {
+  const navigate = useNavigate();
+
   // Marketing website FORCES light theme. Without this, a user who has
   // toggled dark mode in the app (which persists data-theme="dark" on <html>)
   // would see the marketing site inherit dark-mode token values — making
@@ -138,6 +140,19 @@ const WebsiteLayout = ({ children }) => {
       else document.documentElement.removeAttribute('data-theme');
     };
   }, []);
+
+  // Catch stray OAuth hash tokens (biqc.ai/#access_token=... loop).
+  // Happens when Supabase redirects back to the Site URL instead of
+  // /auth/callback. Without this, user sees home page, must click Log in
+  // a second time to be picked up and redirected to the platform.
+  useEffect(() => {
+    const hash = window.location.hash || '';
+    const hasAuthTokens = /[#&](access_token|refresh_token|provider_token)=/.test(hash)
+      || /[#&]error=/.test(hash);
+    if (hasAuthTokens) {
+      navigate(`/auth/callback${hash}`, { replace: true });
+    }
+  }, [navigate]);
 
   return (
     <div className="biqc-marketing min-h-screen" style={{ background: 'var(--canvas, #FFFFFF)', color: 'var(--ink-display, #0A0A0A)' }}>
