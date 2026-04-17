@@ -7,6 +7,7 @@ import RecaptchaGate from '../components/RecaptchaGate';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import BiqcLogoCard from '../components/BiqcLogoCard';
 
 /* ── Mockup-aligned CSS-variable font stacks ── */
 const DISPLAY = 'var(--font-display, ' + fontFamily.display + ')';
@@ -264,31 +265,32 @@ const LoginSupabase = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#FAFAFA' }}>
-      {/* Left: Brand Panel — #0A0A0A hardcoded per mockup auth spec */}
-      <aside className="hidden lg:flex flex-col justify-between flex-1 relative overflow-hidden" style={{ background: 'var(--surface, #FFFFFF)', color: '#FFFFFF', padding: '48px 40px' }}>
-        {/* Animated orbs */}
-        <div className="absolute -top-[200px] -left-[200px] w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #E85D00 0%, transparent 60%)', opacity: 0.3, filter: 'blur(80px)', animation: 'orbDrift 16s ease-in-out infinite' }} />
-        <div className="absolute -bottom-[200px] -right-[200px] w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #C0C8D4 0%, transparent 60%)', opacity: 0.2, filter: 'blur(60px)', animation: 'orbDrift 20s ease-in-out infinite reverse' }} />
-        <style>{`@keyframes orbDrift { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px, 40px) scale(1.18); } }`}</style>
+    <div className="min-h-screen flex" style={{ background: 'var(--canvas-sage, #F2F4EC)' }}>
+      {/* Left: Brand Panel — liquid-steel silver gradient with dark text (Merge aesthetic) */}
+      <aside className="hidden lg:flex flex-col justify-between flex-1 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #F6F7F9 0%, #E4EAF2 50%, #C8D4E4 100%)', color: 'var(--ink-display, #0A0A0A)', padding: '48px 40px' }}>
+        {/* Soft orange bloom — subtle identity accent, not a blaze */}
+        <div className="absolute -top-[160px] -left-[160px] w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,0,0.18) 0%, transparent 65%)', opacity: 0.6, filter: 'blur(70px)', animation: 'orbDrift 18s ease-in-out infinite' }} />
+        {/* Silver counter-orb for depth */}
+        <div className="absolute -bottom-[220px] -right-[220px] w-[520px] h-[520px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(168,177,189,0.35) 0%, transparent 60%)', opacity: 0.5, filter: 'blur(80px)', animation: 'orbDrift 22s ease-in-out infinite reverse' }} />
+        <style>{`@keyframes orbDrift { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-24px, 32px) scale(1.12); } }`}</style>
 
-        <Link to="/" className="relative z-10 flex items-center gap-3" style={{ color: '#FFFFFF', textDecoration: 'none' }}>
-          <span className="inline-block rounded-full" style={{ width: 10, height: 10, background: 'var(--lava, #E85D00)', boxShadow: '0 0 16px var(--lava, #E85D00)' }} />
-          <span className="text-2xl font-semibold" style={{ fontFamily: DISPLAY }}>BIQc</span>
-        </Link>
+        {/* Hovering BIQc.ai logo card */}
+        <div className="relative z-10">
+          <BiqcLogoCard size="md" to="/" />
+        </div>
 
         <div className="relative z-10 max-w-[480px] mt-12">
-          <h2 className="font-medium leading-[1.05] mb-4" style={{ fontFamily: DISPLAY, color: '#FFFFFF', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: 'var(--ls-tight, -0.035em)' }}>
-            Welcome back to your <em style={{ fontStyle: 'italic', color: 'var(--lava-warm, #FF7A1A)' }}>operator brain</em>.
+          <h2 className="font-semibold leading-[1.05] mb-4" style={{ fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)', color: 'var(--ink-display, #0A0A0A)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.035em' }}>
+            Welcome back to your <em style={{ fontStyle: 'italic', color: 'var(--lava, #E85D00)' }}>operator brain</em>.
           </h2>
-          <p className="text-base leading-relaxed mb-8" style={{ fontFamily: UI, color: 'var(--ink-secondary, #525252)', maxWidth: 420 }}>
+          <p className="text-base leading-relaxed mb-8" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-secondary, #525252)', maxWidth: 420 }}>
             Two clicks away from the only quiet feed that knows what changed in your business while you slept.
           </p>
-          <div className="pl-5 rounded-r-xl" style={{ borderLeft: '2px solid var(--lava, #E85D00)', padding: '20px 20px 20px 20px', background: 'rgba(255,255,255,0.04)' }}>
-            <p className="text-sm leading-relaxed mb-2" style={{ fontFamily: UI, color: 'var(--ink, #171717)', fontStyle: 'italic' }}>
+          <div className="pl-5 rounded-r-xl" style={{ borderLeft: '2px solid var(--lava, #E85D00)', padding: '20px 20px 20px 20px', background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+            <p className="text-sm leading-relaxed mb-2" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink, #171717)', fontStyle: 'italic' }}>
               "We replaced four dashboards and a Notion page with BIQc. I now read one feed a day and that is the entire job."
             </p>
-            <span className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--lava-warm, #FF7A1A)' }}>
+            <span className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-secondary, #525252)', fontWeight: 600 }}>
               — Eleanor Cho, founder · Olive Lane Studios
             </span>
           </div>
@@ -296,24 +298,23 @@ const LoginSupabase = () => {
 
         <div className="relative z-10 flex items-center gap-6 flex-wrap">
           {['SOC 2 Type II in progress', 'Sovereign AU data', 'Read-only by default'].map((t, i) => (
-            <span key={i} className="text-[11px] uppercase tracking-[0.04em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #737373)' }}>{t}</span>
+            <span key={i} className="text-[11px] uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', color: 'var(--ink-muted, #737373)', fontWeight: 500 }}>{t}</span>
           ))}
         </div>
       </aside>
 
       {/* Right: Login Form */}
-      <div className="flex-[1.1] flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12" style={{ background: '#FAFAFA' }}>
+      <div className="flex-[1.1] flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12" style={{ background: 'var(--canvas-sage, #F2F4EC)' }}>
         <div className="max-w-[420px] w-full mx-auto">
-          {/* Mobile-only brand */}
-          <div className="flex items-center gap-2 mb-10 lg:hidden">
-            <span className="inline-block rounded-full" style={{ width: 10, height: 10, background: 'var(--lava, #E85D00)' }} />
-            <span className="text-lg font-semibold text-white" style={{ fontFamily: DISPLAY }}>BIQc</span>
+          {/* Mobile-only brand — hovering logo card */}
+          <div className="mb-10 lg:hidden">
+            <BiqcLogoCard size="sm" to="/" />
           </div>
 
-          <h1 className="mb-2" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)', fontSize: '48px', lineHeight: 1.05, letterSpacing: 'var(--ls-tight, -0.035em)', fontWeight: 'var(--fw-display, 400)' }}>
+          <h1 className="mb-2" style={{ fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)', color: 'var(--ink-display, #0A0A0A)', fontSize: '48px', lineHeight: 1.05, letterSpacing: '-0.035em', fontWeight: 600 }}>
             Sign in to <em style={{ fontStyle: 'italic', color: 'var(--lava, #E85D00)' }}>BIQc</em>.
           </h1>
-          <p className="text-base mb-2" style={{ fontFamily: UI, color: 'var(--ink-secondary, #8FA0B8)' }}>
+          <p className="text-base mb-2" style={{ fontFamily: UI, color: 'var(--ink-secondary, #525252)' }}>
             Use the same Google or Microsoft account that holds your inbox.
           </p>
 
@@ -337,7 +338,7 @@ const LoginSupabase = () => {
           <div className="flex flex-col gap-3 mb-6" style={{ marginTop: '28px' }}>
             <button type="button" onClick={() => handleOAuthSignIn('google')} disabled={!hasSupabaseConfig || oauthLoading || loading}
               className="w-full flex items-center justify-center gap-3 text-sm font-medium transition-all disabled:opacity-50"
-              style={{ fontFamily: UI, color: 'var(--ink-display, #0A0A0A)', background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-md, 8px)', padding: '14px 18px', cursor: 'pointer' }}
+              style={{ fontFamily: UI, color: 'var(--ink-display, #0A0A0A)', background: '#FFFFFF', border: '1px solid rgba(10,10,10,0.1)', borderRadius: '8px', padding: '14px 18px', cursor: 'pointer' }}
               data-testid="login-google-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: 'var(--lava, #E85D00)', fontFamily: MONO }}>connecting...</span> : (
                 <>
@@ -348,7 +349,7 @@ const LoginSupabase = () => {
             </button>
             <button type="button" onClick={() => handleOAuthSignIn('azure')} disabled={!hasSupabaseConfig || oauthLoading || loading}
               className="w-full flex items-center justify-center gap-3 text-sm font-medium transition-all disabled:opacity-50"
-              style={{ fontFamily: UI, color: 'var(--ink-display, #0A0A0A)', background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-md, 8px)', padding: '14px 18px', cursor: 'pointer' }}
+              style={{ fontFamily: UI, color: 'var(--ink-display, #0A0A0A)', background: '#FFFFFF', border: '1px solid rgba(10,10,10,0.1)', borderRadius: '8px', padding: '14px 18px', cursor: 'pointer' }}
               data-testid="login-microsoft-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: 'var(--lava, #E85D00)', fontFamily: MONO }}>connecting...</span> : (
                 <>
@@ -362,7 +363,7 @@ const LoginSupabase = () => {
           {/* Divider */}
           <div className="flex items-center gap-4 mb-6" style={{ margin: '28px 0' }}>
             <div className="flex-1 h-px" style={{ background: 'var(--border, rgba(140,170,210,0.12))' }} />
-            <span className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #708499)' }}>or use email</span>
+            <span className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #737373)' }}>or use email</span>
             <div className="flex-1 h-px" style={{ background: 'var(--border, rgba(140,170,210,0.12))' }} />
           </div>
 
@@ -370,25 +371,25 @@ const LoginSupabase = () => {
           <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #708499)' }}>Work email</label>
+                <label htmlFor="email" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #737373)' }}>Work email</label>
                 <Input id="email" type="email" inputMode="email" autoComplete="email" value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="you@yourbusiness.com.au" required
                   className="h-12 text-sm"
-                  style={{ fontFamily: UI, background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink, #C8D4E4)' }}
+                  style={{ fontFamily: UI, background: '#FFFFFF', border: '1px solid rgba(10,10,10,0.1)', borderRadius: '8px', color: 'var(--ink-display, #0A0A0A)' }}
                   data-testid="login-email-input" />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="password" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #708499)' }}>Password</label>
+                <label htmlFor="password" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #737373)' }}>Password</label>
                 <div className="relative">
                   <Input id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" enterKeyHint="go"
                     value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="••••••••••" required
                     className="h-12 pr-12 text-sm"
-                    style={{ fontFamily: UI, background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink, #C8D4E4)' }}
+                    style={{ fontFamily: UI, background: '#FFFFFF', border: '1px solid rgba(10,10,10,0.1)', borderRadius: '8px', color: 'var(--ink-display, #0A0A0A)' }}
                     data-testid="login-password-input" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors" style={{ color: 'var(--ink-muted, #708499)' }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors" style={{ color: 'var(--ink-muted, #737373)' }}
                     data-testid="login-toggle-password">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -423,8 +424,8 @@ const LoginSupabase = () => {
               </div>
             )}
             {fallbackRequired && fallbackChallenge && (
-              <div className="rounded-xl border px-3 py-3 mt-5" style={{ borderColor: 'var(--border, rgba(140,170,210,0.12))', background: 'rgba(14,22,40,0.5)' }} data-testid="login-fallback-captcha">
-                <p className="text-xs mb-2" style={{ color: 'var(--ink-muted, #708499)', fontFamily: UI }}>
+              <div className="rounded-xl border px-3 py-3 mt-5" style={{ borderColor: 'rgba(10,10,10,0.08)', background: 'var(--canvas-sage-soft, #F7F8F2)' }} data-testid="login-fallback-captcha">
+                <p className="text-xs mb-2" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', fontWeight: 500 }}>
                   Verification required: solve {fallbackChallenge.prompt}
                 </p>
                 <Input
@@ -433,22 +434,22 @@ const LoginSupabase = () => {
                   onChange={(e) => setFallbackAnswer(e.target.value)}
                   placeholder="Your answer"
                   className="h-10 text-sm"
-                  style={{ fontFamily: UI, background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink, #C8D4E4)' }}
+                  style={{ fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', background: '#FFFFFF', border: '1px solid rgba(10,10,10,0.1)', borderRadius: '8px', color: 'var(--ink-display, #0A0A0A)' }}
                   data-testid="login-fallback-captcha-input"
                 />
               </div>
             )}
 
             <button type="submit" disabled={!hasSupabaseConfig || loading || oauthLoading || (lockoutUntil && Date.now() < lockoutUntil)}
-              className="w-full flex items-center justify-center gap-2 mt-6 text-[15px] font-semibold transition-all disabled:opacity-50 hover:brightness-110"
-              style={{ background: 'var(--lava, #E85D00)', color: 'white', height: 48, fontFamily: UI, boxShadow: '0 4px 16px rgba(232,93,0,0.3)', border: 'none', borderRadius: 'var(--r-md, 8px)', cursor: 'pointer', padding: '16px' }}
+              className="w-full flex items-center justify-center gap-2 mt-6 text-[15px] font-medium transition-all disabled:opacity-50"
+              style={{ background: '#0A0A0A', color: '#FFFFFF', height: 48, fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', boxShadow: '0 4px 12px rgba(10,10,10,0.12)', border: '1px solid #0A0A0A', borderRadius: '999px', cursor: 'pointer', padding: '16px', letterSpacing: '-0.005em' }}
               aria-busy={loading}
               data-testid="login-submit-btn">
               {loading ? 'Signing in...' : (lockoutUntil && Date.now() < lockoutUntil ? `Retry in ${Math.max(1, cooldownSeconds)}s` : <>Sign in<span className="ml-1">→</span></>)}
             </button>
           </form>
 
-          <p className="text-sm mt-7 text-center" style={{ fontFamily: UI, color: 'var(--ink-secondary, #8FA0B8)' }}>
+          <p className="text-sm mt-7 text-center" style={{ fontFamily: UI, color: 'var(--ink-secondary, #525252)' }}>
             New to BIQc?{' '}
             <Link to="/register-supabase" className="font-medium" style={{ color: 'var(--lava, #E85D00)', textDecoration: 'none' }} data-testid="login-signup-link">
               Start your free account →
