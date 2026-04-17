@@ -9,8 +9,8 @@ import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle, Do
 // ─── Reusable card wrappers ───────────────────────────────────────────────────
 
 const GlassCard = ({ children, className = '' }) => (
-  <div className={`rounded-xl p-6 transition-all duration-300 hover:border-[#E85D00]/30 hover:translate-y-[-2px] ${className}`}
-    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(232,93,0,0.15)', borderRadius: 12 }}>
+  <div className={`rounded-xl p-6 transition-all duration-300 hover:-translate-y-[2px] ${className}`}
+    style={{ background: '#FFFFFF', border: '1px solid rgba(10,10,10,0.06)', borderRadius: 14 }}>
     {children}
   </div>
 );
@@ -19,17 +19,16 @@ const StatCard = ({ number, stat, body, biqc }) => (
   <div
     className="rounded-2xl p-7 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1"
     style={{
-      background: 'var(--surface)',
-      border: '1px solid rgba(232,93,0,0.25)',
+      background: '#FFFFFF',
+      border: '1px solid rgba(10,10,10,0.06)',
       borderRadius: 18,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(232,93,0,0.08), inset 0 1px 0 rgba(255,255,255,0.04)',
-      backdropFilter: 'blur(12px)',
+      boxShadow: '0 8px 28px rgba(10,10,10,0.04)',
     }}
   >
-    <p style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 700, color: '#E85D00', lineHeight: 1.1, marginBottom: 0 }}>{number}</p>
-    <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: 'var(--font-ui)' }}>{stat}</p>
-    <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{body}</p>
-    <p className="text-sm italic leading-relaxed" style={{ color: '#E85D00', fontFamily: 'var(--font-ui)' }}>{biqc}</p>
+    <p style={{ fontFamily: 'var(--font-marketing-display)', fontSize: '40px', fontWeight: 700, color: 'var(--ink-display)', lineHeight: 1.05, letterSpacing: '-0.04em', marginBottom: 0 }}>{number}</p>
+    <p className="text-base sm:text-lg leading-snug" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-ui)', fontWeight: 600, letterSpacing: '-0.01em' }}>{stat}</p>
+    <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-marketing-ui)', letterSpacing: '-0.003em' }}>{body}</p>
+    <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-marketing-ui)', paddingTop: '10px', borderTop: '1px solid rgba(10,10,10,0.06)', letterSpacing: '-0.003em' }}>{biqc}</p>
   </div>
 );
 
@@ -77,9 +76,9 @@ const STATS = [
 const WHAT_YOU_GET_CARDS = [
   {
     icon: DollarSign,
-    iconBg: 'rgba(16,185,129,0.12)',
-    iconColor: '#10B981',
-    border: 'rgba(16,185,129,0.2)',
+    iconBg: 'rgba(10,10,10,0.04)',
+    iconColor: 'var(--ink)',
+    border: 'rgba(10,10,10,0.06)',
     title: 'Revenue Leakage & Missed Opportunities',
     subtitle: "Identify revenue you're losing \u2014 without realising it.",
     bullets: [
@@ -89,13 +88,13 @@ const WHAT_YOU_GET_CARDS = [
       'Revenue concentrated in too few clients, increasing risk',
     ],
     cta: 'Recover lost revenue and close gaps before they widen',
-    ctaColor: '#10B981',
+    ctaColor: 'var(--ink-display)',
   },
   {
     icon: TrendingDown,
-    iconBg: 'rgba(59,130,246,0.12)',
-    iconColor: '#3B82F6',
-    border: 'rgba(59,130,246,0.2)',
+    iconBg: 'rgba(10,10,10,0.04)',
+    iconColor: 'var(--ink)',
+    border: 'rgba(10,10,10,0.06)',
     title: 'Cost & Payroll Blowouts',
     subtitle: 'Stop costs creeping up unnoticed.',
     bullets: [
@@ -105,13 +104,13 @@ const WHAT_YOU_GET_CARDS = [
       'Rising operational costs with no clear driver identified',
     ],
     cta: 'Control costs and protect your margins',
-    ctaColor: '#3B82F6',
+    ctaColor: 'var(--ink-display)',
   },
   {
     icon: AlertCircle,
-    iconBg: 'rgba(245,158,11,0.12)',
-    iconColor: '#F59E0B',
-    border: 'rgba(245,158,11,0.2)',
+    iconBg: 'rgba(10,10,10,0.04)',
+    iconColor: 'var(--ink)',
+    border: 'rgba(10,10,10,0.06)',
     title: 'Customer & Operational Risk',
     subtitle: 'Catch issues before they impact your reputation.',
     bullets: [
@@ -121,13 +120,13 @@ const WHAT_YOU_GET_CARDS = [
       'Processes not followed, creating inconsistent outcomes',
     ],
     cta: 'Fix problems early — before customers feel them',
-    ctaColor: '#F59E0B',
+    ctaColor: 'var(--ink-display)',
   },
   {
     icon: FileWarning,
-    iconBg: 'rgba(239,68,68,0.12)',
-    iconColor: '#EF4444',
-    border: 'rgba(239,68,68,0.2)',
+    iconBg: 'rgba(10,10,10,0.04)',
+    iconColor: 'var(--ink)',
+    border: 'rgba(10,10,10,0.06)',
     title: 'Compliance & Legal Exposure',
     subtitle: 'Reduce risk before it becomes a liability.',
     bullets: [
@@ -137,7 +136,7 @@ const WHAT_YOU_GET_CARDS = [
       'Audit blind spots that compound over time',
     ],
     cta: 'Protect your business from avoidable risk',
-    ctaColor: '#EF4444',
+    ctaColor: 'var(--ink-display)',
   },
 ];
 
@@ -153,7 +152,7 @@ const HomePage = () => {
     ══════════════════════════════════════════════════════════ */}
     <section
       className="relative overflow-hidden"
-      style={{ background: '#FAFAFA' }}
+      style={{ background: 'var(--canvas-sage)', fontFamily: 'var(--font-marketing-ui)' }}
       data-testid="hero-section"
     >
       <style>{`
@@ -162,8 +161,8 @@ const HomePage = () => {
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes badgePulse {
-          0%,100% { box-shadow: 0 0 0 0 rgba(140,170,210,0); }
-          50%     { box-shadow: 0 0 0 6px rgba(140,170,210,0.08); }
+          0%,100% { box-shadow: 0 0 0 0 rgba(10,10,10,0); }
+          50%     { box-shadow: 0 0 0 6px rgba(10,10,10,0.04); }
         }
         @keyframes orbFloat {
           0%,100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.55; }
@@ -176,95 +175,97 @@ const HomePage = () => {
         .hero-fade-5 { animation: heroFadeUp 0.7s ease both 0.58s; }
       `}</style>
 
-      {/* ── Decorative background layers ── */}
-      {/* Centred amber bloom */}
+      {/* ── Decorative background layers (shades only, Merge-aligned) ── */}
+      {/* Centred soft bloom — was amber, now neutral shade */}
       <div className="absolute pointer-events-none" style={{
         top: '0%', left: '50%', width: 900, height: 560,
         transform: 'translate(-50%, -30%)',
-        background: 'radial-gradient(ellipse, rgba(198,95,46,0.13) 0%, rgba(232,93,0,0.04) 40%, transparent 70%)',
+        background: 'radial-gradient(ellipse, rgba(10,10,10,0.05) 0%, rgba(10,10,10,0.015) 40%, transparent 70%)',
         animation: 'orbFloat 12s ease-in-out infinite',
       }} />
-      {/* Left accent orb */}
+      {/* Left accent orb — was blue, now shade */}
       <div className="absolute pointer-events-none hidden lg:block" style={{
         top: '60%', left: '5%', width: 400, height: 400,
         transform: 'translate(-50%, -50%)',
-        background: 'radial-gradient(ellipse, rgba(59,130,246,0.06) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse, rgba(10,10,10,0.035) 0%, transparent 70%)',
         animation: 'orbFloat 16s ease-in-out infinite 3s',
       }} />
-      {/* Fine grid */}
+      {/* Fine grid — softened */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)',
+        backgroundImage: 'linear-gradient(rgba(10,10,10,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(10,10,10,0.015) 1px, transparent 1px)',
         backgroundSize: '64px 64px',
       }} />
-      {/* Top vignette */}
-      <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(232,93,0,0.3), transparent)' }} />
+      {/* Top vignette — was orange, now neutral shade */}
+      <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(10,10,10,0.12), transparent)' }} />
 
       {/* ── Hero content ── */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 sm:px-10 text-center" style={{ paddingTop: 96, paddingBottom: 72 }}>
 
-        {/* Badge */}
+        {/* Badge — structure preserved, colors shaded */}
         <div className="hero-fade-1 inline-flex items-center gap-2.5 px-4 py-2 rounded-full mb-8 cursor-default" style={{
-          background: 'linear-gradient(135deg, rgba(140,170,210,0.08), rgba(140,170,210,0.03))',
-          border: '1px solid rgba(140,170,210,0.15)',
+          background: 'rgba(255,255,255,0.65)',
+          border: '1px solid rgba(10,10,10,0.08)',
           animation: 'heroFadeUp 0.7s ease both 0.05s, badgePulse 4s ease-in-out infinite 1s',
         }}>
-          {/* Live indicator dot */}
+          {/* Live indicator dot — subtle orange accent (the only orange in hero) */}
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: '#10B981' }} />
-            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#10B981' }} />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: 'var(--lava)' }} />
+            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: 'var(--lava)' }} />
           </span>
-          <Shield className="w-3 h-3 flex-shrink-0" style={{ color: '#9BB0CC' }} />
-          <span style={{ fontFamily: 'var(--font-mono)', color: '#9BB0CC', fontSize: '11px', fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase' }}>
+          <Shield className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--ink-secondary)' }} />
+          <span style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', fontSize: '11px', fontWeight: 500, letterSpacing: '-0.005em' }}>
             Australian Owned &amp; Operated
           </span>
         </div>
 
-        {/* Headline */}
+        {/* Headline — Geist, plain color (gradient killed) */}
         <h1
           className="hero-fade-2 tracking-tight mb-5"
           style={{
-            fontFamily: 'var(--font-display)',
+            fontFamily: 'var(--font-marketing-display)',
             fontSize: 'clamp(26px, 3.8vw, 44px)',
             lineHeight: 1.1,
+            letterSpacing: '-0.035em',
+            fontWeight: 600,
             color: 'var(--ink-display)',
           }}
         >
           One intelligence layer for every{' '}
           <span style={{
-            fontFamily: 'var(--font-display)',
-            background: 'linear-gradient(135deg, #FF7A18 0%, #E85D00 40%, var(--ink) 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            fontFamily: 'var(--font-marketing-display)',
+            color: 'var(--ink-display)',
           }}>
             decision that matters.
           </span>
         </h1>
 
-        {/* Subtitle */}
+        {/* Subtitle — fixed color (was broken on light bg), Geist */}
         <p
           className="hero-fade-3 max-w-2xl mx-auto leading-relaxed mb-10"
-          style={{ fontFamily: 'var(--font-ui)', color: 'rgba(159,176,195,0.9)', fontSize: 'clamp(15px, 1.8vw, 18px)' }}
+          style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', fontSize: 'clamp(15px, 1.8vw, 18px)', letterSpacing: '-0.005em' }}
         >
           BIQc brings your business systems into one live Intelligence Platform — helping owners
           and leaders make faster decisions, evaluate trade‑offs clearly, and execute with
           confidence in real time.
         </p>
 
-        {/* CTA — single centred button */}
+        {/* CTA — was orange gradient, now black pill */}
         <div className="hero-fade-4 flex justify-center mb-6">
           <Link
             to="/register-supabase"
-            className="group relative inline-flex items-center justify-center gap-2 font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5"
+            className="group relative inline-flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
             style={{
-              background: 'linear-gradient(135deg, #FF7A18, #E85D00)',
-              fontFamily: 'var(--font-ui)',
-              fontWeight: 600,
-              fontSize: '16px',
-              padding: '14px 32px',
-              borderRadius: 'var(--r-md)',
-              boxShadow: '0 8px 28px rgba(198,95,46,0.38), 0 2px 4px rgba(0,0,0,0.3)',
-              minWidth: 'min(220px, calc(100vw - 64px))',
+              background: '#0A0A0A',
+              color: '#FFFFFF',
+              fontFamily: 'var(--font-marketing-ui)',
+              fontWeight: 500,
+              fontSize: '15px',
+              letterSpacing: '-0.005em',
+              padding: '13px 24px',
+              borderRadius: '999px',
+              border: '1px solid #0A0A0A',
+              boxShadow: '0 4px 12px rgba(10,10,10,0.08)',
+              minWidth: 'min(200px, calc(100vw - 64px))',
             }}
             data-testid="hero-cta"
           >
@@ -273,24 +274,23 @@ const HomePage = () => {
           </Link>
         </div>
 
-        {/* Inline trust strip */}
-        <div className="hero-fade-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+        {/* Inline trust strip — monochrome shades, emoji removed, font Geist */}
+        <div className="hero-fade-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
           {[
-            { icon: '🇦🇺', label: 'Australian Hosted' },
-            { icon: '🔒', label: 'AES-256 Encrypted' },
-            { icon: '✅', label: '14-Day Guarantee' },
+            { label: 'Australian Hosted' },
+            { label: 'AES-256 Encrypted' },
+            { label: '14-Day Guarantee' },
           ].map((t, i) => (
             <span key={t.label} className="flex items-center gap-1.5">
-              {i > 0 && <span style={{ display: 'inline-block', width: 1, height: 14, background: 'rgba(255,255,255,0.25)', marginRight: 4 }} />}
-              <span style={{ fontSize: '13px' }}>{t.icon}</span>
-              <span style={{ fontFamily: 'var(--font-mono)', color: '#64748B', fontSize: '11px', fontWeight: 500 }}>{t.label}</span>
+              {i > 0 && <span style={{ display: 'inline-block', width: 3, height: 3, borderRadius: '50%', background: 'rgba(10,10,10,0.2)' }} />}
+              <span style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-muted)', fontSize: '12px', fontWeight: 500, letterSpacing: '-0.002em' }}>{t.label}</span>
             </span>
           ))}
-          <span style={{ display: 'inline-block', width: 1, height: 14, background: 'rgba(255,255,255,0.25)' }} />
+          <span style={{ display: 'inline-block', width: 3, height: 3, borderRadius: '50%', background: 'rgba(10,10,10,0.2)' }} />
           <Link
             to="/login-supabase"
-            className="hover:text-white transition-colors"
-            style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', fontSize: '11px' }}
+            className="transition-colors"
+            style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', fontSize: '12px', fontWeight: 500, letterSpacing: '-0.002em' }}
             data-testid="hero-login"
           >
             Already have an account?
@@ -308,7 +308,7 @@ const HomePage = () => {
     {/* ══════════════════════════════════════════════════════════
         ANIMATED CONNECTOR — diagram → What You Get
     ══════════════════════════════════════════════════════════ */}
-    <div style={{ background: 'var(--canvas-app, #FAFAFA)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 0, paddingBottom: 0 }}>
+    <div style={{ background: 'var(--canvas-sage)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 0, paddingBottom: 0 }}>
       <style>{`
         @keyframes connectorPulse {
           0%   { transform: translateX(-50%) translateY(0);    opacity: 0; }
@@ -328,12 +328,11 @@ const HomePage = () => {
         .connector-label { animation: labelFadeIn 2s ease-in-out infinite; }
       `}</style>
 
-      {/* Vertical animated line */}
+      {/* Vertical line — was orange gradient, now neutral shade */}
       <div style={{ position: 'relative', width: 2, height: 80 }}>
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(232,93,0,0.55), rgba(232,93,0,0.12))',
-          boxShadow: '0 0 8px rgba(232,93,0,0.25)',
+          background: 'linear-gradient(to bottom, rgba(10,10,10,0.25), rgba(10,10,10,0.05))',
           borderRadius: 1,
         }} />
         <div
@@ -341,56 +340,49 @@ const HomePage = () => {
           style={{
             position: 'absolute', left: '50%',
             width: 8, height: 8, borderRadius: '50%',
-            background: '#FF8C28',
-            boxShadow: '0 0 14px rgba(232,93,0,0.9), 0 0 28px rgba(232,93,0,0.4)',
+            background: 'var(--lava)',
+            boxShadow: '0 0 10px rgba(232,93,0,0.4)',
             top: 0,
           }}
         />
       </div>
 
-      {/* Animated node with label */}
+      {/* Node — was orange tinted, now white on sage with subtle orange pulse */}
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
         padding: '18px 36px',
         borderRadius: 16,
-        background: 'rgba(232,93,0,0.06)',
-        border: '1px solid rgba(232,93,0,0.25)',
-        boxShadow: '0 0 40px rgba(232,93,0,0.08)',
+        background: 'rgba(255,255,255,0.6)',
+        border: '1px solid rgba(10,10,10,0.08)',
+        boxShadow: '0 4px 20px rgba(10,10,10,0.04)',
         marginTop: 0,
       }}>
-        {/* Pulsing ring */}
         <div style={{ position: 'relative', width: 14, height: 14 }}>
           <div style={{
-            position: 'absolute', inset: -4, borderRadius: '50%',
-            border: '1px solid rgba(232,93,0,0.3)',
-            animation: 'corePulse 3s ease-in-out infinite',
-          }} />
-          <div style={{
             width: 14, height: 14, borderRadius: '50%',
-            background: '#E85D00',
-            boxShadow: '0 0 12px rgba(232,93,0,0.8)',
+            background: 'var(--lava)',
+            boxShadow: '0 0 0 4px rgba(232,93,0,0.12)',
           }} />
         </div>
         <span
           className="connector-label"
-          style={{ fontFamily: 'var(--font-mono)', color: '#FF9C45', fontSize: 11, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase' }}
+          style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-display)', fontSize: 11, fontWeight: 600, letterSpacing: '0.02em', textTransform: 'uppercase' }}
         >
           Intelligence Output
         </span>
         <svg width="180" height="10" viewBox="0 0 180 10" fill="none" style={{ marginTop: -4 }}>
-          <line x1="0" y1="5" x2="172" y2="5" stroke="rgba(232,93,0,0.3)" strokeWidth="1.2" strokeDasharray="4 3">
+          <line x1="0" y1="5" x2="172" y2="5" stroke="rgba(10,10,10,0.25)" strokeWidth="1" strokeDasharray="4 3">
             <animate attributeName="stroke-dashoffset" from="14" to="0" dur="1.5s" repeatCount="indefinite" />
           </line>
-          <polygon points="170,2 180,5 170,8" fill="rgba(232,93,0,0.45)" />
+          <polygon points="170,2 180,5 170,8" fill="rgba(10,10,10,0.35)" />
         </svg>
       </div>
 
-      {/* Second vertical connector into What You Get */}
+      {/* Second vertical connector */}
       <div style={{ position: 'relative', width: 2, height: 80 }}>
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(232,93,0,0.45), rgba(232,93,0,0.08))',
-          boxShadow: '0 0 8px rgba(232,93,0,0.2)',
+          background: 'linear-gradient(to bottom, rgba(10,10,10,0.2), rgba(10,10,10,0.04))',
           borderRadius: 1,
         }} />
         <div
@@ -398,8 +390,8 @@ const HomePage = () => {
           style={{
             position: 'absolute', left: '50%',
             width: 8, height: 8, borderRadius: '50%',
-            background: '#FF8C28',
-            boxShadow: '0 0 14px rgba(232,93,0,0.9), 0 0 28px rgba(232,93,0,0.4)',
+            background: 'var(--lava)',
+            boxShadow: '0 0 10px rgba(232,93,0,0.4)',
             top: 0, animationDelay: '0.5s',
           }}
         />
@@ -409,79 +401,77 @@ const HomePage = () => {
     {/* ══════════════════════════════════════════════════════════
         WHAT YOU GET — pain-point framing
     ══════════════════════════════════════════════════════════ */}
-    <section className="pb-16 sm:pb-24" style={{ background: 'var(--canvas-app, #FAFAFA)' }} data-testid="what-you-get">
+    <section className="pb-16 sm:pb-24" style={{ background: 'var(--canvas-sage)', fontFamily: 'var(--font-marketing-ui)' }} data-testid="what-you-get">
       <style>{`
         .wyg-card-enhanced:hover {
-          box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(140,170,210,0.08) !important;
-          border-color: rgba(160,185,220,0.22) !important;
+          box-shadow: 0 12px 32px rgba(10,10,10,0.06) !important;
+          transform: translateY(-4px);
         }
       `}</style>
       <div className="max-w-5xl mx-auto px-6">
 
-        {/* Section header */}
+        {/* Section header — eyebrow orange → shade with tiny orange dot */}
         <div className="text-center mb-4">
-          <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>
+          <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', letterSpacing: '0.12em', display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--lava)', display: 'inline-block' }} />
             Intelligence Output
           </p>
           <h2
             className="text-3xl sm:text-4xl lg:text-5xl font-semibold mb-4"
-            style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}
+            style={{ fontFamily: 'var(--font-marketing-display)', color: 'var(--ink-display)', letterSpacing: '-0.035em', lineHeight: 1.1 }}
           >
             What You Get
           </h2>
           <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
-            style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
+            style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-marketing-ui)', letterSpacing: '-0.005em' }}>
             Full visibility over where you&rsquo;re <strong style={{ color: 'var(--ink-display)' }}>losing money</strong>;
             {' '}where risk is building, and where <strong style={{ color: 'var(--ink-display)' }}>growth</strong> is being{' '}
             <strong style={{ color: 'var(--ink-display)' }}>missed</strong>&mdash;<strong style={{ color: 'var(--ink-display)' }}>in real time.</strong>
           </p>
         </div>
 
-        {/* 4 pain-point cards */}
+        {/* 4 pain-point cards — monochrome shades, white bg */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-10">
           {WHAT_YOU_GET_CARDS.map((card) => (
             <div
               key={card.title}
-              className="wyg-card-enhanced relative rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-1.5 overflow-hidden"
+              className="wyg-card-enhanced relative rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 overflow-hidden"
               style={{
-                background: 'linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
+                background: '#FFFFFF',
                 border: `1px solid ${card.border}`,
-                boxShadow: `0 4px 32px ${card.iconColor}0a`,
-                backdropFilter: 'blur(6px)',
-                WebkitBackdropFilter: 'blur(6px)',
               }}
             >
-              {/* Top accent bar matching mockup */}
-              <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: card.iconColor, opacity: 0.6 }} />
+              {/* Top accent bar — was colored, now shade */}
+              <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'rgba(10,10,10,0.18)', opacity: 0.6 }} />
               {/* Card header */}
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: card.iconBg }}>
                   <card.icon className="w-5 h-5" style={{ color: card.iconColor }} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold leading-snug mb-0.5" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
+                  <h3 className="text-sm leading-snug mb-0.5" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-ui)', fontWeight: 600, letterSpacing: '-0.015em' }}>
                     {card.title}
                   </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: 'rgba(159,176,195,0.7)', fontFamily: 'var(--font-ui)' }}>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-marketing-ui)', letterSpacing: '-0.003em' }}>
                     {card.subtitle}
                   </p>
                 </div>
               </div>
 
-              {/* Bullet points */}
+              {/* Bullet points — colored dots → shade dots */}
               <ul className="flex flex-col gap-2 pl-1">
                 {card.bullets.map((b) => (
                   <li key={b} className="flex items-start gap-2">
-                    <span className="flex-shrink-0 mt-1.5" style={{ width: 6, height: 6, borderRadius: '50%', background: card.iconColor }} />
-                    <span className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{b}</span>
+                    <span className="flex-shrink-0 mt-1.5" style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(10,10,10,0.35)' }} />
+                    <span className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-marketing-ui)', letterSpacing: '-0.003em' }}>{b}</span>
                   </li>
                 ))}
               </ul>
 
-              {/* Card CTA */}
-              <div className="flex items-center gap-2 pt-2 mt-auto" style={{ borderTop: `1px solid ${card.border}` }}>
-                <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: card.ctaColor }} />
-                <span className="text-xs font-semibold leading-snug" style={{ color: card.ctaColor, fontFamily: 'var(--font-ui)' }}>
+              {/* Card CTA — arrow orange kept as micro-accent, text plain ink */}
+              <div className="flex items-center gap-2 pt-3 mt-auto" style={{ borderTop: `1px solid ${card.border}` }}>
+                <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--lava)' }} />
+                <span className="text-xs leading-snug" style={{ color: card.ctaColor, fontFamily: 'var(--font-marketing-ui)', fontWeight: 600, letterSpacing: '-0.005em' }}>
                   {card.cta}
                 </span>
               </div>
@@ -489,22 +479,21 @@ const HomePage = () => {
           ))}
         </div>
 
-        {/* Bottom banner — BIQc brings it together */}
+        {/* Bottom banner — orange accent text → plain ink, sage-deep bg */}
         <div
           className="mt-6 rounded-2xl p-8 text-center"
           style={{
-            background: 'linear-gradient(135deg, rgba(140,170,210,0.04), rgba(255,122,24,0.02))',
-            border: '1px solid rgba(140,170,210,0.15)',
-            boxShadow: '0 0 60px rgba(140,170,210,0.04)',
+            background: 'var(--canvas-sage-deep)',
+            border: '1px solid rgba(10,10,10,0.06)',
           }}
         >
-          <h3 className="text-lg sm:text-xl font-bold mb-3" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
-            Then&mdash;<span style={{ color: '#E85D00' }}>BIQc Brings It Together</span>
+          <h3 className="text-lg sm:text-xl mb-3" style={{ fontFamily: 'var(--font-marketing-display)', color: 'var(--ink-display)', fontWeight: 600, letterSpacing: '-0.02em' }}>
+            Then&mdash;BIQc Brings It Together
           </h3>
-          <p className="text-sm mb-3" style={{ color: 'rgba(159,176,195,0.7)', fontFamily: 'var(--font-ui)' }}>
+          <p className="text-sm mb-3" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-marketing-ui)', letterSpacing: '-0.003em' }}>
             Daily Executive Brief &nbsp;·&nbsp; Strategic Action Plans &nbsp;·&nbsp; Market &amp; Competitor Intelligence
           </p>
-          <p className="text-base font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
+          <p className="text-base" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-ui)', fontWeight: 600, letterSpacing: '-0.01em' }}>
             The full picture &nbsp;·&nbsp; The right moves &nbsp;·&nbsp; The confidence to act
           </p>
         </div>
@@ -513,19 +502,20 @@ const HomePage = () => {
     </section>
 
     {/* AI era evidence cards */}
-    <section className="py-14 sm:py-16" style={{ background: 'var(--canvas-app, #FAFAFA)' }} data-testid="ai-era-section">
+    <section className="py-14 sm:py-16" style={{ background: 'var(--canvas-sage-soft)', fontFamily: 'var(--font-marketing-ui)' }} data-testid="ai-era-section">
       <div className="max-w-5xl mx-auto px-6">
-        <p className="text-xs font-semibold tracking-widest uppercase mb-3 text-center" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>
+        <p className="text-xs font-semibold tracking-widest uppercase mb-3 text-center" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', letterSpacing: '0.12em', display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center', width: '100%' }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--lava)', display: 'inline-block' }} />
           The Opportunity
         </p>
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-center"
-          style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4 text-center"
+          style={{ fontFamily: 'var(--font-marketing-display)', color: 'var(--ink-display)', letterSpacing: '-0.035em', lineHeight: 1.1 }}>
           What Businesses Are Achieving In The AI Era
         </h2>
         <p className="text-base sm:text-lg mb-10 max-w-2xl mx-auto leading-relaxed text-center"
-          style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
+          style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-marketing-ui)', letterSpacing: '-0.005em' }}>
           Business leaders make hundreds of decisions every day, and research shows up to{' '}
-          <span style={{ color: '#C65F2E', fontWeight: 600 }}>40%</span> of those decisions are made without the right data.
+          <span style={{ color: 'var(--ink-display)', fontWeight: 600 }}>40%</span> of those decisions are made without the right data.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {STATS.map((item, i) => (
@@ -535,21 +525,26 @@ const HomePage = () => {
       </div>
     </section>
 
-    {/* TRUST & COMPLIANCE BADGES */}
-    <section className="py-10" style={{ background: 'var(--canvas-app, #FAFAFA)', borderTop: '1px solid rgba(140,170,210,0.1)', borderBottom: '1px solid rgba(140,170,210,0.1)' }} data-testid="trust-badges">
+    {/* TRUST & COMPLIANCE BADGES — emoji killed, monoline shade icons */}
+    <section className="py-10" style={{ background: '#FFFFFF', borderTop: '1px solid rgba(10,10,10,0.06)', borderBottom: '1px solid rgba(10,10,10,0.06)', fontFamily: 'var(--font-marketing-ui)' }} data-testid="trust-badges">
       <div className="max-w-5xl mx-auto px-6">
         <div className="flex flex-wrap items-center justify-center gap-4">
           {[
-            { icon: '🇦🇺', label: 'Australian Hosted', sub: 'Sydney & Melbourne data centres' },
-            { icon: '🔒', label: 'AES-256 Encrypted', sub: 'Defence-grade at rest & in transit' },
-            { icon: '🛡️', label: 'Privacy Act Compliant', sub: 'Australian Privacy Principles' },
-            { icon: '✅', label: '14-Day Guarantee', sub: 'No questions asked refund' },
+            { iconPath: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', label: 'Australian Hosted', sub: 'Sydney & Melbourne data centres' },
+            { iconPath: 'M7 11V7a5 5 0 0110 0v4', iconExtra: 'M3 11h18v11H3z', label: 'AES-256 Encrypted', sub: 'Defence-grade at rest & in transit' },
+            { iconPath: 'M12 2L2 7v6c0 5.5 3.8 10.7 10 12 6.2-1.3 10-6.5 10-12V7L12 2z', label: 'Privacy Act Compliant', sub: 'Australian Privacy Principles' },
+            { iconPath: 'M20 6 9 17l-5-5', label: '14-Day Guarantee', sub: 'No questions asked refund' },
           ].map(b => (
-            <div key={b.label} className="flex items-center gap-3 p-4 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(140,170,210,0.15)' }}>
-              <span className="text-2xl">{b.icon}</span>
+            <div key={b.label} className="flex items-center gap-3 p-4 rounded-xl" style={{ background: 'var(--canvas-sage-soft)', border: '1px solid rgba(10,10,10,0.06)' }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(10,10,10,0.04)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={b.iconPath} />
+                  {b.iconExtra && <path d={b.iconExtra} />}
+                </svg>
+              </div>
               <div>
-                <p className="text-xs font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: 'var(--font-mono)' }}>{b.label}</p>
-                <p className="text-[11px] mt-0.5 leading-snug" style={{ color: '#6B7B8D', fontFamily: 'var(--font-ui)' }}>{b.sub}</p>
+                <p className="text-xs" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-ui)', fontWeight: 600, letterSpacing: '-0.005em' }}>{b.label}</p>
+                <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-marketing-ui)', letterSpacing: '-0.002em' }}>{b.sub}</p>
               </div>
             </div>
           ))}
@@ -557,15 +552,18 @@ const HomePage = () => {
       </div>
     </section>
 
-    {/* WHAT COGNITION DELIVERS */}
-    <section className="py-14 sm:py-20" style={{ background: 'var(--canvas-app, #FAFAFA)' }} data-testid="cognition-section">
+    {/* WHAT COGNITION DELIVERS — eyebrow orange → shade, icons orange → shade */}
+    <section className="py-14 sm:py-20" style={{ background: 'var(--canvas-sage)', fontFamily: 'var(--font-marketing-ui)' }} data-testid="cognition-section">
       <div className="max-w-5xl mx-auto px-6">
         <div className="mb-10 sm:mb-12 text-center">
-          <p className="text-xs font-medium tracking-widest uppercase mb-4" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>What Cognition-as-a-Service Delivers</p>
-          <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display, #0A0A0A)' }}>
+          <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', letterSpacing: '0.12em', display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--lava)', display: 'inline-block' }} />
+            What Cognition-as-a-Service Delivers
+          </p>
+          <h2 className="text-2xl sm:text-3xl mb-3" style={{ fontFamily: 'var(--font-marketing-display)', color: 'var(--ink-display)', fontWeight: 600, letterSpacing: '-0.035em', lineHeight: 1.1 }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
-          <p className="text-base max-w-xl mx-auto" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>Businesses embedding AI-driven decision systems experience:</p>
+          <p className="text-base max-w-xl mx-auto" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', letterSpacing: '-0.005em' }}>Businesses embedding AI-driven decision systems experience:</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -578,33 +576,33 @@ const HomePage = () => {
             { icon: Users, title: 'Maximise Output', desc: 'Boost leverage and performance without expanding headcount.' },
           ].map((item, i) => (
             <GlassCard key={i}>
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(232,93,0,0.08)' }}>
-                <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(10,10,10,0.04)' }}>
+                <item.icon className="w-5 h-5" style={{ color: 'var(--ink)' }} strokeWidth={1.8} />
               </div>
-              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display, #0A0A0A)' }}>{item.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>{item.desc}</p>
+              <h3 className="text-base mb-2" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-display)', fontWeight: 600, letterSpacing: '-0.015em' }}>{item.title}</h3>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', letterSpacing: '-0.003em' }}>{item.desc}</p>
             </GlassCard>
           ))}
         </div>
       </div>
     </section>
 
-    {/* SOCIAL PROOF */}
-    <section className="py-14 sm:py-20" style={{ background: 'radial-gradient(ellipse 60% 50% at 70% 30%, rgba(46,74,110,0.06) 0%, transparent 60%), linear-gradient(180deg, var(--canvas-app, #FAFAFA) 0%, #FAFAFA 100%)' }} data-testid="testimonials-section">
+    {/* SOCIAL PROOF — orange metrics + dividers → shades, testimonial cards monochrome */}
+    <section className="py-14 sm:py-20" style={{ background: 'var(--canvas-sage-soft)', fontFamily: 'var(--font-marketing-ui)' }} data-testid="testimonials-section">
       <style>{`
         .testimonial-card-enhanced:hover {
-          box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(140,170,210,0.08) !important;
-          border-color: rgba(160,185,220,0.22) !important;
+          box-shadow: 0 10px 30px rgba(10,10,10,0.06) !important;
+          transform: translateY(-3px);
         }
       `}</style>
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="w-8 h-[2px]" style={{ background: '#E85D00' }} />
-            <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>What Australian SMBs Say</span>
-            <div className="w-8 h-[2px]" style={{ background: '#E85D00' }} />
+            <div className="w-8 h-[1px]" style={{ background: 'rgba(10,10,10,0.18)' }} />
+            <span className="text-xs font-semibold tracking-widest uppercase" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', letterSpacing: '0.12em' }}>What Australian SMBs Say</span>
+            <div className="w-8 h-[1px]" style={{ background: 'rgba(10,10,10,0.18)' }} />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display, #0A0A0A)' }}>
+          <h2 className="text-2xl sm:text-3xl" style={{ fontFamily: 'var(--font-marketing-display)', color: 'var(--ink-display)', fontWeight: 600, letterSpacing: '-0.035em', lineHeight: 1.1 }}>
             Built for operators, not analysts.
           </h2>
         </div>
@@ -631,43 +629,40 @@ const HomePage = () => {
           ].map((t, i) => (
             <div
               key={i}
-              className="testimonial-card-enhanced flex flex-col rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1"
+              className="testimonial-card-enhanced flex flex-col rounded-2xl p-8 transition-all duration-300"
               style={{
-                background: 'linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
-                border: '1px solid rgba(140,170,210,0.15)',
-                backdropFilter: 'blur(6px)',
-                WebkitBackdropFilter: 'blur(6px)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                background: '#FFFFFF',
+                border: '1px solid rgba(10,10,10,0.06)',
               }}
             >
-              {/* Prominent stat header */}
+              {/* Prominent stat header — was orange, now plain ink */}
               <p style={{
-                fontFamily: 'var(--font-display)',
+                fontFamily: 'var(--font-marketing-display)',
                 fontSize: '28px',
                 fontWeight: 700,
-                color: '#FF7A18',
-                marginBottom: '12px',
-                lineHeight: 1.2,
+                color: 'var(--ink-display)',
+                marginBottom: '14px',
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
               }}>
                 {t.metric}
               </p>
 
-              {/* Quote */}
               <div className="flex-1">
                 <p className="text-sm leading-relaxed mb-5" style={{
-                  fontFamily: 'var(--font-ui)',
+                  fontFamily: 'var(--font-marketing-ui)',
                   color: 'var(--ink-secondary)',
                   fontStyle: 'italic',
                   lineHeight: 1.7,
+                  letterSpacing: '-0.003em',
                 }}>
                   &ldquo;{t.quote}&rdquo;
                 </p>
               </div>
 
-              {/* Author */}
               <div>
-                <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-display)' }}>{t.author}</p>
-                <p className="text-xs mt-0.5" style={{ color: '#5C6E82' }}>{t.company}</p>
+                <p className="text-[13px]" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-ui)', fontWeight: 600, letterSpacing: '-0.005em' }}>{t.author}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-marketing-ui)', letterSpacing: '-0.002em' }}>{t.company}</p>
               </div>
             </div>
           ))}
@@ -675,25 +670,25 @@ const HomePage = () => {
       </div>
     </section>
 
-    {/* CTA */}
-    <section className="relative py-20 sm:py-24 overflow-hidden" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #FAFAFA 0%, var(--canvas-app, #FAFAFA) 100%)' }} data-testid="cta-section">
-      {/* Decorative orb behind content */}
+    {/* BOTTOM CTA — orange pill button → black pill, orange orb → shade orb */}
+    <section className="relative py-20 sm:py-24 overflow-hidden" style={{ background: 'var(--canvas-sage)', fontFamily: 'var(--font-marketing-ui)' }} data-testid="cta-section">
+      {/* Decorative orb — was orange+blue, now neutral shade */}
       <div className="absolute pointer-events-none" style={{
         width: 600, height: 600, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(255,122,24,0.05), rgba(140,170,210,0.03) 50%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(10,10,10,0.04), transparent 70%)',
         top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
       }} />
       <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
-        <h2 className="font-medium mb-4" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: '40px' }}>
+        <h2 className="mb-4" style={{ fontFamily: 'var(--font-marketing-display)', color: 'var(--ink-display)', fontSize: 'clamp(32px, 4vw, 44px)', fontWeight: 600, letterSpacing: '-0.035em', lineHeight: 1.1 }}>
           Stop reacting. Start preventing.
         </h2>
-        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)', lineHeight: 1.7 }}>
+        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', lineHeight: 1.6, letterSpacing: '-0.005em' }}>
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
-        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5" style={{ background: 'var(--lava)', borderRadius: 'var(--r-md)', fontFamily: 'var(--font-ui)', fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">
+        <Link to="/register-supabase" className="inline-flex items-center gap-2 transition-all hover:-translate-y-0.5" style={{ background: '#0A0A0A', color: '#FFFFFF', padding: '13px 28px', borderRadius: '999px', border: '1px solid #0A0A0A', fontFamily: 'var(--font-marketing-ui)', fontWeight: 500, fontSize: '15px', letterSpacing: '-0.005em', boxShadow: '0 4px 12px rgba(10,10,10,0.08)' }} data-testid="bottom-cta">
           Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
-        <p className="mt-4" style={{ fontFamily: 'var(--font-mono)', color: '#5C6E82', fontSize: '13px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
+        <p className="mt-4" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-muted)', fontSize: '12px', letterSpacing: '-0.002em' }}>14-day trial &middot; No credit card &middot; Australian support</p>
       </div>
     </section>
 

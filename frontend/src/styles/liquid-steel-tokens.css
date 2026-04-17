@@ -5,13 +5,18 @@
 
 :root {
   /* ─── CANVAS / SURFACES ─── */
-  --canvas:        #FFFFFF;           /* marketing hero background */
+  --canvas:        #FFFFFF;           /* marketing hero background (legacy) */
   --canvas-app:    #FAFAFA;           /* app canvas (off-white) */
   --surface:       #FFFFFF;           /* cards */
   --surface-raised:#FFFFFF;           /* dialogs, popovers */
   --surface-sunken:#F5F5F5;           /* wells, inputs */
   --surface-tint:  #FAFAFA;           /* striped rows, hover */
   --surface-2:     #F0F0F0;           /* secondary surface for auth */
+
+  /* ─── MARKETING SAGE (Merge.dev-inspired) ─── */
+  --canvas-sage:       #F2F4EC;       /* marketing hero background — warm sage off-white */
+  --canvas-sage-deep:  #EEF1E6;       /* deeper sage for hero accent panels */
+  --canvas-sage-soft:  #F7F8F2;       /* lightest sage — alternating sections */
 
   /* ─── INK / TEXT ─── */
   --ink-display:   #0A0A0A;           /* h1 display type */
@@ -54,9 +59,14 @@
   --info-wash:     #EFF6FF;
 
   /* ─── TYPOGRAPHY ─── */
+  /* Platform app — UNCHANGED (Source Serif 4 display, Inter UI) */
   --font-display:  "Source Serif 4", Georgia, serif;
   --font-ui:       "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono:     "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  /* Marketing website — Merge.dev-inspired (Geist, tight tracking, confident) */
+  --font-marketing-display: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-marketing-ui:      "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   /* Type scale — desktop */
   --size-display-xl: clamp(3.5rem, 8vw, 6rem);     /* 56-96 */

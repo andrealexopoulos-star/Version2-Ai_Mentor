@@ -697,3 +697,215 @@ textarea.form-input { min-height: 120px; padding: var(--sp-3) var(--sp-4); resiz
 .sev-critical { color: var(--danger); }
 .sev-high     { color: var(--warning); }
 .sev-info     { color: var(--info); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MERGE-INSPIRED MARKETING AESTHETIC (2026-04-17)
+   Warm sage canvas • Geist sans • orange as ACCENT only
+   Applies only to .merge-* classes — legacy marketing surfaces untouched
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── HERO CANVAS ─── */
+.merge-hero {
+  position: relative;
+  background: var(--canvas-sage);
+  overflow: hidden;
+  isolation: isolate;
+  font-family: var(--font-marketing-ui);
+}
+.merge-hero__canvas {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+/* Subtle concentric curves — distinctive Merge background pattern */
+.merge-hero__curves {
+  position: absolute;
+  top: -20%; left: -10%;
+  width: 140%; height: 140%;
+  background-image:
+    radial-gradient(circle at 20% 10%, transparent 0%, transparent 18%, rgba(10,10,10,0.025) 18.2%, transparent 18.8%),
+    radial-gradient(circle at 20% 10%, transparent 0%, transparent 26%, rgba(10,10,10,0.02) 26.2%, transparent 26.8%),
+    radial-gradient(circle at 20% 10%, transparent 0%, transparent 34%, rgba(10,10,10,0.018) 34.2%, transparent 34.8%),
+    radial-gradient(circle at 20% 10%, transparent 0%, transparent 42%, rgba(10,10,10,0.015) 42.2%, transparent 42.8%),
+    radial-gradient(circle at 20% 10%, transparent 0%, transparent 50%, rgba(10,10,10,0.012) 50.2%, transparent 50.8%),
+    radial-gradient(circle at 20% 10%, transparent 0%, transparent 58%, rgba(10,10,10,0.01) 58.2%, transparent 58.8%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+/* Soft fade-out at bottom so curves don't fight the next section */
+.merge-hero__fade {
+  position: absolute;
+  left: 0; right: 0; bottom: 0; height: 200px;
+  background: linear-gradient(180deg, transparent 0%, var(--canvas-sage) 100%);
+  pointer-events: none;
+}
+
+/* ─── HERO CONTENT ─── */
+.merge-hero__content {
+  position: relative;
+  z-index: 2;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: clamp(80px, 12vw, 140px) 24px clamp(64px, 9vw, 100px);
+  text-align: center;
+}
+
+/* Eyebrow tag — pill, tiny, understated */
+.merge-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-marketing-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: #525252;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  margin-bottom: 28px;
+  letter-spacing: -0.005em;
+}
+.merge-eyebrow__dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--lava);
+  box-shadow: 0 0 0 3px rgba(232, 93, 0, 0.12);
+}
+
+/* Headline — massive, Geist, confident, no gradient */
+.merge-headline {
+  font-family: var(--font-marketing-display);
+  font-weight: 600;
+  font-size: clamp(44px, 7vw, 88px);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: #0A0A0A;
+  margin: 0 0 24px;
+}
+.merge-headline__line { display: block; }
+
+/* Subtitle — tight, muted, readable on sage */
+.merge-subtitle {
+  font-family: var(--font-marketing-ui);
+  font-size: clamp(16px, 1.6vw, 19px);
+  line-height: 1.55;
+  color: #4E4E4E;
+  max-width: 620px;
+  margin: 0 auto 40px;
+  letter-spacing: -0.005em;
+}
+
+/* ─── CTA PAIR (primary + secondary pill) ─── */
+.merge-cta-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.merge-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-marketing-ui);
+  font-size: 15px;
+  font-weight: 500;
+  color: #FFFFFF !important;
+  background: #0A0A0A;
+  padding: 13px 24px;
+  border-radius: 999px;
+  border: 1px solid #0A0A0A;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+  letter-spacing: -0.005em;
+}
+.merge-cta-primary:hover {
+  background: #1F1F1F;
+  color: #FFFFFF !important;
+  transform: translateY(-1px);
+}
+
+.merge-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-marketing-ui);
+  font-size: 15px;
+  font-weight: 500;
+  color: #0A0A0A !important;
+  background: #FFFFFF;
+  padding: 13px 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(10, 10, 10, 0.18);
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+  letter-spacing: -0.005em;
+}
+.merge-cta-secondary:hover {
+  border-color: rgba(10, 10, 10, 0.35);
+  color: #0A0A0A !important;
+  transform: translateY(-1px);
+}
+
+/* ─── TRUST STRIP (demoted, subtle) ─── */
+.merge-trust-strip {
+  margin-top: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.merge-trust-item {
+  font-family: var(--font-marketing-ui);
+  font-size: 12px;
+  font-weight: 500;
+  color: #737373;
+  letter-spacing: -0.002em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.merge-trust-divider {
+  width: 3px; height: 3px; border-radius: 50%;
+  background: rgba(10, 10, 10, 0.2);
+}
+
+/* ─── "LEARN MORE" LINK — orange arrow, the ONLY place orange lives ─── */
+.merge-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-marketing-ui);
+  font-size: 14px;
+  font-weight: 500;
+  color: #0A0A0A;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(10, 10, 10, 0.1);
+  background: #FFFFFF;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.merge-link:hover {
+  border-color: rgba(10, 10, 10, 0.3);
+  transform: translateX(2px);
+}
+.merge-link__arrow {
+  color: var(--lava);
+  transition: transform 0.2s ease;
+}
+.merge-link:hover .merge-link__arrow {
+  transform: translateX(2px);
+}
+
+/* ─── SECTION AFTER HERO — keeps sage → white flow ─── */
+.merge-section-white {
+  background: #FFFFFF;
+  position: relative;
+}
+.merge-section-sage {
+  background: var(--canvas-sage-soft);
+  position: relative;
+}
