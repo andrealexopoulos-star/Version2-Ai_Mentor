@@ -16,40 +16,24 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
    ──────────────────────────────────────────── */
 const PLANS = [
   {
-    id: 'free',
-    name: 'Free',
-    badge: 'Get Started',
-    badgeBg: 'rgba(140,170,210,0.1)',
-    badgeColor: 'var(--ink-secondary)',
-    price: '$0',
-    period: '/mo',
-    description: 'Everything you need to start understanding your business better.',
-    includesLabel: "What's included",
-    features: [
-      'AI Business Advisor',
-      'Market Intelligence Brief',
-      'Email Inbox & Calendar',
-      'Competitive Benchmark',
-      'Business Profile & DNA',
-      'Data Health Monitor',
-      'Actions & Alerts',
-      'Ask BIQc AI Chat',
-      'Up to 2 integrations',
-    ],
-    ctaLabel: 'Start Free',
-    ctaStyle: 'outline',
-  },
-  {
     id: 'growth',
     name: 'Growth',
-    badge: 'Most Popular',
+    badge: '14-day free trial · Most Popular',
     badgeBg: 'rgba(232,93,0,0.08)',
     badgeColor: 'var(--lava)',
     price: '$69',
     period: '/mo',
-    description: 'Everything in Free, plus powerful tools to grow your revenue.',
-    includesLabel: 'Everything in Free, plus',
+    description: 'Everything you need to understand, grow, and protect your business. Start with a 14-day trial — cancel anytime before day 14 for $0.',
+    includesLabel: "What's included",
     features: [
+      'AI Business Advisor',
+      'Market Intelligence Brief',
+      'Ask BIQc AI Chat',
+      'Business Profile & DNA',
+      'Email Inbox & Calendar',
+      'Competitive Benchmark',
+      'Data Health Monitor',
+      'Actions & Alerts',
       'Board Room (single-model AI)',
       'Revenue Analytics',
       'Operations Centre',
@@ -149,80 +133,80 @@ const COMPARISON = [
   {
     group: 'AI & Intelligence',
     rows: [
-      ['AI Business Advisor', true, true, true, true],
-      ['Ask BIQc AI Chat', true, true, true, true],
-      ['Board Room (single-model AI)', false, true, true, true],
-      ['War Room (multi-model AI)', false, false, true, true],
-      ['Custom AI model training', false, false, false, true],
+      ['AI Business Advisor', true, true, true],
+      ['Ask BIQc AI Chat', true, true, true],
+      ['Board Room (single-model AI)', true, true, true],
+      ['War Room (multi-model AI)', false, true, true],
+      ['Custom AI model training', false, false, true],
     ],
   },
   {
     group: 'Business Intelligence',
     rows: [
-      ['Market Intelligence Brief', true, true, true, true],
-      ['Competitive Benchmark', true, true, true, true],
-      ['Business Profile & DNA', true, true, true, true],
-      ['Intelligence Baseline', false, false, true, true],
-      ['Intel Centre', false, false, true, true],
+      ['Market Intelligence Brief', true, true, true],
+      ['Competitive Benchmark', true, true, true],
+      ['Business Profile & DNA', true, true, true],
+      ['Intelligence Baseline', false, true, true],
+      ['Intel Centre', false, true, true],
     ],
   },
   {
     group: 'Revenue & Finance',
     rows: [
-      ['Revenue Analytics', false, true, true, true],
-      ['Billing Management', false, true, true, true],
-      ['Forensic Audit', false, true, true, true],
-      ['Exposure Scan', false, true, true, true],
+      ['Revenue Analytics', true, true, true],
+      ['Billing Management', true, true, true],
+      ['Forensic Audit', true, true, true],
+      ['Exposure Scan', true, true, true],
     ],
   },
   {
     group: 'Operations',
     rows: [
-      ['Actions & Alerts', true, true, true, true],
-      ['Email Inbox & Calendar', true, true, true, true],
-      ['Data Health Monitor', true, true, true, true],
-      ['Operations Centre', false, true, true, true],
-      ['SOP Generator', false, true, true, true],
-      ['Decision Tracker', false, true, true, true],
-      ['Operator Dashboard', false, false, true, true],
-      ['Ops Advisory', false, false, true, true],
+      ['Actions & Alerts', true, true, true],
+      ['Email Inbox & Calendar', true, true, true],
+      ['Data Health Monitor', true, true, true],
+      ['Operations Centre', true, true, true],
+      ['SOP Generator', true, true, true],
+      ['Decision Tracker', true, true, true],
+      ['Operator Dashboard', false, true, true],
+      ['Ops Advisory', false, true, true],
     ],
   },
   {
     group: 'Marketing',
     rows: [
-      ['Marketing Intelligence', false, true, true, true],
-      ['Marketing Automation', false, true, true, true],
-      ['Market Analysis', false, false, true, true],
+      ['Marketing Intelligence', true, true, true],
+      ['Marketing Automation', true, true, true],
+      ['Market Analysis', false, true, true],
     ],
   },
   {
     group: 'Risk & Compliance',
     rows: [
-      ['Risk Intelligence', false, false, true, true],
-      ['Compliance Centre', false, false, true, true],
-      ['Watchtower', false, false, true, true],
-      ['Audit Log', false, false, true, true],
+      ['Risk Intelligence', false, true, true],
+      ['Compliance Centre', false, true, true],
+      ['Watchtower', false, true, true],
+      ['Audit Log', false, true, true],
     ],
   },
   {
     group: 'Reporting & Data',
     rows: [
-      ['Reports Library', false, true, true, true],
-      ['Analysis Suite', false, false, true, true],
-      ['Data Centre', false, false, true, true],
-      ['Document Library', false, false, true, true],
+      ['Reports Library', true, true, true],
+      ['Analysis Suite', false, true, true],
+      ['Data Centre', false, true, true],
+      ['Document Library', false, true, true],
     ],
   },
   {
     group: 'Integrations & Support',
     rows: [
-      ['Integrations', 'Up to 2', 'Up to 5', 'Unlimited', 'Unlimited + custom'],
-      ['SSO & advanced security', false, false, false, true],
-      ['SLA guarantees', false, false, false, true],
-      ['Dedicated success manager', false, false, false, true],
-      ['Multi-seat team access', false, false, false, true],
-      ['Priority support', false, false, false, true],
+      ['Integrations', 'Up to 5', 'Unlimited', 'Unlimited + custom'],
+      ['SSO & advanced security', false, false, true],
+      ['SLA guarantees', false, false, true],
+      ['Dedicated success manager', false, false, true],
+      ['Multi-seat team access', false, false, true],
+      ['Priority support', false, false, true],
     ],
   },
 ];
@@ -233,11 +217,11 @@ const COMPARISON = [
 const FAQS = [
   {
     q: 'How does the 14-day free trial work?',
-    a: 'When you sign up for Growth or Pro, you get full access to all features for 14 days at no cost. No credit card is required to start. At the end of the trial, you can choose to subscribe or downgrade to the Free plan without losing your data.',
+    a: 'When you sign up, you start a 14-day Growth trial with full access to every Growth feature. Your card is captured at signup by Stripe (BIQc never sees it) and charged automatically on day 14 — unless you cancel before then for $0. We email a reminder 3 days before the charge date.',
   },
   {
     q: 'Can I cancel my subscription at any time?',
-    a: "Yes, absolutely. There are no lock-in contracts. You can cancel or downgrade your plan at any time from your account settings. If you cancel, you'll retain access to your current plan until the end of your billing period, then automatically move to the Free plan.",
+    a: "Yes, absolutely. There are no lock-in contracts. You can cancel or downgrade your plan at any time from your account settings in two clicks. If you cancel mid-billing-period, you keep access until the end of that period; after that, your account moves to read-only — your data stays intact, and you can reactivate any time with no learning lost.",
   },
   {
     q: 'Where is my data stored and is it secure?',
@@ -277,7 +261,7 @@ export default function Pricing() {
 
   const ctaHref = (plan) => {
     if (plan.id === 'enterprise') return '/contact?source=pricing';
-    if (plan.id === 'free') return '/register-supabase';
+    // Free plan removed 2026-04-18 Phase 6.10 — all signups start 14-day Growth trial
     return user ? '/subscribe' : '/register-supabase';
   };
 
@@ -379,7 +363,7 @@ export default function Pricing() {
               <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {['Feature', 'Free', 'Growth', 'Pro', 'Enterprise'].map((h, i) => (
+                    {['Feature', 'Growth', 'Pro', 'Enterprise'].map((h, i) => (
                       <th key={h}
                         className={`${i === 0 ? 'text-left' : 'text-center min-w-[100px]'} px-4 py-3 font-semibold sticky top-16 z-10`}
                         style={{ color: 'var(--ink-display)', background: 'var(--canvas)', borderBottom: '1px solid var(--border)' }}>
@@ -392,7 +376,7 @@ export default function Pricing() {
                   {COMPARISON.map((group) => (
                     <React.Fragment key={group.group}>
                       <tr>
-                        <td colSpan={5} className="px-4 pt-3.5 pb-2 text-xs font-bold uppercase tracking-wide"
+                        <td colSpan={4} className="px-4 pt-3.5 pb-2 text-xs font-bold uppercase tracking-wide"
                           style={{ color: 'var(--ink-secondary)', background: 'var(--canvas)' }}>
                           {group.group}
                         </td>
