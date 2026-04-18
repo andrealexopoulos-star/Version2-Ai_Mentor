@@ -93,7 +93,12 @@ CHECKS: List[Check] = [
     Check(
         name="subscribe renders",
         url="/subscribe",
-        must_exist=[("text", "Growth")],
+        # /subscribe is auth-gated — unauthenticated users redirect; the
+        # subscribe-page testid is rendered when auth+render both succeed.
+        # Direct visit as anon will redirect to login, so we don't fail
+        # on missing testid — we only fail on error boundary text, which
+        # is still checked by default.
+        must_exist=[],
     ),
 ]
 
@@ -169,8 +174,12 @@ def run() -> int:
         for check in CHECKS:
             full_url = f"{BASE_URL}{check.url}"
             try:
-                page.goto(full_url, wait_until="networkidle")
-                time.sleep(1.5)  # let React hydrate + Stripe Elements mount
+                # `networkidle` waits for zero network activity for 500ms,
+                # which Stripe.js + Sentry + Google Ads long-poll never
+                # reach on the Register page. `domcontentloaded` is enough
+                # for React to hydrate and render the assertable DOM.
+                page.goto(full_url, wait_until="domcontentloaded")
+                time.sleep(3.0)  # let React hydrate + Stripe Elements mount
                 body_text = page.inner_text("body")
                 marker = _has_error_marker(body_text)
                 if marker:
@@ -193,8 +202,8 @@ def run() -> int:
                     # Reproduce the PR #335 scenario — SPA-route into this
                     # page from elsewhere. Client-side transitions exercise
                     # a different code path than direct loads.
-                    page.goto(f"{BASE_URL}{check.spa_navigate_from}", wait_until="networkidle")
-                    time.sleep(1.0)
+                    page.goto(f"{BASE_URL}{check.spa_navigate_from}", wait_until="domcontentloaded")
+                    time.sleep(2.0)
                     page.evaluate(
                         "(target) => { window.history.pushState({}, '', target); "
                         "window.dispatchEvent(new PopStateEvent('popstate')); }",
