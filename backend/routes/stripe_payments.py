@@ -588,6 +588,338 @@ async def confirm_checkout_session(
     }
 
 
+# ─── Phase 6.11 — CC-mandatory signup (Setup Intent flow) ─────────────────
+#
+# Embedded card capture via Stripe Elements. Card never touches BIQc.
+#
+# Two-step flow after Supabase auth.signUp():
+#   1. POST /stripe/signup-create-setup-intent  { plan }
+#      → creates Stripe Customer + SetupIntent, returns client_secret
+#   2. Frontend: stripe.confirmSetup(client_secret)  — Elements confirms
+#      the card, returns payment_method_id
+#   3. POST /stripe/confirm-trial-signup  { customer_id, payment_method_id, plan }
+#      → creates subscription with trial_period_days=14, card saved for
+#        off_session auto-charge at T+14.
+#
+# Trust Layer: user stays on biqc.ai throughout. Card submitted direct to
+# Stripe; BIQc only ever sees the payment_method_id (an opaque handle).
+
+
+def _user_has_had_paid_or_trial_before(sb, user_id: str) -> bool:
+    """Server-side trial-eligibility guard (revenue-leak defense).
+
+    Returns True if this user_id has EVER held a non-free subscription or
+    trial — active, trialing, or canceled. Used to prevent a returning
+    user from re-triggering a fresh 14-day trial by hitting the signup
+    endpoint again after cancellation.
+
+    Checks two independent sources:
+      1. users.subscription_status / subscription_tier — the canonical
+         lifecycle state. 'active', 'trialing', 'past_due', 'canceled'
+         all count as "has had a subscription". Only null / 'free' /
+         missing = eligible.
+      2. payment_transactions — historical record. Any row with
+         tier in {starter, pro, business, enterprise} and
+         payment_status in {paid, trialing, active, past_due, canceled}
+         proves prior subscription.
+
+    Both sources must be checked because (a) users may be data-cleaned
+    but transactions kept for accounting, (b) a Stripe-side cancellation
+    could leave a transient state where status was reset but history
+    remains.
+    """
+    PRIOR_STATUSES = {"active", "trialing", "past_due", "canceled"}
+    PRIOR_TIERS = {"starter", "pro", "professional", "business", "enterprise"}
+    PRIOR_TX_STATUSES = {"paid", "trialing", "active", "past_due", "canceled"}
+
+    try:
+        u_res = sb.table("users").select("subscription_status,subscription_tier").eq("id", user_id).limit(1).execute()
+        urow = (u_res.data or [{}])[0] if u_res.data else {}
+        if (urow.get("subscription_status") or "").lower() in PRIOR_STATUSES:
+            return True
+        if (urow.get("subscription_tier") or "").lower() in PRIOR_TIERS:
+            return True
+    except Exception as exc:
+        logger.warning("users eligibility lookup failed for %s: %s — erring on side of trial allowed", user_id, exc)
+
+    try:
+        tx_res = (
+            sb.table("payment_transactions")
+            .select("id")
+            .eq("user_id", user_id)
+            .in_("tier", list(PRIOR_TIERS))
+            .in_("payment_status", list(PRIOR_TX_STATUSES))
+            .limit(1)
+            .execute()
+        )
+        if tx_res.data:
+            return True
+    except Exception as exc:
+        logger.warning("payment_transactions eligibility lookup failed for %s: %s", user_id, exc)
+
+    return False
+
+
+class SignupSetupIntentRequest(BaseModel):
+    plan: str  # "starter" (Growth) | "professional" (Pro) | "business"
+
+
+@router.post("/stripe/signup-create-setup-intent")
+async def signup_create_setup_intent(
+    req: SignupSetupIntentRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Step 1 of 6.11 signup. Creates Stripe Customer + SetupIntent.
+
+    Idempotent: reuses existing stripe_customer_id if one is already
+    persisted on the user row (verified live against Stripe). Rejects the
+    call if the user already has an active/trialing subscription — the
+    signup flow should only run once per account.
+    """
+    if not _is_stripe_production_ready():
+        raise HTTPException(status_code=503, detail="Stripe is not configured for production")
+
+    plan_id = (req.plan or "").lower().strip()
+    if plan_id not in PLANS:
+        raise HTTPException(status_code=400, detail=f"Invalid plan. Choose from: {list(PLANS.keys())}")
+
+    user_id = current_user["id"]
+    user_email = current_user.get("email", "")
+    sb = _get_service_supabase()
+
+    try:
+        user_res = sb.table("users").select("stripe_customer_id,subscription_status").eq("id", user_id).limit(1).execute()
+        user_row = (user_res.data or [{}])[0] if user_res.data else {}
+    except Exception as exc:
+        logger.warning("users lookup failed in signup flow: %s", exc)
+        user_row = {}
+
+    if user_row.get("subscription_status") in ("active", "trialing"):
+        raise HTTPException(status_code=409, detail="Account already has an active or trialing subscription")
+
+    # Revenue-leak defense: don't allow a fresh trial for a user who has
+    # ever had a subscription (including canceled ones). Signup trial is a
+    # one-time benefit per user_id. Cancelled users should re-subscribe
+    # via /pricing (no trial), not through signup.
+    if _user_has_had_paid_or_trial_before(sb, user_id):
+        raise HTTPException(
+            status_code=409,
+            detail="This account has already used its 14-day trial. Please upgrade from the pricing page instead.",
+        )
+
+    customer_id = user_row.get("stripe_customer_id")
+
+    try:
+        if customer_id:
+            try:
+                stripe.Customer.retrieve(customer_id)
+            except stripe.error.InvalidRequestError:
+                # Stale cached customer_id. Discard and recreate.
+                customer_id = None
+
+        if not customer_id:
+            # Idempotency key = user_id means a concurrent retry returns
+            # the same Customer rather than creating a duplicate.
+            customer = stripe.Customer.create(
+                email=user_email,
+                metadata={"user_id": user_id, "source": "biqc_signup"},
+                idempotency_key=f"biqc-signup-customer-{user_id}",
+            )
+            customer_id = customer.id
+            try:
+                sb.table("users").update({"stripe_customer_id": customer_id}).eq("id", user_id).execute()
+            except Exception as exc:
+                logger.warning("Could not persist stripe_customer_id for user %s: %s", user_id, exc)
+
+        setup_intent = stripe.SetupIntent.create(
+            customer=customer_id,
+            payment_method_types=["card"],
+            usage="off_session",
+            metadata={"user_id": user_id, "plan": plan_id, "source": "biqc_signup"},
+            idempotency_key=f"biqc-signup-si-{user_id}-{plan_id}",
+        )
+
+        return {
+            "customer_id": customer_id,
+            "client_secret": setup_intent.client_secret,
+            "setup_intent_id": setup_intent.id,
+            "plan": plan_id,
+        }
+
+    except stripe.error.StripeError as exc:
+        logger.error("Stripe SetupIntent creation failed for user %s: %s", user_id, exc)
+        raise HTTPException(status_code=502, detail="Stripe could not create a setup intent. Please try again.")
+
+
+class ConfirmTrialSignupRequest(BaseModel):
+    customer_id: str
+    payment_method_id: str
+    plan: str
+    # trial_period_days REMOVED — server-determined based on eligibility.
+    # Client-controlled trial days created a revenue-leak path (Codex P1).
+
+
+# Canonical signup trial length — change here to roll trials across the
+# platform, not a per-request param. Must stay <= 30 to match Stripe's
+# trial policy assumptions.
+SIGNUP_TRIAL_DAYS = 14
+
+
+@router.post("/stripe/confirm-trial-signup")
+async def confirm_trial_signup(
+    req: ConfirmTrialSignupRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Step 2 of 6.11 signup. Creates trial subscription using the card
+    captured by the preceding SetupIntent.
+
+    Verifies the customer_id is owned by this user (metadata.user_id)
+    before acting. Idempotent — returns the existing subscription if the
+    user already has one. Trial length is server-determined (SIGNUP_TRIAL_DAYS)
+    and only granted to users who have never held a subscription.
+    """
+    if not _is_stripe_production_ready():
+        raise HTTPException(status_code=503, detail="Stripe is not configured for production")
+
+    plan_id = (req.plan or "").lower().strip()
+    if plan_id not in PLANS:
+        raise HTTPException(status_code=400, detail=f"Invalid plan. Choose from: {list(PLANS.keys())}")
+    plan = PLANS[plan_id]
+    if int(plan.get("amount") or 0) <= 0 and plan_id != "enterprise":
+        raise HTTPException(status_code=503, detail="Pricing is not configured for this plan")
+
+    user_id = current_user["id"]
+    sb = _get_service_supabase()
+
+    # Verify the customer_id belongs to this user (anti-tamper — the
+    # client sends customer_id back to us, so we must validate it matches
+    # metadata.user_id on Stripe's side).
+    try:
+        customer = stripe.Customer.retrieve(req.customer_id)
+    except stripe.error.InvalidRequestError:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    if (customer.metadata or {}).get("user_id") != user_id:
+        logger.warning(
+            "Customer ownership mismatch: user=%s attempted customer=%s (owner=%s)",
+            user_id, req.customer_id, (customer.metadata or {}).get("user_id"),
+        )
+        raise HTTPException(status_code=403, detail="Customer does not belong to this user")
+
+    # Idempotency — return existing subscription if user already has one.
+    try:
+        row_res = sb.table("users").select("subscription_status,subscription_tier,trial_ends_at").eq("id", user_id).limit(1).execute()
+        existing_row = (row_res.data or [{}])[0] if row_res.data else {}
+    except Exception:
+        existing_row = {}
+    if existing_row.get("subscription_status") in ("active", "trialing"):
+        return {
+            "status": existing_row.get("subscription_status"),
+            "tier": existing_row.get("subscription_tier"),
+            "trial_ends_at": existing_row.get("trial_ends_at"),
+            "already_subscribed": True,
+        }
+
+    # Revenue-leak defense: only grant a trial to users who have never
+    # held any subscription (active/trialing/past_due/canceled). Returning
+    # customers must upgrade via /pricing, which uses the non-trial
+    # Checkout path.
+    trial_days = SIGNUP_TRIAL_DAYS if not _user_has_had_paid_or_trial_before(sb, user_id) else 0
+    if trial_days == 0:
+        # Defense-in-depth: /signup-create-setup-intent should have already
+        # blocked this path. If we get here, refuse rather than silently
+        # creating a no-trial subscription that the user didn't consent to.
+        raise HTTPException(
+            status_code=409,
+            detail="This account has already used its 14-day trial. Please upgrade from the pricing page instead.",
+        )
+
+    try:
+        # The SetupIntent (created with customer=...) already attached the
+        # payment method on client-side confirmation. We only need to set it
+        # as the customer's default for off_session charges at trial-end.
+        # An explicit PaymentMethod.attach here would error with "already
+        # attached" — so we skip it.
+        stripe.Customer.modify(
+            req.customer_id,
+            invoice_settings={"default_payment_method": req.payment_method_id},
+        )
+
+        # Idempotency key — concurrent retries (double-submit, network
+        # retry, two tabs) return the SAME subscription from Stripe instead
+        # of racing past our pre-check and creating duplicates. Key is
+        # scoped to user_id + plan_id + the payment_method so re-running
+        # with a new card still works, but the same-card retry dedupes.
+        # Codex P2: "concurrent retries ... can race past the pre-check".
+        subscription = stripe.Subscription.create(
+            customer=req.customer_id,
+            items=[{
+                "price_data": {
+                    "currency": plan["currency"],
+                    "unit_amount": plan["amount"],
+                    "recurring": {"interval": plan["interval"]},
+                    "product_data": {"name": plan["name"]},
+                },
+            }],
+            trial_period_days=trial_days,
+            default_payment_method=req.payment_method_id,
+            metadata={
+                "user_id": user_id,
+                "tier": plan["tier"],
+                "source": "biqc_signup",
+                "trial_days": str(trial_days),
+            },
+            idempotency_key=f"biqc-signup-sub-{user_id}-{plan_id}-{req.payment_method_id[-8:]}",
+        )
+
+        trial_end_iso = None
+        if getattr(subscription, "trial_end", None):
+            trial_end_iso = datetime.fromtimestamp(subscription.trial_end, tz=timezone.utc).isoformat()
+
+        _apply_tier_upgrade(sb, user_id, plan["tier"])
+        _update_subscription_lifecycle(
+            sb, user_id,
+            status=subscription.status,
+            stripe_customer_id=req.customer_id,
+            trial_ends_at=trial_end_iso,
+            past_due_since=None,
+        )
+
+        try:
+            sb.table("payment_transactions").insert({
+                "user_id": user_id,
+                "session_id": subscription.id,
+                "amount": plan["amount"] / 100,
+                "currency": plan["currency"],
+                "package_id": plan_id,
+                "tier": plan["tier"],
+                "payment_status": "trialing" if subscription.status == "trialing" else subscription.status,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "stripe_customer_id": req.customer_id,
+                "stripe_subscription_id": subscription.id,
+            }).execute()
+        except Exception as exc:
+            logger.warning("payment_transactions insert failed for signup: %s", exc)
+
+        return {
+            "status": subscription.status,
+            "tier": plan["tier"],
+            "subscription_id": subscription.id,
+            "trial_ends_at": trial_end_iso,
+            "already_subscribed": False,
+        }
+
+    except stripe.error.CardError as exc:
+        logger.warning("Card declined at signup: %s", getattr(exc, "user_message", str(exc)))
+        raise HTTPException(
+            status_code=402,
+            detail=f"Card declined: {getattr(exc, 'user_message', None) or 'Please try another card.'}",
+        )
+    except stripe.error.StripeError as exc:
+        logger.error("Subscription creation failed at signup for user %s: %s", user_id, exc)
+        raise HTTPException(status_code=502, detail="Could not create subscription. Please try again.")
+
+
 def _resolve_stripe_customer_for_portal(sb, user_id: str, user_email: str) -> Optional[str]:
     """Return the Stripe customer_id to use for the portal session.
 
