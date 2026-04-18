@@ -159,6 +159,14 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
     },
   }), []);
 
+  // P1 HOTFIX (2026-04-19): Keep the mount div EMPTY from React's
+  // perspective. Previously a `{!mounted && ...}` conditional child lived
+  // inside this div, but Stripe's paymentElement.mount() wipes the div and
+  // inserts its own iframe, leaving the React virtual DOM out of sync. On
+  // the next reconciliation React tries to remove a node that is no longer
+  // its child → `NotFoundError: Failed to execute 'removeChild'` →
+  // AppErrorBoundary catches → every CTA-driven signup was blocked. Moving
+  // the placeholder and error text to sibling elements fixes it.
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
       <label style={{
@@ -171,25 +179,26 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
       }}>
         Card on file (no charge for 14 days)
       </label>
+      {/* Mount container — REACT MUST NOT PUT CHILDREN IN HERE. Stripe
+          injects its iframe directly into this div and manages its
+          children. Any React child would collide with Stripe's DOM. */}
       <div
         ref={mountDivRef}
         data-testid="stripe-card-field"
         style={{
-          padding: mounted ? 0 : 16,
-          minHeight: mounted ? 'auto' : 64,
+          minHeight: mounted ? 'auto' : 48,
           background: '#FFFFFF',
           border: '1px solid rgba(10,10,10,0.1)',
           borderRadius: 8,
           opacity: disabled ? 0.6 : 1,
           pointerEvents: disabled ? 'none' : 'auto',
         }}
-      >
-        {!mounted && !loadError && (
-          <div style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', fontFamily: MONO }}>
-            Loading secure card field...
-          </div>
-        )}
-      </div>
+      />
+      {!mounted && !loadError && (
+        <div style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', fontFamily: MONO }}>
+          Loading secure card field...
+        </div>
+      )}
       {loadError && (
         <div style={{ fontSize: 12, color: 'var(--danger, #EF4444)', fontFamily: MONO }}>
           {loadError}
