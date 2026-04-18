@@ -47,22 +47,16 @@ BRAIN_PLAN_LABELS = {
 # Route pattern → minimum tier required
 # 'free' = available to all, 'starter' = paid, 'super_admin' = admin only
 ROUTE_ACCESS = {
-    # FREE TIER — allowed
-    '/advisor': 'free',              # BIQc Overview (Market tab only gated separately)
-    '/market': 'free',               # Market tab (sub-gating inside)
-    '/business-profile': 'free',     # Business DNA
-    '/settings': 'free',             # Account settings
-    '/integrations': 'free',         # Connect integrations
-    '/connect-email': 'free',        # Email integration
-    '/data-health': 'free',          # Data health check
-    '/competitive-benchmark': 'free',
-    '/soundboard': 'free',
-    '/email-inbox': 'free',
-    '/calendar': 'free',
-    '/actions': 'free',
-    '/alerts': 'free',
-    '/settings/actions': 'free',
-    '/settings/alerts': 'free',
+    # Phase 6.11 — Free tier is a locked/unsubscribed state, not a
+    # destination. Routes below stay on 'free' only because they must
+    # remain reachable during/after signup:
+    #   • Signup + onboarding flow
+    #   • Account self-service (settings — to cancel)
+    #   • Purchase path (subscribe, upgrade)
+    #   • Legal + catalog (biqc-legal, more-features)
+    # Everything else lifts to 'starter'. See routeAccessConfig.js —
+    # parity enforced by scripts/feature_tier_parity_gate.py.
+    '/settings': 'free',             # Account settings (cancel/manage)
     '/calibration': 'free',          # Onboarding calibration
     '/onboarding': 'free',
     '/onboarding-decision': 'free',
@@ -71,7 +65,24 @@ ROUTE_ACCESS = {
     '/subscribe': 'free',
     '/upgrade': 'free',
     '/more-features': 'free',
-    '/cmo-report': 'free',             # CMO Report (free tier)
+
+    # Starter tier (trialing users pass, since _normalize_tier maps
+    # trialing users to their plan). Subscription gate.
+    '/advisor': 'starter',
+    '/market': 'starter',
+    '/business-profile': 'starter',
+    '/integrations': 'starter',
+    '/connect-email': 'starter',
+    '/data-health': 'starter',
+    '/competitive-benchmark': 'starter',
+    '/soundboard': 'starter',
+    '/email-inbox': 'starter',
+    '/calendar': 'starter',
+    '/actions': 'starter',
+    '/alerts': 'starter',
+    '/settings/actions': 'starter',
+    '/settings/alerts': 'starter',
+    '/cmo-report': 'starter',
 
     # PAID TIER — requires starter or above
     '/exposure-scan': 'starter',

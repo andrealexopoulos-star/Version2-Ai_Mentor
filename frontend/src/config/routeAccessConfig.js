@@ -4,21 +4,18 @@
  */
 const ROUTE_ACCESS_MAP = {
   // ── Free tier ────────────────────────────────────────────────
-  '/advisor':               { minTier: 'free', launchType: 'free' },
-  '/market':                { minTier: 'free', launchType: 'free' },
-  '/business-profile':      { minTier: 'free', launchType: 'free' },
+  // Phase 6.11 — CC-mandatory signup. Free tier no longer exists as a
+  // destination: users either have a trialing/active subscription (>=
+  // starter) or they're sent to /subscribe. Routes below stay on 'free'
+  // ONLY because they must remain accessible during/after signup:
+  //   • Identity + signup flow (calibration, onboarding, profile-import)
+  //   • Account self-service (settings — to cancel/reactivate)
+  //   • Purchase path (subscribe, upgrade)
+  //   • Legal + catalog (biqc-legal, more-features)
+  // Everything else lifts to 'starter' — the subscription gate. A user
+  // whose tier resolves to 'free' hitting a starter route is redirected
+  // to /subscribe.
   '/settings':              { minTier: 'free', launchType: 'free' },
-  '/integrations':          { minTier: 'free', launchType: 'free' },
-  '/connect-email':         { minTier: 'free', launchType: 'free' },
-  '/data-health':           { minTier: 'free', launchType: 'free' },
-  '/competitive-benchmark': { minTier: 'free', launchType: 'free' },
-  '/soundboard':            { minTier: 'free', launchType: 'free' },
-  '/email-inbox':           { minTier: 'free', launchType: 'free' },
-  '/calendar':              { minTier: 'free', launchType: 'free' },
-  '/actions':               { minTier: 'free', launchType: 'free' },
-  '/alerts':                { minTier: 'free', launchType: 'free' },
-  '/settings/actions':      { minTier: 'free', launchType: 'free' },
-  '/settings/alerts':       { minTier: 'free', launchType: 'free' },
   '/calibration':           { minTier: 'free', launchType: 'free' },
   '/onboarding':            { minTier: 'free', launchType: 'free' },
   '/onboarding-decision':   { minTier: 'free', launchType: 'free' },
@@ -27,7 +24,23 @@ const ROUTE_ACCESS_MAP = {
   '/subscribe':             { minTier: 'free', launchType: 'free' },
   '/upgrade':               { minTier: 'free', launchType: 'free' },
   '/more-features':         { minTier: 'free', launchType: 'free' },
-  '/cmo-report':            { minTier: 'free', launchType: 'free' },
+
+  // ── Starter tier (trialing counts) — full platform access ────
+  '/advisor':               { minTier: 'starter', launchType: 'free' },
+  '/market':                { minTier: 'starter', launchType: 'free' },
+  '/business-profile':      { minTier: 'starter', launchType: 'free' },
+  '/integrations':          { minTier: 'starter', launchType: 'free' },
+  '/connect-email':         { minTier: 'starter', launchType: 'free' },
+  '/data-health':           { minTier: 'starter', launchType: 'free' },
+  '/competitive-benchmark': { minTier: 'starter', launchType: 'free' },
+  '/soundboard':            { minTier: 'starter', launchType: 'free' },
+  '/email-inbox':           { minTier: 'starter', launchType: 'free' },
+  '/calendar':              { minTier: 'starter', launchType: 'free' },
+  '/actions':               { minTier: 'starter', launchType: 'free' },
+  '/alerts':                { minTier: 'starter', launchType: 'free' },
+  '/settings/actions':      { minTier: 'starter', launchType: 'free' },
+  '/settings/alerts':       { minTier: 'starter', launchType: 'free' },
+  '/cmo-report':            { minTier: 'starter', launchType: 'free' },
 
   // ── Growth tier ($69 AUD/mo) — foundation access ─────────────
   '/revenue':               { minTier: 'starter', featureKey: 'revenue',                launchType: 'foundation' },
