@@ -1902,11 +1902,36 @@ def _sse_event(event_type: str, payload: Dict[str, Any]) -> str:
     return f"data: {json.dumps(body, ensure_ascii=False)}\n\n"
 
 
-def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, complexity: str, has_openai: bool, has_google: bool) -> tuple[str, List[str], str, str]:
-    if not has_openai and not has_google:
-        raise RuntimeError("AI provider keys are not configured. Add a valid OPENAI_API_KEY and/or GOOGLE_API_KEY in the backend environment to restore Soundboard replies.")
+def _resolve_model_route(
+    mode: str,
+    intent_domain: str,
+    intent_action: str,
+    complexity: str,
+    has_openai: bool,
+    has_google: bool,
+    has_anthropic: bool = False,
+) -> tuple[str, List[str], str, str]:
+    """Pick (provider, model_candidates, label, why) for a user query.
+
+    Phase 6.17 2026-04-19 — Anthropic (Claude) is now the preferred
+    provider for Normal / Thinking / Pro modes when
+    ANTHROPIC_API_KEY is set. The felt-intelligence delta vs GPT-4o for
+    advisor-tone reasoning is large. OpenAI + Gemini remain the
+    fallbacks — the existing provider-fallback chain at the call site
+    handles outages gracefully.
+    """
+    if not has_openai and not has_google and not has_anthropic:
+        raise RuntimeError(
+            "AI provider keys are not configured. Add ANTHROPIC_API_KEY and/or "
+            "OPENAI_API_KEY and/or GOOGLE_API_KEY in the backend environment."
+        )
 
     mode = (mode or "auto").lower()
+    # Latest Claude model IDs (Opus 4.7 newest; Sonnet 4.6 latest Sonnet;
+    # Haiku 4.5 the fast option). Bump here when Anthropic ships newer.
+    anthropic_opus = ["claude-opus-4-7", "claude-sonnet-4-6"]
+    anthropic_sonnet = ["claude-sonnet-4-6", "claude-haiku-4-5-20251001"]
+    anthropic_haiku = ["claude-haiku-4-5-20251001", "claude-sonnet-4-6"]
     openai_pro = ["gpt-4o", "gpt-4o-2024-11-20"]
     openai_thinking = ["o1-preview", "gpt-4o"]
     openai_fast = ["gpt-4o-mini", "gpt-4o"]
@@ -1914,22 +1939,34 @@ def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, comp
     gemini_fast = ["gemini-2.0-flash", "gemini-1.5-flash"]
 
     if mode == "normal":
+        if has_anthropic:
+            return "anthropic", anthropic_sonnet, "Normal", "User-selected normal mode (Claude Sonnet 4.6 — advisor tone)"
         if has_openai:
             return "openai", openai_fast, "Normal", "User-selected normal mode (OpenAI fast path)"
         return "gemini", gemini_fast, "Normal", "User-selected normal mode routed to Gemini fallback"
 
     if mode == "thinking":
+        if has_anthropic:
+            return "anthropic", anthropic_opus, "Pro Thinking", "User-selected deep reasoning (Claude Opus 4.7)"
         return "openai", openai_thinking if has_openai else gemini_pro, "Pro Thinking", "User-selected deep reasoning mode"
     if mode == "pro":
+        if has_anthropic:
+            return "anthropic", anthropic_opus, "Pro", "User-selected pro analysis (Claude Opus 4.7, multi-domain)"
         if has_google:
             return "gemini", gemini_pro, "Pro", "User-selected long-context analysis mode"
         return "openai", openai_pro, "Pro", "User-selected pro mode routed to OpenAI fallback"
     if mode == "fast":
+        if has_anthropic:
+            return "anthropic", anthropic_haiku, "Fast", "User-selected fast mode (Claude Haiku 4.5)"
         if has_google:
             return "gemini", gemini_fast, "Fast", "User-selected fast mode"
         return "openai", openai_fast, "Fast", "User-selected fast mode routed to OpenAI fallback"
 
+    # AUTO mode — intent-driven routing. Anthropic preferred for analytical
+    # queries when available.
     if intent_domain in ("finance", "risk", "planning") or intent_action in ("forecast", "diagnose") or complexity == "high":
+        if has_anthropic:
+            return "anthropic", anthropic_opus, "Pro Thinking", "Deep reasoning — financial/risk (Claude Opus 4.7)"
         if has_openai:
             return "openai", openai_pro, "Pro Thinking", "Deep reasoning — financial/risk/strategic analysis"
         return "gemini", gemini_pro, "Pro", "Deep reasoning routed to Gemini due to OpenAI availability"
@@ -1937,17 +1974,25 @@ def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, comp
     if intent_domain == "marketing" and complexity != "low":
         if has_google:
             return "gemini", gemini_pro, "Pro", "Market intelligence & competitive research"
+        if has_anthropic:
+            return "anthropic", anthropic_sonnet, "Pro", "Marketing query (Claude Sonnet 4.6)"
         return "openai", openai_fast, "Fast", "Marketing query routed to OpenAI fallback"
 
     if intent_domain in ("sales", "operations", "hr") or intent_action in ("create", "update"):
+        if has_anthropic:
+            return "anthropic", anthropic_sonnet, "Instant", "Operational query (Claude Sonnet 4.6)"
         if has_openai:
             return "openai", openai_fast, "Instant", "Fast structured response for operational query"
         return "gemini", gemini_fast, "Fast", "Operational query routed to Gemini fallback"
 
+    if has_anthropic and (complexity == "low" or intent_domain == "general"):
+        return "anthropic", anthropic_haiku, "Fast", "Quick query — Claude Haiku 4.5"
     if has_google and (complexity == "low" or intent_domain == "general"):
         return "gemini", gemini_fast, "Fast", "Quick query — Gemini Flash"
     if has_openai:
         return "openai", openai_fast, "Instant", "General query — OpenAI fast path"
+    if has_anthropic:
+        return "anthropic", anthropic_sonnet, "Instant", "General query — Claude Sonnet 4.6"
     return "gemini", gemini_pro, "Pro", "Fallback to available Gemini provider"
 
 
@@ -2165,7 +2210,7 @@ async def _call_trinity_orchestration(
             system_message=system_message,
             clean_message=clean_message,
             messages_history=messages_history,
-            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6"],
+            model_candidates=["claude-opus-4-7", "claude-sonnet-4-6"],
         ))
 
     results = await asyncio.gather(*parallel_tasks, return_exceptions=True)
@@ -2259,7 +2304,7 @@ async def _run_boardroom_orchestration(
                     system_message=role_system,
                     clean_message=clean_message,
                     messages_history=messages_history[-SOUNDBOARD_BOARDROOM_CONTEXT_LIMIT:],
-                    model_candidates=["claude-opus-4-6", "claude-sonnet-4-6"],
+                    model_candidates=["claude-opus-4-7", "claude-sonnet-4-6"],
                 )
             else:
                 role_text, role_model = await _call_gemini_with_fallback(
@@ -2299,7 +2344,7 @@ async def _run_boardroom_orchestration(
             system_message=challenge_system,
             clean_message=challenge_prompt,
             messages_history=[],
-            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6"],
+            model_candidates=["claude-opus-4-7", "claude-sonnet-4-6"],
         )
     else:
         challenge_text, challenge_model = await _call_gemini_with_fallback(
@@ -2335,7 +2380,7 @@ async def _run_boardroom_orchestration(
             api_key=anthropic_key,
             system_message=consensus_system,
             clean_message=consensus_input,
-            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6"],
+            model_candidates=["claude-opus-4-7", "claude-sonnet-4-6"],
         )
     else:
         final_text, final_model = await _call_gemini_with_fallback(
@@ -3541,6 +3586,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                     complexity=complexity,
                     has_openai=has_openai_key,
                     has_google=has_google_key,
+                    has_anthropic=has_anthropic_key,
                 )
             except RuntimeError as e:
                 logger.error(f"Soundboard route selection error: {e}")
@@ -3558,7 +3604,46 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             system_message += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_candidates[0]}){scope_suffix}\n"
 
             reasoning_mode = mode == "thinking" or intent_action in ("forecast", "diagnose") or complexity == "high"
-            if provider == "openai":
+            if provider == "anthropic":
+                # Primary Anthropic path (Claude). Fallback chain:
+                # anthropic → openai → gemini — mirrors the existing
+                # openai→anthropic→gemini chain but with Claude as primary.
+                try:
+                    response, resolved_model = await _call_anthropic_with_fallback(
+                        api_key=ANTHROPIC_DIRECT_KEY,
+                        system_message=system_message,
+                        clean_message=clean_message,
+                        messages_history=messages_history,
+                        model_candidates=model_candidates,
+                    )
+                except Exception as anthropic_error:
+                    if has_openai_key:
+                        logger.warning(
+                            f"[SOUNDBOARD] Anthropic primary failed, falling back to OpenAI: {anthropic_error}"
+                        )
+                        response, resolved_model = await _call_openai_with_fallback(
+                            api_key=OPENAI_DIRECT_KEY,
+                            system_message=system_message,
+                            clean_message=clean_message,
+                            messages_history=messages_history,
+                            model_candidates=["gpt-4o", "gpt-4o-mini"],
+                            reasoning=reasoning_mode,
+                        )
+                        provider = "openai-fallback"
+                    elif has_google_key:
+                        logger.warning(
+                            f"[SOUNDBOARD] Anthropic primary failed, falling back to Gemini: {anthropic_error}"
+                        )
+                        response, resolved_model = await _call_gemini_with_fallback(
+                            api_key=GOOGLE_DIRECT_KEY,
+                            system_message=system_message,
+                            clean_message=clean_message,
+                            model_candidates=["gemini-2.5-pro", "gemini-2.0-flash"],
+                        )
+                        provider = "gemini-fallback"
+                    else:
+                        raise
+            elif provider == "openai":
                 try:
                     response, resolved_model = await _call_openai_with_fallback(
                         api_key=OPENAI_DIRECT_KEY,
@@ -3571,11 +3656,16 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 except Exception as openai_error:
                     if has_anthropic_key:
                         logger.warning(f"[SOUNDBOARD] OpenAI route failed, falling back to Anthropic: {openai_error}")
+                        # Pre-existing bug flagged by peer review 2026-04-19:
+                        # messages_history is a required param on
+                        # _call_anthropic_with_fallback — without it this
+                        # branch would TypeError on every OpenAI outage.
                         response, resolved_model = await _call_anthropic_with_fallback(
                             api_key=ANTHROPIC_DIRECT_KEY,
                             system_message=system_message,
                             clean_message=clean_message,
-                            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6"],
+                            messages_history=messages_history,
+                            model_candidates=["claude-opus-4-7", "claude-sonnet-4-6"],
                         )
                         provider = "anthropic-fallback"
                     elif has_google_key:
@@ -4483,6 +4573,7 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
                         complexity=complexity,
                         has_openai=has_openai,
                         has_google=has_google,
+                        has_anthropic=has_anthropic,
                     )
                     primary_model = model_candidates[0]
 
