@@ -5,9 +5,10 @@ import { apiClient } from '../lib/api';
 import { Input } from '../components/ui/input';
 import RecaptchaGate from '../components/RecaptchaGate';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import BiqcLogoCard from '../components/BiqcLogoCard';
+import useForceLightTheme from '../hooks/useForceLightTheme';
 
 /* ── Mockup-aligned CSS-variable font stacks ── */
 const DISPLAY = 'var(--font-display, ' + fontFamily.display + ')';
@@ -15,6 +16,7 @@ const UI      = 'var(--font-ui, '      + fontFamily.body    + ')';
 const MONO    = 'var(--font-mono, '    + fontFamily.mono    + ')';
 
 const LoginSupabase = () => {
+  useForceLightTheme();
   const navigate = useNavigate();
   const { signIn, signInWithOAuth, hasSupabaseConfig, authState } = useSupabaseAuth();
   const [loading, setLoading] = useState(false);
@@ -410,7 +412,7 @@ const LoginSupabase = () => {
                 className="flex items-start gap-2 px-4 py-3 rounded-xl text-sm mt-5"
                 style={{ background: 'var(--danger-wash, rgba(239,68,68,0.08))', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--danger, #EF4444)', fontFamily: UI }}
               >
-                <span className="text-base leading-none mt-0.5">⚠</span>
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={2} />
                 <span>{loginError}</span>
               </div>
             )}
@@ -456,6 +458,12 @@ const LoginSupabase = () => {
             <Link to="/register-supabase" className="font-medium" style={{ color: 'var(--lava, #E85D00)', textDecoration: 'none' }} data-testid="login-signup-link">
               Start your free account →
             </Link>
+          </p>
+
+          <p className="text-xs text-center mt-4 leading-relaxed" style={{ fontFamily: UI, color: 'var(--ink-muted, #737373)' }}>
+            SOC 2 in progress · Australian-sovereign data ·{' '}
+            <Link to="/trust/terms" style={{ color: 'var(--lava, #E85D00)', textDecoration: 'none' }}>Terms</Link> ·{' '}
+            <Link to="/trust/privacy" style={{ color: 'var(--lava, #E85D00)', textDecoration: 'none' }}>Privacy</Link>
           </p>
         </div>
       </div>

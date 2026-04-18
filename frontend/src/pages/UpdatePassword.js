@@ -6,11 +6,13 @@ import { toast } from 'sonner';
 import { KeyRound, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import BiqcLogoCard from '../components/BiqcLogoCard';
+import useForceLightTheme from '../hooks/useForceLightTheme';
 
 const DISPLAY = 'var(--font-marketing-display, "Geist", sans-serif)';
 const UI      = 'var(--font-marketing-ui, "Geist", sans-serif)';
 
 const UpdatePassword = () => {
+  useForceLightTheme();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');

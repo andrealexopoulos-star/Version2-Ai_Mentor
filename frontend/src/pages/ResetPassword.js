@@ -7,6 +7,7 @@ import { Lock, CheckCircle2, Info } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { getAppBaseUrl } from '../config/urls';
 import BiqcLogoCard from '../components/BiqcLogoCard';
+import useForceLightTheme from '../hooks/useForceLightTheme';
 
 /* ── Marketing-aligned font stacks (Merge aesthetic — Geist) ── */
 const DISPLAY = 'var(--font-marketing-display, "Geist", sans-serif)';
@@ -14,6 +15,7 @@ const UI      = 'var(--font-marketing-ui, "Geist", sans-serif)';
 const MONO    = 'var(--font-marketing-ui, "Geist", sans-serif)';
 
 const ResetPassword = () => {
+  useForceLightTheme();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
