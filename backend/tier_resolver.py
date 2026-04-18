@@ -61,6 +61,8 @@ ROUTE_ACCESS = {
     '/calendar': 'free',
     '/actions': 'free',
     '/alerts': 'free',
+    '/settings/actions': 'free',
+    '/settings/alerts': 'free',
     '/calibration': 'free',          # Onboarding calibration
     '/onboarding': 'free',
     '/onboarding-decision': 'free',
