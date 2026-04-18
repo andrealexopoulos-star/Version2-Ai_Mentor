@@ -323,6 +323,7 @@ jobs:
             REACT_APP_RECAPTCHA_MODE=${{ secrets.REACT_APP_RECAPTCHA_MODE }}
             REACT_APP_RECAPTCHA_PROVIDER=${{ secrets.REACT_APP_RECAPTCHA_PROVIDER }}
             REACT_APP_RECAPTCHA_STRICT=${{ secrets.REACT_APP_RECAPTCHA_STRICT }}
+            REACT_APP_STRIPE_PUBLISHABLE_KEY=${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}
 
       - name: Record frontend image tag
         if: needs.website-change-gate.outputs.deploy_frontend == 'true'
