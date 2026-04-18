@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { Input } from '../components/ui/input';
 import RecaptchaGate from '../components/RecaptchaGate';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Check } from 'lucide-react';
+import { Eye, EyeOff, Check, Lock } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { EVENTS, trackActivationStep, trackEvent } from '../lib/analytics';
 import BiqcLogoCard from '../components/BiqcLogoCard';
+import PlanPicker, { PLAN_OPTIONS } from '../components/PlanPicker';
+import StripeCardField from '../components/StripeCardField';
+import { hasStripeKey } from '../lib/stripeJs';
 
 /* ── Mockup-aligned CSS-variable font stacks ── */
 const DISPLAY = 'var(--font-display, ' + fontFamily.display + ')';
@@ -48,9 +51,25 @@ const RegisterSupabase = () => {
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', full_name: '', company_name: '', industry: ''
   });
+  // Phase 6.11 — CC-mandatory signup state
+  const [selectedPlan, setSelectedPlan] = useState('starter');
+  const [cardReady, setCardReady] = useState(false);
+  const [cardError, setCardError] = useState('');
+  const [trialStep, setTrialStep] = useState('idle'); // idle | auth | intent | confirm | subscribe | done
+  const cardRef = useRef(null);
+  const stripeConfigured = hasStripeKey();
 
   const passwordsMatch = formData.password === formData.confirmPassword;
-  const isFormValid = formData.email && formData.password && formData.password.length >= 6 && formData.full_name && formData.confirmPassword && passwordsMatch;
+  const isFormValid = formData.email && formData.password && formData.password.length >= 6 && formData.full_name && formData.confirmPassword && passwordsMatch && selectedPlan && cardReady;
+
+  // Trial summary: 14 days from now, price from selected plan
+  const trialSummary = (() => {
+    const end = new Date();
+    end.setDate(end.getDate() + 14);
+    const endStr = end.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+    const plan = PLAN_OPTIONS.find((p) => p.id === selectedPlan) || PLAN_OPTIONS[0];
+    return { endStr, price: plan.price, period: plan.period, planName: plan.name };
+  })();
 
   const buildFallbackChallenge = () => {
     const left = Math.floor(Math.random() * 8) + 2;
@@ -131,6 +150,8 @@ const RegisterSupabase = () => {
       // provided, signUp routes through /api/auth/supabase/signup; when it
       // isn't (captcha disabled/unavailable in dev), signUp falls back to
       // the direct Supabase client path.
+      // ── Step 1: Supabase auth signup (creates user + session) ──
+      setTrialStep('auth');
       await signUp(
         formData.email,
         formData.password,
@@ -147,13 +168,74 @@ const RegisterSupabase = () => {
       );
       trackEvent(EVENTS.ACTIVATION_SIGNUP_COMPLETE, { method: 'email' });
       trackActivationStep('signup_complete', { method: 'email' });
-      // Google Ads conversion — new sign-up
-      if (window.gtag) {
-        window.gtag('event', 'conversion', { send_to: 'AW-18002554945', event_category: 'signup', event_label: 'email_registration' });
-        window.gtag('event', 'sign_up', { method: 'email' });
+
+      // ── Step 2: Stripe SetupIntent (server creates Customer + SI) ──
+      setTrialStep('intent');
+      let customer_id, client_secret;
+      try {
+        const res = await apiClient.post('/stripe/signup-create-setup-intent', { plan: selectedPlan });
+        customer_id = res.data?.customer_id;
+        client_secret = res.data?.client_secret;
+      } catch (err) {
+        const detail = err?.response?.data?.detail || '';
+        if (err?.response?.status === 409) {
+          // User already has subscription — jump straight to app
+          toast.success('Your subscription is already active. Taking you in.');
+          navigate('/calibration');
+          return;
+        }
+        toast.error(detail || 'Could not start your trial setup. Please try again.');
+        setTrialStep('idle');
+        return;
       }
-      toast.success('Account created! Please check your email to confirm.');
-      navigate('/login-supabase');
+
+      if (!customer_id || !client_secret) {
+        toast.error('Trial setup returned an incomplete response. Please try again.');
+        setTrialStep('idle');
+        return;
+      }
+
+      // ── Step 3: Stripe Elements confirms the card against the SI ──
+      setTrialStep('confirm');
+      if (!cardRef.current) {
+        toast.error('Card form not ready yet. Please wait a moment and retry.');
+        setTrialStep('idle');
+        return;
+      }
+      const confirm = await cardRef.current.confirmWith(client_secret);
+      if (confirm.error) {
+        toast.error(confirm.error);
+        setCardError(confirm.error);
+        setTrialStep('idle');
+        return;
+      }
+      const payment_method_id = confirm.paymentMethodId;
+
+      // ── Step 4: Server creates trialing subscription ──
+      setTrialStep('subscribe');
+      try {
+        await apiClient.post('/stripe/confirm-trial-signup', {
+          customer_id,
+          payment_method_id,
+          plan: selectedPlan,
+          trial_period_days: 14,
+        });
+      } catch (err) {
+        const detail = err?.response?.data?.detail || '';
+        toast.error(detail || 'Could not finalize your subscription. Your card is on file — please contact support if this persists.');
+        setTrialStep('idle');
+        return;
+      }
+
+      // Google Ads conversion — new sign-up with trial
+      if (window.gtag) {
+        window.gtag('event', 'conversion', { send_to: 'AW-18002554945', event_category: 'signup', event_label: 'email_registration_trial' });
+        window.gtag('event', 'sign_up', { method: 'email', plan: selectedPlan });
+      }
+
+      setTrialStep('done');
+      toast.success(`Trial started. Free until ${trialSummary.endStr}.`);
+      navigate('/calibration');
     } catch (error) {
       const raw = error.message || '';
       if (raw.includes('Supabase is not configured')) {
@@ -319,6 +401,11 @@ const RegisterSupabase = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
+            {/* Phase 6.11 — plan picker + Stripe Elements card capture.
+                14-day free trial, auto-charged at T+14. Card goes straight
+                to Stripe; BIQc never sees the number. */}
+            <PlanPicker value={selectedPlan} onChange={setSelectedPlan} disabled={loading || trialStep !== 'idle'} />
+
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="full_name" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #737373)' }}>Full name</label>
@@ -362,11 +449,62 @@ const RegisterSupabase = () => {
               </div>
             </div>
 
-            <button type="submit" disabled={!hasSupabaseConfig || loading || oauthLoading || !isFormValid}
-              className="w-full flex items-center justify-center gap-2 mt-6 text-[15px] font-medium transition-all disabled:opacity-50"
+            {/* ── Card capture (Stripe Elements) ── */}
+            <div style={{ marginTop: 20 }}>
+              {stripeConfigured ? (
+                <StripeCardField
+                  ref={cardRef}
+                  onReady={() => setCardReady(true)}
+                  onError={(msg) => setCardError(msg)}
+                  disabled={loading || trialStep !== 'idle'}
+                />
+              ) : (
+                <div style={{
+                  padding: '12px 14px',
+                  borderRadius: 10,
+                  background: 'var(--danger-wash, rgba(239,68,68,0.08))',
+                  border: '1px solid var(--danger-soft, rgba(239,68,68,0.2))',
+                  fontSize: 12.5,
+                  color: 'var(--danger, #EF4444)',
+                  fontFamily: MONO,
+                  letterSpacing: '-0.003em',
+                }}>
+                  Stripe is not configured. Set REACT_APP_STRIPE_PUBLISHABLE_KEY in Azure App Service → biqc-web → Configuration.
+                </div>
+              )}
+            </div>
+
+            {/* ── Trust microcopy (Phase 6.11 spec) ── */}
+            <div style={{
+              marginTop: 12,
+              padding: '12px 14px',
+              borderRadius: 10,
+              background: 'rgba(10,10,10,0.03)',
+              border: '1px solid rgba(10,10,10,0.06)',
+              fontFamily: UI,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <Lock size={14} strokeWidth={2} style={{ color: 'var(--ink-secondary, #525252)', marginTop: 2, flexShrink: 0 }} />
+                <div style={{ fontSize: 12.5, color: 'var(--ink-secondary, #525252)', lineHeight: 1.5, letterSpacing: '-0.003em' }}>
+                  <strong style={{ color: 'var(--ink-display, #0A0A0A)', fontWeight: 600 }}>Free until {trialSummary.endStr}.</strong>{' '}
+                  Then {trialSummary.price} {trialSummary.period} for {trialSummary.planName}.{' '}
+                  Cancel any time in the first 14 days for <strong style={{ color: 'var(--ink-display, #0A0A0A)', fontWeight: 600 }}>$0</strong>.{' '}
+                  Your card goes straight to Stripe — BIQc never sees the number.
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" disabled={!hasSupabaseConfig || !stripeConfigured || loading || oauthLoading || !isFormValid}
+              className="w-full flex items-center justify-center gap-2 mt-5 text-[15px] font-medium transition-all disabled:opacity-50"
               style={{ background: '#0A0A0A', color: '#FFFFFF', height: 48, fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', boxShadow: '0 4px 12px rgba(10,10,10,0.12)', border: '1px solid #0A0A0A', borderRadius: '999px', cursor: 'pointer', padding: '16px', letterSpacing: '-0.005em' }}
               data-testid="register-submit-btn">
-              {loading ? 'Creating account...' : <>Create account<span className="ml-1">→</span></>}
+              {loading ? (
+                trialStep === 'auth' ? 'Creating account...' :
+                trialStep === 'intent' ? 'Preparing trial setup...' :
+                trialStep === 'confirm' ? 'Securing your card...' :
+                trialStep === 'subscribe' ? 'Starting your trial...' :
+                'Working...'
+              ) : <>Start 14-day free trial<span className="ml-1">→</span></>}
             </button>
 
             {recaptchaEnabled && (
