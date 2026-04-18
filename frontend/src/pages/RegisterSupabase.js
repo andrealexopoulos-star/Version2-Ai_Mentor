@@ -214,11 +214,12 @@ const RegisterSupabase = () => {
       // ── Step 4: Server creates trialing subscription ──
       setTrialStep('subscribe');
       try {
+        // Trial length is server-determined (backend enforces 14-day one-shot
+        // per user_id to block post-cancel trial-replay — Codex P1 fix).
         await apiClient.post('/stripe/confirm-trial-signup', {
           customer_id,
           payment_method_id,
           plan: selectedPlan,
-          trial_period_days: 14,
         });
       } catch (err) {
         const detail = err?.response?.data?.detail || '';

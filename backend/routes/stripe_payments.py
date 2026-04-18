@@ -605,6 +605,61 @@ async def confirm_checkout_session(
 # Stripe; BIQc only ever sees the payment_method_id (an opaque handle).
 
 
+def _user_has_had_paid_or_trial_before(sb, user_id: str) -> bool:
+    """Server-side trial-eligibility guard (revenue-leak defense).
+
+    Returns True if this user_id has EVER held a non-free subscription or
+    trial — active, trialing, or canceled. Used to prevent a returning
+    user from re-triggering a fresh 14-day trial by hitting the signup
+    endpoint again after cancellation.
+
+    Checks two independent sources:
+      1. users.subscription_status / subscription_tier — the canonical
+         lifecycle state. 'active', 'trialing', 'past_due', 'canceled'
+         all count as "has had a subscription". Only null / 'free' /
+         missing = eligible.
+      2. payment_transactions — historical record. Any row with
+         tier in {starter, pro, business, enterprise} and
+         payment_status in {paid, trialing, active, past_due, canceled}
+         proves prior subscription.
+
+    Both sources must be checked because (a) users may be data-cleaned
+    but transactions kept for accounting, (b) a Stripe-side cancellation
+    could leave a transient state where status was reset but history
+    remains.
+    """
+    PRIOR_STATUSES = {"active", "trialing", "past_due", "canceled"}
+    PRIOR_TIERS = {"starter", "pro", "professional", "business", "enterprise"}
+    PRIOR_TX_STATUSES = {"paid", "trialing", "active", "past_due", "canceled"}
+
+    try:
+        u_res = sb.table("users").select("subscription_status,subscription_tier").eq("id", user_id).limit(1).execute()
+        urow = (u_res.data or [{}])[0] if u_res.data else {}
+        if (urow.get("subscription_status") or "").lower() in PRIOR_STATUSES:
+            return True
+        if (urow.get("subscription_tier") or "").lower() in PRIOR_TIERS:
+            return True
+    except Exception as exc:
+        logger.warning("users eligibility lookup failed for %s: %s — erring on side of trial allowed", user_id, exc)
+
+    try:
+        tx_res = (
+            sb.table("payment_transactions")
+            .select("id")
+            .eq("user_id", user_id)
+            .in_("tier", list(PRIOR_TIERS))
+            .in_("payment_status", list(PRIOR_TX_STATUSES))
+            .limit(1)
+            .execute()
+        )
+        if tx_res.data:
+            return True
+    except Exception as exc:
+        logger.warning("payment_transactions eligibility lookup failed for %s: %s", user_id, exc)
+
+    return False
+
+
 class SignupSetupIntentRequest(BaseModel):
     plan: str  # "starter" (Growth) | "professional" (Pro) | "business"
 
@@ -641,6 +696,16 @@ async def signup_create_setup_intent(
 
     if user_row.get("subscription_status") in ("active", "trialing"):
         raise HTTPException(status_code=409, detail="Account already has an active or trialing subscription")
+
+    # Revenue-leak defense: don't allow a fresh trial for a user who has
+    # ever had a subscription (including canceled ones). Signup trial is a
+    # one-time benefit per user_id. Cancelled users should re-subscribe
+    # via /pricing (no trial), not through signup.
+    if _user_has_had_paid_or_trial_before(sb, user_id):
+        raise HTTPException(
+            status_code=409,
+            detail="This account has already used its 14-day trial. Please upgrade from the pricing page instead.",
+        )
 
     customer_id = user_row.get("stripe_customer_id")
 
@@ -686,7 +751,14 @@ class ConfirmTrialSignupRequest(BaseModel):
     customer_id: str
     payment_method_id: str
     plan: str
-    trial_period_days: Optional[int] = 14
+    # trial_period_days REMOVED — server-determined based on eligibility.
+    # Client-controlled trial days created a revenue-leak path (Codex P1).
+
+
+# Canonical signup trial length — change here to roll trials across the
+# platform, not a per-request param. Must stay <= 30 to match Stripe's
+# trial policy assumptions.
+SIGNUP_TRIAL_DAYS = 14
 
 
 @router.post("/stripe/confirm-trial-signup")
@@ -699,7 +771,8 @@ async def confirm_trial_signup(
 
     Verifies the customer_id is owned by this user (metadata.user_id)
     before acting. Idempotent — returns the existing subscription if the
-    user already has one.
+    user already has one. Trial length is server-determined (SIGNUP_TRIAL_DAYS)
+    and only granted to users who have never held a subscription.
     """
     if not _is_stripe_production_ready():
         raise HTTPException(status_code=503, detail="Stripe is not configured for production")
@@ -713,7 +786,6 @@ async def confirm_trial_signup(
 
     user_id = current_user["id"]
     sb = _get_service_supabase()
-    trial_days = max(0, min(int(req.trial_period_days or 14), 30))
 
     # Verify the customer_id belongs to this user (anti-tamper — the
     # client sends customer_id back to us, so we must validate it matches
@@ -743,6 +815,20 @@ async def confirm_trial_signup(
             "trial_ends_at": existing_row.get("trial_ends_at"),
             "already_subscribed": True,
         }
+
+    # Revenue-leak defense: only grant a trial to users who have never
+    # held any subscription (active/trialing/past_due/canceled). Returning
+    # customers must upgrade via /pricing, which uses the non-trial
+    # Checkout path.
+    trial_days = SIGNUP_TRIAL_DAYS if not _user_has_had_paid_or_trial_before(sb, user_id) else 0
+    if trial_days == 0:
+        # Defense-in-depth: /signup-create-setup-intent should have already
+        # blocked this path. If we get here, refuse rather than silently
+        # creating a no-trial subscription that the user didn't consent to.
+        raise HTTPException(
+            status_code=409,
+            detail="This account has already used its 14-day trial. Please upgrade from the pricing page instead.",
+        )
 
     try:
         # The SetupIntent (created with customer=...) already attached the
