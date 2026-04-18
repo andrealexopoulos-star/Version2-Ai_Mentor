@@ -29,7 +29,7 @@ const OnboardingDecision = () => {
 
   const handleDefer = () => {
     sessionStorage.setItem('onboarding_deferred', 'true');
-    navigate('/advisor', { replace: true });
+    navigate('/soundboard', { replace: true });
   };
 
   const paths = [

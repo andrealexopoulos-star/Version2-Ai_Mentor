@@ -367,7 +367,7 @@ function AppRoutes() {
 
         {/* Core app — free */}
         <Route path="/advisor" element={<ProtectedRoute><RouteErrorBoundary><Advisor /></RouteErrorBoundary></ProtectedRoute>} />
-        <Route path="/dashboard" element={<Navigate to="/advisor" replace />} />
+        <Route path="/dashboard" element={<Navigate to="/soundboard" replace />} />
         <Route path="/market" element={<ProtectedRoute><RouteErrorBoundary><MarketPage /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/market/calibration" element={<ProtectedRoute><RouteErrorBoundary><ForensicCalibration /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/business-profile" element={<ProtectedRoute><RouteErrorBoundary><BusinessProfile /></RouteErrorBoundary></ProtectedRoute>} />

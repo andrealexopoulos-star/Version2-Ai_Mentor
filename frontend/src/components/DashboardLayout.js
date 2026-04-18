@@ -811,40 +811,15 @@ const DashboardLayout = ({ children }) => {
       {isNavOpen && <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={closeAll} aria-hidden="true" style={{ zIndex: 998 }} />}
 
       {/* ═══ MAIN CONTENT + DESKTOP SOUNDBOARD PANEL ═══ */}
-      {trialDaysLeft !== null && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 56,
-            left: 0,
-            right: 0,
-            zIndex: 998,
-            background: '#E85D00',
-            padding: '6px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: 13,
-          }}
-        >
-          <span style={{ color: 'white', fontWeight: 500, flex: 1, textAlign: 'center' }}>
-            You are on a free trial of Professional — {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining.
-          </span>
-          <button
-            onClick={() => navigate('/subscribe')}
-            style={{ background: 'white', color: '#E85D00', border: 'none', borderRadius: 6, padding: '3px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-          >
-            Upgrade now
-          </button>
-        </div>
-      )}
+      {/* 2026-04-18 Phase 6.2: orange "14-day Free Trial of Professional" strip
+          REMOVED. Replaced by Phase 6.3 TrialCountdownCard (tutorial-style,
+          dismissible, appears once per session for trial users) — separate PR. */}
 
       <div
         className="pt-[60px] pb-[76px] lg:pb-0 transition-all duration-300 flex"
         style={{
           minHeight: '100dvh',
           marginLeft: isDesktopViewport ? `${activeSidebarWidth}px` : undefined,
-          paddingTop: trialDaysLeft !== null ? 32 : 0,
         }}
       >
         <main id="main-content" className="flex-1" style={{ background: 'var(--canvas-app)', overflowY: 'visible' }}>
