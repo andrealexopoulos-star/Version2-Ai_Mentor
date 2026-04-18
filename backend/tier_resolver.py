@@ -254,12 +254,18 @@ def check_route_access(route: str, user: dict) -> dict:
     """Check if user can access a frontend route."""
     tier = resolve_tier(user)
 
-    # Find matching route
+    # Find matching route. Exact match wins over prefix match — otherwise
+    # `/settings` (declared before `/settings/actions`) would swallow the
+    # subroute and grant its `free` tier where we set `starter`. Codex P1
+    # on PR #332.
     required = None
-    for pattern, req_tier in ROUTE_ACCESS.items():
-        if route == pattern or route.startswith(pattern + '/'):
-            required = req_tier
-            break
+    if route in ROUTE_ACCESS:
+        required = ROUTE_ACCESS[route]
+    else:
+        for pattern, req_tier in ROUTE_ACCESS.items():
+            if route.startswith(pattern + '/'):
+                required = req_tier
+                break
 
     if required is None:
         # Unknown route — allow (public pages, etc.)

@@ -428,9 +428,22 @@ def _apply_trial_context(user_data: dict, sb) -> dict:
     sub_status = (payload.get("subscription_status") or "").strip().lower()
     subscription_inactive = sub_status in INACTIVE_STATUSES
 
+    # Super-admin bypass must consider role + email, not just
+    # subscription_tier — an admin account whose stored tier is non-'super_admin'
+    # (e.g. internal team member with a legacy tier value) and whose sub is
+    # 'canceled' would otherwise be demoted to 'free'. Codex P2 on PR #332.
+    role = (payload.get("role") or "").strip().lower()
+    email = (payload.get("email") or "").strip().lower()
+    is_super_admin = (
+        role in {"superadmin", "super_admin"}
+        or (MASTER_ADMIN_EMAIL and email == MASTER_ADMIN_EMAIL.lower())
+        or (payload.get("subscription_tier") or "").strip().lower() == "super_admin"
+    )
+    should_demote = subscription_inactive and not is_super_admin
+
     if not user_id or sb is None:
         base_tier = payload.get("subscription_tier", "free")
-        payload["effective_tier"] = "free" if subscription_inactive and base_tier != "super_admin" else base_tier
+        payload["effective_tier"] = "free" if should_demote else base_tier
         payload["on_trial"] = False
         return payload
 
@@ -447,7 +460,7 @@ def _apply_trial_context(user_data: dict, sb) -> dict:
             pass
 
     base_tier = payload.get("subscription_tier", "free")
-    payload["effective_tier"] = "free" if subscription_inactive and base_tier != "super_admin" else base_tier
+    payload["effective_tier"] = "free" if should_demote else base_tier
     payload["on_trial"] = False
     return payload
 
