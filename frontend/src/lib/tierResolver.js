@@ -46,6 +46,18 @@ export function resolveTier(user) {
     }
   }
 
+  // Phase 6.11 — subscription gate. A user who has a tier set but whose
+  // Stripe subscription is unhealthy (past-due payment, user-canceled,
+  // or explicitly incomplete) is treated as 'free' for access purposes.
+  // This way a canceled Pro user loses access until they reactivate,
+  // even if users.subscription_tier has not yet been downgraded by the
+  // webhook (eventual consistency safety net).
+  const status = (user.subscription_status || '').toLowerCase().trim();
+  const INACTIVE_STATUSES = new Set(['past_due', 'canceled', 'cancelled', 'incomplete', 'incomplete_expired', 'unpaid']);
+  if (INACTIVE_STATUSES.has(status)) {
+    return 'free';
+  }
+
   const raw = (user.subscription_tier || user.tier || 'free').toLowerCase().trim();
   if (['super_admin', 'superadmin'].includes(raw)) return 'super_admin';
   if (['enterprise', 'custom_build', 'custom'].includes(raw)) return 'enterprise';

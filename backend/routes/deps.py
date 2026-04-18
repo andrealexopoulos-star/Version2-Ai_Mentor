@@ -417,8 +417,33 @@ def get_sb():
 def _apply_trial_context(user_data: dict, sb) -> dict:
     payload = dict(user_data or {})
     user_id = payload.get("id")
+
+    # Phase 6.11 — subscription gate. If Stripe reports the subscription
+    # unhealthy (past_due / canceled / incomplete), effective_tier is
+    # demoted to 'free' regardless of what subscription_tier says. This
+    # catches eventual-consistency windows where the webhook hasn't yet
+    # downgraded the tier column. Reverse-trial (trial_expires_at) users
+    # are still honored — those are grant-based, not Stripe-based.
+    INACTIVE_STATUSES = {"past_due", "canceled", "cancelled", "incomplete", "incomplete_expired", "unpaid"}
+    sub_status = (payload.get("subscription_status") or "").strip().lower()
+    subscription_inactive = sub_status in INACTIVE_STATUSES
+
+    # Super-admin bypass must consider role + email, not just
+    # subscription_tier — an admin account whose stored tier is non-'super_admin'
+    # (e.g. internal team member with a legacy tier value) and whose sub is
+    # 'canceled' would otherwise be demoted to 'free'. Codex P2 on PR #332.
+    role = (payload.get("role") or "").strip().lower()
+    email = (payload.get("email") or "").strip().lower()
+    is_super_admin = (
+        role in {"superadmin", "super_admin"}
+        or (MASTER_ADMIN_EMAIL and email == MASTER_ADMIN_EMAIL.lower())
+        or (payload.get("subscription_tier") or "").strip().lower() == "super_admin"
+    )
+    should_demote = subscription_inactive and not is_super_admin
+
     if not user_id or sb is None:
-        payload["effective_tier"] = payload.get("subscription_tier", "free")
+        base_tier = payload.get("subscription_tier", "free")
+        payload["effective_tier"] = "free" if should_demote else base_tier
         payload["on_trial"] = False
         return payload
 
@@ -434,7 +459,8 @@ def _apply_trial_context(user_data: dict, sb) -> dict:
         except Exception:
             pass
 
-    payload["effective_tier"] = payload.get("subscription_tier", "free")
+    base_tier = payload.get("subscription_tier", "free")
+    payload["effective_tier"] = "free" if should_demote else base_tier
     payload["on_trial"] = False
     return payload
 
@@ -489,7 +515,7 @@ async def get_current_user(
                 sb = get_sb()
                 if sb:
                     try:
-                        user_row = sb.table("users").select("trial_expires_at,trial_tier,subscription_tier").eq("id", user.get("id")).maybe_single().execute()
+                        user_row = sb.table("users").select("trial_expires_at,trial_tier,subscription_tier,subscription_status").eq("id", user.get("id")).maybe_single().execute()
                         if user_row.data:
                             user = {**user, **user_row.data}
                     except Exception as trial_ctx_err:
