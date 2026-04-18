@@ -6,6 +6,7 @@ import { apiClient } from '../lib/api';
 import { useTutorial, HelpButton, PageTutorial } from './TutorialOverlay';
 import FirstLoginNotification from './FirstLoginNotification';
 import MobileNav from './MobileNav';
+import TrialCountdownCard from './TrialCountdownCard';
 import { DailyBriefBanner } from './DailyBriefCard';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -811,9 +812,15 @@ const DashboardLayout = ({ children }) => {
       {isNavOpen && <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={closeAll} aria-hidden="true" style={{ zIndex: 998 }} />}
 
       {/* ═══ MAIN CONTENT + DESKTOP SOUNDBOARD PANEL ═══ */}
-      {/* 2026-04-18 Phase 6.2: orange "14-day Free Trial of Professional" strip
-          REMOVED. Replaced by Phase 6.3 TrialCountdownCard (tutorial-style,
-          dismissible, appears once per session for trial users) — separate PR. */}
+      {/* 2026-04-18 Phase 6.2 + 6.3: orange banner REPLACED with
+          TrialCountdownCard — tutorial-style, dismissible, bottom-right,
+          shows exact charge date, persistent in final 3 days of trial. */}
+      {user?.trial_expires_at && (
+        <TrialCountdownCard
+          trialExpiresAt={user.trial_expires_at}
+          onUpgrade={() => navigate('/subscribe')}
+        />
+      )}
 
       <div
         className="pt-[60px] pb-[76px] lg:pb-0 transition-all duration-300 flex"
