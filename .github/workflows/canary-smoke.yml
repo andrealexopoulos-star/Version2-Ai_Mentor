@@ -1,0 +1,62 @@
+name: Canary Smoke (post-deploy + scheduled)
+
+# Fires after a successful main deploy AND every 10 minutes to catch
+# CDN / environmental breakage. Adds the layer the 2026-04-19 P1
+# incident exposed: the old deploy-gate smoke only checked backend
+# HTTP status; it couldn't detect a React render crash that left the
+# server returning 200. This workflow actually renders the pages
+# headless, clicks SPA-style, and fails loudly if the error boundary
+# text appears.
+
+on:
+  workflow_run:
+    workflows: ["Build & Deploy BIQc"]
+    types: [completed]
+  # Every 3 hours — every deploy already triggers via workflow_run, so
+  # the schedule only catches CDN/environmental drift between deploys.
+  # 8 runs/day × ~3 min = ~720 min/month (fits well within 2000-min
+  # GitHub Actions free tier, leaving headroom for deploy workflows).
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    # Run only if the triggering deploy succeeded (or on schedule/manual)
+    if: >
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    name: Canary render + SPA-nav smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Playwright
+        run: |
+          pip install --quiet playwright==1.58.0
+          python -m playwright install --with-deps chromium
+
+      - name: Run canary smoke
+        env:
+          BASE_URL: ${{ secrets.CANARY_BASE_URL || 'https://biqc.ai' }}
+          PLAYWRIGHT_TIMEOUT: "25000"
+        run: python scripts/canary_smoke.py
+
+      - name: Upload canary artifact on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canary-smoke-report
+          path: test_reports/canary_smoke_*.json
+          retention-days: 7
