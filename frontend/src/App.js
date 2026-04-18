@@ -159,6 +159,18 @@ class AppErrorBoundary extends React.Component {
   state = { error: null, errorRef: null, copied: false };
   static getDerivedStateFromError(err) { return { error: err, errorRef: _appErrorRef() }; }
   componentDidCatch(error, errorInfo) {
+    // Ship to Sentry so we see every FATAL on the dashboard within
+    // ~minutes (not hours as in the 2026-04-19 incident). Wrapped
+    // behind window.Sentry probe so it's a no-op if the loader
+    // hasn't finished or the DSN is missing.
+    try {
+      if (window.Sentry && typeof window.Sentry.captureException === 'function') {
+        window.Sentry.captureException(error, {
+          tags: { fatal_ref: this.state.errorRef, boundary: 'AppErrorBoundary' },
+          extra: { componentStack: errorInfo && errorInfo.componentStack },
+        });
+      }
+    } catch (_) { /* never let reporting crash the crash page */ }
     console.error(`[AppErrorBoundary] ref=${this.state.errorRef}`, error, errorInfo);
   }
   _copyRef = () => {

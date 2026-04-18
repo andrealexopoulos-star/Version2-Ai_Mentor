@@ -3,6 +3,12 @@ import ReactDOM from "react-dom/client";
 import "@/index.css";
 import "@/App.css";
 import "@/mobile.css";
+// Sentry init must run BEFORE the app mounts so crashes in the initial
+// render (like PR #335's StripeCardField DOM conflict) are captured.
+// Loader script is queued in index.html and replays errors when the SDK
+// finishes loading, so even errors that fire before this import ran are
+// still delivered to Sentry.
+import "@/lib/sentry";
 import App from "@/App";
 
 if (process.env.NODE_ENV === "production") {
