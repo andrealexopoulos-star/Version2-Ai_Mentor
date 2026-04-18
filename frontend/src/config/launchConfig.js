@@ -7,6 +7,8 @@ export const FREE_LAUNCH_ROUTES = [
   '/business-profile',
   '/actions',
   '/alerts',
+  '/settings/actions',
+  '/settings/alerts',
   '/data-health',
   '/settings',
   '/competitive-benchmark',

@@ -586,7 +586,7 @@ const Advisor = () => {
               <RefreshCw className="w-4 h-4" /> Refresh
             </button>
             <button
-              onClick={() => navigate('/alerts')}
+              onClick={() => navigate('/settings/alerts')}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
               style={{ background: 'var(--lava)', color: 'var(--ink-inverse)', fontFamily: 'var(--font-ui)', border: 'none', cursor: 'pointer' }}
             >
@@ -820,7 +820,7 @@ const Advisor = () => {
               {[
                 { title: 'Ask BIQc anything', desc: '"What changed in the pipeline this week?"', icon: MessageSquare, path: '/soundboard' },
                 { title: 'Inbox triage', desc: emailStats.total > 0 ? `${emailStats.total} email${emailStats.total !== 1 ? 's' : ''} analysed. ${emailStats.highPriority > 0 ? `${emailStats.highPriority} need${emailStats.highPriority !== 1 ? '' : 's'} a decision.` : 'None urgent.'}` : integrationData.email?.connected ? 'Inbox connected. Checking priorities...' : 'Connect your inbox to start triaging.', icon: Mail, path: '/email-inbox' },
-                { title: 'Action queue', desc: activityItems.length > 0 ? `${activityItems.length} recent item${activityItems.length !== 1 ? 's' : ''} tracked.` : 'No actions tracked yet.', icon: CheckSquare, path: '/actions' },
+                { title: 'Action queue', desc: activityItems.length > 0 ? `${activityItems.length} recent item${activityItems.length !== 1 ? 's' : ''} tracked.` : 'No actions tracked yet.', icon: CheckSquare, path: '/settings/actions' },
                 { title: 'Add an integration', desc: 'Xero, HubSpot, Slack — via Merge.dev', icon: Puzzle, path: '/integrations' },
               ].map((action) => {
                 const Icon = action.icon;

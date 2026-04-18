@@ -100,6 +100,8 @@ const APP_ROUTE_PATHS = [
   '/audit-log',
   '/alerts',
   '/actions',
+  '/settings/alerts',
+  '/settings/actions',
   '/automations',
   '/soundboard',
   '/email-inbox',

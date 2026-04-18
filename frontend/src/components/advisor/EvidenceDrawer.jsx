@@ -43,16 +43,16 @@ const SOURCE_ROUTE = {
   CRM: '/revenue',
   Accounting: '/revenue',
   'Email/Calendar': '/email-inbox',
-  'Observation Events': '/alerts',
+  'Observation Events': '/settings/alerts',
   'Market Feed': '/market',
-  Snapshot: '/alerts',
+  Snapshot: '/settings/alerts',
 };
 
 export const EvidenceDrawer = ({ open, decision, onClose }) => {
   if (!open || !decision) return null;
 
   const signal = decision.signal;
-  const targetRoute = SOURCE_ROUTE[signal.source] || '/alerts';
+  const targetRoute = SOURCE_ROUTE[signal.source] || '/settings/alerts';
   const evidenceRefs = Array.isArray(signal.evidenceRefs) ? signal.evidenceRefs : [];
 
   return (

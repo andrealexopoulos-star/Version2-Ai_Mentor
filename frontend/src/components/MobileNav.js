@@ -30,7 +30,7 @@ const MobileNav = () => {
         { id: 'pulse', label: 'Overview', icon: LayoutDashboard, path: '/advisor' },
         { id: 'soundboard', label: 'Ask BIQc', icon: MessageSquare, path: '/soundboard' },
         { id: 'inbox', label: 'Inbox', icon: Inbox, path: '/email-inbox' },
-        { id: 'alerts', label: 'Alerts', icon: Bell, path: '/alerts' },
+        { id: 'alerts', label: 'Alerts', icon: Bell, path: '/settings/alerts' },
         { id: 'more', label: 'More', icon: MoreHorizontal, path: null },
       ];
 
@@ -55,7 +55,7 @@ const MobileNav = () => {
           {
             label: 'Operate',
             items: [
-              { label: 'Actions', icon: Bell, path: '/actions' },
+              { label: 'Actions', icon: Bell, path: '/settings/actions' },
               { label: 'Data Health', icon: Activity, path: '/data-health' },
               { label: 'Business DNA', icon: FileText, path: '/business-profile' },
             ],
