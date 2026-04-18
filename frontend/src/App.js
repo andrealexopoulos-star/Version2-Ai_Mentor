@@ -394,8 +394,10 @@ function AppRoutes() {
         <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="compliance"><RouteErrorBoundary><CompliancePage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><LaunchRoute access="foundation"><RouteErrorBoundary><ReportsPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/audit-log" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="risk-workforce"><RouteErrorBoundary><AuditLogPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
-        <Route path="/alerts" element={<ProtectedRoute><RouteErrorBoundary><AlertsPageAuth /></RouteErrorBoundary></ProtectedRoute>} />
-        <Route path="/actions" element={<ProtectedRoute><RouteErrorBoundary><ActionsPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/settings/alerts" element={<ProtectedRoute><RouteErrorBoundary><AlertsPageAuth /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/settings/actions" element={<ProtectedRoute><RouteErrorBoundary><ActionsPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/alerts" element={<Navigate to="/settings/alerts" replace />} />
+        <Route path="/actions" element={<Navigate to="/settings/actions" replace />} />
         <Route path="/automations" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="automations"><RouteErrorBoundary><AutomationsPageAuth /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/soundboard" element={<ProtectedRoute><RouteErrorBoundary><SoundboardPanel /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/email-inbox" element={<ProtectedRoute><RouteErrorBoundary><EmailInbox /></RouteErrorBoundary></ProtectedRoute>} />

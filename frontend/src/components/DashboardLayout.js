@@ -306,9 +306,9 @@ const DashboardLayout = ({ children }) => {
     const sections = [
       // — Today
       { id: 'overview', label: 'Advisor', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [], group: 'today' },
-      { id: 'alerts', label: 'Alert Centre', path: '/alerts', icon: Bell, showBadge: true, items: [], group: 'today' },
+      { id: 'alerts', label: 'Alert Centre', path: '/settings/alerts', icon: Bell, showBadge: true, items: [], group: 'today' },
       { id: 'soundboard', label: 'Ask BIQc', path: '/soundboard', icon: MessageSquare, items: [], group: 'today' },
-      { id: 'actions', label: 'Actions', path: '/actions', icon: Zap, items: [], group: 'today' },
+      { id: 'actions', label: 'Actions', path: '/settings/actions', icon: Zap, items: [], group: 'today' },
       // — Inbox
       { id: 'priority-inbox', label: 'Email', path: '/email-inbox', icon: Inbox, items: [], group: 'inbox' },
       { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [], group: 'inbox' },
@@ -513,7 +513,7 @@ const DashboardLayout = ({ children }) => {
                   <h3 className="font-semibold text-sm" style={{ fontFamily: DISPLAY, color: 'var(--ink-display)' }}>Alerts</h3>
                   <div className="flex items-center gap-2">
                     {notifications.high > 0 && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: colors.dangerDim, color: colors.danger, fontFamily: fontFamily.mono }}>{notifications.high} urgent</span>}
-                    <button onClick={() => { setShowNotifications(false); navigate('/alerts'); }} className="text-xs px-2 py-1 rounded-lg" style={{ color: colors.brand, background: colors.brandDim, fontFamily: fontFamily.mono }}>View all</button>
+                    <button onClick={() => { setShowNotifications(false); navigate('/settings/alerts'); }} className="text-xs px-2 py-1 rounded-lg" style={{ color: colors.brand, background: colors.brandDim, fontFamily: fontFamily.mono }}>View all</button>
                   </div>
                 </div>
                 {notificationsList.length === 0 ? (

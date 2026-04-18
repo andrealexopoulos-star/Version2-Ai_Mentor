@@ -1497,7 +1497,7 @@ export default function AdvisorWatchtower() {
     if (!decision?.signal) return;
 
     if (actionType === 'assign-owner') {
-      navigate('/actions', {
+      navigate('/settings/actions', {
         state: {
           advisorAssignment: {
             title: decision.signal.issueBrief || decision.signal.title,
@@ -1903,7 +1903,7 @@ export default function AdvisorWatchtower() {
                     BIQc Priority Snapshot
                   </h2>
                   <Link
-                    to="/alerts"
+                    to="/settings/alerts"
                     className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-black/5"
                     style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}
                     data-testid="advisor-view-alerts-link"

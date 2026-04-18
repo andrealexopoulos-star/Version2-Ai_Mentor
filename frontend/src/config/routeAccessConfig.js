@@ -17,6 +17,8 @@ const ROUTE_ACCESS_MAP = {
   '/calendar':              { minTier: 'free', launchType: 'free' },
   '/actions':               { minTier: 'free', launchType: 'free' },
   '/alerts':                { minTier: 'free', launchType: 'free' },
+  '/settings/actions':      { minTier: 'free', launchType: 'free' },
+  '/settings/alerts':       { minTier: 'free', launchType: 'free' },
   '/calibration':           { minTier: 'free', launchType: 'free' },
   '/onboarding':            { minTier: 'free', launchType: 'free' },
   '/onboarding-decision':   { minTier: 'free', launchType: 'free' },
