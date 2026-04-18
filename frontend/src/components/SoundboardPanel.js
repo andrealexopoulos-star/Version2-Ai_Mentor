@@ -31,6 +31,7 @@ import {
 } from '../lib/soundboardRuntime';
 import VoiceChat from './VoiceChat';
 import AskBiqcMessageActions from './soundboard/AskBiqcMessageActions';
+import DashboardLayout from './DashboardLayout';
 
 
 // Data query detection — ONLY route to integration Edge Function for EXPLICIT data retrieval requests.
@@ -142,8 +143,8 @@ function InlineIntegrationConnect({ req, onDismiss }) {
   return (
     <div
       style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'rgba(10,10,10,0.03)',
+        border: '1px solid rgba(10,10,10,0.08)',
         borderRadius: 10,
         padding: '10px 14px',
         display: 'flex',
@@ -184,7 +185,7 @@ function InlineIntegrationConnect({ req, onDismiss }) {
             borderRadius: 8,
             background: 'none',
             color: 'var(--ink-muted, #737373)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: '1px solid rgba(10,10,10,0.1)',
             fontSize: 12,
             cursor: 'pointer',
           }}
@@ -206,8 +207,8 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
   return (
     <div
       style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'rgba(10,10,10,0.03)',
+        border: '1px solid rgba(10,10,10,0.08)',
         borderRadius: 10,
         overflow: 'hidden',
       }}
@@ -251,7 +252,7 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
       </button>
 
       {expanded && (
-        <div style={{ padding: '0 14px 12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ padding: '0 14px 12px', borderTop: '1px solid rgba(10,10,10,0.06)' }}>
           {req.type === 'select' ? (
             <select
               value={value}
@@ -260,8 +261,8 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
                 width: '100%',
                 padding: '8px 10px',
                 marginTop: 8,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(10,10,10,0.06)',
+                border: '1px solid rgba(10,10,10,0.12)',
                 borderRadius: 8,
                 color: 'var(--ink-display, #0A0A0A)',
                 fontSize: 13,
@@ -286,8 +287,8 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
                 width: '100%',
                 padding: '8px 10px',
                 marginTop: 8,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(10,10,10,0.06)',
+                border: '1px solid rgba(10,10,10,0.12)',
                 borderRadius: 8,
                 color: 'var(--ink-display, #0A0A0A)',
                 fontSize: 13,
@@ -302,8 +303,8 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
               style={{
                 padding: '6px 16px',
                 borderRadius: 8,
-                background: value ? '#E85D00' : 'rgba(255,255,255,0.1)',
-                color: value ? 'white' : 'rgba(255,255,255,0.3)',
+                background: value ? '#E85D00' : 'rgba(10,10,10,0.1)',
+                color: value ? 'white' : 'rgba(10,10,10,0.3)',
                 border: 'none',
                 fontSize: 12,
                 fontWeight: 600,
@@ -319,7 +320,7 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
                 borderRadius: 8,
                 background: 'none',
                 color: 'var(--ink-muted, #737373)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: '1px solid rgba(10,10,10,0.1)',
                 fontSize: 12,
                 cursor: 'pointer',
               }}
@@ -382,8 +383,8 @@ function InlineDataRequirements({ requirements, originalMessage, conversationId,
       style={{
         marginTop: 16,
         padding: '14px 16px',
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.1)',
+        background: 'rgba(10,10,10,0.04)',
+        border: '1px solid rgba(10,10,10,0.1)',
         borderRadius: 12,
       }}
     >
@@ -809,7 +810,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       .slice(-1)[0]?.content || '';
 
     return (
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'var(--surface-sunken, #F5F5F5)', borderLeft: '1px solid var(--border, rgba(10,10,10,0.08))' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(10,10,10,0.04)', background: 'var(--surface-sunken, #F5F5F5)', borderLeft: '1px solid var(--border, rgba(10,10,10,0.08))' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <div
             style={{
@@ -841,7 +842,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 color: 'var(--ink-subtle, #A3A3A3)',
                 padding: '1px 8px',
                 borderRadius: 20,
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: '1px solid rgba(10,10,10,0.1)',
                 marginLeft: 4,
               }}
             >
@@ -925,7 +926,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             maxWidth: '70%',
             padding: '12px 16px',
             background: 'var(--surface-sunken, #F5F5F5)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(10,10,10,0.08)',
             borderRadius: '18px 18px 4px 18px',
             fontSize: 14,
             color: 'var(--ink-display, #0A0A0A)',
@@ -941,14 +942,23 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   };
 
   return (
+    <DashboardLayout>
     <div
       style={{
         display: 'flex',
-        height: '100vh',
+        // Size from parent flex, not viewport. DashboardLayout adds a top
+        // bar, page-nav row, and padding above children, so `calc(100vh
+        // - N)` is fragile. Codex P1 on PR #333.
+        flex: 1,
+        minHeight: 560,
+        height: '100%',
+        maxHeight: 'calc(100vh - 88px)',
         background: 'var(--surface, #FFFFFF)',
-        color: '#fff',
+        color: 'var(--ink-display, #0A0A0A)',
         overflow: 'hidden',
         fontFamily: "var(--font-ui)",
+        borderRadius: 12,
+        border: '1px solid var(--border, rgba(10,10,10,0.08))',
       }}
       data-testid="soundboard-panel"
     >
@@ -956,9 +966,9 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         style={{
           width: sidebarCollapsed ? '0px' : '260px',
           minWidth: sidebarCollapsed ? '0px' : '260px',
-          height: '100vh',
+          height: '100%',
           background: 'var(--surface-sunken, #F5F5F5)',
-          borderRight: '1px solid rgba(255,255,255,0.08)',
+          borderRight: '1px solid rgba(10,10,10,0.08)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -969,7 +979,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         <div
           style={{
             padding: '16px',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            borderBottom: '1px solid rgba(10,10,10,0.08)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1022,7 +1032,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 <button
                   key={conv.id}
                   onClick={() => loadConversation(conv)}
-                  onMouseEnter={(e) => { if (activeConvId !== conv.id) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                  onMouseEnter={(e) => { if (activeConvId !== conv.id) e.currentTarget.style.background = 'rgba(10,10,10,0.05)'; }}
                   onMouseLeave={(e) => { if (activeConvId !== conv.id) e.currentTarget.style.background = 'transparent'; }}
                   style={{
                     width: '100%',
@@ -1041,12 +1051,13 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   <p
                     style={{
                       fontSize: 13,
-                      color: activeConvId === conv.id ? '#fff' : 'rgba(255,255,255,0.6)',
+                      color: activeConvId === conv.id ? 'var(--ink-display, #0A0A0A)' : 'var(--ink-secondary, #525252)',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                       margin: 0,
                       fontFamily: fontFamily.body,
+                      fontWeight: activeConvId === conv.id ? 600 : 500,
                     }}
                   >
                     {conv.title || 'New Conversation'}
@@ -1069,8 +1080,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             top: 12,
             left: 12,
             zIndex: 100,
-            background: 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(10,10,10,0.08)',
+            border: '1px solid rgba(10,10,10,0.12)',
             borderRadius: 8,
             padding: '6px 10px',
             color: 'var(--ink-secondary, #525252)',
@@ -1083,11 +1094,11 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         </button>
       )}
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%' }}>
         <div
           style={{
             height: 52,
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            borderBottom: '1px solid rgba(10,10,10,0.08)',
             display: 'flex',
             alignItems: 'center',
             padding: '0 20px',
@@ -1180,15 +1191,15 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                       e.currentTarget.style.transform = 'translateY(-1px)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                      e.currentTarget.style.background = 'rgba(10,10,10,0.04)';
+                      e.currentTarget.style.borderColor = 'rgba(10,10,10,0.08)';
                       e.currentTarget.style.transform = 'translateY(0)';
                     }}
                     style={{
                       textAlign: 'left',
                       padding: '12px 14px',
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(10,10,10,0.04)',
+                      border: '1px solid rgba(10,10,10,0.08)',
                       borderRadius: 10,
                       cursor: 'pointer',
                       transition: 'all 180ms ease',
@@ -1203,7 +1214,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                     <span style={{
                       width: 28,
                       height: 28,
-                      background: 'rgba(255,255,255,0.06)',
+                      background: 'rgba(10,10,10,0.06)',
                       borderRadius: 6,
                       display: 'flex',
                       alignItems: 'center',
@@ -1233,8 +1244,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                         gap: 8,
                         padding: '8px 12px',
                         borderRadius: 10,
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'rgba(10,10,10,0.04)',
+                        border: '1px solid rgba(10,10,10,0.08)',
                         color: 'var(--ink-muted, #737373)',
                         fontSize: 12,
                       }}
@@ -1260,7 +1271,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             <div
               style={{
                 padding: '10px 20px',
-                borderTop: '1px solid rgba(255,255,255,0.08)',
+                borderTop: '1px solid rgba(10,10,10,0.08)',
                 background: 'rgba(232,93,0,0.04)',
               }}
             >
@@ -1284,7 +1295,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                         fontSize: 10,
                         padding: '2px 8px',
                         borderRadius: 20,
-                        background: 'rgba(255,255,255,0.08)',
+                        background: 'rgba(10,10,10,0.08)',
                         color: 'var(--ink-muted, #737373)',
                       }}
                     >
@@ -1297,9 +1308,9 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               <div
                 style={{
                   padding: '8px 12px',
-                  background: 'rgba(255,255,255,0.04)',
+                  background: 'rgba(10,10,10,0.04)',
                   borderRadius: 8,
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(10,10,10,0.08)',
                 }}
               >
                 <p style={{ fontSize: 13, color: 'var(--ink-secondary, #525252)', margin: 0 }}>
@@ -1328,7 +1339,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           )}
 
           {loading && !showBoardroomViz && (
-            <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(10,10,10,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <div
                   style={{
@@ -1512,8 +1523,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         <div
           className="rounded-2xl flex items-end gap-1 p-2"
           style={{
-            background: 'rgba(255,255,255,0.05)',
-            border: `1px solid ${attachedFile ? 'rgba(232,93,0,0.4)' : 'rgba(255,255,255,0.1)'}`,
+            background: 'rgba(10,10,10,0.05)',
+            border: `1px solid ${attachedFile ? 'rgba(232,93,0,0.4)' : 'rgba(10,10,10,0.1)'}`,
           }}
         >
           <input type="file" ref={fileRef} className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.md,.json,.py,.js" />
@@ -1557,18 +1568,18 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             onClick={sendMessage}
             disabled={(!input.trim() && !attachedFile) || loading}
             className="p-2 rounded-xl shrink-0 transition-all disabled:opacity-20"
-            style={{ background: (input.trim() || attachedFile) ? '#E85D00' : 'rgba(255,255,255,0.1)', width: 32, height: 32 }}
+            style={{ background: (input.trim() || attachedFile) ? '#E85D00' : 'rgba(10,10,10,0.1)', width: 32, height: 32 }}
             data-testid="sb-send"
           >
             {loading ? (
-              <div style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.5)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <div style={{ width: 12, height: 12, border: '2px solid rgba(10,10,10,0.5)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             ) : (
               <Send className="w-4 h-4 text-white" />
             )}
           </button>
         </div>
         <p className="text-[9px] text-center mt-1.5" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-subtle, #A3A3A3)' }}>
-          <span style={{ padding: '1px 5px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, marginRight: 2 }}>{'\u21B5'}</span> Send {'\u00B7'} <span style={{ padding: '1px 5px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, marginRight: 2, marginLeft: 2 }}>{'\u21E7\u21B5'}</span> New line {'\u00B7'} BIQc uses connected data only
+          <span style={{ padding: '1px 5px', background: 'rgba(10,10,10,0.06)', border: '1px solid rgba(10,10,10,0.08)', borderRadius: 3, marginRight: 2 }}>{'\u21B5'}</span> Send {'\u00B7'} <span style={{ padding: '1px 5px', background: 'rgba(10,10,10,0.06)', border: '1px solid rgba(10,10,10,0.08)', borderRadius: 3, marginRight: 2, marginLeft: 2 }}>{'\u21E7\u21B5'}</span> New line {'\u00B7'} BIQc uses connected data only
         </p>
       </div>
       </div>
@@ -1579,6 +1590,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         />
       )}
     </div>
+    </DashboardLayout>
   );
 };
 

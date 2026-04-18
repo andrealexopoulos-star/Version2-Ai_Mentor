@@ -281,10 +281,14 @@
 /* Design System enforcement rules imported from design-system/enforcement.css */
 @import './design-system/enforcement.css';
 
+/* Markdown — theme-aware. Phase 6 readability fix: flipped hardcoded
+   dark-theme whites to ink-display tokens. The rules in index.css are the
+   canonical source now; these are defensive duplicates (same selectors) so
+   either file being loaded first resolves to the light-mode values. */
 .markdown-body table { border-collapse: collapse; width: 100%; margin: 12px 0; }
-.markdown-body th, .markdown-body td { border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; text-align: left; }
-.markdown-body th { background: rgba(255,255,255,0.08); font-weight: 600; }
-.markdown-body code { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-.markdown-body pre { background: rgba(255,255,255,0.06); padding: 16px; border-radius: 8px; overflow-x: auto; }
-.markdown-body h2, .markdown-body h3 { margin-top: 20px; margin-bottom: 8px; }
-.markdown-body strong { color: #fff; }
+.markdown-body th, .markdown-body td { border: 1px solid var(--border, rgba(10,10,10,0.08)); padding: 8px 12px; text-align: left; color: var(--ink-display, #0A0A0A); }
+.markdown-body th { background: var(--surface-sunken, rgba(10,10,10,0.04)); font-weight: 600; }
+.markdown-body code { background: var(--surface-sunken, rgba(10,10,10,0.05)); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: var(--ink-display, #0A0A0A); }
+.markdown-body pre { background: var(--surface-sunken, rgba(10,10,10,0.04)); padding: 16px; border-radius: 8px; overflow-x: auto; color: var(--ink-display, #0A0A0A); }
+.markdown-body h2, .markdown-body h3 { margin-top: 20px; margin-bottom: 8px; color: var(--ink-display, #0A0A0A); }
+.markdown-body strong { color: var(--ink-display, #0A0A0A); }
