@@ -25,13 +25,16 @@ const CAT_COLORS = {
   Product: '#EF4444', Compliance: '#0EA5E9',
 };
 
+/* Liquid-steel silver variants — subtle tonal shifts keep visual rhythm
+   without breaking the Merge monochrome aesthetic. Categories get their
+   colour only as a tiny top accent stripe + eyebrow badge. */
 const GRADIENTS = [
-  'linear-gradient(135deg, #F59E0B, #F97316)',
-  'linear-gradient(135deg, #3B82F6, #6366F1)',
-  'linear-gradient(135deg, #10B981, #059669)',
-  'linear-gradient(135deg, #8B5CF6, #A855F7)',
-  'linear-gradient(135deg, #E85D00, #EF4444)',
-  'linear-gradient(135deg, #0EA5E9, #3B82F6)',
+  'linear-gradient(135deg, #F6F7F9 0%, #E8ECF1 50%, #D1D8E0 100%)',  // cool silver
+  'linear-gradient(135deg, #F8F6F1 0%, #EAE6DE 50%, #D6CFC3 100%)',  // warm taupe silver
+  'linear-gradient(135deg, #EEF2EF 0%, #DFE4E0 50%, #C9D1CB 100%)',  // sage silver
+  'linear-gradient(135deg, #F1F2F6 0%, #DFE1E9 50%, #CDCFDA 100%)',  // neutral lavender silver
+  'linear-gradient(135deg, #F5EEE7 0%, #E6D9CB 50%, #D1BEAC 100%)',  // warm copper-tinted silver
+  'linear-gradient(135deg, #EDF0F2 0%, #DDE2E5 50%, #C5CDD2 100%)',  // cool stone silver
 ];
 
 export default function BlogPage() {
@@ -63,27 +66,32 @@ export default function BlogPage() {
             Insights on AI, business intelligence, and the future of decision-making.
           </p>
 
-          {/* Search */}
+          {/* Search — Merge pill pattern */}
           <div className="max-w-md mx-auto relative mb-6">
-            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--ink-muted)' }} />
+            <Search className="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2" style={{ color: 'var(--ink-muted, #737373)' }} />
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search articles..."
-              className="w-full h-12 pl-11 pr-4 rounded-lg text-sm outline-none transition-all focus:ring-2 focus:ring-[#E85D00]/20 focus:border-[#E85D00]"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--ink)' }}
+              className="w-full h-12 pl-12 pr-5 text-sm outline-none transition-all focus:ring-2 focus:ring-[#E85D00]/20 focus:border-[#E85D00]"
+              style={{ background: '#FFFFFF', border: '1px solid rgba(10,10,10,0.1)', color: 'var(--ink-display, #0A0A0A)', borderRadius: '999px', fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', letterSpacing: '-0.005em' }}
               data-testid="blog-search" />
           </div>
 
-          {/* Category filters */}
+          {/* Category filters — Merge pill pattern: active = black, inactive = white on shade border */}
           <div className="flex flex-nowrap overflow-x-auto gap-2 pb-2 sm:flex-wrap sm:justify-center" style={{ scrollbarWidth: 'none' }}>
             {CATEGORIES.map(cat => {
-              const color = CAT_COLORS[cat] || '#E85D00';
+              const isActive = activeCategory === cat;
               return (
                 <button key={cat} onClick={() => setActiveCategory(cat)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap shrink-0"
+                  className="text-xs font-medium transition-all whitespace-nowrap shrink-0"
                   style={{
-                    background: activeCategory === cat ? color : 'var(--surface)',
-                    color: activeCategory === cat ? 'white' : 'var(--ink-secondary)',
-                    border: `1px solid ${activeCategory === cat ? 'transparent' : 'var(--border)'}`,
+                    background: isActive ? '#0A0A0A' : '#FFFFFF',
+                    color: isActive ? '#FFFFFF' : 'var(--ink-secondary, #525252)',
+                    border: `1px solid ${isActive ? '#0A0A0A' : 'rgba(10,10,10,0.1)'}`,
+                    padding: '6px 14px',
+                    borderRadius: '999px',
+                    letterSpacing: '-0.005em',
+                    boxShadow: isActive ? '0 4px 12px rgba(10,10,10,0.08)' : 'none',
+                    fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)',
                   }}
                   data-testid={`blog-cat-${cat.toLowerCase()}`}>
                   {cat}
@@ -157,30 +165,39 @@ export default function BlogPage() {
               const grad = GRADIENTS[i % GRADIENTS.length];
               return (
                 <Link key={article.slug} to={`/blog/${article.slug}`}
-                  className="group rounded-[10px] overflow-hidden flex flex-col transition-all hover:border-white/20 hover:shadow-lg"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                  className="group rounded-[14px] overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1"
+                  style={{ background: '#FFFFFF', border: '1px solid rgba(10,10,10,0.06)', boxShadow: '0 2px 8px rgba(10,10,10,0.04)' }}
                   data-testid={`blog-card-${article.slug}`}>
-                  {/* Gradient image */}
-                  <div className="h-40 flex items-center justify-center relative overflow-hidden" style={{ background: grad }}>
-                    <span className="text-[32px] font-bold relative z-10"
-                      style={{ color: 'var(--ink-muted, #737373)', fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)' }}>
+                  {/* Liquid-steel silver header with subtle category accent */}
+                  <div className="h-40 flex items-center justify-center relative overflow-hidden"
+                    style={{ background: grad, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(10,10,10,0.08)' }}>
+                    {/* Thin coloured stripe — only hint of category identity */}
+                    <div className="absolute top-0 left-0 right-0" style={{ height: 3, background: catColor, opacity: 0.75 }} />
+                    {/* Article number — ink on silver */}
+                    <span className="text-[42px] font-bold relative z-10"
+                      style={{ color: 'rgba(10,10,10,0.35)', fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)', letterSpacing: '-0.03em', textShadow: '0 1px 0 rgba(255,255,255,0.4)' }}>
                       {String(i + 1).padStart(2, '0')}
                     </span>
+                    {/* Horizontal brushed-metal striations */}
+                    <div className="absolute inset-0 pointer-events-none" style={{
+                      background: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, rgba(10,10,10,0.025) 1px, rgba(10,10,10,0.025) 2px)',
+                      mixBlendMode: 'overlay',
+                    }} />
                   </div>
                   {/* Body */}
                   <div className="p-6 flex-1 flex flex-col">
-                    <span className="inline-block self-start text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded mb-3"
-                      style={{ background: `${catColor}15`, color: catColor }}>
+                    <span className="inline-block self-start text-[10px] font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded mb-3"
+                      style={{ background: `${catColor}15`, color: catColor, letterSpacing: '0.08em' }}>
                       {article.category}
                     </span>
                     <h3 className="text-base font-semibold leading-snug mb-2.5 group-hover:text-[#E85D00] transition-colors"
-                      style={{ color: 'var(--ink-display)' }}>
+                      style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)', letterSpacing: '-0.015em' }}>
                       {article.title}
                     </h3>
-                    <p className="text-sm leading-relaxed mb-4 flex-1 line-clamp-3" style={{ color: 'var(--ink-secondary)' }}>
+                    <p className="text-sm leading-relaxed mb-4 flex-1 line-clamp-3" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)' }}>
                       {article.excerpt}
                     </p>
-                    <div className="flex items-center justify-between text-[13px]" style={{ color: '#5C6E82' }}>
+                    <div className="flex items-center justify-between text-[12px]" style={{ color: 'var(--ink-muted, #737373)', fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)' }}>
                       <div className="flex items-center gap-1.5">
                         <Clock className="w-3 h-3" />
                         {article.readTime}
