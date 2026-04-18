@@ -3,6 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { CreditCard, Building2, RefreshCw, CircleCheck, CircleAlert, Download, Clock, Zap, Check, ExternalLink } from 'lucide-react';
+import CognitiveLearningCounter from '../components/CognitiveLearningCounter';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+
+// Small wrapper — reads user from auth context, passes to the counter component.
+// Keeps the main BillingPage component lean.
+const BillingCognitiveCounter = () => {
+  const { user, session } = useSupabaseAuth();
+  const userId = user?.id || session?.user?.id;
+  const createdAt = user?.created_at || session?.user?.created_at;
+  if (!userId) return null;
+  return <CognitiveLearningCounter variant="card" userId={userId} userCreatedAt={createdAt} />;
+};
 
 const TIER_DISPLAY = {
   free: 'Free',
@@ -156,6 +168,13 @@ const BillingPage = () => {
             Refresh
           </button>
         </div>
+
+        {/* ── Cognitive Learning Counter — Phase 6.13 IPO selling point.
+             Surfaces accumulated intelligence asset (days, signals, agents,
+             snapshots, human-hours equivalent, $ equivalent). Backend endpoint
+             /cognitive-stats/summary lands in follow-up PR; falls back to
+             client-side estimates based on user.created_at. ── */}
+        <BillingCognitiveCounter />
 
         {fetchError && (
           <div style={{
