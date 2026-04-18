@@ -455,6 +455,9 @@ api_router.include_router(enrichment_router)
 from routes.action_items import router as action_items_router
 api_router.include_router(action_items_router)
 
+from routes.alerts import router as alerts_router
+api_router.include_router(alerts_router)
+
 from routes.rag_service import router as rag_router
 api_router.include_router(rag_router)
 

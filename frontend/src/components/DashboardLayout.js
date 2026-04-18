@@ -7,6 +7,7 @@ import { useTutorial, HelpButton, PageTutorial } from './TutorialOverlay';
 import FirstLoginNotification from './FirstLoginNotification';
 import MobileNav from './MobileNav';
 import TrialCountdownCard from './TrialCountdownCard';
+import AlertStack from './AlertStack';
 import { DailyBriefBanner } from './DailyBriefCard';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -831,6 +832,8 @@ const DashboardLayout = ({ children }) => {
       >
         <main id="main-content" className="flex-1" style={{ background: 'var(--canvas-app)', overflowY: 'visible' }}>
           <div className="px-4 py-4 md:px-6 md:py-6">
+            {/* Phase 6.5: Active alerts stack — auto-clears on target-page visit */}
+            <AlertStack maxVisible={3} position="top" />
             <div className="mb-4 flex items-center justify-between gap-3" data-testid="page-navigation-row">
               <button
                 onClick={() => navigate(-1)}
