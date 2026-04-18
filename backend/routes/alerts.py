@@ -50,6 +50,52 @@ class AlertFeedback(BaseModel):
     feedback: int = Field(..., ge=-1, le=1)  # -1, 0, 1
 
 
+# ─── Seed logic — Phase 6.6 first-landing alert ──────────────────────────────
+
+def _seed_welcome_market_alert_if_needed(sb, user_id: str) -> None:
+    """Phase 6.6 — emit the "Visit Market Insights & Benchmark" alert on first
+    landing after calibration. Idempotent: won't emit if one already exists
+    (even if dismissed or viewed).
+    """
+    try:
+        existing = sb.table('alerts_queue') \
+            .select('id') \
+            .eq('user_id', user_id) \
+            .eq('type', 'welcome_market') \
+            .limit(1) \
+            .execute()
+        if existing.data:
+            return  # already seeded (in any state)
+
+        # Check user completed calibration — look at onboarding_status or business_profiles
+        prof = sb.table('business_profiles') \
+            .select('user_id, calibration_complete, updated_at') \
+            .eq('user_id', user_id) \
+            .limit(1) \
+            .execute()
+        if not prof.data or not prof.data[0].get('calibration_complete'):
+            return  # hasn't finished calibration yet
+
+        sb.table('alerts_queue').insert({
+            'user_id': user_id,
+            'type': 'welcome_market',
+            'source': 'onboarding',
+            'target_page': '/market',
+            'priority': 2,
+            'weight': 0.9,
+            'payload': {
+                'title': 'Start with Market Insights & Benchmark',
+                'body': "Your BIQc has mapped your business. Visit Market to see where you stand against the competition, and what moved in your industry this week.",
+                'cta_label': 'Open Market',
+                'cta_href': '/market',
+                'icon': 'Radar',
+                'severity': 'info',
+            },
+        }).execute()
+    except Exception as e:
+        logger.warning(f"[alerts] welcome_market seed failed for user={user_id}: {e}")
+
+
 # ─── GET /alerts/active — used by useAlerts hook ─────────────────────────────
 
 @router.get("/alerts/active")
@@ -58,9 +104,17 @@ async def list_active_alerts(current_user: dict = Depends(get_current_user)):
 
     Marks them as `delivered_at = now()` on first pull so we track delivery latency
     (Phase 6.14 learning signal: how fast after emit did the user see it?).
+
+    Also opportunistically seeds the Phase 6.6 welcome-market alert on first
+    post-calibration call. Idempotent.
     """
     sb = get_supabase_admin()
     user_id = current_user['id']
+
+    # Phase 6.6 — seed welcome Market alert if user completed calibration + no
+    # welcome_market alert yet exists. No-op otherwise. Runs before fetch so
+    # the newly seeded alert appears in the same response.
+    _seed_welcome_market_alert_if_needed(sb, user_id)
 
     # Fetch active alerts
     res = sb.table('alerts_queue') \
