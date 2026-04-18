@@ -718,9 +718,12 @@ async def signup_create_setup_intent(
                 customer_id = None
 
         if not customer_id:
+            # Idempotency key = user_id means a concurrent retry returns
+            # the same Customer rather than creating a duplicate.
             customer = stripe.Customer.create(
                 email=user_email,
                 metadata={"user_id": user_id, "source": "biqc_signup"},
+                idempotency_key=f"biqc-signup-customer-{user_id}",
             )
             customer_id = customer.id
             try:
@@ -733,6 +736,7 @@ async def signup_create_setup_intent(
             payment_method_types=["card"],
             usage="off_session",
             metadata={"user_id": user_id, "plan": plan_id, "source": "biqc_signup"},
+            idempotency_key=f"biqc-signup-si-{user_id}-{plan_id}",
         )
 
         return {
@@ -841,6 +845,12 @@ async def confirm_trial_signup(
             invoice_settings={"default_payment_method": req.payment_method_id},
         )
 
+        # Idempotency key — concurrent retries (double-submit, network
+        # retry, two tabs) return the SAME subscription from Stripe instead
+        # of racing past our pre-check and creating duplicates. Key is
+        # scoped to user_id + plan_id + the payment_method so re-running
+        # with a new card still works, but the same-card retry dedupes.
+        # Codex P2: "concurrent retries ... can race past the pre-check".
         subscription = stripe.Subscription.create(
             customer=req.customer_id,
             items=[{
@@ -859,6 +869,7 @@ async def confirm_trial_signup(
                 "source": "biqc_signup",
                 "trial_days": str(trial_days),
             },
+            idempotency_key=f"biqc-signup-sub-{user_id}-{plan_id}-{req.payment_method_id[-8:]}",
         )
 
         trial_end_iso = None

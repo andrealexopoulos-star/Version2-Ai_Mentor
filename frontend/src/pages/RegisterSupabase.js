@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { Input } from '../components/ui/input';
 import RecaptchaGate from '../components/RecaptchaGate';
@@ -168,6 +168,22 @@ const RegisterSupabase = () => {
       );
       trackEvent(EVENTS.ACTIVATION_SIGNUP_COMPLETE, { method: 'email' });
       trackActivationStep('signup_complete', { method: 'email' });
+
+      // ── Session-presence guard (Codex P1) ──
+      // If Supabase email-confirmation is ON (project-level setting), signUp
+      // succeeds but returns no session — subsequent authenticated Stripe
+      // calls would 401. Tell the user to check their email + sign in, and
+      // route them to /login-supabase. When they come back authenticated,
+      // AuthCallback (via PR D) will detect no-subscription and land them
+      // on the billing step.
+      const { data: sessionCheck } = await supabase.auth.getSession();
+      if (!sessionCheck?.session?.access_token) {
+        toast.success(
+          'Account created. Please confirm your email and sign in to start your 14-day trial.',
+        );
+        navigate('/login-supabase');
+        return;
+      }
 
       // ── Step 2: Stripe SetupIntent (server creates Customer + SI) ──
       setTrialStep('intent');

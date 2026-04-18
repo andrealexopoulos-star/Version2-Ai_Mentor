@@ -26,8 +26,15 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
   const mountDivRef = useRef(null);
   const stripeRef = useRef(null);
   const elementsRef = useRef(null);
+  const paymentElementRef = useRef(null);
   const [loadError, setLoadError] = useState('');
   const [mounted, setMounted] = useState(false);
+
+  // Stable refs for callbacks so the init effect does NOT re-run when the
+  // parent passes new inline-lambda handlers each render (Codex P1).
+  const onReadyRef = useRef(onReady);
+  const onErrorRef = useRef(onError);
+  useEffect(() => { onReadyRef.current = onReady; onErrorRef.current = onError; });
 
   useEffect(() => {
     let cancelled = false;
@@ -75,16 +82,17 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
           layout: { type: 'tabs', defaultCollapsed: false },
           wallets: { applePay: 'auto', googlePay: 'auto' },
         });
+        paymentElementRef.current = paymentElement;
         paymentElement.on('ready', () => {
           if (cancelled) return;
           setMounted(true);
-          onReady && onReady();
+          if (onReadyRef.current) onReadyRef.current();
         });
         paymentElement.on('loaderror', (evt) => {
           const msg = evt?.error?.message || 'Could not load card form.';
           if (cancelled) return;
           setLoadError(msg);
-          onError && onError(msg);
+          if (onErrorRef.current) onErrorRef.current(msg);
         });
 
         if (mountDivRef.current && !cancelled) {
@@ -94,11 +102,27 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
         if (cancelled) return;
         const msg = err?.message || 'Failed to load Stripe.';
         setLoadError(msg);
-        onError && onError(msg);
+        if (onErrorRef.current) onErrorRef.current(msg);
       }
     })();
-    return () => { cancelled = true; };
-  }, [onReady, onError]);
+    return () => {
+      cancelled = true;
+      // Properly unmount the PaymentElement so Stripe releases the DOM
+      // node instead of leaving a detached iframe in the tree (Codex P1).
+      try {
+        if (paymentElementRef.current) {
+          paymentElementRef.current.unmount();
+          paymentElementRef.current = null;
+        }
+      } catch (err) {
+        // Unmount may throw during rapid re-renders; swallow — the next
+        // effect cycle replaces the element regardless.
+      }
+    };
+    // Intentionally empty deps — Elements is mounted once per component
+    // lifetime. Callback handlers flow through stable refs above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useImperativeHandle(ref, () => ({
     /**
