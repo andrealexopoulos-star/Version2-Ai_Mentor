@@ -946,14 +946,19 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     <div
       style={{
         display: 'flex',
-        height: 'calc(100vh - 72px)',
+        // Size from parent flex, not viewport. DashboardLayout adds a top
+        // bar, page-nav row, and padding above children, so `calc(100vh
+        // - N)` is fragile. Codex P1 on PR #333.
+        flex: 1,
         minHeight: 560,
+        height: '100%',
+        maxHeight: 'calc(100vh - 88px)',
         background: 'var(--surface, #FFFFFF)',
         color: 'var(--ink-display, #0A0A0A)',
         overflow: 'hidden',
         fontFamily: "var(--font-ui)",
         borderRadius: 12,
-        border: '1px solid rgba(10,10,10,0.08)',
+        border: '1px solid var(--border, rgba(10,10,10,0.08))',
       }}
       data-testid="soundboard-panel"
     >
