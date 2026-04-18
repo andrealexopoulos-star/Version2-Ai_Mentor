@@ -321,6 +321,10 @@ class CheckoutRequest(BaseModel):
     success_url: Optional[str] = None
     cancel_url: Optional[str] = None
     origin_url: Optional[str] = None   # legacy support
+    # Phase 6.11 — CC-mandatory signup. When set, Stripe creates a trialing
+    # subscription and collects card upfront but does not charge until trial
+    # end. Server-capped at 30 days to prevent manipulated-client abuse.
+    trial_period_days: Optional[int] = None
 
 
 @router.post("/stripe/create-checkout-session")
@@ -399,6 +403,20 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
             "tax_enabled": "1" if _stripe_tax_enabled() else "0",
         },
     }
+
+    # Phase 6.11 — Trial handling. When the Register page calls this endpoint
+    # right after Supabase signup, it passes trial_period_days=14. Stripe
+    # creates a trialing subscription, the user enters their card on Stripe's
+    # hosted page, and is not charged until trial end. We still require the
+    # card upfront (payment_method_collection='always') so auto-charge at
+    # T+14 is unambiguous.
+    if req.trial_period_days is not None:
+        trial_days = max(0, min(int(req.trial_period_days), 30))
+        if trial_days > 0:
+            session_kwargs["subscription_data"] = {"trial_period_days": trial_days}
+            session_kwargs["payment_method_collection"] = "always"
+            session_kwargs["metadata"]["source"] = "biqc_signup"
+            session_kwargs["metadata"]["trial_days"] = str(trial_days)
 
     if _stripe_tax_enabled():
         # Stripe Tax pipeline — requires Tax dashboard activation.
@@ -998,13 +1016,17 @@ async def stripe_webhook(request: Request):
         try:
             if event.type == "checkout.session.completed":
                 session = event.data.object
-                if session.payment_status == "paid":
+                # Phase 6.11 — trial subscriptions report payment_status as
+                # "no_payment_required" (card saved, no charge yet). Treat
+                # both cases as a successful checkout so the user is flagged
+                # trialing (not active) until the first invoice clears.
+                if session.payment_status in ("paid", "no_payment_required"):
                     # Enrich the payment_transactions row with the now-known
                     # customer + subscription IDs so later cancellation /
                     # dunning webhooks can resolve the user back via these
                     # linkage columns (see migration 095).
                     update_payload = {
-                        "payment_status": "paid",
+                        "payment_status": "paid" if session.payment_status == "paid" else "trialing",
                         "paid_at": datetime.now(timezone.utc).isoformat(),
                     }
                     customer_id = getattr(session, "customer", None)
@@ -1020,14 +1042,42 @@ async def stripe_webhook(request: Request):
                     user_id = (session.metadata or {}).get("user_id")
                     if user_id:
                         _apply_tier_upgrade(sb, user_id, (session.metadata or {}).get("tier", "starter"))
-                        # Cache the customer id on the user row + flag active
-                        # so downstream webhooks (invoice.*, subscription.*)
-                        # can resolve without a payment_transactions join.
+
+                        # For trial checkouts we need subscription.status +
+                        # subscription.trial_end to populate trial_ends_at
+                        # correctly. Fetch once from Stripe; default to
+                        # "active" if no subscription id (shouldn't happen in
+                        # subscription mode but belt-and-braces).
+                        lifecycle_status = "active"
+                        trial_end_iso: Any = _UNSET
+                        if subscription_id:
+                            try:
+                                sub = stripe.Subscription.retrieve(subscription_id)
+                                lifecycle_status = getattr(sub, "status", "active") or "active"
+                                if getattr(sub, "trial_end", None):
+                                    trial_end_iso = datetime.fromtimestamp(
+                                        sub.trial_end, tz=timezone.utc
+                                    ).isoformat()
+                                elif lifecycle_status != "trialing":
+                                    # Explicit null — if this user was
+                                    # previously trialing and has now paid,
+                                    # clear the old trial_ends_at.
+                                    trial_end_iso = None
+                            except Exception as exc:
+                                logger.warning(
+                                    "Could not retrieve Stripe subscription %s: %s",
+                                    subscription_id, exc,
+                                )
+
+                        # stripe_subscription_id is NOT stored on users;
+                        # payment_transactions.stripe_subscription_id is
+                        # the canonical link (see _downgrade_user_tier).
                         _update_subscription_lifecycle(
                             sb, user_id,
-                            status="active",
+                            status=lifecycle_status,
                             past_due_since=None,
                             stripe_customer_id=customer_id,
+                            trial_ends_at=trial_end_iso,
                         )
 
             elif event.type == "invoice.payment_succeeded":
