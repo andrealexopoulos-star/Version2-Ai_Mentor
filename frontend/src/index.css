@@ -866,14 +866,14 @@ input[type="password"]::placeholder {
 .markdown-body li { margin: 4px 0; color: var(--ink-secondary, #525252); }
 .markdown-body table { border-collapse: collapse; width: 100%; margin: 12px 0; }
 .markdown-body th, .markdown-body td {
-    border: 1px solid rgba(10,10,10,0.08);
+    border: 1px solid var(--border, rgba(10,10,10,0.08));
     padding: 8px 12px;
     text-align: left;
     color: var(--ink-display, #0A0A0A);
 }
-.markdown-body th { background: rgba(10,10,10,0.04); font-weight: 600; }
+.markdown-body th { background: var(--surface-sunken, rgba(10,10,10,0.04)); font-weight: 600; }
 .markdown-body code {
-    background: rgba(10,10,10,0.05);
+    background: var(--surface-sunken, rgba(10,10,10,0.05));
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 13px;
@@ -881,7 +881,7 @@ input[type="password"]::placeholder {
     color: var(--ink-display, #0A0A0A);
 }
 .markdown-body pre {
-    background: rgba(10,10,10,0.04);
+    background: var(--surface-sunken, rgba(10,10,10,0.04));
     padding: 16px;
     border-radius: 8px;
     overflow-x: auto;
@@ -890,8 +890,21 @@ input[type="password"]::placeholder {
 }
 .markdown-body hr {
     border: none;
-    border-top: 1px solid rgba(10,10,10,0.08);
+    border-top: 1px solid var(--border, rgba(10,10,10,0.08));
     margin: 16px 0;
+}
+
+/* Explicit dark-theme visibility for markdown chrome. The fallback
+   rgba(10,10,10,0.08) above is near-invisible on dark surfaces; these
+   overrides (along with --border/--surface-sunken tokens that flip via
+   tokens.css) preserve table/code/pre legibility in dark mode.
+   Codex P2 on PR #333. */
+[data-theme="dark"] .markdown-body th,
+[data-theme="dark"] .markdown-body td {
+    border-color: rgba(255,255,255,0.12);
+}
+[data-theme="dark"] .markdown-body hr {
+    border-top-color: rgba(255,255,255,0.12);
 }
 
 /* Tailwind Base — light mode default, dark mode override */
