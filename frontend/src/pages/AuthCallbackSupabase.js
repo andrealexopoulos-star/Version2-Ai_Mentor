@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../context/SupabaseAuthContext';
 import { getBackendUrl } from '../config/urls';
 import BiqcLogoCard from '../components/BiqcLogoCard';
+import useForceLightTheme from '../hooks/useForceLightTheme';
 
 /**
  * AuthCallbackSupabase — handles both PKCE and implicit OAuth flows.
@@ -17,6 +18,7 @@ import BiqcLogoCard from '../components/BiqcLogoCard';
  * Both paths end at /advisor on success, /login-supabase on failure.
  */
 const AuthCallbackSupabase = () => {
+  useForceLightTheme();
   const navigate = useNavigate();
   const [status, setStatus] = useState('Completing sign in...');
 

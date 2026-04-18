@@ -12,6 +12,7 @@ import BiqcLogoCard from '../components/BiqcLogoCard';
 import PlanPicker, { PLAN_OPTIONS } from '../components/PlanPicker';
 import StripeCardField from '../components/StripeCardField';
 import { hasStripeKey } from '../lib/stripeJs';
+import useForceLightTheme from '../hooks/useForceLightTheme';
 
 /* ── Mockup-aligned CSS-variable font stacks ── */
 const DISPLAY = 'var(--font-display, ' + fontFamily.display + ')';
@@ -28,6 +29,7 @@ const INTEGRATION_LABELS = {
 };
 
 const RegisterSupabase = () => {
+  useForceLightTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const pendingIntegration = searchParams.get('integration');
@@ -535,8 +537,8 @@ const RegisterSupabase = () => {
               </div>
             )}
             {fallbackRequired && fallbackChallenge && (
-              <div className="rounded-xl border px-3 py-3 mt-4" style={{ borderColor: 'var(--border, rgba(140,170,210,0.12))', background: 'rgba(14,22,40,0.5)' }} data-testid="register-fallback-captcha">
-                <p className="text-xs mb-2" style={{ color: 'var(--ink-muted, #737373)', fontFamily: UI }}>
+              <div className="rounded-xl border px-3 py-3 mt-4" style={{ borderColor: 'rgba(10,10,10,0.1)', background: '#FFFFFF' }} data-testid="register-fallback-captcha">
+                <p className="text-xs mb-2" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: UI }}>
                   Verification required: solve {fallbackChallenge.prompt}
                 </p>
                 <Input type="number" value={fallbackAnswer} onChange={(e) => setFallbackAnswer(e.target.value)} placeholder="Your answer" className="h-10 text-sm" style={inputStyle} data-testid="register-fallback-captcha-input" />
@@ -545,7 +547,7 @@ const RegisterSupabase = () => {
           </form>
 
           <p className="text-xs text-center mt-4 leading-relaxed" style={{ fontFamily: UI, color: 'var(--ink-muted, #737373)' }}>
-            By creating an account you agree to our <Link to="/trust#terms" style={{ color: 'var(--lava, #E85D00)', textDecoration: 'none' }}>terms</Link> and <Link to="/trust#privacy" style={{ color: 'var(--lava, #E85D00)', textDecoration: 'none' }}>privacy policy</Link>. SOC 2 in progress. Australian-sovereign data.
+            By creating an account you agree to our <Link to="/trust/terms" style={{ color: 'var(--lava, #E85D00)', textDecoration: 'none' }}>terms</Link> and <Link to="/trust/privacy" style={{ color: 'var(--lava, #E85D00)', textDecoration: 'none' }}>privacy policy</Link>. SOC 2 in progress. Australian-sovereign data.
           </p>
 
           <p className="text-sm mt-7 text-center" style={{ fontFamily: UI, color: 'var(--ink-secondary, #525252)' }}>
