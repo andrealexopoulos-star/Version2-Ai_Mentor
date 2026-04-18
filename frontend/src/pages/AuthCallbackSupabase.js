@@ -28,7 +28,7 @@ const AuthCallbackSupabase = () => {
 
     const routeAfterAuth = async (session) => {
       if (!session?.access_token) {
-        navigate('/advisor', { replace: true });
+        navigate('/soundboard', { replace: true });
         return;
       }
 
@@ -69,7 +69,7 @@ const AuthCallbackSupabase = () => {
         if (!anyProbeSucceeded) {
           navigate('/integrations?onboarding=1&source=auth-callback-probe-failed', { replace: true });
         } else if (hasConnectedTools) {
-          navigate('/advisor', { replace: true });
+          navigate('/soundboard', { replace: true });
         } else {
           navigate('/integrations?onboarding=1&source=auth-callback', { replace: true });
         }

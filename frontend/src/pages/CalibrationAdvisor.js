@@ -80,7 +80,7 @@ const CalibrationAdvisor = () => {
     try {
       await apiClient.post('/calibration/skip');
       try { clearBootstrapCache(); } catch {}
-      navigate('/advisor', { replace: true });
+      navigate('/soundboard', { replace: true });
     } catch {
       setSkipping(false);
     }
