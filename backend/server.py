@@ -11,6 +11,33 @@ import os
 import logging
 from contextlib import suppress
 
+# ═══ Sentry init — FIRST, before any other imports that might throw ═══
+# Added 2026-04-19 post P1 incident. DSN comes from SENTRY_DSN env var on
+# Azure App Service. If unset, init is a no-op and the SDK stays silent.
+_SENTRY_DSN = os.environ.get("SENTRY_DSN", "").strip()
+if _SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.starlette import StarletteIntegration
+        sentry_sdk.init(
+            dsn=_SENTRY_DSN,
+            environment=(os.environ.get("ENVIRONMENT") or "production").lower(),
+            release=os.environ.get("RELEASE_SHA") or None,
+            traces_sample_rate=0.05,
+            profiles_sample_rate=0.0,
+            # Do NOT send full PII by default — business owners' data.
+            send_default_pii=False,
+            integrations=[
+                StarletteIntegration(),
+                FastApiIntegration(transaction_style="endpoint"),
+            ],
+        )
+    except Exception as _exc:
+        logging.getLogger(__name__).warning(
+            "Sentry init failed (will run without error reporting): %s", _exc
+        )
+
 from supabase_client import init_supabase
 from core.config import configure_middleware, configure_oauth, init_services, OPENAI_KEY
 from core.ai_core import get_ai_response, get_system_prompt, get_business_context, build_business_knowledge_context

@@ -17,6 +17,14 @@ class RouteErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    try {
+      if (window.Sentry && typeof window.Sentry.captureException === 'function') {
+        window.Sentry.captureException(error, {
+          tags: { error_ref: this.state.errorRef, boundary: 'RouteErrorBoundary' },
+          extra: { componentStack: errorInfo && errorInfo.componentStack },
+        });
+      }
+    } catch (_) { /* never let reporting crash */ }
     console.error(`[RouteErrorBoundary] ref=${this.state.errorRef}`, error, errorInfo);
   }
 

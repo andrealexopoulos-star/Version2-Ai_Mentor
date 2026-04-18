@@ -157,3 +157,4 @@ fpdf2==2.8.6
 playwright==1.58.0
 aiofiles
 uvicorn
+sentry-sdk[fastapi]==2.18.0
