@@ -67,13 +67,19 @@ def _seed_welcome_market_alert_if_needed(sb, user_id: str) -> None:
         if existing.data:
             return  # already seeded (in any state)
 
-        # Check user completed calibration — look at onboarding_status or business_profiles
+        # Check user completed calibration.
+        # The schema has `last_calibration_step INT` (not `calibration_complete BOOL`).
+        # calibration.py:3133 / :3178 set last_calibration_step=9 on completion,
+        # so `>= 9` is the "calibration is done" threshold.
+        # 2026-04-19 P0-e fix: previous query asked for a missing column and
+        # was silently erroring for every user, so the welcome-market alert
+        # was never being seeded.
         prof = sb.table('business_profiles') \
-            .select('user_id, calibration_complete, updated_at') \
+            .select('user_id, last_calibration_step, updated_at') \
             .eq('user_id', user_id) \
             .limit(1) \
             .execute()
-        if not prof.data or not prof.data[0].get('calibration_complete'):
+        if not prof.data or (prof.data[0].get('last_calibration_step') or 0) < 9:
             return  # hasn't finished calibration yet
 
         sb.table('alerts_queue').insert({
