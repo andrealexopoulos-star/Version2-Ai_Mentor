@@ -22,7 +22,7 @@ const AI_STEPS = [
     num: 2,
     title: 'Analyse',
     desc: 'Three AI models process every signal in parallel, cross-checking each other for accuracy.',
-    badges: ['GPT-5.2', 'Claude Opus', 'Gemini 2.5 Pro'],
+    badges: ['OpenAI', 'Anthropic', 'Google'],
   },
   {
     num: 3,

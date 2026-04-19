@@ -154,12 +154,14 @@ export const breakpoints = {
   xxl: 1440,
 };
 
-// ═══ HEADING STYLE (serif visibility fix) ═══
+// ═══ HEADING STYLE (serif visibility) ═══
+// 2026-04-19 PDF #4b (a11y): removed textShadow from the default
+// heading token. On light canvas the drop-shadow reduced contrast
+// and read as blur. Stroke + font-smoothing alone give crispness.
 export const headingStyle = {
   fontFamily: fontFamily.display,
   color: colors.text,
   WebkitTextStroke: '0.3px currentColor',
-  textShadow: '0 1px 6px rgba(0,0,0,0.4)',
   WebkitFontSmoothing: 'antialiased',
 };
 

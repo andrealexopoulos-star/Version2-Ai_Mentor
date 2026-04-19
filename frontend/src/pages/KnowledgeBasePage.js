@@ -200,7 +200,7 @@ const KnowledgeBaseContent = () => {
   return (
     <div className="max-w-[900px] mx-auto space-y-8 px-6 py-8" style={{ fontFamily: fontFamily.body }} data-testid="knowledge-base-page">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--ink-display)] mb-2" style={{ fontFamily: fontFamily.display, textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #EDF1F7' }}>Knowledge Base</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--ink-display)] mb-2" style={{ fontFamily: fontFamily.display }}>Knowledge Base</h1>
         <p className="text-sm text-[var(--ink-secondary)]">Understanding BIQc — Business Intelligence Quotient Centre. Step-by-step guides to activate every intelligence layer, plus frequently asked questions.</p>
       </div>
 

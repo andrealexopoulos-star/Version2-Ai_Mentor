@@ -81,7 +81,7 @@ const PLANS = [
     desc: 'Everything in Pro, plus premium AI models and team access.',
     includesLabel: 'Everything in Pro, plus',
     features: [
-      'All premium AI model access (Claude, GPT-5.4)',
+      'Access to frontier models from OpenAI, Anthropic, and Google',
       '15M input + 6M output tokens/month',
       'Advanced risk & compliance modules',
       'Priority model routing',

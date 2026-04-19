@@ -72,7 +72,7 @@ export const TIER_FEATURES = {
   ],
   business: [
     'Everything in Professional',
-    'All premium model access (Claude, GPT-5.4)',
+    'Access to frontier models from OpenAI, Anthropic, and Google',
     '15M input + 6M output tokens/month',
     'Advanced risk & compliance modules',
     'Priority model routing',

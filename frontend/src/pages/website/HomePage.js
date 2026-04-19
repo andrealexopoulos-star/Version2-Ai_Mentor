@@ -249,8 +249,22 @@ const HomePage = () => {
           confidence in real time.
         </p>
 
-        {/* CTA — was orange gradient, now black pill */}
-        <div className="hero-fade-4 flex justify-center mb-6">
+        {/* CTA — was orange gradient, now black pill. 2026-04-19 PDF #4b:
+            trial claim was buried; promoted to a prominent accent pill
+            above the CTA button (reviewer's direction). */}
+        <div className="hero-fade-4 flex flex-col items-center mb-6 gap-3">
+          <span
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-medium uppercase tracking-[0.08em]"
+            style={{
+              background: 'var(--lava-wash, rgba(232,93,0,0.12))',
+              color: 'var(--lava, #E85D00)',
+              border: '1px solid var(--lava-soft, rgba(232,93,0,0.18))',
+              fontFamily: 'var(--font-marketing-ui)',
+            }}
+          >
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 0 8px var(--lava, #E85D00)' }} />
+            14 days free · Cancel anytime
+          </span>
           <Link
             to="/register-supabase"
             className="group relative inline-flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
@@ -269,7 +283,7 @@ const HomePage = () => {
             }}
             data-testid="hero-cta"
           >
-            Start For Free Today
+            Start Your 14-Day Trial
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
@@ -685,10 +699,24 @@ const HomePage = () => {
         <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', lineHeight: 1.6, letterSpacing: '-0.005em' }}>
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
-        <Link to="/register-supabase" className="inline-flex items-center gap-2 transition-all hover:-translate-y-0.5" style={{ background: '#0A0A0A', color: '#FFFFFF', padding: '13px 28px', borderRadius: '999px', border: '1px solid #0A0A0A', fontFamily: 'var(--font-marketing-ui)', fontWeight: 500, fontSize: '15px', letterSpacing: '-0.005em', boxShadow: '0 4px 12px rgba(10,10,10,0.08)' }} data-testid="bottom-cta">
-          Start Your 14-Day Trial <ArrowRight className="w-4 h-4" />
-        </Link>
-        <p className="mt-4" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-muted)', fontSize: '12px', letterSpacing: '-0.002em' }}>14-day trial &middot; Cancel anytime &middot; Australian support</p>
+        <div className="flex flex-col items-center gap-3">
+          <span
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-medium uppercase tracking-[0.08em]"
+            style={{
+              background: 'var(--lava-wash, rgba(232,93,0,0.12))',
+              color: 'var(--lava, #E85D00)',
+              border: '1px solid var(--lava-soft, rgba(232,93,0,0.18))',
+              fontFamily: 'var(--font-marketing-ui)',
+            }}
+          >
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 0 8px var(--lava, #E85D00)' }} />
+            14 days free · Cancel anytime
+          </span>
+          <Link to="/register-supabase" className="inline-flex items-center gap-2 transition-all hover:-translate-y-0.5" style={{ background: '#0A0A0A', color: '#FFFFFF', padding: '13px 28px', borderRadius: '999px', border: '1px solid #0A0A0A', fontFamily: 'var(--font-marketing-ui)', fontWeight: 500, fontSize: '15px', letterSpacing: '-0.005em', boxShadow: '0 4px 12px rgba(10,10,10,0.08)' }} data-testid="bottom-cta">
+            Start Your 14-Day Trial <ArrowRight className="w-4 h-4" />
+          </Link>
+          <p style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-muted)', fontSize: '12px', letterSpacing: '-0.002em' }}>Australian support · SOC 2 in progress · Cancel anytime</p>
+        </div>
       </div>
     </section>
 

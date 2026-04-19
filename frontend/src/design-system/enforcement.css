@@ -3,20 +3,25 @@
  * Imported globally. Prevents visual drift.
  */
 
-/* ═══ HEADING VISIBILITY (Serif on Dark) ═══ */
+/* ═══ HEADING VISIBILITY ═══
+ * 2026-04-19 PDF #4b (a11y): the heavy text-shadow on headings was a
+ * carry-over from the pre-light-mode design. On the current light
+ * canvas it reduces contrast ratios and reads as blur rather than
+ * depth. Dropped default shadow; kept subtle font-smoothing + stroke
+ * so headings stay crisp without the halo. Pages that need a glow
+ * for specific dark-bg sections should opt in locally.
+ */
 h1, h2, h3 {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-stroke: 0.2px currentColor;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* ═══ MOBILE: Reduce visual noise ═══ */
 @media (max-width: 768px) {
-  /* Increase heading stroke for readability */
+  /* Increase heading stroke for readability; no shadow (a11y) */
   h1, h2 {
     -webkit-text-stroke: 0.3px currentColor;
-    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
   }
 
   /* Remove heavy glow on mobile */

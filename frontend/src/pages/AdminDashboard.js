@@ -576,7 +576,7 @@ const AdminDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   {[{ name: 'Growth', price: '$69/mo', f: ['Up to 5 integrations', 'Daily intelligence', 'Email alerts', 'Full platform access'] },
                     { name: 'Professional', price: '$199/mo', f: ['Expanded connectors', 'Real-time intelligence', 'Priority model routing', 'Advanced reporting'] },
-                    { name: 'Business', price: '$349/mo', f: ['Premium AI (Claude, GPT-5.4)', 'Up to 15 integrations', 'Team (5 seats)', 'Dedicated onboarding'] },
+                    { name: 'Business', price: '$349/mo', f: ['Frontier models from OpenAI, Anthropic, and Google', 'Up to 15 integrations', 'Team (5 seats)', 'Dedicated onboarding'] },
                     { name: 'Enterprise', price: 'Custom', f: ['Everything in Business', 'Enterprise governance', 'Custom integrations', 'Dedicated account manager'] }
                   ].map(t => (
                     <div key={t.name} className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
