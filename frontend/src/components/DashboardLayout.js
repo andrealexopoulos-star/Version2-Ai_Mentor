@@ -198,16 +198,20 @@ const DashboardLayout = ({ children }) => {
     };
   }, [activeResizeTarget, sidebarCollapsed]);
 
-  // Theme management — light (default) or dark, persisted to localStorage
+  // Theme management — light (default) or dark, session-scoped.
+  // A new browser session (new tab, or re-login) always starts on the light
+  // default; within one session the user's toggle is respected. Switched from
+  // localStorage to sessionStorage 2026-04-19 after Andreas reported dark mode
+  // persisting across logins (P2 regression).
   const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('biqc_theme');
+    const saved = sessionStorage.getItem('biqc_theme');
     return saved ? saved === 'dark' : false; // default light
   });
 
   useEffect(() => {
     const theme = isDark ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('biqc_theme', theme);
+    sessionStorage.setItem('biqc_theme', theme);
   }, [isDark]);
 
   const toggleTheme = () => setIsDark(prev => !prev);
