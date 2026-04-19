@@ -123,6 +123,15 @@ class SignUpRequest(BaseModel):
     # rejected before we create a Supabase auth user. In dev/without
     # config this is silently accepted so local flows still work.
     recaptcha_token: Optional[str] = None
+    # 2026-04-19 P0 fix: when reCAPTCHA fails to load on the client (ad-
+    # block, flaky network, automation-detection), the Register page shows
+    # a local math challenge as a bot-deterrent fallback. We accept the
+    # prompt + answer here so signup can still go through the backend path
+    # (admin.create_user + email_confirm=True) instead of being forced into
+    # the client-direct supabase.auth.signUp() bypass that doesn't confirm
+    # email. See _enforce_signup_recaptcha for validation.
+    fallback_challenge_prompt: Optional[str] = None
+    fallback_challenge_answer: Optional[str] = None
 
 class SignInRequest(BaseModel):
     email: EmailStr
@@ -409,6 +418,27 @@ async def _enforce_signup_recaptcha(request: "SignUpRequest") -> None:
     configured = recaptcha_is_configured()
 
     if not token:
+        # 2026-04-19 P0 fix: if the client couldn't obtain a reCAPTCHA token
+        # (outage, ad-block, automation-detection), accept a validated local
+        # math-challenge fallback so signups still go through the trusted
+        # backend path instead of the client-direct bypass. The answer check
+        # is done here so there's one enforcement point.
+        prompt = (request.fallback_challenge_prompt or "").strip()
+        answer_raw = (request.fallback_challenge_answer or "").strip()
+        if prompt and answer_raw:
+            m = re.match(r"^\s*(\d+)\s*\+\s*(\d+)\s*$", prompt)
+            try:
+                answer_int = int(answer_raw)
+            except ValueError:
+                answer_int = None
+            if m and answer_int is not None:
+                expected = int(m.group(1)) + int(m.group(2))
+                if expected == answer_int:
+                    logger.info("[signup] accepted fallback math challenge (captcha unavailable)")
+                    return
+            logger.warning("[signup] fallback challenge provided but invalid")
+            raise HTTPException(status_code=400, detail="Verification challenge incorrect")
+
         if configured and _is_production():
             raise HTTPException(status_code=400, detail="Captcha token required")
         if configured:

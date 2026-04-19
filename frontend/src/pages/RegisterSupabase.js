@@ -153,6 +153,10 @@ const RegisterSupabase = () => {
       // isn't (captcha disabled/unavailable in dev), signUp falls back to
       // the direct Supabase client path.
       // ── Step 1: Supabase auth signup (creates user + session) ──
+      // If reCAPTCHA is unavailable and the fallback math challenge was
+      // shown, pass the prompt + answer to the backend so it can verify
+      // there instead of failing closed. This keeps ALL signups on the
+      // backend admin.create_user path (no client-direct bypass).
       setTrialStep('auth');
       await signUp(
         formData.email,
@@ -166,6 +170,8 @@ const RegisterSupabase = () => {
         {
           recaptchaToken: recaptchaOperational ? captchaToken : '',
           recaptchaAction,
+          fallbackChallengePrompt: fallbackRequired && fallbackChallenge ? fallbackChallenge.prompt : '',
+          fallbackChallengeAnswer: fallbackRequired && fallbackChallenge ? String(fallbackAnswer || '') : '',
         }
       );
       trackEvent(EVENTS.ACTIVATION_SIGNUP_COMPLETE, { method: 'email' });

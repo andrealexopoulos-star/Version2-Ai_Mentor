@@ -330,62 +330,62 @@ export const SupabaseAuthProvider = ({ children }) => {
     if (!hasSupabaseConfig) {
       throw new Error(SUPABASE_SETUP_MESSAGE);
     }
-    const { recaptchaToken = '', recaptchaAction = 'register' } = options || {};
+    const {
+      recaptchaToken = '',
+      recaptchaAction = 'register',
+      fallbackChallengePrompt = '',
+      fallbackChallengeAnswer = '',
+    } = options || {};
 
-    if (recaptchaToken) {
-      // Backend-routed signup path: captcha verified server-side, then
-      // Supabase auth user + profile created, session tokens returned.
-      clearClientAuthCachesForFreshLogin();
-      const response = await fetch(`${getBackendUrl()}/api/auth/supabase/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          full_name: metadata.full_name || null,
-          company_name: metadata.company_name || null,
-          industry: metadata.industry || null,
-          role: metadata.role || null,
-          recaptcha_token: recaptchaToken,
-          recaptcha_action: recaptchaAction,
-        }),
-      });
+    // 2026-04-19 P0 fix: ALL signups go through the backend /api/auth/
+    // supabase/signup endpoint, which uses admin.create_user(email_
+    // confirm=True) so the trial + Stripe flow can start immediately
+    // without blocking on an email-confirmation link. Previously there
+    // was a client-direct `supabase.auth.signUp()` fallback used when
+    // reCAPTCHA was unavailable, which went through the project "Confirm
+    // email" setting and left users unable to log in or pay. If the
+    // client can't produce a reCAPTCHA token, we pass the local math-
+    // challenge prompt + answer instead; the backend validates it.
+    clearClientAuthCachesForFreshLogin();
+    const response = await fetch(`${getBackendUrl()}/api/auth/supabase/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        full_name: metadata.full_name || null,
+        company_name: metadata.company_name || null,
+        industry: metadata.industry || null,
+        role: metadata.role || null,
+        recaptcha_token: recaptchaToken,
+        recaptcha_action: recaptchaAction,
+        fallback_challenge_prompt: fallbackChallengePrompt || null,
+        fallback_challenge_answer: fallbackChallengeAnswer || null,
+      }),
+    });
 
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const message = payload?.detail || payload?.message || 'Signup failed';
-        throw new Error(message);
-      }
-
-      // If the backend returned a session (email confirmation disabled),
-      // plant it into supabase-js so subsequent API calls are authenticated.
-      // When email confirmation is enabled upstream, session will be null
-      // and the user will confirm via the email link instead.
-      const accessToken = payload?.session?.access_token;
-      const refreshToken = payload?.session?.refresh_token;
-      if (accessToken && refreshToken) {
-        const { error: setSessionErr } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-        if (setSessionErr) throw setSessionErr;
-      }
-      return payload;
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?.detail || payload?.message || 'Signup failed';
+      throw new Error(message);
     }
 
-    // Fallback — direct client-side Supabase signup. Used when reCAPTCHA
-    // is not configured (dev/local) so the flow still works without a
-    // site key. Production callers should always pass a token.
-    const { data, error } = await supabase.auth.signUp({
-      email, password, options: { data: metadata }
-    });
-    if (error) throw error;
-    // IMPORTANT: Do not write to protected profile tables from client-side signup.
-    // Server-side auth verification/bootstrap handles users + cognitive profile creation.
-    return data;
+    // Backend always returns a session for new signups (admin-created,
+    // email_confirm=True, then sign_in_with_password). Plant tokens into
+    // supabase-js so subsequent API calls are authenticated.
+    const accessToken = payload?.session?.access_token;
+    const refreshToken = payload?.session?.refresh_token;
+    if (accessToken && refreshToken) {
+      const { error: setSessionErr } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (setSessionErr) throw setSessionErr;
+    }
+    return payload;
   };
 
   const signIn = async (email, password) => {
