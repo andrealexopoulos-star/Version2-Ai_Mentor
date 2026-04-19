@@ -113,7 +113,15 @@
         <link rel="alternate" hreflang="en" href="https://biqc.ai/" />
         <link rel="alternate" hreflang="en-AU" href="https://biqc.ai/" />
         
-        <!-- Schema.org Structured Data -->
+        <!-- Schema.org Structured Data.
+             2026-04-19 PDF review: removed fabricated aggregateRating
+             (4.8 / 500 reviews was not based on real customer reviews).
+             Using invented ratings in structured data is a Google rich-
+             result penalty and — more importantly — the "unverifiable
+             stats = trust killer" the reviewer flagged. Price updated
+             from 0 to the actual Growth starting point (69 AUD/mo).
+             Re-add aggregateRating only once we have real reviews from
+             real, attributable customers. -->
         <script type="application/ld+json">
         {
           "@context": "https://schema.org",
@@ -122,13 +130,11 @@
           "applicationCategory": "BusinessApplication",
           "offers": {
             "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "AUD"
-          },
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.8",
-            "ratingCount": "500"
+            "price": "69",
+            "priceCurrency": "AUD",
+            "priceValidUntil": "2027-01-01",
+            "availability": "https://schema.org/InStock",
+            "description": "BIQc Growth subscription — starts at $69 AUD/month after a 14-day free trial."
           },
           "operatingSystem": "Web",
           "description": "AI business mentor providing personalised strategic advice for Australian SMEs and professional services businesses",
