@@ -253,8 +253,9 @@ export const WAITLIST_ROUTE_MAP = WAITLIST_FEATURES.reduce((acc, feature) => {
   return acc;
 }, {});
 
+// 2026-04-19: "Everything in Free" anchor removed. Starter is the new floor tier,
+// so its features are declared in full via pricingTiers.js + this foundation list.
 export const PAID_LAUNCH_FEATURES = [
-  'Everything in Free',
   ...FOUNDATION_FEATURES.map((feature) => feature.title),
   'Up to 5 integrations',
 ];

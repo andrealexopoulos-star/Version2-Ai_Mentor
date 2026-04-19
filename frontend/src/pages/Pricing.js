@@ -216,7 +216,7 @@ const COMPARISON = [
    ──────────────────────────────────────────── */
 const FAQS = [
   {
-    q: 'How does the 14-day free trial work?',
+    q: 'How does the 14-day trial work?',
     a: 'When you sign up, you start a 14-day Growth trial with full access to every Growth feature. Your card is captured at signup by Stripe (BIQc never sees it) and charged automatically on day 14 — unless you cancel before then for $0. We email a reminder 3 days before the charge date.',
   },
   {
@@ -254,14 +254,14 @@ const ctaStyles = {
    Page component
    ──────────────────────────────────────────── */
 export default function Pricing() {
-  usePageMeta({ title: 'Pricing — Plans for Every Business Stage', description: 'Simple, transparent pricing for BIQc. Start free, upgrade when you need more intelligence. Plans from $69 AUD/month.' });
+  usePageMeta({ title: 'Pricing — Plans for Every Business Stage', description: 'Simple, transparent pricing for BIQc. 14-day trial, upgrade when you need more intelligence. Plans from $69 AUD/month.' });
   const { user } = useSupabaseAuth();
   const [compareOpen, setCompareOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
 
   const ctaHref = (plan) => {
     if (plan.id === 'enterprise') return '/contact?source=pricing';
-    // Free plan removed 2026-04-18 Phase 6.10 — all signups start 14-day Growth trial
+    // 2026-04-19: no free tier. All signups start a 14-day Growth trial.
     return user ? '/subscribe' : '/register-supabase';
   };
 
@@ -282,7 +282,7 @@ export default function Pricing() {
           </h1>
           <p className="text-lg max-w-[480px] mx-auto leading-relaxed"
             style={{ color: 'var(--ink-secondary)' }}>
-            Start free. Upgrade when you're ready. No surprises, no hidden fees.
+            Start your 14-day trial. Upgrade when you're ready. No surprises, no hidden fees.
           </p>
         </div>
       </section>
@@ -446,7 +446,7 @@ export default function Pricing() {
             Start your 14-day trial today
           </h2>
           <p className="text-base mb-8" style={{ color: 'var(--ink-secondary)' }}>
-            No credit card required. Full access to Growth features. Cancel anytime.
+            14-day trial. Full access to Growth features. Cancel anytime before day 14 for $0.
           </p>
           <Link to="/register-supabase"
             className="inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold text-white transition-all hover:brightness-110"

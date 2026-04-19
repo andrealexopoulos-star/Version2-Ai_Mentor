@@ -354,7 +354,7 @@ export function HowItWorks() {
           {/* ── CTA ── */}
           <div className="text-center pt-6" style={{ borderTop: '1px solid var(--biqc-border, #1E2D3D)' }}>
             <p className="text-sm mb-5" style={{ color: 'var(--biqc-text-2, #8FA0B8)', fontFamily: fontFamily.body }}>
-              Connect your first platform in under 2 minutes. No credit card required.
+              Connect your first platform in under 2 minutes. 14-day trial, cancel anytime.
             </p>
             <Link
               to="/register-supabase"
@@ -365,7 +365,7 @@ export function HowItWorks() {
                 boxShadow: '0 8px 32px rgba(232,93,0,0.28)',
               }}
               data-testid="how-it-works-cta">
-              Start free trial <ArrowRight className="w-4 h-4" />
+              Start your 14-day trial <ArrowRight className="w-4 h-4" />
             </Link>
             <p className="text-[11px] mt-3" style={{ fontFamily: fontFamily.mono, color: '#4A5568' }}>
               14-day trial · Australian hosted · Cancel anytime

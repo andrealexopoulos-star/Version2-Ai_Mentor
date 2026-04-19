@@ -276,13 +276,13 @@ export default function ContactPage() {
             Ready to See Your Business Clearly?
           </h2>
           <p className="text-lg mb-8" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: UI, letterSpacing: '-0.005em' }}>
-            Start free. No credit card required. Intelligence in minutes.
+            14-day trial. Cancel anytime. Intelligence in minutes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register-supabase"
               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-[15px] font-medium transition-all"
               style={{ background: '#0A0A0A', color: '#FFFFFF', border: '1px solid #0A0A0A', borderRadius: '999px', fontFamily: UI, letterSpacing: '-0.005em', boxShadow: '0 4px 12px rgba(10,10,10,0.08)' }}>
-              Start Free Today <ArrowRight className="w-4 h-4" />
+              Start Your Trial Today <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>

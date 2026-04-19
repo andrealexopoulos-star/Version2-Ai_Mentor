@@ -288,7 +288,7 @@ const IntegrationsPage = () => {
             className="inline-flex items-center gap-2 px-7 py-3 text-[15px] font-semibold text-white transition-all hover:brightness-110"
             style={{ background: 'var(--lava)', borderRadius: 'var(--r-md)', fontFamily: 'var(--font-ui)' }}
             data-testid="integrations-final-cta">
-            Start Free
+            Start Your Trial
           </Link>
         </div>
       </section>

@@ -204,7 +204,7 @@ const InteractiveDemoExpanded = ({ onClose }) => {
                   onClick={onClose}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  Start Free
+                  Start Your Trial
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               )}

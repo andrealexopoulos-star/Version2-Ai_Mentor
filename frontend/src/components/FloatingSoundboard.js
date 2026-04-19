@@ -50,7 +50,7 @@ function resolveField(naturalName) {
   return FIELD_MAP[lower] || null;
 }
 
-const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrationState = {} }) => {
+const FloatingSoundboard = ({ context = '', subscriptionTier = 'trial', integrationState = {} }) => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);

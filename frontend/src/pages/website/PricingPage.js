@@ -5,15 +5,19 @@ import { ArrowRight, Check, ChevronDown } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 /* ─── PLAN DATA (from approved mockup) ─── */
+// 2026-04-19: Free tier removed (CEO direction "there is no free tier"). Growth
+// is the first paid tier at $69/mo with a 14-day CC-mandatory trial. All core
+// protection features previously listed under Free are now included in Growth.
 const PLANS = [
   {
-    name: 'Free',
-    badge: 'Get Started',
-    badgeBg: 'rgba(140,170,210,0.1)', badgeColor: '#8FA0B8',
-    price: '$0',
+    name: 'Growth',
+    badge: 'Most Popular',
+    badgeBg: 'rgba(232,93,0,0.08)', badgeColor: '#E85D00',
+    price: '$69',
     period: '/mo',
-    desc: 'Everything you need to start understanding your business better.',
+    desc: 'Everything you need to protect, understand, and grow your business — in one operating intelligence platform.',
     includesLabel: "What's included",
+    highlight: true,
     features: [
       'AI Business Advisor',
       'Market Intelligence Brief',
@@ -23,22 +27,6 @@ const PLANS = [
       'Data Health Monitor',
       'Actions & Alerts',
       'Ask BIQc AI Chat',
-      'Up to 2 integrations',
-    ],
-    cta: 'Start Free',
-    ctaStyle: 'outline',
-    link: '/register-supabase',
-  },
-  {
-    name: 'Growth',
-    badge: 'Most Popular',
-    badgeBg: 'rgba(232,93,0,0.08)', badgeColor: '#E85D00',
-    price: '$69',
-    period: '/mo',
-    desc: 'Everything in Free, plus powerful tools to grow your revenue.',
-    includesLabel: 'Everything in Free, plus',
-    highlight: true,
-    features: [
       'Board Room (single-model AI)',
       'Revenue Analytics',
       'Operations Centre',
@@ -215,7 +203,7 @@ const COMPARE_GROUPS = [
 const FAQS = [
   {
     q: 'How does the 14-day free trial work?',
-    a: "When you sign up for Growth or Pro, you get full access to all features for 14 days at no cost. No credit card is required to start. At the end of the trial, you can choose to subscribe or downgrade to the Free plan without losing your data.",
+    a: "When you sign up for Growth or Pro, you get full access to all features for 14 days at no cost. Your card is captured at signup by Stripe (BIQc never sees it) and charged automatically on day 14 unless you cancel. Cancel anytime in two clicks from Settings → Billing. Your data stays intact either way.",
   },
   {
     q: 'Can I cancel my subscription at any time?',
@@ -338,7 +326,7 @@ const PricingPage = () => {
             Simple, transparent pricing.
           </h1>
           <p className="text-base sm:text-lg" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
-            Start free. Upgrade when you're ready. No surprises, no hidden fees.
+            Start your 14-day trial. Upgrade when you're ready. No surprises, no hidden fees.
           </p>
         </div>
       </section>
@@ -425,7 +413,7 @@ const PricingPage = () => {
       <section className="py-20 px-6 text-center" style={{ borderTop: '1px solid rgba(140,170,210,0.12)' }} data-testid="pricing-bottom-cta">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)', letterSpacing: '-0.02em' }}>Start your 14-day trial today</h2>
-          <p className="text-base mb-8" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>No credit card required. Full access to Growth features. Cancel anytime.</p>
+          <p className="text-base mb-8" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>14-day trial. Full access to Growth features. Cancel anytime before day 14 for $0.</p>
           <Link
             to="/register-supabase"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg text-base font-semibold text-white transition-all hover:brightness-110"

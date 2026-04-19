@@ -1,12 +1,17 @@
+// 2026-04-19: Free tier removed per CEO direction ("there is no free tier, remove").
+// All core protection features fold into Starter (Growth, $69) as the first paid tier.
+// Higher tiers inherit via "Everything in X" cascade labels.
 export const PRICING_TIERS = [
   {
-    id: 'free',
-    name: 'Free',
-    subtitle: 'Launch access',
-    price: '$0',
-    priceNum: 0,
+    id: 'starter',
+    name: 'Growth',
+    subtitle: 'Full protection + growth operating package',
+    price: '$69',
+    priceNum: 69,
     period: '/month',
-    color: '#64748B',
+    color: '#E85D00',
+    popular: true,
+    recommended: true,
     features: [
       'BIQc Overview',
       'Ask BIQc',
@@ -19,21 +24,6 @@ export const PRICING_TIERS = [
       'Data Health',
       'Settings',
       'Competitive Benchmark',
-      'Email integration only',
-    ],
-  },
-  {
-    id: 'starter',
-    name: 'Growth',
-    subtitle: 'Growth operating package',
-    price: '$69',
-    priceNum: 69,
-    period: '/month',
-    color: '#E85D00',
-    popular: true,
-    recommended: true,
-    features: [
-      'Everything in Free',
       'BIQc Foundation package',
       'Exposure Scan',
       'Marketing Auto',
@@ -126,7 +116,8 @@ export const getTierByPlanId = (id) => {
   if (id === 'business') return PRICING_TIERS.find((tier) => tier.id === 'business') || PRICING_TIERS[3];
   if (id === 'enterprise') return PRICING_TIERS.find((tier) => tier.id === 'enterprise') || PRICING_TIERS[4];
   if (id === 'custom' || id === 'custom_build') return PRICING_TIERS.find((tier) => tier.id === 'custom_build') || PRICING_TIERS[5];
-  return PRICING_TIERS.find((tier) => tier.id === id) || PRICING_TIERS[0];
+  // Unknown / legacy 'free' / null → fall back to Starter (the new floor).
+  return PRICING_TIERS.find((tier) => tier.id === id) || PRICING_TIERS.find((t) => t.id === 'starter') || PRICING_TIERS[0];
 };
 
 export const getTierColor = (id) => getTierByPlanId(id).color;

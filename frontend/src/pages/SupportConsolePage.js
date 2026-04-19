@@ -5,8 +5,10 @@ import { Shield, CheckCircle2, Users, Key, UserX, Edit, Eye, AlertTriangle, Load
 import { fontFamily } from '../design-system/tokens';
 
 
-const TIER_COLORS = { free: '#64748B', starter: '#E85D00', pro: '#3B82F6', professional: '#3B82F6', growth: '#E85D00', business: '#F59E0B', enterprise: '#8B5CF6', super_admin: '#EF4444' };
-const TIER_LABELS = { free: 'Free', starter: 'Growth $69', pro: 'Professional $199', professional: 'Professional $199', growth: 'Growth $69', business: 'Business $349', enterprise: 'Enterprise', super_admin: 'Super Admin' };
+// 2026-04-19: Free tier removed. 'trial' is the in-trial state for users who
+// haven't paid yet; post-trial users are gated via subscription_status.
+const TIER_COLORS = { trial: '#8FA0B8', starter: '#E85D00', pro: '#3B82F6', professional: '#3B82F6', growth: '#E85D00', business: '#F59E0B', enterprise: '#8B5CF6', super_admin: '#EF4444' };
+const TIER_LABELS = { trial: 'Trial (14-day)', starter: 'Growth $69', pro: 'Professional $199', professional: 'Professional $199', growth: 'Growth $69', business: 'Business $349', enterprise: 'Enterprise', super_admin: 'Super Admin' };
 
 const SupportConsolePage = () => {
   const [admin, setAdmin] = useState(null);
@@ -147,13 +149,14 @@ const SupportConsolePage = () => {
                         <td className="px-3 py-2 text-[var(--ink-secondary)]">{u.full_name || '—'}</td>
                         <td className="px-3 py-2 text-[var(--ink-secondary)]">{u.business_name || '—'}</td>
                         <td className="px-3 py-2">
-                          <select value={u.subscription_tier || 'free'} onChange={e => updateTier(u.id, e.target.value)}
-                            className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: (TIER_COLORS[u.subscription_tier] || '#64748B') + '15', color: TIER_COLORS[u.subscription_tier] || '#64748B', border: 'none', fontFamily: fontFamily.mono }}>
+                          <select value={u.subscription_tier || 'trial'} onChange={e => updateTier(u.id, e.target.value)}
+                            className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: (TIER_COLORS[u.subscription_tier] || '#8FA0B8') + '15', color: TIER_COLORS[u.subscription_tier] || '#8FA0B8', border: 'none', fontFamily: fontFamily.mono }}>
                             {[
-                              { val: 'free', label: 'Free' },
-                              { val: 'starter', label: 'BIQc Foundation ($349)' },
-                              { val: 'professional', label: 'BIQc Foundation ($349)' },
-                              { val: 'enterprise', label: 'BIQc Foundation ($349)' },
+                              { val: 'trial', label: 'Trial (14-day)' },
+                              { val: 'starter', label: 'Growth ($69)' },
+                              { val: 'pro', label: 'Professional ($199)' },
+                              { val: 'business', label: 'Business ($349)' },
+                              { val: 'enterprise', label: 'Enterprise' },
                               { val: 'super_admin', label: 'Super Admin' },
                             ].map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
                           </select>

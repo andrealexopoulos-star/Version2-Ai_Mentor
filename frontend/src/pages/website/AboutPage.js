@@ -427,7 +427,7 @@ export default function AboutPage() {
               margin: '0 auto 32px',
               lineHeight: 1.7,
             }}>
-              Start free. No credit card required. Intelligence in minutes.
+              14-day trial. Cancel anytime. Intelligence in minutes.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
               <Link
@@ -450,7 +450,7 @@ export default function AboutPage() {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 32px ${C.brandGlow}`; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
-                Start Free Today <ArrowRight size={16} />
+                Start Your Trial Today <ArrowRight size={16} />
               </Link>
               <Link
                 to="/contact"

@@ -54,7 +54,7 @@ const TrustPage = () => {
           <button onClick={() => nav('/')} className="flex items-center gap-2 text-[13px] font-medium rounded-lg px-3 py-1.5 hover:bg-slate-50" style={{ color: MUTED, fontFamily: fontFamily.display }} data-testid="trust-back-btn">
             <ChevronLeft className="w-4 h-4" /> Back to BIQc
           </button>
-          <button onClick={() => nav('/register-supabase')} className="text-[13px] font-semibold px-5 py-2.5 rounded-lg text-white" style={{ background: AZURE, fontFamily: fontFamily.display, boxShadow: '0 4px 14px rgba(0,122,255,0.25)' }} data-testid="trust-start-btn">Start Free</button>
+          <button onClick={() => nav('/register-supabase')} className="text-[13px] font-semibold px-5 py-2.5 rounded-lg text-white" style={{ background: AZURE, fontFamily: fontFamily.display, boxShadow: '0 4px 14px rgba(0,122,255,0.25)' }} data-testid="trust-start-btn">Start Trial</button>
         </div>
       </nav>
 
@@ -135,7 +135,7 @@ const TrustPage = () => {
         <div className="max-w-2xl mx-auto text-center space-y-6">
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em]" style={{ fontFamily: fontFamily.display }}>Ready to deploy sovereign intelligence?</h2>
           <button onClick={() => nav('/register-supabase')} className="px-10 py-4 rounded-xl text-[13px] font-semibold inline-flex items-center gap-2 text-white" style={{ background: AZURE, fontFamily: fontFamily.display, boxShadow: '0 8px 24px rgba(0,122,255,0.25)' }} data-testid="trust-cta-deploy">
-            Start Free Trial
+            Start Your 14-Day Trial
           </button>
           <p className="text-[10px] tracking-[0.1em] uppercase font-medium" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #737373)' }}>Australian owned · Australian hosted · Your data, your sovereignty</p>
         </div>

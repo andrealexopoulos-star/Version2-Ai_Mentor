@@ -581,7 +581,7 @@ const RegisterSupabase = () => {
           </p>
 
           <div className="flex flex-col gap-3 mb-8 max-w-[440px] mx-auto text-left">
-            {['14 days of Pro features, no credit card', 'Auto-detects 19 of the 23 most common SMB risks', 'Read-only by default — we never write to your tools', 'Cancel in two clicks. Export your data anytime.'].map((item, i) => (
+            {['14 days of full Growth features — cancel anytime before day 14 for $0', 'Auto-detects 19 of the 23 most common SMB risks', 'Read-only by default — we never write to your tools', 'Cancel in two clicks. Export your data anytime.'].map((item, i) => (
               <div key={i} className="flex items-start gap-3 text-sm" style={{ color: 'var(--ink-display, #0A0A0A)' }}>
                 <div className="w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'var(--lava, #E85D00)' }}>
                   <Check className="w-3 h-3 text-white" />

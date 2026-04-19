@@ -23,8 +23,9 @@ export const KpiThresholdTab = () => {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [config, setConfig] = useState({
-    plan_label: 'Free',
-    plan_tier: 'free',
+    // 2026-04-19: no free tier. Default flash is Trial until backend payload lands.
+    plan_label: 'Trial',
+    plan_tier: 'trial',
     visible_metric_limit: 10,
     catalog_total_metrics: 100,
     custom_thresholds_active: 0,
@@ -38,8 +39,9 @@ export const KpiThresholdTab = () => {
 
   const applyPayload = (payload = {}) => {
     setConfig({
-      plan_label: payload.plan_label || 'Free',
-      plan_tier: payload.plan_tier || 'free',
+      // 2026-04-19: no free tier — fall back to Trial for unpaid states.
+      plan_label: payload.plan_label || 'Trial',
+      plan_tier: payload.plan_tier || 'trial',
       visible_metric_limit: payload.visible_metric_limit || 10,
       catalog_total_metrics: payload.catalog_total_metrics || 100,
       custom_thresholds_active: payload.custom_thresholds_active || 0,
@@ -107,7 +109,7 @@ export const KpiThresholdTab = () => {
       const selected = new Set(prev.selected_metric_keys || []);
       const alreadySelected = selected.has(metricKey);
       if (!alreadySelected && selected.size >= prev.visible_metric_limit) {
-        toast.info(prev.selection_upgrade_prompt || `Free tier includes ${prev.visible_metric_limit} active KPIs.`);
+        toast.info(prev.selection_upgrade_prompt || `Your current plan includes ${prev.visible_metric_limit} active KPI slots. Upgrade for more.`);
         return prev;
       }
 
@@ -167,7 +169,7 @@ export const KpiThresholdTab = () => {
               <SlidersHorizontal className="h-4 w-4 text-[#E85D00]" /> KPI Thresholds
             </CardTitle>
             <CardDescription data-testid="business-dna-kpi-description">
-              Choose the KPIs BIQc should track most closely for your business. Free tier includes {config.visible_metric_limit} active KPI slots.
+              Choose the KPIs BIQc should track most closely for your business. Your current plan includes {config.visible_metric_limit} active KPI slots.
             </CardDescription>
           </div>
           <Button onClick={handleSave} disabled={saving || loading} data-testid="business-dna-kpi-save-button">

@@ -2,17 +2,23 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, X, Check } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 
+// 2026-04-19: Free tier removed. "Trial" is the in-trial state; post-trial users
+// lose paid features via subscription gate until they resubscribe. Starter is the
+// floor paid tier at $69/mo (was erroneously $49 here — fixed). Pro is $199/mo
+// (was erroneously $149 here — fixed). Prices aligned to pricingTiers.js.
 const PLANS = {
-  free: { name: 'Free', price: '$0', period: '/mo', features: ['Advisor & Morning Brief', 'Alert Centre (5 alerts)', 'Calendar & Email Triage', 'Ask BIQc AI Chat', 'Market Snapshot'] },
-  starter: { name: 'Starter', price: '$49', period: '/mo', features: ['Everything in Free', 'Revenue Intelligence', 'Operations Dashboard', 'Marketing Intelligence', 'BoardRoom AI', 'Reports & SOP Generator', 'Billing Management'] },
-  pro: { name: 'Pro', price: '$149', period: '/mo', features: ['Everything in Starter', 'Watchtower Real-Time', 'WarRoom Crisis Centre', 'Intel Centre & Risk', 'Compliance & Audit', 'Market Analysis Deep', 'Operator Dashboard', 'CMO Report'] },
+  trial: { name: 'Trial', price: '$0', period: '/14 days', features: ['Full Growth access during trial', 'Advisor & Morning Brief', 'Ask BIQc AI Chat', 'Market & Position', 'Business DNA', 'Alerts & Actions'] },
+  starter: { name: 'Growth', price: '$69', period: '/mo', features: ['BIQc Overview', 'Ask BIQc', 'Market & Position', 'Business DNA', 'Revenue Intelligence', 'Operations Dashboard', 'Marketing Intelligence', 'BoardRoom AI', 'Reports & SOP Generator', 'Billing Management', 'Up to 5 integrations'] },
+  pro: { name: 'Professional', price: '$199', period: '/mo', features: ['Everything in Growth', 'Watchtower Real-Time', 'WarRoom Crisis Centre', 'Intel Centre & Risk', 'Compliance & Audit', 'Market Analysis Deep', 'Operator Dashboard', 'CMO Report', 'Expanded connector allowance'] },
 };
 
-const UpgradeModal = ({ isOpen, onClose, featureName = 'this feature', requiredTier = 'starter', currentTier = 'free' }) => {
+const UpgradeModal = ({ isOpen, onClose, featureName = 'this feature', requiredTier = 'starter', currentTier = 'trial' }) => {
   const navigate = useNavigate();
   if (!isOpen) return null;
 
-  const current = PLANS[currentTier] || PLANS.free;
+  // Legacy tier names ('free' in old payloads) collapse to trial since there is no free tier.
+  const normalizedCurrent = currentTier === 'free' ? 'trial' : currentTier;
+  const current = PLANS[normalizedCurrent] || PLANS.trial;
   const required = PLANS[requiredTier] || PLANS.starter;
 
   return (
