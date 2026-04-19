@@ -855,7 +855,8 @@ class BusinessBrainEngine:
             "selected_metric_keys": selected_keys,
             "selected_count": len(selected_keys),
             "selection_limit_reached": len(selected_keys) >= self.visible_metric_limit,
-            "selection_upgrade_prompt": f"Free tier includes {self.visible_metric_limit} active KPIs. Upgrade to track more metrics." if self.plan_tier == "free" else None,
+            # 2026-04-19: "Free tier" retired in UI. Prompt references "your plan" instead.
+            "selection_upgrade_prompt": f"Your current plan includes {self.visible_metric_limit} active KPIs. Upgrade to track more metrics." if self.plan_tier in ("free", "trial") else None,
             "metrics": visible_metrics,
             "catalog_metrics": catalog_metrics,
         }
