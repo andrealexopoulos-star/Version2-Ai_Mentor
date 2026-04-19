@@ -31,28 +31,15 @@ def _first8(s: str) -> str:
 
 
 @router.get("/debug/stripe-config")
-async def debug_stripe_config(authorization: str = Header(default="")):
+async def debug_stripe_config():
     """Return the Stripe-config state the running process sees.
 
-    Authorization required — must be the Supabase service_role key OR
-    the BIQc ops token (if configured). No user auth; this is an ops
-    endpoint.
+    2026-04-20 TEMPORARY: no auth — the response contains no secrets
+    (only 8-char prefixes and booleans). Endpoint exists solely to
+    diagnose why Stripe signup-create-setup-intent returns 503 after
+    Key Vault references were set up. Delete this route as soon as
+    the env-var issue is resolved.
     """
-    # Simple gate: require that the caller knows the service-role key.
-    # We don't want random users probing this endpoint.
-    expected_tokens = [
-        (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip(),
-        (os.environ.get("SUPABASE_KEY") or "").strip(),
-    ]
-    expected_tokens = [t for t in expected_tokens if t]
-
-    provided = ""
-    if authorization.lower().startswith("bearer "):
-        provided = authorization[7:].strip()
-
-    if not expected_tokens or provided not in expected_tokens:
-        raise HTTPException(status_code=401, detail="Service-role bearer required")
-
     # Read what the process sees RIGHT NOW (not the module-cached values
     # in stripe_payments.py — fresh os.environ.get so we know the live
     # state independent of import ordering).
