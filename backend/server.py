@@ -452,6 +452,12 @@ api_router.include_router(engagement_engine_router)
 from routes.stripe_payments import router as stripe_payments_router
 api_router.include_router(stripe_payments_router)
 
+# 2026-04-20 P0 debug route — env var resolution diagnosis for the
+# Stripe "not configured for production" issue. Service-role gated.
+# Delete once resolved.
+from routes.debug_stripe_config import router as debug_stripe_config_router
+api_router.include_router(debug_stripe_config_router)
+
 from routes.billing import router as billing_router
 api_router.include_router(billing_router)
 
