@@ -181,7 +181,9 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
                             "company_name": existing_by_email.get("company_name") or (metadata.get("company_name") if metadata else None),
                             "industry": existing_by_email.get("industry") or (metadata.get("industry") if metadata else None),
                             "role": "superadmin" if _is_master_admin_email(email) else (existing_by_email.get("role") or "user"),
-                            "subscription_tier": existing_by_email.get("subscription_tier") or "free",
+                            # 2026-04-19: no free tier. New users default to 'trial' (14-day Growth trial).
+                            # Legacy rows with 'free' are preserved as-is and handled as equivalent to 'trial' by tier_resolver.
+                            "subscription_tier": existing_by_email.get("subscription_tier") or "trial",
                             "is_master_account": True if _is_master_admin_email(email) else existing_by_email.get("is_master_account", False),
                             "created_at": existing_by_email.get("created_at") or datetime.utcnow().isoformat(),
                             "updated_at": datetime.utcnow().isoformat()
@@ -215,7 +217,8 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
             "industry": metadata.get("industry") if metadata else None,
             # Never trust client-supplied signup role.
             "role": "superadmin" if _is_master_admin_email(email) else "user",
-            "subscription_tier": "free",
+            # 2026-04-19: no free tier. Brand-new signup → 14-day Growth trial.
+            "subscription_tier": "trial",
             "is_master_account": _is_master_admin_email(email),
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat()

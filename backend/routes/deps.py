@@ -139,7 +139,8 @@ TIER_LIMITS = {
 # Controls how far back each tier can look into historical data (emails, signals,
 # observation events). -1 means unlimited (no cutoff).
 TIER_LOOKBACK_DAYS = {
-    "free": 30,
+    "free": 30,             # legacy / gated state (past_due, canceled, etc.)
+    "trial": 90,            # 14-day Growth trial mirrors Starter lookback
     "starter": 90,
     "pro": 180,
     "business": 365,
@@ -228,7 +229,11 @@ def _normalize_subscription_tier(tier: str | None) -> str:
     separate identity for display and custom entitlement overlays.
     Legacy 'custom' collapses into 'custom_build' (Step 8 / P1-3).
     """
-    tier_value = (tier or "free").lower().strip()
+    # 2026-04-19: no free plan. New signups use 'trial' (14-day Growth trial —
+    # CC captured at signup via PR #330 Stripe Setup Intent). During the trial
+    # users get full Growth / Starter access; backend rate limits mirror that.
+    # Legacy 'free' strings on pre-rename rows keep working as the gated bucket.
+    tier_value = (tier or "trial").lower().strip()
     if tier_value in ("superadmin", "super_admin"):
         return "super_admin"
     if tier_value in ("custom", "custom_build"):
@@ -239,7 +244,10 @@ def _normalize_subscription_tier(tier: str | None) -> str:
         return "business"
     if tier_value in ("professional", "pro"):
         return "pro"
-    if tier_value in ("foundation", "growth", "starter"):
+    if tier_value in ("foundation", "growth", "starter", "trial"):
+        # 'trial' gets Growth-tier rate limits so trial users can actually evaluate
+        # the product. Expiry is enforced elsewhere via subscription_status + the
+        # frontend subscription gate (Phase 6.11); see tier_resolver.js.
         return "starter"
     return tier_value if tier_value in TIER_RATE_LIMIT_DEFAULTS else "free"
 

@@ -106,7 +106,10 @@ def _launch_integration_limit(current_user: dict):
     tier = resolve_tier(current_user)
     if tier == 'super_admin':
         return None
-    if tier == 'free':
+    # 2026-04-19: 'free' retired as a plan label but remains as the gated/inactive
+    # bucket in tier_resolver (past_due / canceled users). 'trial' is the new
+    # in-trial state. Both get the constrained limit until they upgrade.
+    if tier in ('free', 'trial'):
         return 1
     return 5
 

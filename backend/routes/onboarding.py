@@ -162,7 +162,8 @@ async def accept_invite(req: InviteAcceptRequest):
         "name": invite.get("name") or "User",
         "business_name": None,
         "industry": None,
-        "subscription_tier": "free",
+        # 2026-04-19: no free tier. Invited user → 14-day Growth trial.
+        "subscription_tier": "trial",
         "subscription_started_at": created_at,
         "role": invite.get("role") or "member",
         "account_id": invite["account_id"],
@@ -179,7 +180,8 @@ async def accept_invite(req: InviteAcceptRequest):
         "company_name": None,
         "industry": None,
         "role": invite.get("role") or "member",
-        "subscription_tier": "free",
+        # 2026-04-19: no free tier — invited user profile defaults to trial.
+        "subscription_tier": "trial",
         "subscription_started_at": created_at,
         "account_id": invite["account_id"],
         "is_master_account": False,

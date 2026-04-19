@@ -586,7 +586,8 @@ def _build_staff_review_highlights(staff_intel: Dict[str, Any]) -> Dict[str, Any
         "glassdoor_score": glassdoor_score,
         "top_positive_reviews": positives[:3],
         "top_negative_reviews": [{"review": v, "action_item": action_plan[idx] if idx < len(action_plan) else "Address this issue with a 30-day team operations plan."} for idx, v in enumerate(negatives[:3])],
-        "free_tier_message": "Data not available on free tier" if not platforms and not positives and not negatives else "",
+        # 2026-04-19: "free tier" retired. Message now reflects actual state (data not yet captured).
+        "free_tier_message": "Data not yet captured — complete calibration to populate" if not platforms and not positives and not negatives else "",
     }
 
 
@@ -2438,13 +2439,13 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 f"SEMrush rank {seo_current.get('semrush_rank')}, ~{seo_current.get('organic_keywords') or 0} ranking keywords, "
                 f"~{seo_current.get('organic_traffic') or 0} monthly organic visits."
                 if seo_current.get("semrush_rank") or seo_current.get("organic_keywords") or seo_current.get("organic_traffic")
-                else "SEO ranking data not available on free tier."
+                else "SEO ranking data not yet captured — enrichment will populate on scan."
             )
             paid_rank_summary = (
                 f"~{paid_current.get('adwords_keywords') or 0} paid keywords, ~{paid_current.get('adwords_traffic') or 0} monthly paid visits, "
                 f"estimated spend ${paid_current.get('adwords_cost_usd') or 0}."
                 if paid_current.get("adwords_keywords") is not None or paid_current.get("adwords_traffic") is not None
-                else "Paid marketing ranking data not available on free tier."
+                else "Paid marketing ranking data not yet captured — enrichment will populate on scan."
             )
 
             enrichment["recommended_keywords"] = recommended_keywords
