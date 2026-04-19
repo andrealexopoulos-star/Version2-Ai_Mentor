@@ -220,6 +220,7 @@ class AppErrorBoundary extends React.Component {
 // Public Route — redirect authenticated users to advisor
 const PublicRoute = ({ children }) => {
   const { user, session, loading, authState } = useSupabaseAuth();
+  const location = useLocation();
   const recentLoginTs = (() => {
     try {
       const raw = sessionStorage.getItem('biqc_auth_recent_login');
@@ -228,9 +229,38 @@ const PublicRoute = ({ children }) => {
       return 0;
     }
   })();
+  // 2026-04-20 P0 UX fix: when a user is on /register-supabase and the
+  // trial signup flow is still running, the Supabase auth session lands
+  // (backend admin.create_user + sign_in) BEFORE the Stripe SetupIntent +
+  // subscription calls complete. Without this guard, PublicRoute would
+  // navigate away to /calibration the moment the session appeared —
+  // unmounting the Register page mid-flow and hiding any Stripe error
+  // behind a brief toast on /calibration. Result: users thought they
+  // paid when they hadn't (Andreas 2026-04-19 incident). The guard is
+  // set by RegisterSupabase.handleSubmit right before the Supabase
+  // signup call and cleared on every terminal path (success, Stripe
+  // failure, cancel). TTL-bounded so a crashed signup flow can't strand
+  // the user forever.
+  const inTrialSignup = (() => {
+    try {
+      const raw = sessionStorage.getItem('biqc_trial_signup_in_progress');
+      if (!raw) return false;
+      const ts = parseInt(raw, 10);
+      if (!Number.isFinite(ts)) return false;
+      // Stale after 5 minutes — crash recovery
+      if (Date.now() - ts > 5 * 60 * 1000) {
+        try { sessionStorage.removeItem('biqc_trial_signup_in_progress'); } catch {}
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  })();
   if (authState === AUTH_STATE.LOADING || loading) return <LoadingScreen />;
   if (!user && !session && recentLoginTs && Date.now() - recentLoginTs < 20000) return <LoadingScreen />;
   const isAuthenticated = user || session;
+  if (inTrialSignup && location.pathname === '/register-supabase') return children;
   if (isAuthenticated && authState === AUTH_STATE.NEEDS_CALIBRATION) return <Navigate to="/calibration" replace />;
   if (isAuthenticated) return <Navigate to="/advisor" replace />;
   return children;

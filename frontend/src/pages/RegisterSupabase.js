@@ -157,6 +157,13 @@ const RegisterSupabase = () => {
       // shown, pass the prompt + answer to the backend so it can verify
       // there instead of failing closed. This keeps ALL signups on the
       // backend admin.create_user path (no client-direct bypass).
+      //
+      // 2026-04-20 P0 UX fix: set a sessionStorage flag so PublicRoute
+      // in App.js doesn't auto-navigate us away to /calibration the
+      // moment the Supabase session lands. We need to stay on this
+      // page until Stripe completes (or fails visibly). Cleared in the
+      // finally block below.
+      try { sessionStorage.setItem('biqc_trial_signup_in_progress', String(Date.now())); } catch {}
       setTrialStep('auth');
       await signUp(
         formData.email,
@@ -292,7 +299,14 @@ const RegisterSupabase = () => {
       } else {
         toast.error(error.message || 'Registration failed. Please try again.');
       }
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+      // Always clear the signup-in-progress flag on every terminal path
+      // so PublicRoute can resume normal auth-based redirects. If the
+      // flow reached the navigate('/calibration') line above, the flag
+      // removal here is still fine — PublicRoute won't see it again.
+      try { sessionStorage.removeItem('biqc_trial_signup_in_progress'); } catch {}
+    }
   };
 
   const handleOAuthSignIn = async (provider) => {
