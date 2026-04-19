@@ -2,7 +2,6 @@ import { getRouteAccess } from './routeAccessConfig';
 import { checkRouteAccess } from '../lib/tierResolver';
 
 export const TIERS = {
-  free: { id: 'free', label: 'Free', price: 0, color: '#64748B' },
   starter: { id: 'starter', label: 'Growth', price: 69, color: '#E85D00' },
   pro: { id: 'pro', label: 'Professional', price: 199, color: '#3B82F6' },
   business: { id: 'business', label: 'Business', price: 349, color: '#F59E0B' },
@@ -35,7 +34,10 @@ export function requiredTier(path) {
 }
 
 export const TIER_FEATURES = {
-  free: [
+  // 2026-04-19: free tier removed. Its features folded into Starter (Growth,
+  // $69) as the first paid tier; higher tiers inherit via "Everything in X"
+  // labels. Per Andreas direction — no more free plan offered to users.
+  starter: [
     'BIQc Overview',
     'Ask BIQc',
     'Inbox',
@@ -47,10 +49,6 @@ export const TIER_FEATURES = {
     'Data Health',
     'Settings',
     'Competitive Benchmark',
-    'Email integration only',
-  ],
-  starter: [
-    'Everything in Free',
     'BIQc Foundation package',
     'Exposure Scan',
     'Marketing Auto',
