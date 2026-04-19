@@ -445,7 +445,22 @@ async def _enforce_signup_recaptcha(request: "SignUpRequest") -> None:
 # Auth Endpoints
 async def signup_with_email(request: SignUpRequest):
     """
-    Sign up with email and password using Supabase Auth
+    Sign up with email + password using Supabase Auth.
+
+    P0 fix (2026-04-19 late AEST): the previous implementation used
+    `auth.sign_up()` which respects the project-level "Confirm email"
+    setting. With confirm-email ON — the default — that call returned
+    `session=None` and the client-side trial flow early-exited BEFORE
+    hitting Stripe (no SetupIntent, no subscription, no receipt, no
+    login possible until the user clicked an email link that often
+    never arrived through Supabase's default SMTP). Every trial signup
+    was silently failing.
+
+    The fix: bypass "Confirm email" for paid-trial signup by using the
+    admin create-user API with `email_confirm=True`, then immediately
+    sign the user in with the password they just chose to produce a
+    real session. Welcome / verify emails can still be sent async
+    out-of-band; they no longer gate trial start.
     """
     try:
         # Step 13 / P1-8 — gate signup on reCAPTCHA before touching Supabase.
@@ -453,57 +468,95 @@ async def signup_with_email(request: SignUpRequest):
         # or create orphaned auth.users rows.
         await _enforce_signup_recaptcha(request)
 
-        # Check if user already exists
+        # Check if user already exists in public.users
         existing_user = await get_user_by_email(request.email)
         if existing_user:
             raise HTTPException(status_code=400, detail="User with this email already exists")
-        
-        # Create user in Supabase Auth
-        auth_response = get_supabase_auth_client().auth.sign_up({
-            "email": request.email,
-            "password": request.password,
-            "options": {
-                "data": {
-                    "full_name": request.full_name,
-                    "company_name": request.company_name,
-                    "industry": request.industry
-                }
-            }
-        })
-        
-        if not auth_response.user:
-            raise HTTPException(status_code=400, detail="Failed to create user")
-        
-        # Create user profile in PostgreSQL
-        user_profile = await create_user_profile(
-            user_id=auth_response.user.id,
-            email=request.email,
-            metadata={
-                "full_name": request.full_name,
-                "company_name": request.company_name,
-                "industry": request.industry
-            }
+
+        if supabase_admin is None:
+            raise HTTPException(status_code=503, detail="Auth service unavailable")
+
+        user_metadata = {
+            "full_name": request.full_name,
+            "company_name": request.company_name,
+            "industry": request.industry,
+        }
+
+        # Create the auth user with email auto-confirmed so sign_in works
+        # on the very next call. This is the ONLY acceptable path for a
+        # paid-trial flow — we cannot block on an email link.
+        try:
+            admin_response = supabase_admin.auth.admin.create_user({
+                "email": request.email,
+                "password": request.password,
+                "email_confirm": True,
+                "user_metadata": user_metadata,
+            })
+        except Exception as create_err:
+            msg = str(create_err).lower()
+            if "already" in msg or "exists" in msg or "registered" in msg or "duplicate" in msg:
+                raise HTTPException(status_code=400, detail="User with this email already exists")
+            logger.error(f"admin.create_user failed for {request.email}: {create_err}")
+            raise HTTPException(status_code=500, detail=f"Failed to create user: {create_err}")
+
+        auth_user = getattr(admin_response, "user", None) or (
+            admin_response.get("user") if isinstance(admin_response, dict) else None
         )
-        
+        if not auth_user:
+            raise HTTPException(status_code=500, detail="Auth user creation returned no user")
+
+        user_id = getattr(auth_user, "id", None) or auth_user.get("id")
+        user_email = getattr(auth_user, "email", None) or auth_user.get("email") or request.email
+
+        # Create / merge public profile. on_auth_user_created trigger will
+        # have already inserted a minimal row; this call patches full_name /
+        # company_name / industry and initialises cognitive profile.
+        user_profile = await create_user_profile(
+            user_id=user_id,
+            email=user_email,
+            metadata=user_metadata,
+        )
+
+        # Produce a real session by signing in with the just-created creds.
+        # Uses the anon client path so the returned tokens are user-scoped
+        # (not service-role) and safe for the frontend to plant via
+        # supabase.auth.setSession().
+        session_access_token = None
+        session_refresh_token = None
+        session_expires_at = None
+        try:
+            signin_response = get_supabase_auth_client().auth.sign_in_with_password({
+                "email": request.email,
+                "password": request.password,
+            })
+            if signin_response and signin_response.session:
+                session_access_token = signin_response.session.access_token
+                session_refresh_token = signin_response.session.refresh_token
+                session_expires_at = signin_response.session.expires_at
+        except Exception as signin_err:
+            logger.warning(
+                f"Post-signup sign_in_with_password failed for {request.email}: {signin_err}"
+            )
+
         return {
             "message": "User created successfully",
             "user": {
-                "id": auth_response.user.id,
-                "email": auth_response.user.email,
+                "id": user_id,
+                "email": user_email,
                 "full_name": user_profile.get("full_name"),
-                "company_name": user_profile.get("company_name")
+                "company_name": user_profile.get("company_name"),
             },
             "session": {
-                "access_token": auth_response.session.access_token if auth_response.session else None,
-                "refresh_token": auth_response.session.refresh_token if auth_response.session else None,
-                "expires_at": auth_response.session.expires_at if auth_response.session else None
-            }
+                "access_token": session_access_token,
+                "refresh_token": session_refresh_token,
+                "expires_at": session_expires_at,
+            },
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Signup error: {e}")
+        logger.error(f"Signup error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
 
 async def signin_with_email(request: SignInRequest):

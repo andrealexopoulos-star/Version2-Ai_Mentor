@@ -171,18 +171,28 @@ const RegisterSupabase = () => {
       trackEvent(EVENTS.ACTIVATION_SIGNUP_COMPLETE, { method: 'email' });
       trackActivationStep('signup_complete', { method: 'email' });
 
-      // ── Session-presence guard (Codex P1) ──
-      // If Supabase email-confirmation is ON (project-level setting), signUp
-      // succeeds but returns no session — subsequent authenticated Stripe
-      // calls would 401. Tell the user to check their email + sign in, and
-      // route them to /login-supabase. When they come back authenticated,
-      // AuthCallback (via PR D) will detect no-subscription and land them
-      // on the billing step.
-      const { data: sessionCheck } = await supabase.auth.getSession();
-      if (!sessionCheck?.session?.access_token) {
-        toast.success(
-          'Account created. Please confirm your email and sign in to start your 14-day trial.',
-        );
+      // ── Session-presence guard ──
+      // With the 2026-04-19 P0 signup fix, the backend uses
+      // admin.create_user(email_confirm=True) + signs in the user
+      // immediately, so a session should be present here 100% of the time.
+      // If it's not, try an explicit signInWithPassword with the creds the
+      // user just provided before giving up — the old behaviour of punting
+      // to /login-supabase caused trials to never start (Andreas 2026-04-19
+      // test incident).
+      let sessionData = (await supabase.auth.getSession()).data;
+      if (!sessionData?.session?.access_token) {
+        try {
+          const { data: signinData } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+          });
+          if (signinData?.session) {
+            sessionData = { session: signinData.session };
+          }
+        } catch (_) {}
+      }
+      if (!sessionData?.session?.access_token) {
+        toast.error('Account created but we could not sign you in automatically. Please sign in to continue your trial.');
         navigate('/login-supabase');
         return;
       }
