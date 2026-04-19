@@ -575,8 +575,13 @@ class BIQcRedisJobs:
                 return
 
             try:
-                from supabase_client import get_supabase_client
-                sb = get_supabase_client()
+                # 2026-04-19: use the service-role admin client, not the anon
+                # client. public.job_execution_log has a service-role-only
+                # RLS policy, so writes via the anon client fail closed
+                # (hundreds of rejections per hour, jobs ran but weren't
+                # logged). See session handoff 2026-04-19.
+                from supabase_client import get_supabase_admin
+                sb = get_supabase_admin()
                 rows = [
                     {
                         "job_id": e.get("job_id"),
