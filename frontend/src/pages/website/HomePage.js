@@ -686,9 +686,9 @@ const HomePage = () => {
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
         <Link to="/register-supabase" className="inline-flex items-center gap-2 transition-all hover:-translate-y-0.5" style={{ background: '#0A0A0A', color: '#FFFFFF', padding: '13px 28px', borderRadius: '999px', border: '1px solid #0A0A0A', fontFamily: 'var(--font-marketing-ui)', fontWeight: 500, fontSize: '15px', letterSpacing: '-0.005em', boxShadow: '0 4px 12px rgba(10,10,10,0.08)' }} data-testid="bottom-cta">
-          Try It For Free <ArrowRight className="w-4 h-4" />
+          Start Your 14-Day Trial <ArrowRight className="w-4 h-4" />
         </Link>
-        <p className="mt-4" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-muted)', fontSize: '12px', letterSpacing: '-0.002em' }}>14-day trial &middot; No credit card &middot; Australian support</p>
+        <p className="mt-4" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-muted)', fontSize: '12px', letterSpacing: '-0.002em' }}>14-day trial &middot; Cancel anytime &middot; Australian support</p>
       </div>
     </section>
 

@@ -449,11 +449,11 @@ const LandingIntelligent = () => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 mb-4">
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Not a chatbot.</span>
           <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-display)', background: 'var(--biqc-bg)', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
-            <Shield className="w-4 h-4" strokeWidth={1.5} /> Try It For Free
+            <Shield className="w-4 h-4" strokeWidth={1.5} /> Start Your 14-Day Trial
           </button>
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Not a dashboard.</span>
         </div>
-        <p className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>No credit card required · Australian owned & operated</p>
+        <p className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>14-day trial · Cancel anytime · Australian owned & operated</p>
       </section>
 
       {/* ── COGNITION-AS-A-SERVICE ── */}
@@ -635,10 +635,10 @@ const LandingIntelligent = () => {
           </h2>
           <p className="text-base sm:text-lg text-slate-400 mb-8" style={{ fontFamily: 'var(--font-ui)' }}>Connect your systems. Let BIQc build context. Act with confidence.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-display)', background: '#E85D00', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Run your free Snapshot <ArrowRight className="w-4 h-4" /></button>
-            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-display)', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}>Try It For Free</button>
+            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-display)', background: '#E85D00', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Run your business snapshot <ArrowRight className="w-4 h-4" /></button>
+            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-display)', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}>Start Your 14-Day Trial</button>
           </div>
-          <p className="text-xs text-slate-600 mt-5" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Free to start · No credit card · Australian owned and operated</p>
+          <p className="text-xs text-slate-600 mt-5" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>14-day trial · Cancel anytime · Australian owned and operated</p>
         </div>
       </section>
 

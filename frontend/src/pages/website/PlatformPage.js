@@ -653,7 +653,7 @@ export default function PlatformPage() {
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link to="/register-supabase" style={{ background: 'var(--lava)', color: '#fff', borderRadius: 'var(--r-md)', padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', textDecoration: 'none', boxShadow: '0 6px 24px rgba(232,93,0,0.3)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              Start Free Trial <ArrowRight size={15} />
+              Start Your 14-Day Trial <ArrowRight size={15} />
             </Link>
             <Link to="/soundboard" style={{ background: 'rgba(10,10,10,0.04)', color: 'var(--ink-secondary, #525252)', border: '1px solid rgba(10,10,10,0.14)', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', textDecoration: 'none' }}>
               Try Ask BIQc Demo
@@ -799,7 +799,7 @@ export default function PlatformPage() {
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/register-supabase" style={{ background: 'var(--lava)', color: '#fff', borderRadius: 'var(--r-md)', padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', textDecoration: 'none', boxShadow: '0 4px 16px rgba(232,93,0,0.3)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            Start Free Trial <ArrowRight size={16} />
+            Start Your 14-Day Trial <ArrowRight size={16} />
           </Link>
           <Link to="/pricing" style={{ background: 'transparent', color: 'var(--ink-display)', border: '1px solid rgba(10,10,10,0.1)', borderRadius: 8, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', textDecoration: 'none' }}>
             View Pricing

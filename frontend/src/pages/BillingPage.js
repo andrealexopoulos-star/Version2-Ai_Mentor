@@ -16,9 +16,10 @@ const BillingCognitiveCounter = () => {
   return <CognitiveLearningCounter variant="card" userId={userId} userCreatedAt={createdAt} />;
 };
 
+// 2026-04-19: Free tier removed. 'trial' is the in-trial state (14-day CC-mandatory);
+// legacy 'free' strings from existing user rows map to 'trial' for display only.
 const TIER_DISPLAY = {
-  free: 'Free',
-  trial: 'Free Trial',
+  trial: 'Trial',
   starter: 'Growth',
   foundation: 'Growth',
   growth: 'Growth',
@@ -31,13 +32,13 @@ const TIER_DISPLAY = {
 };
 
 const TIER_PRICE = {
-  free: '$0', trial: '$0', starter: '$69', foundation: '$69', growth: '$69',
+  trial: '$0', starter: '$69', foundation: '$69', growth: '$69',
   pro: '$199', professional: '$199', enterprise: 'Custom',
   custom_build: 'Custom', beta: '$0', super_admin: '$0',
 };
 
 const PLAN_FEATURES = {
-  free: ['Ask BIQc advisor', 'Alert Centre', 'Basic actions'],
+  trial: ['Full Growth access during trial', 'Advisor & Morning Brief', 'Ask BIQc AI Chat', 'Market & Position', 'Business DNA', 'Alerts & Actions'],
   growth: ['BoardRoom strategic chat', 'Revenue analytics', 'Operations metrics', 'SOP generator', 'Exposure scan', 'Marketing automation', 'Reports library', 'Decision tracker'],
   starter: ['BoardRoom strategic chat', 'Revenue analytics', 'Operations metrics', 'SOP generator', 'Exposure scan', 'Marketing automation', 'Reports library', 'Decision tracker'],
   foundation: ['BoardRoom strategic chat', 'Revenue analytics', 'Operations metrics', 'SOP generator', 'Exposure scan', 'Marketing automation', 'Reports library', 'Decision tracker'],
@@ -116,8 +117,10 @@ const BillingPage = () => {
   const connectors = overview?.billing_connectors || {};
   const chargesSummary = overview?.charges_summary || {};
   const supplierSummary = overview?.supplier_summary || {};
-  const rawTier = String(overview?.subscription?.tier || overview?.user?.subscription_tier || 'free').toLowerCase();
-  const planLabel = TIER_DISPLAY[rawTier] || 'Free';
+  // Legacy 'free' strings from old rows collapse to 'trial' for display.
+  const rawTierRaw = String(overview?.subscription?.tier || overview?.user?.subscription_tier || 'trial').toLowerCase();
+  const rawTier = rawTierRaw === 'free' ? 'trial' : rawTierRaw;
+  const planLabel = TIER_DISPLAY[rawTier] || 'Trial';
 
   const connectorBadges = useMemo(
     () => [
@@ -134,7 +137,7 @@ const BillingPage = () => {
   );
 
   const priceLabel = TIER_PRICE[rawTier] || '$0';
-  const features = PLAN_FEATURES[rawTier] || PLAN_FEATURES.free;
+  const features = PLAN_FEATURES[rawTier] || PLAN_FEATURES.trial;
   const isHighestPlan = ['enterprise', 'custom_build', 'super_admin'].includes(rawTier);
 
   // Determine usage meter color: green < 60%, amber 60-85%, red > 85%

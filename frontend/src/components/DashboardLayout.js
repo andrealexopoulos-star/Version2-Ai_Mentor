@@ -273,8 +273,10 @@ const DashboardLayout = ({ children }) => {
   }, []);
 
   const checkBudgetThreshold = (data) => {
-    const tier = String(data?.usage?.tier || data?.subscription?.tier || user?.subscription_tier || 'free').toLowerCase();
-    if (!['free', 'trial', ''].includes(tier)) return; // only for free tier
+    // Trial banner: only show for users in the 14-day trial (or legacy 'free' string
+    // which is treated as 'trial' until backend rename lands). Paid users aren't nagged.
+    const tier = String(data?.usage?.tier || data?.subscription?.tier || user?.subscription_tier || 'trial').toLowerCase();
+    if (!['trial', 'free', ''].includes(tier)) return; // only during trial
     const features = data?.usage?.features || {};
     let maxPct = 0;
     for (const feat of Object.values(features)) {
@@ -802,7 +804,12 @@ const DashboardLayout = ({ children }) => {
                   className="text-[11px] capitalize"
                   style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono, lineHeight: 1.3 }}
                 >
-                  {(user?.subscription_tier || 'free').replace('_', ' ')}
+                  {/* 2026-04-19: no free tier — default label is Trial for users without an active paid sub */}
+                  {(() => {
+                    const raw = (user?.subscription_tier || 'trial').toString();
+                    if (raw === 'free') return 'trial';
+                    return raw.replace('_', ' ');
+                  })()}
                 </p>
               </div>
             )}

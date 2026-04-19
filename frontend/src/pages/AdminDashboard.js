@@ -573,10 +573,11 @@ const AdminDashboard = () => {
               </div>
               <Pnl>
                 <h3 className="text-base text-[var(--ink-display)] mb-3" style={{ fontFamily: D }}>Subscription Tiers</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {[{ name: 'Starter', price: '$499/mo', f: ['5 integrations', 'Daily intelligence', 'Email alerts'] },
-                    { name: 'Professional', price: '$999/mo', f: ['Unlimited integrations', 'Real-time intelligence', 'Auto-email + SMS', 'Full reports'] },
-                    { name: 'Enterprise', price: 'Custom', f: ['Everything', 'White label', 'Custom integrations', 'Dedicated AM'] }
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  {[{ name: 'Growth', price: '$69/mo', f: ['Up to 5 integrations', 'Daily intelligence', 'Email alerts', 'Full platform access'] },
+                    { name: 'Professional', price: '$199/mo', f: ['Expanded connectors', 'Real-time intelligence', 'Priority model routing', 'Advanced reporting'] },
+                    { name: 'Business', price: '$349/mo', f: ['Premium AI (Claude, GPT-5.4)', 'Up to 15 integrations', 'Team (5 seats)', 'Dedicated onboarding'] },
+                    { name: 'Enterprise', price: 'Custom', f: ['Everything in Business', 'Enterprise governance', 'Custom integrations', 'Dedicated account manager'] }
                   ].map(t => (
                     <div key={t.name} className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <span className="text-sm font-medium text-[var(--ink-display)]" style={{ fontFamily: B }}>{t.name}</span>

@@ -47,7 +47,7 @@ const WebsiteNav = () => {
         <div className="flex items-center gap-3">
           <Link to="/login-supabase" className="hidden md:block px-4 py-2 rounded-lg text-sm text-[var(--ink-secondary)] hover:text-[var(--ink-display)] transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="nav-login">Log in</Link>
           <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--ink-inverse)] transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }} data-testid="nav-get-started">
-            Start Free
+            Start Trial
           </Link>
           {/* Mobile: Log In text + hamburger */}
           <Link to="/login-supabase" className="md:hidden text-xs text-[var(--ink-secondary)] hover:text-[var(--ink-display)]" style={{ fontFamily: fontFamily.body }} data-testid="nav-mobile-login">Log in</Link>
@@ -70,7 +70,7 @@ const WebsiteNav = () => {
           ))}
           <div className="pt-4 space-y-2">
             <Link to="/login-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[var(--ink-secondary)] border border-white/10">Log in</Link>
-            <Link to="/register-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[var(--ink-inverse)] font-semibold" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)' }}>Start Free</Link>
+            <Link to="/register-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[var(--ink-inverse)] font-semibold" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)' }}>Start Trial</Link>
           </div>
         </div>
       )}
@@ -112,7 +112,7 @@ const WebsiteFooter = () => (
         <div>
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[var(--ink-secondary)]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Company</h2>
           <div className="space-y-2.5">
-            {[['About', '/about'], ['Blog', '/blog'], ['Knowledge Base', '/knowledge-base'], ['Contact', '/contact'], ['Log In', '/login-supabase'], ['Start Free Trial', '/register-supabase']].map(([l, p]) => (
+            {[['About', '/about'], ['Blog', '/blog'], ['Knowledge Base', '/knowledge-base'], ['Contact', '/contact'], ['Log In', '/login-supabase'], ['Start Your Trial', '/register-supabase']].map(([l, p]) => (
               <Link key={l} to={p} className="block text-sm text-[var(--ink-secondary)] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.body }}>{l}</Link>
             ))}
           </div>

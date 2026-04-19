@@ -348,12 +348,12 @@ export default function IntelligencePage() {
               Ready to think faster?
             </h2>
             <p className="text-base mb-7" style={{ color: 'var(--ink-secondary)' }}>
-              Start free and get your first intelligence briefing in under 10 minutes.
+              Start your 14-day trial and get your first intelligence briefing in under 10 minutes.
             </p>
             <Link to="/register-supabase"
               className="inline-flex items-center gap-2 px-7 py-3 text-[15px] font-semibold text-white transition-all hover:brightness-110"
               style={{ background: 'var(--lava)', borderRadius: 'var(--r-md)', boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}>
-              Start Free <ArrowRight className="w-4 h-4" />
+              Start Your Trial <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>

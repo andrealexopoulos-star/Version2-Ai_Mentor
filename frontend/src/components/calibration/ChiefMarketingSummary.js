@@ -653,13 +653,13 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             <div className="p-3 rounded-lg" style={{ background: 'var(--surface-sunken, #F5F5F5)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Website Scan Coverage</p>
               <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>
-                ABN: {websiteScanSummary.abn || 'Data not available on free tier'} · Full business name: {websiteScanSummary.full_business_name || bizName}
+                ABN: {websiteScanSummary.abn || 'Data not yet captured — complete calibration to populate'} · Full business name: {websiteScanSummary.full_business_name || bizName}
               </p>
               <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>
-                Locations: {(websiteScanSummary.locations_detected || []).length > 0 ? websiteScanSummary.locations_detected.slice(0, 3).join(', ') : 'Data not available on free tier'}
+                Locations: {(websiteScanSummary.locations_detected || []).length > 0 ? websiteScanSummary.locations_detected.slice(0, 3).join(', ') : 'Data not yet captured — complete calibration to populate'}
               </p>
               <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>
-                Contact emails: {(websiteScanSummary.contact_emails_detected || []).length > 0 ? websiteScanSummary.contact_emails_detected.slice(0, 5).join(', ') : 'Data not available on free tier'}
+                Contact emails: {(websiteScanSummary.contact_emails_detected || []).length > 0 ? websiteScanSummary.contact_emails_detected.slice(0, 5).join(', ') : 'Data not yet captured — complete calibration to populate'}
               </p>
             </div>
           )}
@@ -1247,7 +1247,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 <div className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
                   <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Glassdoor & Employer Review Scan</p>
                   <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>
-                    Glassdoor score: {staffReviewHighlights.glassdoor_score != null ? `${staffReviewHighlights.glassdoor_score}/5` : 'Data not available on free tier'}
+                    Glassdoor score: {staffReviewHighlights.glassdoor_score != null ? `${staffReviewHighlights.glassdoor_score}/5` : 'Data not yet captured — complete calibration to populate'}
                   </p>
                   {(staffReviewHighlights.top_positive_reviews || []).slice(0, 3).map((txt, idx) => (
                     <p key={`pos-${idx}`} className="text-[11px] text-[var(--ink-secondary)] mt-1" style={{ fontFamily: fontFamily.body }}>
@@ -1399,7 +1399,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             </div>
           ) : (
             <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
-              {(staffReviewHighlights.free_tier_message || 'Data not available on free tier')}.
+              {(staffReviewHighlights.free_tier_message || 'Data not yet captured — complete calibration to populate')}.
             </p>
           )}
         </div>

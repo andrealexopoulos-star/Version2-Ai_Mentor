@@ -353,10 +353,10 @@ export default function SoundboardPage() {
           These examples use generic data. Your account uses live signals from Xero, HubSpot, Outlook, and every other connected tool.
         </p>
         <Link to="/register-supabase" style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: '#fff', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 8px 32px rgba(232,93,0,0.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          Start Free Trial <ArrowRight size={16} />
+          Start Your 14-Day Trial <ArrowRight size={16} />
         </Link>
         <p style={{ fontFamily: fontFamily.mono, color: '#4A5568', fontSize: 11, marginTop: 16 }}>
-          14-day trial Â· Australian hosted Â· No credit card
+          14-day trial Â· Australian hosted Â· Cancel anytime
         </p>
       </section>
     </WebsiteLayout>

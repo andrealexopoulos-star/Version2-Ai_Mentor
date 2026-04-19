@@ -37,7 +37,7 @@ const MobileNav = () => {
   const moreSections = [
     ...(isFreeTier
       ? [{
-          label: 'Free Tier',
+          label: 'Essentials',
           items: [
             { label: 'Competitive Benchmark', icon: Target, path: '/competitive-benchmark' },
             { label: 'Connectors', icon: Link2, path: '/integrations' },
@@ -45,7 +45,7 @@ const MobileNav = () => {
         }]
       : [
           {
-            label: 'Free',
+            label: 'Essentials',
             items: [
               { label: 'Market & Position', icon: Radar, path: '/market' },
               { label: 'Calendar', icon: Calendar, path: '/calendar' },
