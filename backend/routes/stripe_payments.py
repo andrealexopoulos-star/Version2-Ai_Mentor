@@ -134,6 +134,52 @@ PLANS = {
 PACKAGES = PLANS
 
 
+# Per-process cache of Stripe Product IDs keyed by plan name. Prevents
+# hitting Stripe.Product.list on every signup. Seeded lazily on first
+# subscription create. Test and live accounts have independent Product
+# IDs so the cache is scoped per-process (restart clears it).
+_PRODUCT_ID_CACHE: dict[str, str] = {}
+
+
+def _get_or_create_plan_product(plan_name: str) -> str:
+    """Return Stripe Product.id matching `plan_name`; create if missing.
+
+    2026-04-20: subscription create was passing inline `product_data`,
+    which is a Checkout-only parameter. Stripe requires a real Product
+    id when creating Subscriptions inline. This helper makes sure one
+    exists (cached per process) keyed on plan name.
+    """
+    cached = _PRODUCT_ID_CACHE.get(plan_name)
+    if cached:
+        return cached
+    try:
+        # Search existing products for a matching ACTIVE one. Stripe
+        # `Product.list` returns up to 100 per page; BIQc has <10 tiers.
+        existing = stripe.Product.list(limit=100, active=True)
+        for p in existing.auto_paging_iter():
+            if getattr(p, "name", None) == plan_name:
+                _PRODUCT_ID_CACHE[plan_name] = p.id
+                logger.info("Stripe product matched: name=%s id=%s", plan_name, p.id)
+                return p.id
+    except Exception as exc:
+        logger.warning("stripe.Product.list failed (continuing to create): %s", exc)
+
+    # No match — create it. Idempotency key ensures concurrent signups
+    # for the same new plan don't create duplicates.
+    try:
+        created = stripe.Product.create(
+            name=plan_name,
+            metadata={"source": "biqc_auto_created", "plan_name": plan_name},
+            idempotency_key=f"biqc-plan-product-{plan_name.replace(' ', '-').lower()}",
+        )
+        _PRODUCT_ID_CACHE[plan_name] = created.id
+        logger.info("Stripe product created: name=%s id=%s", plan_name, created.id)
+        return created.id
+    except Exception as exc:
+        logger.error("stripe.Product.create failed for %s: %s", plan_name, exc)
+        raise
+
+
 def _is_production() -> bool:
     env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
     prod_flag = (os.environ.get("PRODUCTION") or "").strip().lower()
@@ -852,6 +898,20 @@ async def confirm_trial_signup(
             invoice_settings={"default_payment_method": req.payment_method_id},
         )
 
+        # 2026-04-20 critical fix: subscription create was using
+        # items[0].price_data.product_data — that parameter is ONLY valid
+        # on Stripe Checkout Session creation, NOT on Subscription.create.
+        # Stripe rejected every request with "parameter_unknown". Result:
+        # NO BIQc customer has ever actually gotten a Stripe subscription
+        # on signup (test OR live) since this code was written. Caught
+        # during P0 test-card verification on 2026-04-20.
+        #
+        # Fix: look up (or auto-create) a Stripe Product named after this
+        # plan tier, then reference its id in price_data.product. Products
+        # are cached at module import via _get_or_create_plan_product so
+        # we're not hammering the Products API on every signup.
+        product_id = _get_or_create_plan_product(plan["name"])
+
         # Idempotency key — concurrent retries (double-submit, network
         # retry, two tabs) return the SAME subscription from Stripe instead
         # of racing past our pre-check and creating duplicates. Key is
@@ -865,7 +925,7 @@ async def confirm_trial_signup(
                     "currency": plan["currency"],
                     "unit_amount": plan["amount"],
                     "recurring": {"interval": plan["interval"]},
-                    "product_data": {"name": plan["name"]},
+                    "product": product_id,
                 },
             }],
             trial_period_days=trial_days,
