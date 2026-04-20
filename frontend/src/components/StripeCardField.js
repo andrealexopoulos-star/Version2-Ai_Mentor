@@ -152,29 +152,62 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
       if (!stripe || !elements) {
         return { error: 'Stripe not initialized yet.', rawError: { type: 'local', message: 'stripe_not_initialized' } };
       }
-      // Force elements to validate + submit internally before confirmSetup.
-      const submitResult = await elements.submit();
-      if (submitResult && submitResult.error) {
+      // 2026-04-20 Andreas P0: stripe.confirmSetup was THROWING (not
+      // returning an error) with `IntegrationError: confirmParams.return_url
+      // is required when using automatic payment methods`. Because the
+      // throw was uncaught, our Promise.race-with-timeout wrapper didn't
+      // catch it and the UI sat forever at "Confirming...". Wrap the
+      // whole thing in try/catch so every failure mode — IntegrationError,
+      // network error, thrown exceptions from sub-calls — returns a
+      // structured { error } object the caller can handle.
+      try {
+        // Force elements to validate + submit internally before confirmSetup.
+        const submitResult = await elements.submit();
+        if (submitResult && submitResult.error) {
+          return {
+            error: submitResult.error.message || 'Card validation failed.',
+            rawError: submitResult.error,
+          };
+        }
+        // return_url is REQUIRED by Stripe when using automatic payment
+        // methods (which we're on — mode: 'setup' without explicit
+        // paymentMethodTypes defaults to automatic). `redirect:
+        // 'if_required'` means Stripe only navigates to this URL when a
+        // payment method (e.g. 3DS, Klarna, Afterpay redirect) actually
+        // needs it. For card-only flows it's rarely used but must still
+        // be passed.
+        const returnUrl = (typeof window !== 'undefined' && window.location
+          ? window.location.origin + '/complete-signup'
+          : 'https://www.biqc.ai/complete-signup');
+        const { error, setupIntent } = await stripe.confirmSetup({
+          elements,
+          clientSecret,
+          redirect: 'if_required',
+          confirmParams: { return_url: returnUrl },
+        });
+        if (error) {
+          return {
+            error: error.message || 'Card could not be confirmed.',
+            rawError: error,
+          };
+        }
+        if (!setupIntent || !setupIntent.payment_method) {
+          return { error: 'Stripe did not return a payment method.', rawError: { type: 'local', message: 'no_payment_method_returned', setupIntent } };
+        }
+        return { paymentMethodId: setupIntent.payment_method };
+      } catch (err) {
+        // Structured capture for IntegrationError and any other thrown
+        // exception from the Stripe SDK or our own code above.
         return {
-          error: submitResult.error.message || 'Card validation failed.',
-          rawError: submitResult.error,
+          error: (err && err.message) || String(err) || 'Card confirmation threw an unexpected error.',
+          rawError: {
+            type: (err && err.type) || 'sdk_throw',
+            code: err && err.code,
+            message: err && err.message,
+            name: err && err.name,
+          },
         };
       }
-      const { error, setupIntent } = await stripe.confirmSetup({
-        elements,
-        clientSecret,
-        redirect: 'if_required',
-      });
-      if (error) {
-        return {
-          error: error.message || 'Card could not be confirmed.',
-          rawError: error,
-        };
-      }
-      if (!setupIntent || !setupIntent.payment_method) {
-        return { error: 'Stripe did not return a payment method.', rawError: { type: 'local', message: 'no_payment_method_returned', setupIntent } };
-      }
-      return { paymentMethodId: setupIntent.payment_method };
     },
   }), []);
 
