@@ -83,11 +83,19 @@ const CompleteSignup = () => {
     const now = new Date();
     const end = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
     const endStr = end.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    // PlanPicker's PLAN_OPTIONS use `.price` ("$69") + `.period` ("AUD/mo").
+    // Prefix with "A" so the microcopy reads "A$69" instead of a bare "$69"
+    // that could be mistaken for USD. Fall back to the currently-selected
+    // plan's own fields, never to a hardcoded price (Andreas 2026-04-20
+    // bug: microcopy was showing A$199 regardless of selection).
+    const rawPrice = selectedPlanDetails?.price || '$69';
+    const price = rawPrice.startsWith('A') ? rawPrice : `A${rawPrice}`;
+    const period = selectedPlanDetails?.period || 'AUD/mo';
     return {
       endStr,
       planName: selectedPlanDetails?.name || 'Growth',
-      price: selectedPlanDetails?.price_label || 'A$199.00',
-      period: selectedPlanDetails?.period_label || '/mo',
+      price,
+      period,
     };
   }, [selectedPlanDetails]);
 
@@ -293,11 +301,16 @@ const CompleteSignup = () => {
               }}
               data-testid="complete-signup-submit">
               {trialStep === 'intent'    ? 'Preparing Stripe...' :
-               trialStep === 'confirm'   ? 'Confirming card...' :
+               trialStep === 'confirm'   ? 'Confirming with your bank — up to 30s...' :
                trialStep === 'subscribe' ? 'Starting trial...' :
                trialStep === 'done'      ? 'Done — taking you in...' :
                <>Start 14-day free trial <span className="ml-1">→</span></>}
             </button>
+            {trialStep === 'confirm' && (
+              <p className="text-xs mt-3 text-center" style={{ fontFamily: MONO, color: '#737373' }}>
+                Your bank may send an SMS or push-notification to approve this card. Complete it, then hold on — don't refresh.
+              </p>
+            )}
           </form>
 
           <p className="text-[13px] mt-6 text-center" style={{ fontFamily: UI, color: '#737373' }}>
