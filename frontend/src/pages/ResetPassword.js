@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../context/SupabaseAuthContext';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
 import { Lock, CheckCircle2, Info } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
-import { getAppBaseUrl } from '../config/urls';
+import { getApiBaseUrl } from '../config/urls';
 import BiqcLogoCard from '../components/BiqcLogoCard';
 import useForceLightTheme from '../hooks/useForceLightTheme';
 
@@ -25,10 +24,19 @@ const ResetPassword = () => {
     if (!email) { toast.error('Please enter your email'); return; }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${getAppBaseUrl()}/update-password`,
+      // Call our branded backend endpoint so the user gets a BIQc-themed
+      // email (E3 template) instead of Supabase's generic default. The
+      // backend is deliberately non-committal — it always returns 200 so
+      // attackers can't enumerate which emails are registered.
+      const resp = await fetch(`${getApiBaseUrl()}/auth/request-password-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
-      if (error) throw error;
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.detail || 'Failed to send reset email');
+      }
       setSent(true);
       toast.success('Reset email sent');
     } catch (err) {

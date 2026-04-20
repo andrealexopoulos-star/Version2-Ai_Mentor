@@ -28,6 +28,8 @@ import RegisterSupabase from "./pages/RegisterSupabase";
 import AuthCallbackSupabase from "./pages/AuthCallbackSupabase";
 import ResetPassword from './pages/ResetPassword';
 import UpdatePassword from './pages/UpdatePassword';
+import VerifyEmail from './pages/VerifyEmail';
+import VerifyEmailSent from './pages/VerifyEmailSent';
 
 // ── ALL other pages — lazy-loaded with tier-based chunks ──────────────────────
 
@@ -388,6 +390,8 @@ function AppRoutes() {
         <Route path="/register-supabase" element={<PublicRoute><RegisterSupabase /></PublicRoute>} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
         <Route path="/auth/callback" element={<AuthCallbackSupabase />} />
         <Route path="/login" element={<Navigate to="/login-supabase" replace />} />
         <Route path="/register" element={<Navigate to="/register-supabase" replace />} />

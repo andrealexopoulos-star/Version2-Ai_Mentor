@@ -277,7 +277,13 @@ const RegisterSupabase = () => {
 
       setTrialStep('done');
       toast.success(`Trial started. Free until ${trialSummary.endStr}.`);
-      navigate('/calibration');
+      // 2026-04-20: route through /verify-email-sent instead of straight
+      // to /calibration. The backend fires the E1 verification email
+      // synchronously from confirm-trial-signup and ProtectedRoute reads
+      // users.email_verified_by_user — unverified users landing on
+      // /calibration would be bounced back here anyway, so skip the
+      // round-trip and take them to the "check your inbox" page directly.
+      navigate('/verify-email-sent');
     } catch (error) {
       const raw = error.message || '';
       if (raw.includes('Supabase is not configured')) {

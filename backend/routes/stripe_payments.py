@@ -980,6 +980,22 @@ async def confirm_trial_signup(
         except Exception as exc:
             logger.warning("payment_transactions insert failed for signup: %s", exc)
 
+        # E1 verification email — fire-and-forget. The DB reads inside
+        # issue_verification_email_for_user pick up trial_ends_at + the
+        # payment_transactions row we just wrote, so the email shows the
+        # correct first_charge_date and first_charge_amount.
+        #
+        # Wrapped in try/except so a Resend outage does not fail the
+        # signup: a paying user must always be able to reach the app,
+        # and they can request a resend from /verify-email-sent.
+        try:
+            from routes.email_verification import issue_verification_email_for_user
+            issue_result = issue_verification_email_for_user(sb, user_id)
+            logger.info("[signup] verification email issue status=%s user=%s",
+                        issue_result.get("status"), user_id)
+        except Exception as exc:
+            logger.warning("[signup] verification email issue failed for %s: %s", user_id, exc)
+
         return {
             "status": subscription.status,
             "tier": plan["tier"],
@@ -1347,6 +1363,34 @@ def _get_past_due_since(sb, user_id: str) -> Optional[str]:
         return None
 
 
+def _read_user_snapshot_for_email(sb, user_id: str) -> Dict[str, Any]:
+    """Return email + full_name + current lifecycle state for webhook email
+    decisions. Used to (a) know whether the user was trialing vs active
+    BEFORE we flip the status on a cancellation/suspension event, and
+    (b) carry the email/name into the send_* calls.
+
+    All reads in one query; empty dict on failure (best-effort — a webhook
+    should never 500 because we couldn't read a user row for an email)."""
+    if not user_id:
+        return {}
+    try:
+        res = (
+            sb.table("users")
+            .select(
+                "id,email,full_name,subscription_tier,subscription_status,"
+                "trial_ends_at,current_period_end"
+            )
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
+        rows = (res.data or []) if res is not None else []
+        return (rows[0] or {}) if rows else {}
+    except Exception as exc:
+        logger.warning("[email] snapshot read failed for %s: %s", user_id, exc)
+        return {}
+
+
 def _downgrade_user_tier(sb, customer_id: Optional[str], subscription_id: Optional[str]) -> None:
     """On subscription cancellation, drop the user back to free tier.
 
@@ -1456,6 +1500,12 @@ async def stripe_webhook(request: Request):
                 period_end_ts = _ts_from_epoch(getattr(inv, "period_end", None))
                 user_id = _resolve_user_by_customer_id(sb, customer_id)
                 if user_id:
+                    # Capture pre-update snapshot so we can tell whether this
+                    # is the trial→active transition (E5) or a recurring
+                    # renewal (E7).
+                    before = _read_user_snapshot_for_email(sb, user_id)
+                    was_trialing = (before.get("subscription_status") or "").lower() == "trialing"
+
                     _update_subscription_lifecycle(
                         sb, user_id,
                         status="active",
@@ -1464,9 +1514,65 @@ async def stripe_webhook(request: Request):
                         stripe_customer_id=customer_id,
                     )
                     logger.info(
-                        "invoice.payment_succeeded: user=%s cust=%s sub=%s period_end=%s",
-                        user_id, customer_id, subscription_id, period_end_ts,
+                        "invoice.payment_succeeded: user=%s cust=%s sub=%s period_end=%s (was_trialing=%s)",
+                        user_id, customer_id, subscription_id, period_end_ts, was_trialing,
                     )
+
+                    # Emit E5 or E7 — best-effort.
+                    try:
+                        from services.email_service import (
+                            send_trial_ended_paid_email, send_payment_receipt_email,
+                        )
+                        from routes.email_verification import (
+                            plan_display_name, format_date_long, format_currency,
+                        )
+                        amount_paid_cents = getattr(inv, "amount_paid", None) or getattr(inv, "amount_due", 0)
+                        currency_code = (getattr(inv, "currency", None) or "aud").upper()
+                        amount_str = format_currency(amount_paid_cents, currency_code, from_cents=True)
+                        invoice_url = (
+                            getattr(inv, "hosted_invoice_url", None)
+                            or getattr(inv, "invoice_pdf", None)
+                            or "https://biqc.ai/settings/billing"
+                        )
+                        plan_name = plan_display_name(before.get("subscription_tier"))
+                        next_charge_date = format_date_long(period_end_ts)
+                        to_email = before.get("email")
+                        to_name = before.get("full_name") or ""
+
+                        # amount_paid_cents == 0 indicates a $0 trial-start
+                        # invoice (Stripe issues one when a subscription is
+                        # created with trial_period_days). Skip the email —
+                        # the E1 verification email already covers this.
+                        if to_email and (amount_paid_cents or 0) > 0:
+                            if was_trialing:
+                                send_trial_ended_paid_email(
+                                    to=to_email, full_name=to_name,
+                                    amount=amount_str, plan_name=plan_name,
+                                    next_charge_date=next_charge_date,
+                                    invoice_url=invoice_url,
+                                )
+                            else:
+                                invoice_number = (
+                                    getattr(inv, "number", None)
+                                    or f"INV-{(subscription_id or '')[-8:]}"
+                                )
+                                paid_date = format_date_long(
+                                    _ts_from_epoch(getattr(inv, "status_transitions", {}).get("paid_at", None))
+                                    if isinstance(getattr(inv, "status_transitions", None), dict)
+                                    else None
+                                )
+                                if paid_date == "—":
+                                    paid_date = format_date_long(datetime.now(timezone.utc).isoformat())
+                                send_payment_receipt_email(
+                                    to=to_email, full_name=to_name,
+                                    amount=amount_str, plan_name=plan_name,
+                                    invoice_number=invoice_number, paid_date=paid_date,
+                                    next_charge_date=next_charge_date,
+                                    invoice_url=invoice_url,
+                                )
+                    except Exception as email_exc:
+                        logger.warning("[email] payment_succeeded email send failed user=%s: %s",
+                                       user_id, email_exc)
                 else:
                     logger.warning(
                         "invoice.payment_succeeded: no user resolved for cust=%s sub=%s — skipping lifecycle update",
@@ -1498,6 +1604,30 @@ async def stripe_webhook(request: Request):
                         "invoice.payment_failed: user=%s cust=%s sub=%s attempt=%s",
                         user_id, customer_id, subscription_id, attempt_count,
                     )
+
+                    # E8 payment failed — best-effort.
+                    try:
+                        from services.email_service import send_payment_failed_email
+                        from routes.email_verification import (
+                            plan_display_name, format_date_long, format_currency,
+                        )
+                        before = _read_user_snapshot_for_email(sb, user_id)
+                        amount_cents = getattr(inv, "amount_due", None) or getattr(inv, "amount_paid", 0)
+                        currency_code = (getattr(inv, "currency", None) or "aud").upper()
+                        amount_str = format_currency(amount_cents, currency_code, from_cents=True)
+                        retry_ts = _ts_from_epoch(getattr(inv, "next_payment_attempt", None))
+                        retry_date = format_date_long(retry_ts) if retry_ts else "the next retry date"
+                        to_email = before.get("email")
+                        to_name = before.get("full_name") or ""
+                        if to_email:
+                            send_payment_failed_email(
+                                to=to_email, full_name=to_name,
+                                amount=amount_str,
+                                plan_name=plan_display_name(before.get("subscription_tier")),
+                                retry_date=retry_date,
+                            )
+                    except Exception as email_exc:
+                        logger.warning("[email] E8 send failed user=%s: %s", user_id, email_exc)
                 else:
                     logger.warning(
                         "invoice.payment_failed: no user resolved for cust=%s sub=%s — event recorded only",
@@ -1530,10 +1660,42 @@ async def stripe_webhook(request: Request):
                 subscription_id = getattr(sub, "id", None)
                 current_period_end_ts = _ts_from_epoch(getattr(sub, "current_period_end", None))
                 trial_end_ts = _ts_from_epoch(getattr(sub, "trial_end", None))
+                # Stripe's EventData is a StripeObject (dict-like); read
+                # previous_attributes via both attribute + dict access so
+                # API-version quirks don't silently drop plan-change info.
+                prev_attrs: Dict[str, Any] = {}
+                try:
+                    prev_attrs = (
+                        getattr(event.data, "previous_attributes", None)
+                        or (event.data.get("previous_attributes") if hasattr(event.data, "get") else None)
+                        or {}
+                    )
+                except Exception:
+                    prev_attrs = {}
 
                 if status in {"canceled", "unpaid", "incomplete_expired"}:
+                    # Capture pre-downgrade state so we can decide E9 vs E10.
+                    pre_user_id = _resolve_user_by_customer_id(sb, customer_id)
+                    pre_snapshot = _read_user_snapshot_for_email(sb, pre_user_id) if pre_user_id else {}
+
                     # Terminal state → revoke tier + mark canceled.
                     _downgrade_user_tier(sb, customer_id, subscription_id)
+
+                    # E9 account_suspended specifically for status="unpaid"
+                    # (dunning exhausted). "canceled" / "incomplete_expired"
+                    # fall through to customer.subscription.deleted emission
+                    # (E10) so we don't double-send.
+                    if status == "unpaid" and pre_snapshot.get("email"):
+                        try:
+                            from services.email_service import send_account_suspended_email
+                            from routes.email_verification import plan_display_name
+                            send_account_suspended_email(
+                                to=pre_snapshot["email"],
+                                full_name=pre_snapshot.get("full_name") or "",
+                                plan_name=plan_display_name(pre_snapshot.get("subscription_tier")),
+                            )
+                        except Exception as email_exc:
+                            logger.warning("[email] E9 send failed user=%s: %s", pre_user_id, email_exc)
                 else:
                     # Non-terminal tick → refresh lifecycle state so the app
                     # reflects Stripe's truth (trialing→active transition,
@@ -1548,6 +1710,13 @@ async def stripe_webhook(request: Request):
                     # webhook must not clobber it with None.
                     user_id = _resolve_user_by_customer_id(sb, customer_id)
                     if user_id:
+                        # Read snapshot BEFORE update so we can detect plan
+                        # change (E11) by comparing the pre-webhook tier with
+                        # what the event now advertises. Plan changes come
+                        # through this branch when a user self-serves via the
+                        # customer portal.
+                        pre_snapshot = _read_user_snapshot_for_email(sb, user_id)
+
                         _update_subscription_lifecycle(
                             sb, user_id,
                             status=(status or None),
@@ -1557,9 +1726,107 @@ async def stripe_webhook(request: Request):
                             stripe_subscription_id=subscription_id,
                         )
 
+                        # E11 plan change — fire only when items[] changed.
+                        # `previous_attributes.items` being present is
+                        # Stripe's signal that the subscription line-items
+                        # were swapped.
+                        plan_changed = bool(prev_attrs.get("items") or prev_attrs.get("plan"))
+                        if plan_changed and pre_snapshot.get("email"):
+                            try:
+                                from services.email_service import send_plan_changed_email
+                                from routes.email_verification import (
+                                    plan_display_name, format_date_long, format_currency,
+                                )
+                                # Extract new plan info from the subscription's
+                                # first item. price.unit_amount is in cents,
+                                # price.recurring.interval is month|year.
+                                new_plan_name = "your plan"
+                                new_amount_str = "—"
+                                try:
+                                    items = getattr(sub, "items", None)
+                                    items_data = getattr(items, "data", []) if items else []
+                                    if items_data:
+                                        price = getattr(items_data[0], "price", None)
+                                        product_id = getattr(price, "product", None) if price else None
+                                        # Product lookup is best-effort — if
+                                        # Stripe returns an id we ask for its
+                                        # display name, otherwise fall back to
+                                        # metadata.tier on the sub.
+                                        try:
+                                            if product_id:
+                                                product = stripe.Product.retrieve(product_id)
+                                                new_plan_name = plan_display_name(getattr(product, "name", None))
+                                        except Exception:
+                                            pass
+                                        if new_plan_name == "your plan":
+                                            new_plan_name = plan_display_name(
+                                                (getattr(sub, "metadata", None) or {}).get("tier")
+                                            )
+                                        if price:
+                                            new_amount_str = format_currency(
+                                                getattr(price, "unit_amount", None),
+                                                getattr(price, "currency", "aud") or "aud",
+                                                from_cents=True,
+                                            )
+                                except Exception as price_exc:
+                                    logger.warning("[email] E11 price parse failed: %s", price_exc)
+
+                                send_plan_changed_email(
+                                    to=pre_snapshot["email"],
+                                    full_name=pre_snapshot.get("full_name") or "",
+                                    old_plan=plan_display_name(pre_snapshot.get("subscription_tier")),
+                                    new_plan=new_plan_name,
+                                    new_amount=new_amount_str,
+                                    effective_date=format_date_long(current_period_end_ts or datetime.now(timezone.utc).isoformat()),
+                                )
+                            except Exception as email_exc:
+                                logger.warning("[email] E11 send failed user=%s: %s", user_id, email_exc)
+
             elif event.type == "customer.subscription.deleted":
                 sub = event.data.object
-                _downgrade_user_tier(sb, getattr(sub, "customer", None), getattr(sub, "id", None))
+                customer_id_d = getattr(sub, "customer", None)
+                subscription_id_d = getattr(sub, "id", None)
+
+                # Capture pre-delete snapshot so we can route E6 vs E10 based
+                # on whether the user was trialing (never converted → E6 trial
+                # cancelled) or active (was paying → E10 subscription cancelled).
+                pre_user_id = _resolve_user_by_customer_id(sb, customer_id_d)
+                pre_snapshot = _read_user_snapshot_for_email(sb, pre_user_id) if pre_user_id else {}
+                was_trialing = (pre_snapshot.get("subscription_status") or "").lower() == "trialing"
+
+                _downgrade_user_tier(sb, customer_id_d, subscription_id_d)
+
+                if pre_snapshot.get("email"):
+                    try:
+                        from routes.email_verification import plan_display_name, format_date_long
+                        plan_name = plan_display_name(pre_snapshot.get("subscription_tier"))
+                        if was_trialing:
+                            from services.email_service import send_trial_cancelled_email
+                            send_trial_cancelled_email(
+                                to=pre_snapshot["email"],
+                                full_name=pre_snapshot.get("full_name") or "",
+                                plan_name=plan_name,
+                            )
+                        else:
+                            from services.email_service import send_subscription_cancelled_email
+                            # When cancel_at_period_end was True, Stripe
+                            # actually deletes on period_end — so the
+                            # current_period_end in Stripe's object is the
+                            # moment of deletion (≈ now). Fall back to the
+                            # user's cached current_period_end if present.
+                            access_end_ts = (
+                                _ts_from_epoch(getattr(sub, "current_period_end", None))
+                                or pre_snapshot.get("current_period_end")
+                                or datetime.now(timezone.utc).isoformat()
+                            )
+                            send_subscription_cancelled_email(
+                                to=pre_snapshot["email"],
+                                full_name=pre_snapshot.get("full_name") or "",
+                                plan_name=plan_name,
+                                access_end_date=format_date_long(access_end_ts),
+                            )
+                    except Exception as email_exc:
+                        logger.warning("[email] E6/E10 send failed user=%s: %s", pre_user_id, email_exc)
 
             elif event.type == "charge.refunded":
                 charge = event.data.object

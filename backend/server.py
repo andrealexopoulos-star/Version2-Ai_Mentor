@@ -458,6 +458,9 @@ api_router.include_router(stripe_payments_router)
 from routes.debug_stripe_config import router as debug_stripe_config_router
 api_router.include_router(debug_stripe_config_router)
 
+from routes.email_verification import router as email_verification_router
+api_router.include_router(email_verification_router)
+
 from routes.billing import router as billing_router
 api_router.include_router(billing_router)
 

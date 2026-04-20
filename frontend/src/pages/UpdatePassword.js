@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
 import { KeyRound, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import { getApiBaseUrl } from '../config/urls';
 import BiqcLogoCard from '../components/BiqcLogoCard';
 import useForceLightTheme from '../hooks/useForceLightTheme';
 
@@ -43,6 +44,27 @@ const UpdatePassword = () => {
       if (error) throw error;
       setDone(true);
       toast.success('Password updated successfully');
+
+      // Fire E4 (password changed confirmation) — best-effort. The
+      // recovery flow left the user signed-in via Supabase's recovery
+      // session, so the access token is available for the bearer auth.
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (token) {
+          await fetch(`${getApiBaseUrl()}/auth/password-changed-notify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+        }
+      } catch (notifyErr) {
+        // Silent — confirmation email is a nice-to-have, not a gate on
+        // the user reaching their dashboard.
+      }
+
       setTimeout(() => navigate('/advisor', { replace: true }), 2000);
     } catch (err) {
       toast.error(err.message || 'Failed to update password');
