@@ -38,6 +38,34 @@ const AuthCallbackSupabase = () => {
         Authorization: `Bearer ${session.access_token}`,
       };
 
+      // 2026-04-20 OAuth-bypass fix: before any in-app routing, verify the
+      // user actually has a Stripe subscription. OAuth signup (Continue
+      // with Google/Microsoft) never went through the trial flow, so users
+      // landed on /advisor with zero payment collected. Check /auth/me
+      // and redirect to /complete-signup for card capture when the
+      // subscription isn't active/trialing. Superadmins are exempt so
+      // internal testing isn't blocked.
+      try {
+        const backendUrl = getBackendUrl();
+        const meRes = await fetch(`${backendUrl}/api/auth/supabase/me`, { headers });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          const u = meData?.user || {};
+          const status = String(u.subscription_status || '').toLowerCase();
+          const role = String(u.role || '').toLowerCase();
+          const isSuperadmin = role === 'superadmin' || role === 'super_admin' || u.is_master_account === true;
+          const hasTrialOrPaid = status === 'active' || status === 'trialing';
+          if (!hasTrialOrPaid && !isSuperadmin) {
+            navigate('/complete-signup', { replace: true });
+            return;
+          }
+        }
+      } catch (_e) {
+        // Fall through to the normal routing — don't block users behind a
+        // flaky /auth/me call. ProtectedRoute will still enforce the gate
+        // on subsequent navigations.
+      }
+
       try {
         const backendUrl = getBackendUrl();
         const [mergeRes, outlookRes, gmailRes] = await Promise.allSettled([

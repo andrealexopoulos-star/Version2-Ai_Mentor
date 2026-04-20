@@ -980,21 +980,41 @@ async def confirm_trial_signup(
         except Exception as exc:
             logger.warning("payment_transactions insert failed for signup: %s", exc)
 
-        # E1 verification email — fire-and-forget. The DB reads inside
-        # issue_verification_email_for_user pick up trial_ends_at + the
-        # payment_transactions row we just wrote, so the email shows the
-        # correct first_charge_date and first_charge_amount.
-        #
-        # Wrapped in try/except so a Resend outage does not fail the
-        # signup: a paying user must always be able to reach the app,
-        # and they can request a resend from /verify-email-sent.
+        # Branch on OAuth vs email+password signup:
+        #   - Email+password: E1 verification flow (user must click link)
+        #   - OAuth (google/azure): E2 welcome directly, email already
+        #     verified by the provider (migration 110 flips the flag at
+        #     public.users insert time).
+        # Both are fire-and-forget so a Resend outage never blocks the
+        # user from reaching the app.
         try:
-            from routes.email_verification import issue_verification_email_for_user
-            issue_result = issue_verification_email_for_user(sb, user_id)
-            logger.info("[signup] verification email issue status=%s user=%s",
-                        issue_result.get("status"), user_id)
+            row = sb.table("users").select(
+                "email,full_name,email_verified_by_user,subscription_tier,trial_ends_at"
+            ).eq("id", user_id).limit(1).execute()
+            user_row = (row.data or [{}])[0] if row.data else {}
+            already_verified = bool(user_row.get("email_verified_by_user"))
+
+            if already_verified:
+                # OAuth path — skip E1, send E2 welcome instead.
+                from services.email_service import send_verified_email
+                from routes.email_verification import (
+                    plan_display_name, format_date_long, format_currency,
+                )
+                send_verified_email(
+                    to=user_row.get("email"),
+                    full_name=user_row.get("full_name") or "",
+                    plan_name=plan_display_name(user_row.get("subscription_tier") or plan["tier"]),
+                    first_charge_date=format_date_long(user_row.get("trial_ends_at")),
+                    first_charge_amount=format_currency(plan["amount"], plan.get("currency", "AUD"), from_cents=True),
+                )
+                logger.info("[signup] oauth user — sent E2 welcome (no E1) user=%s", user_id)
+            else:
+                from routes.email_verification import issue_verification_email_for_user
+                issue_result = issue_verification_email_for_user(sb, user_id)
+                logger.info("[signup] verification email issue status=%s user=%s",
+                            issue_result.get("status"), user_id)
         except Exception as exc:
-            logger.warning("[signup] verification email issue failed for %s: %s", user_id, exc)
+            logger.warning("[signup] post-signup email send failed for %s: %s", user_id, exc)
 
         return {
             "status": subscription.status,
