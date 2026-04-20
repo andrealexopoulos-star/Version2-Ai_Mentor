@@ -169,12 +169,32 @@ const CompleteSignup = () => {
         setTrialStep('idle');
         return;
       }
-      const confirm = await cardRef.current.confirmWith(client_secret);
+
+      // 2026-04-20 Andreas P0: stripe.confirmSetup was hanging indefinitely
+      // on live cards (across TWO different cards, no bank SMS/push ever
+      // received — so the request never even reached the user's bank).
+      // Wrap the confirm in a 45s timeout so a hung promise can't trap the
+      // user forever. On timeout we abort, log, and let them retry with a
+      // different card or method.
+      const CONFIRM_TIMEOUT_MS = 45000;
+      let timedOut = false;
+      const confirmPromise = cardRef.current.confirmWith(client_secret);
+      const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => {
+          timedOut = true;
+          resolve({ error: 'Card confirmation timed out after 45 seconds.', rawError: { type: 'client_timeout', duration_ms: CONFIRM_TIMEOUT_MS } });
+        }, CONFIRM_TIMEOUT_MS);
+      });
+      const confirm = await Promise.race([confirmPromise, timeoutPromise]);
       if (confirm.error) {
-        reportSignupError('card_confirm', confirm.error, confirm.rawError, { customer_id, path: 'complete-signup' });
+        reportSignupError('card_confirm', confirm.error, confirm.rawError,
+          { customer_id, path: 'complete-signup', timed_out: timedOut });
         toast.error(confirm.error);
         setCardError(confirm.error);
-        setTrialFailureMessage(`Card couldn't be confirmed: ${confirm.error}. Double-check the card details below and click Start trial again.`);
+        const hint = timedOut
+          ? 'No response from Stripe in 45 seconds. This usually means the card was silently rejected or blocked. Try a different card, or use Apple Pay / Google Pay if shown.'
+          : 'Double-check the card details below and click Start trial again.';
+        setTrialFailureMessage(`Card couldn't be confirmed: ${confirm.error} ${hint}`);
         setTrialStep('idle');
         return;
       }

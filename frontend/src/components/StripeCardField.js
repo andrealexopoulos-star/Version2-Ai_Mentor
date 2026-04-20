@@ -78,9 +78,20 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
         });
         elementsRef.current = elements;
 
+        // 2026-04-20 Andreas P0: stripe.confirmSetup was hanging across
+        // TWO different live cards with no bank SMS/push — meaning the
+        // request wasn't reaching the issuer at all. Strongest suspect
+        // is Stripe Link intercepting the confirm and blocking on its
+        // own phone-verification flow that never completes for a
+        // fresh-signup email. Disable Link (and the sign-up/save-info
+        // upsell that goes with it) and let the user enter card details
+        // directly — we can re-enable later once the flow is stable.
         const paymentElement = elements.create('payment', {
           layout: { type: 'tabs', defaultCollapsed: false },
           wallets: { applePay: 'auto', googlePay: 'auto' },
+          paymentMethodOrder: ['card', 'apple_pay', 'google_pay'],
+          fields: { billingDetails: { email: 'never' } },
+          terms: { card: 'never' },
         });
         paymentElementRef.current = paymentElement;
         paymentElement.on('ready', () => {
