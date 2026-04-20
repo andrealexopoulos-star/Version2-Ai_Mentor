@@ -75,11 +75,16 @@ CHECKS: List[Check] = [
         must_exist=[("text", "Growth")],
     ),
     Check(
-        name="register-supabase renders plan picker + Stripe card field",
+        # 2026-04-20: /register-supabase is now auth-only — name/email/
+        # password. Plan picker + Stripe card capture moved to
+        # /complete-signup (the hard-gated post-auth step). Canary
+        # checks the inputs that actually live on this page now.
+        name="register-supabase renders auth form",
         url="/register-supabase",
         must_exist=[
-            ("testid", "plan-picker"),
-            ("testid", "stripe-card-field"),
+            ("testid", "register-name-input"),
+            ("testid", "register-email-input"),
+            ("testid", "register-password-input"),
             ("testid", "register-submit-btn"),
         ],
         # Today's P1 only manifested on SPA nav — direct load worked.
