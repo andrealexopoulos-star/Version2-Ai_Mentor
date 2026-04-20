@@ -784,9 +784,17 @@ async def signup_create_setup_intent(
             except Exception as exc:
                 logger.warning("Could not persist stripe_customer_id for user %s: %s", user_id, exc)
 
+        # 2026-04-20 Andreas P0: Stripe rejected confirm with
+        #   "Payment details were collected through Stripe Elements using
+        #    automatic payment methods and cannot be confirmed through
+        #    the API configured with payment_method_types"
+        # Frontend PaymentElement runs in automatic mode (to support
+        # card + Apple Pay + Google Pay). This SetupIntent must match.
+        # allow_redirects='never' keeps redirect-based methods (Klarna,
+        # Afterpay) out since we only want card + wallets.
         setup_intent = stripe.SetupIntent.create(
             customer=customer_id,
-            payment_method_types=["card"],
+            automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
             usage="off_session",
             metadata={"user_id": user_id, "plan": plan_id, "source": "biqc_signup"},
             idempotency_key=f"biqc-signup-si-{user_id}-{plan_id}",
