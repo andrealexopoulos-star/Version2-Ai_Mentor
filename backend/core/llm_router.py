@@ -70,19 +70,68 @@ async def _check_budget_or_raise(user_id: str | None, tier: str | None):
     enforcer(sb, user_id, tier)
 
 
-async def _record_usage(user_id: str | None, model: str, input_tokens: int, output_tokens: int, feature: str = "llm_call", tier: str | None = None):
-    """Fire-and-forget token recording. Never blocks or raises."""
+async def _record_usage(
+    user_id: str | None,
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    feature: str = "llm_call",
+    tier: str | None = None,
+    *,
+    cached_input_tokens: int = 0,
+    request_id: str | None = None,
+    cache_hit: bool | None = None,
+    action: str | None = None,
+    tier_at_event: str | None = None,
+):
+    """Fire-and-forget token recording. Never blocks or raises.
+
+    H4: during PR1, LEGACY (ai_usage_log + token_allocations) is SOT.
+    usage_ledger is a SHADOW write — consumer migration to the ledger
+    happens in PR B4/B5. Divergence (one succeeds, one fails) is logged
+    at ERROR so we can observe before PR B4/B5 promotes the ledger.
+    """
     if not user_id or (input_tokens <= 0 and output_tokens <= 0):
         return
-    metering_fn = _get_metering()
-    if metering_fn is None:
-        return
+
     try:
         from routes.deps import get_sb
         sb = get_sb()
-        metering_fn(sb, user_id, model, input_tokens, output_tokens, feature=feature, tier=tier)
     except Exception as exc:
-        logger.debug("[LLM Router] token recording failed (non-fatal): %s", exc)
+        logger.debug("[LLM Router] sb unavailable, skipping usage emit: %s", exc)
+        return
+
+    # 1) Legacy metering (SOT during PR1, sync)
+    legacy_ok = False
+    metering_fn = _get_metering()
+    if metering_fn is not None:
+        try:
+            metering_fn(sb, user_id, model, input_tokens, output_tokens, feature=feature, tier=tier)
+            legacy_ok = True
+        except Exception as exc:
+            logger.debug("[LLM Router] legacy metering failed (non-fatal): %s", exc)
+
+    # 2) New usage_ledger emit (SHADOW during PR1, async fire-and-forget)
+    try:
+        from core.token_meter import emit_consume
+        await emit_consume(
+            sb,
+            user_id=user_id,
+            model=model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cached_input_tokens=cached_input_tokens,
+            feature=feature,
+            action=action,
+            tier_at_event=tier_at_event or tier,
+            cache_hit=cache_hit,
+            request_id=request_id,
+        )
+    except Exception as exc:
+        logger.debug("[LLM Router] usage_ledger emit failed (non-fatal): %s", exc)
+        if legacy_ok:
+            # H4: observable divergence — legacy succeeded, ledger failed
+            logger.error("[LLM Router] SOT divergence: legacy=OK ledger=FAIL user=%s", str(user_id)[:8])
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
@@ -260,7 +309,7 @@ async def llm_chat(
                 timeout=timeout,
                 api_key=key,
             )
-            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
+            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier, action=feature, tier_at_event=tier)
             return content
 
     if provider == "google" or _provider_for_model(model) == "google":
@@ -278,7 +327,7 @@ async def llm_chat(
                 timeout=timeout,
                 api_key=key,
             )
-            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
+            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier, action=feature, tier_at_event=tier)
             return content
 
     key = api_key or os.environ.get("OPENAI_API_KEY") or OPENAI_API_KEY
@@ -294,7 +343,7 @@ async def llm_chat(
         timeout=timeout,
         api_key=key,
     )
-    await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
+    await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier, action=feature, tier_at_event=tier)
     return content
 
 
@@ -370,7 +419,7 @@ async def llm_trinity_chat(
         # All providers now return (text, usage) tuples
         if isinstance(result, tuple):
             text, usage = result
-            await _record_usage(user_id, model_name, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_candidate", tier=tier)
+            await _record_usage(user_id, model_name, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_candidate", tier=tier, action="trinity_candidate", tier_at_event=tier)
         else:
             text = result
         if text:
@@ -399,7 +448,7 @@ async def llm_trinity_chat(
             timeout=timeout,
             api_key=OPENAI_API_KEY,
         )
-        await _record_usage(user_id, OPENAI_MODEL_NORMAL, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier)
+        await _record_usage(user_id, OPENAI_MODEL_NORMAL, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
         return fused
 
     if ANTHROPIC_API_KEY:
@@ -413,7 +462,7 @@ async def llm_trinity_chat(
             timeout=timeout,
             api_key=ANTHROPIC_API_KEY,
         )
-        await _record_usage(user_id, ANTHROPIC_MODEL_SONNET, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier)
+        await _record_usage(user_id, ANTHROPIC_MODEL_SONNET, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
         return content
 
     content, usage = await _gemini_chat(
@@ -426,7 +475,7 @@ async def llm_trinity_chat(
         timeout=timeout,
         api_key=GOOGLE_API_KEY,
     )
-    await _record_usage(user_id, GEMINI_MODEL_PRO, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier)
+    await _record_usage(user_id, GEMINI_MODEL_PRO, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
     return content
 
 
@@ -469,7 +518,7 @@ async def llm_chat_with_usage(
             timeout=timeout,
             api_key=key,
         )
-        await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
+        await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier, action=feature, tier_at_event=tier)
         return content, usage
 
     if provider == "anthropic":
@@ -485,7 +534,7 @@ async def llm_chat_with_usage(
                 timeout=timeout,
                 api_key=key,
             )
-            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
+            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier, action=feature, tier_at_event=tier)
             return content, usage
 
     if provider == "google":
@@ -501,7 +550,7 @@ async def llm_chat_with_usage(
                 timeout=timeout,
                 api_key=key,
             )
-            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier)
+            await _record_usage(user_id, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature=feature, tier=tier, action=feature, tier_at_event=tier)
             return content, usage
 
     # Fallback via llm_chat (metering handled inside llm_chat)
