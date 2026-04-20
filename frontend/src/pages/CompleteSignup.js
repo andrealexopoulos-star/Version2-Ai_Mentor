@@ -178,7 +178,13 @@ const CompleteSignup = () => {
       // different card or method.
       const CONFIRM_TIMEOUT_MS = 45000;
       let timedOut = false;
-      const confirmPromise = cardRef.current.confirmWith(client_secret);
+      // Pass the signed-in user's email + name so Stripe has them for
+      // billing_details (we hid those fields from the Element UI to
+      // suppress Link, which means Stripe requires them in confirmParams).
+      const confirmPromise = cardRef.current.confirmWith(client_secret, {
+        email: userEmail || undefined,
+        name: userName || undefined,
+      });
       const timeoutPromise = new Promise((resolve) => {
         setTimeout(() => {
           timedOut = true;

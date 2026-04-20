@@ -146,7 +146,7 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
      * leaves this page; caller should handle the ?setup_intent=... return
      * via a separate useEffect on mount.
      */
-    confirmWith: async (clientSecret) => {
+    confirmWith: async (clientSecret, billingDetails = {}) => {
       const stripe = stripeRef.current;
       const elements = elementsRef.current;
       if (!stripe || !elements) {
@@ -179,11 +179,26 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
         const returnUrl = (typeof window !== 'undefined' && window.location
           ? window.location.origin + '/complete-signup'
           : 'https://www.biqc.ai/complete-signup');
+        // We hid the email/phone fields on the Element (to kill Link's
+        // capture UI). Stripe requires us to pass any hidden billing
+        // details here instead via payment_method_data.billing_details.
+        // Not passing them causes a validation error at confirm time.
+        const pmData = {};
+        if (billingDetails.email) {
+          pmData.billing_details = { ...(pmData.billing_details || {}), email: billingDetails.email };
+        }
+        if (billingDetails.name) {
+          pmData.billing_details = { ...(pmData.billing_details || {}), name: billingDetails.name };
+        }
+        const confirmParamsBody = { return_url: returnUrl };
+        if (Object.keys(pmData).length > 0) {
+          confirmParamsBody.payment_method_data = pmData;
+        }
         const { error, setupIntent } = await stripe.confirmSetup({
           elements,
           clientSecret,
           redirect: 'if_required',
-          confirmParams: { return_url: returnUrl },
+          confirmParams: confirmParamsBody,
         });
         if (error) {
           return {
