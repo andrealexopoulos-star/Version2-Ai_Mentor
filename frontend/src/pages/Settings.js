@@ -46,47 +46,69 @@ const SettingsBillingContent = ({ navigate, user }) => {
   const [overview, setOverview] = useState(null);
   const [loading, setBillingLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [topupSaving, setTopupSaving] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
+    setBillingLoading(true);
     apiClient.get('/billing/overview')
       .then(res => setOverview(res.data))
       .catch(() => setOverview(null))
       .finally(() => setBillingLoading(false));
-  }, []);
+  };
 
-  const rawTier = String(user?.subscription_tier || 'free').toLowerCase();
-  const onTrial = (() => {
-    if (!user?.trial_expires_at) return false;
-    return new Date(user.trial_expires_at) > new Date();
-  })();
-  const displayName = onTrial ? 'Free Trial (Professional)' : (TIER_DISPLAY[rawTier] || 'Free');
-  const isPaid = !['free', 'trial', ''].includes(rawTier) && !onTrial;
+  useEffect(() => { load(); }, []);
 
-  const money = (v, cur = 'AUD') =>
-    new Intl.NumberFormat('en-AU', { style: 'currency', currency: cur.toUpperCase() }).format(Number(v || 0));
+  // Formatters
+  const fmtTokens = (n) => {
+    if (n === null || n === undefined) return '—';
+    if (n < 0) return '\u221E';
+    return new Intl.NumberFormat('en-AU').format(Math.round(n));
+  };
+  const fmtAud = (cents, currency = 'AUD') => {
+    if (cents === null || cents === undefined) return '—';
+    return new Intl.NumberFormat('en-AU', { style: 'currency', currency, maximumFractionDigits: 2 }).format(Number(cents) / 100);
+  };
+  const fmtDate = (isoLike) => {
+    if (!isoLike) return null;
+    try {
+      return new Date(isoLike).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch { return null; }
+  };
 
-  // Derive subscription status from overview
-  const subscription = overview?.subscription || {};
-  const subStatus = subscription.status || (isPaid ? 'active' : onTrial ? 'trialing' : null);
-  const periodEnd = subscription.current_period_end
-    ? new Date(subscription.current_period_end).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
-    : null;
+  // Derive from new /billing/overview shape (Track B4 2026-04-21)
+  const plan = overview?.plan || {};
+  const rawTier = String(plan.tier || user?.subscription_tier || 'trial').toLowerCase();
+  const displayName = TIER_DISPLAY[rawTier] || 'Free';
+  const unmetered = !!plan.unmetered;
+  const subStatus = overview?.subscription_status
+    || (overview?.trial_ends_at && new Date(overview.trial_ends_at) > new Date() ? 'trialing' : null);
+  const isPaid = ['starter', 'foundation', 'growth', 'pro', 'professional', 'business', 'enterprise', 'custom_build'].includes(rawTier);
+  const onTrial = subStatus === 'trialing'
+    || (overview?.trial_ends_at ? new Date(overview.trial_ends_at) > new Date() : false);
+  const paymentRequired = !!overview?.payment_required;
 
-  // Usage data from overview
-  const usage = overview?.usage || {};
-  const usageFeatures = usage.features || {};
+  const allowance = plan.monthly_allowance;
+  const consumed = overview?.consumed_this_period ?? 0;
+  const toppedUp = overview?.topped_up_this_period ?? 0;
+  const netRemaining = overview?.net_remaining ?? 0;
+  const pct = unmetered ? 0 : Math.round((overview?.percent_consumed || 0) * 100);
+  const usageBarColor = pct >= 85
+    ? 'var(--danger, #DC2626)'
+    : pct >= 60 ? 'var(--warning, #E85D00)' : 'var(--positive, #16A34A)';
 
-  // Recent charges (last 5)
-  const recentCharges = (overview?.recent_charges || []).slice(0, 5);
+  const nextCharge = overview?.next_charge;
+  const nextChargeDate = fmtDate(nextCharge?.date);
+  const trialEndDate = fmtDate(overview?.trial_ends_at);
 
-  // Open Stripe portal
+  const recentTopups = overview?.recent_topups || [];
+  const recentInvoices = overview?.recent_invoices || [];
+
   const openStripePortal = async () => {
     setPortalLoading(true);
     try {
       const res = await apiClient.post('/stripe/portal-session');
-      if (res.data?.url) {
-        window.location.href = res.data.url;
-      }
+      if (res.data?.url) window.location.href = res.data.url;
+      else toast.error('Unable to open billing portal');
     } catch {
       toast.error('Failed to open billing portal');
     } finally {
@@ -94,25 +116,66 @@ const SettingsBillingContent = ({ navigate, user }) => {
     }
   };
 
+  const toggleAutoTopup = async (enabled) => {
+    setTopupSaving(true);
+    try {
+      const res = await apiClient.patch('/billing/auto-topup', { enabled });
+      setOverview(prev => prev ? { ...prev, auto_topup_enabled: !!res.data?.auto_topup_enabled } : prev);
+      toast.success(enabled ? 'Auto top-up on' : 'Auto top-up off');
+    } catch {
+      toast.error('Could not update auto top-up');
+    } finally {
+      setTopupSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <InlineLoading text="loading billing" />;
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5, 20px)' }}>
-      {/* Current Plan card — gradient with status badge */}
+
+      {/* Payment-required banner (B7 cron flipped it on) */}
+      {paymentRequired && (
+        <div style={{
+          background: 'var(--danger-wash, #FEE2E2)',
+          border: '1px solid var(--danger, #DC2626)',
+          borderRadius: 'var(--r-md, 8px)',
+          padding: 'var(--sp-4, 16px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+        }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <AlertTriangle className="w-5 h-5" style={{ color: 'var(--danger, #DC2626)' }} />
+            <div>
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, color: 'var(--danger, #DC2626)' }}>
+                Payment required
+              </p>
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-secondary, #525252)' }}>
+                Your last top-up attempt failed. Update your card to keep AI access active.
+              </p>
+            </div>
+          </div>
+          <Button onClick={openStripePortal} disabled={portalLoading}
+            style={{ fontFamily: 'var(--font-ui)', fontSize: 13, background: 'var(--danger, #DC2626)', color: 'var(--ink-inverse, #fff)', borderRadius: 'var(--r-md, 8px)', border: 'none' }}>
+            {portalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update card'}
+          </Button>
+        </div>
+      )}
+
+      {/* Current Plan card */}
       <div style={{ background: 'linear-gradient(135deg, var(--lava-wash, #FFF1E6) 0%, var(--surface, #fff) 100%)', border: '1px solid var(--lava, #E85D00)', borderRadius: 'var(--r-lg, 12px)', padding: 'var(--sp-6, 24px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-5, 20px)', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div className="flex items-center gap-3" style={{ flexWrap: 'wrap' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink-display, #0A0A0A)' }}>
               {displayName}
-              {onTrial && <em style={{ color: 'var(--lava, #E85D00)', fontStyle: 'italic' }}> (Pro trial)</em>}
+              {onTrial && <em style={{ color: 'var(--lava, #E85D00)', fontStyle: 'italic' }}> (trial)</em>}
             </div>
             {subStatus && (
               <span style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                textTransform: 'uppercase',
-                letterSpacing: 'var(--ls-caps, 0.08em)',
-                padding: '3px 10px',
-                borderRadius: 'var(--r-full, 999px)',
-                fontWeight: 600,
+                fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
+                letterSpacing: 'var(--ls-caps, 0.08em)', padding: '3px 10px',
+                borderRadius: 'var(--r-full, 999px)', fontWeight: 600,
                 ...(STATUS_BADGE_STYLES[subStatus] || STATUS_BADGE_STYLES.active),
               }}>
                 {subStatus.replace(/_/g, ' ')}
@@ -120,12 +183,12 @@ const SettingsBillingContent = ({ navigate, user }) => {
             )}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-secondary, #525252)', marginTop: 'var(--sp-2, 8px)', lineHeight: 1.5 }}>
-            {onTrial ? (
-              <>Trial expires {new Date(user.trial_expires_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}. Upgrade to keep access.</>
-            ) : isPaid ? (
-              <>Your plan is active.{periodEnd && <> Current period ends {periodEnd}.</>}</>
+            {onTrial && trialEndDate ? (
+              <>Trial ends {trialEndDate}. {nextChargeDate && <>First charge {nextChargeDate}.</>}</>
+            ) : isPaid && nextChargeDate ? (
+              <>Next charge {nextChargeDate}{nextCharge?.amount_aud_cents ? <> · {fmtAud(nextCharge.amount_aud_cents)}</> : null}.</>
             ) : (
-              <>Free plan. Upgrade anytime to unlock more features.</>
+              <>Active plan.</>
             )}
           </div>
         </div>
@@ -145,74 +208,105 @@ const SettingsBillingContent = ({ navigate, user }) => {
         </div>
       </div>
 
-      {/* Usage Meters */}
-      {!loading && Object.keys(usageFeatures).length > 0 && (
-        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border, rgba(10,10,10,0.08))', borderRadius: 'var(--r-lg, 12px)', padding: 'var(--sp-5, 20px)' }}>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted, #737373)', marginBottom: 16 }}>Usage this period</p>
-          <div className="space-y-3">
-            {Object.entries(usageFeatures).map(([key, feat]) => {
-              const pct = feat.unlimited ? 100 : feat.limit > 0 ? Math.min(100, Math.round((feat.used / feat.limit) * 100)) : 0;
-              return (
-                <div key={key}>
-                  <div className="flex justify-between text-xs mb-1" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-secondary)' }}>
-                    <span className="capitalize">{key.replace(/_/g, ' ')}</span>
-                    <span>{feat.unlimited ? 'Unlimited' : `${feat.used} / ${feat.limit}`}</span>
-                  </div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--surface-sunken)' }}>
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: feat.unlimited ? 'var(--positive, #16A34A)' : pct > 80 ? 'var(--danger, #DC2626)' : 'var(--positive, #16A34A)' }} />
-                  </div>
-                </div>
-              );
-            })}
+      {/* Token allowance bar */}
+      <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border, rgba(10,10,10,0.08))', borderRadius: 'var(--r-lg, 12px)', padding: 'var(--sp-5, 20px)' }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted, #737373)' }}>
+            AI allowance this period
+          </p>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-secondary, #525252)' }}>
+            {unmetered
+              ? 'Unlimited'
+              : <>{fmtTokens(consumed)} / {fmtTokens((allowance || 0) + toppedUp)} tokens</>
+            }
+          </span>
+        </div>
+        {!unmetered && (
+          <div style={{ height: 10, borderRadius: 'var(--r-full, 999px)', background: 'var(--surface-sunken, rgba(10,10,10,0.04))', overflow: 'hidden' }}>
+            <div style={{
+              width: `${Math.min(100, pct)}%`, height: '100%',
+              background: usageBarColor, transition: 'width 0.6s ease',
+            }} />
           </div>
+        )}
+        <div className="flex justify-between" style={{ marginTop: 10, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted, #737373)' }}>
+          <span>{unmetered ? 'No cap on your plan' : <>{fmtTokens(netRemaining)} remaining</>}</span>
+          <span>{toppedUp > 0 ? <>Includes {fmtTokens(toppedUp)} top-up</> : ''}</span>
+        </div>
+      </div>
+
+      {/* Auto top-up toggle */}
+      {!unmetered && (
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border, rgba(10,10,10,0.08))', borderRadius: 'var(--r-lg, 12px)', padding: 'var(--sp-5, 20px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)' }}>
+              Auto top-up
+            </p>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-muted, #737373)', marginTop: 2 }}>
+              {overview?.topup_pack
+                ? <>When your allowance runs out we'll auto-charge {fmtAud(overview.topup_pack.price_aud_cents)} for {fmtTokens(overview.topup_pack.tokens)} more tokens so BIQc keeps working.</>
+                : 'When your allowance runs out we automatically top you up.'}
+            </p>
+          </div>
+          <Switch
+            checked={!!overview?.auto_topup_enabled}
+            disabled={topupSaving}
+            onCheckedChange={(v) => toggleAutoTopup(!!v)}
+          />
         </div>
       )}
 
-      {/* Charges summary cards (paid users) */}
-      {isPaid && !loading && overview && (
-        <div className="grid grid-cols-2 gap-3">
-          <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border, rgba(10,10,10,0.08))', borderRadius: 'var(--r-lg, 12px)', padding: 'var(--sp-4, 16px)' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted, #737373)', marginBottom: 4 }}>Charges paid</p>
-            <p style={{ fontFamily: 'var(--font-ui)', fontSize: 20, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)' }}>
-              {money(overview.charges_summary?.total_paid, overview.charges_summary?.currency)}
-            </p>
-          </div>
-          <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border, rgba(10,10,10,0.08))', borderRadius: 'var(--r-lg, 12px)', padding: 'var(--sp-4, 16px)' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted, #737373)', marginBottom: 4 }}>Supplier outstanding</p>
-            <p style={{ fontFamily: 'var(--font-ui)', fontSize: 20, fontWeight: 600, color: overview.supplier_summary?.total_overdue_supplier > 0 ? 'var(--danger, #DC2626)' : 'var(--ink-display, #0A0A0A)' }}>
-              {money(overview.supplier_summary?.total_outstanding_supplier, overview.charges_summary?.currency)}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Recent Charges */}
-      {!loading && recentCharges.length > 0 && (
+      {/* Recent top-ups */}
+      {recentTopups.length > 0 && (
         <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border, rgba(10,10,10,0.08))', borderRadius: 'var(--r-lg, 12px)', padding: 'var(--sp-5, 20px)' }}>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted, #737373)', marginBottom: 12 }}>Recent charges</p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted, #737373)', marginBottom: 12 }}>
+            Recent top-ups
+          </p>
           <div>
-            {recentCharges.map((charge, idx) => (
-              <div key={charge.id || idx} className="flex items-center justify-between" style={{ padding: '10px 0', borderBottom: idx < recentCharges.length - 1 ? '1px solid var(--border, rgba(10,10,10,0.08))' : 'none' }}>
+            {recentTopups.map((t, idx) => (
+              <div key={t.stripe_ref || idx} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: idx < recentTopups.length - 1 ? '1px solid var(--border, rgba(10,10,10,0.08))' : 'none' }}>
                 <div>
-                  <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 500, color: 'var(--ink-display, #0A0A0A)' }}>
-                    {money(charge.amount / 100, charge.currency || 'AUD')}
+                  <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-display, #0A0A0A)' }}>
+                    {fmtTokens(t.tokens)} tokens
                   </p>
                   <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted, #737373)' }}>
-                    {charge.created ? new Date(charge.created * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                    {fmtDate(t.date) || '—'}
+                  </p>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-display, #0A0A0A)' }}>
+                  {fmtAud(t.price_aud_cents)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent invoices */}
+      {recentInvoices.length > 0 && (
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border, rgba(10,10,10,0.08))', borderRadius: 'var(--r-lg, 12px)', padding: 'var(--sp-5, 20px)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted, #737373)', marginBottom: 12 }}>
+            Recent invoices
+          </p>
+          <div>
+            {recentInvoices.map((inv, idx) => (
+              <div key={idx} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: idx < recentInvoices.length - 1 ? '1px solid var(--border, rgba(10,10,10,0.08))' : 'none' }}>
+                <div>
+                  <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-display, #0A0A0A)' }}>
+                    {fmtAud(inv.amount_aud_cents)}
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted, #737373)' }}>
+                    {fmtDate(inv.date) || '—'}
                   </p>
                 </div>
                 <span style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  textTransform: 'uppercase',
-                  letterSpacing: 'var(--ls-caps, 0.08em)',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--r-full, 999px)',
-                  fontWeight: 600,
-                  background: charge.status === 'succeeded' || charge.status === 'paid' ? 'rgba(22,163,106,0.12)' : charge.status === 'failed' ? 'rgba(220,38,38,0.12)' : 'rgba(115,115,115,0.12)',
-                  color: charge.status === 'succeeded' || charge.status === 'paid' ? 'var(--positive, #16A34A)' : charge.status === 'failed' ? 'var(--danger, #DC2626)' : 'var(--ink-muted, #737373)',
+                  fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
+                  letterSpacing: 'var(--ls-caps, 0.08em)', padding: '2px 8px',
+                  borderRadius: 'var(--r-full, 999px)', fontWeight: 600,
+                  background: inv.status === 'paid' ? 'rgba(22,163,106,0.12)' : inv.status === 'failed' ? 'rgba(220,38,38,0.12)' : 'rgba(115,115,115,0.12)',
+                  color: inv.status === 'paid' ? 'var(--positive, #16A34A)' : inv.status === 'failed' ? 'var(--danger, #DC2626)' : 'var(--ink-muted, #737373)',
                 }}>
-                  {charge.status || 'pending'}
+                  {inv.status}
                 </span>
               </div>
             ))}
@@ -223,35 +317,19 @@ const SettingsBillingContent = ({ navigate, user }) => {
       {/* Payment Method */}
       <div style={{ borderTop: '1px solid var(--border, rgba(10,10,10,0.08))', paddingTop: 'var(--sp-5, 20px)', marginTop: 'var(--sp-1, 4px)' }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted, #737373)', marginBottom: 12 }}>Payment Method</p>
-        {overview?.billing_connectors?.stripe_connected ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CreditCard className="w-5 h-5" style={{ color: 'var(--lava, #E85D00)' }} />
-              <div>
-                <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 500, color: 'var(--ink-display, #0A0A0A)' }}>Card on file</p>
-                <p style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-muted, #737373)' }}>Managed through Stripe</p>
-              </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CreditCard className="w-5 h-5" style={{ color: 'var(--lava, #E85D00)' }} />
+            <div>
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 500, color: 'var(--ink-display, #0A0A0A)' }}>Managed through Stripe</p>
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-muted, #737373)' }}>Update card, invoice email, or tax ID via the portal.</p>
             </div>
-            <Button variant="outline" size="sm" onClick={openStripePortal} disabled={portalLoading}
-              style={{ fontFamily: 'var(--font-ui)', fontSize: 13, borderColor: 'var(--lava, #E85D00)', color: 'var(--lava, #E85D00)', borderRadius: 'var(--r-md, 8px)' }}>
-              {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Manage'}
-            </Button>
           </div>
-        ) : (
-          <div className="flex items-center justify-between">
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-muted, #737373)' }}>No card on file</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/billing')}
-              className="flex items-center gap-2"
-              style={{ fontFamily: 'var(--font-ui)', fontSize: 13, borderColor: 'var(--lava, #E85D00)', color: 'var(--lava, #E85D00)', borderRadius: 'var(--r-md, 8px)' }}
-            >
-              <Plus className="w-4 h-4" />
-              Add card
-            </Button>
-          </div>
-        )}
+          <Button variant="outline" size="sm" onClick={openStripePortal} disabled={portalLoading}
+            style={{ fontFamily: 'var(--font-ui)', fontSize: 13, borderColor: 'var(--lava, #E85D00)', color: 'var(--lava, #E85D00)', borderRadius: 'var(--r-md, 8px)' }}>
+            {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Open portal'}
+          </Button>
+        </div>
       </div>
 
       <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-muted, #737373)' }}>
