@@ -79,17 +79,19 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
         elementsRef.current = elements;
 
         // 2026-04-20 Andreas P0: stripe.confirmSetup was hanging across
-        // TWO different live cards with no bank SMS/push — meaning the
-        // request wasn't reaching the issuer at all. Strongest suspect
-        // is Stripe Link intercepting the confirm and blocking on its
-        // own phone-verification flow that never completes for a
-        // fresh-signup email. Disable Link (and the sign-up/save-info
-        // upsell that goes with it) and let the user enter card details
-        // directly — we can re-enable later once the flow is stable.
+        // TWO different live cards with no request ever reaching Stripe
+        // (verified via Stripe API — 7 SetupIntents stuck at
+        // requires_payment_method with no last_setup_error). Cause:
+        // Stripe Link's email/phone capture widget was hanging
+        // elements.submit() before Stripe's confirm call was made.
+        //
+        // `paymentMethodOrder` only reorders the visible tabs — it does
+        // NOT hide Link. The explicit kill is `wallets.link: 'never'`.
+        // We also strip the save-info-for-Link upsell via the fields +
+        // terms overrides.
         const paymentElement = elements.create('payment', {
           layout: { type: 'tabs', defaultCollapsed: false },
-          wallets: { applePay: 'auto', googlePay: 'auto' },
-          paymentMethodOrder: ['card', 'apple_pay', 'google_pay'],
+          wallets: { link: 'never', applePay: 'auto', googlePay: 'auto' },
           fields: { billingDetails: { email: 'never' } },
           terms: { card: 'never' },
         });
