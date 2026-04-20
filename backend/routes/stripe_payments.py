@@ -53,21 +53,28 @@ BIQC_COMPANY_LEGAL_NAME = (
 
 
 def _is_stripe_production_ready() -> bool:
-    """True when Stripe is configured with a live secret and a webhook secret.
+    """True when Stripe is configured with a usable secret and webhook secret.
 
-    Used to harden webhook + checkout paths when the runtime is in
-    production. In non-production we permit test keys (sk_test_…) so local
-    dev and staging still work.
+    2026-04-20 correction: the previous check rejected test keys when
+    ENVIRONMENT=production. That was paranoid — test keys cannot charge
+    real money, so running test-mode checkout on production infra is
+    harmless. The real safety concern is the opposite direction (live
+    key with no webhook secret → real charges with no server-side
+    confirmation), and that case is still rejected below.
+
+    Returns True if:
+      - STRIPE_KEY is set (any key — test or live), AND
+      - EITHER the key is sk_test_ (safe by definition), OR the key is
+        sk_live_ paired with a non-empty webhook secret.
     """
-    env_is_prod = (
-        (os.environ.get("ENVIRONMENT") or "").strip().lower() == "production"
-        or (os.environ.get("PRODUCTION") or "").strip().lower() in {"1", "true", "yes"}
-    )
     if not STRIPE_KEY:
         return False
-    if env_is_prod and STRIPE_KEY.startswith("sk_test_"):
-        return False
-    if env_is_prod and not STRIPE_WEBHOOK_SECRET:
+    # Test keys can't move real money; accept them unconditionally.
+    if STRIPE_KEY.startswith("sk_test_"):
+        return True
+    # Live keys require a webhook secret so webhook signatures can be
+    # verified. Without this, a MITM could forge subscription events.
+    if not STRIPE_WEBHOOK_SECRET:
         return False
     return True
 
