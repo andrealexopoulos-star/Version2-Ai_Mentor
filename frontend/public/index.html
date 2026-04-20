@@ -28,46 +28,14 @@
         }
       })();
     </script>
-    <!-- Google tag (gtag.js) — GA4 + Google Ads conversion tracking -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HRW99KL3BF"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KN4CB0XTVY"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      window.gtag = window.gtag || gtag;
       gtag('js', new Date());
 
-      // Google Ads conversion tag — always active for conversion measurement
-      gtag('config', 'AW-18002554945');
-
-      // Enable GA4 config — called on consent or if previously accepted
-      window.__biqc_enable_analytics = function() {
-        if (!window.__biqc_analytics_enabled) {
-          gtag('config', 'G-HRW99KL3BF');
-          window.__biqc_analytics_enabled = true;
-        }
-      };
-
-      // Auto-init if user already gave consent in a previous session
-      try {
-        if (localStorage.getItem('biqc_cookie_consent') === 'accepted') {
-          window.__biqc_enable_analytics();
-        }
-      } catch(e) {}
-    </script>
-    <!-- Google tag (gtag.js) event - delayed navigation helper -->
-    <script>
-      function gtagSendEvent(url) {
-        var callback = function () {
-          if (typeof url === 'string') {
-            window.location = url;
-          }
-        };
-        gtag('event', 'ads_conversion_Subscribe_1', {
-          'event_callback': callback,
-          'event_timeout': 2000,
-        });
-        return false;
-      }
+      gtag('config', 'G-KN4CB0XTVY');
     </script>
     
     <!-- Cache Control for Mobile -->

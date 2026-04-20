@@ -141,11 +141,13 @@ const AuthCallbackSupabase = () => {
         if (!mounted) return;
 
         if (data?.session) {
-          // Google Ads conversion — fire if this was a new sign-up (flag set by RegisterSupabase)
+          // GA4 sign-up event — routed to the single gtag config in
+          // public/index.html (G-KN4CB0XTVY). Andreas 2026-04-20:
+          // consolidated analytics to a single GA4 property; Google Ads
+          // conversion tag (AW-…) was removed so `send_to` is omitted.
           try {
             const pendingSignup = localStorage.getItem('biqc_pending_signup');
             if (pendingSignup && window.gtag) {
-              window.gtag('event', 'conversion', { send_to: 'AW-18002554945', event_category: 'signup', event_label: `oauth_${pendingSignup}` });
               window.gtag('event', 'sign_up', { method: pendingSignup });
               localStorage.removeItem('biqc_pending_signup');
             }
