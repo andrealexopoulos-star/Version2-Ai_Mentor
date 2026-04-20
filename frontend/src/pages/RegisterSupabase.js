@@ -57,6 +57,12 @@ const RegisterSupabase = () => {
   const [selectedPlan, setSelectedPlan] = useState('starter');
   const [cardReady, setCardReady] = useState(false);
   const [cardError, setCardError] = useState('');
+  // 2026-04-20: when the client-side card confirmation or the backend
+  // confirm-trial-signup call fails, toasts disappear too fast — the user
+  // sees the form reset to idle and assumes nothing happened (Andreas
+  // feedback). Persist the failure reason so we can render a prominent,
+  // non-dismissing banner right above the submit button.
+  const [trialFailureMessage, setTrialFailureMessage] = useState('');
   const [trialStep, setTrialStep] = useState('idle'); // idle | auth | intent | confirm | subscribe | done
   const cardRef = useRef(null);
   const stripeConfigured = hasStripeKey();
@@ -245,8 +251,10 @@ const RegisterSupabase = () => {
       }
       const confirm = await cardRef.current.confirmWith(client_secret);
       if (confirm.error) {
+        const msg = `Card couldn't be confirmed: ${confirm.error}. Double-check the card details below and click Start trial again.`;
         toast.error(confirm.error);
         setCardError(confirm.error);
+        setTrialFailureMessage(msg);
         setTrialStep('idle');
         return;
       }
@@ -264,10 +272,18 @@ const RegisterSupabase = () => {
         });
       } catch (err) {
         const detail = err?.response?.data?.detail || '';
-        toast.error(detail || 'Could not finalize your subscription. Your card is on file — please contact support if this persists.');
+        const msg = detail
+          ? `Subscription creation failed: ${detail}. Your card is on file. Click Start trial again, or contact support@biqc.ai if this persists.`
+          : 'Subscription creation failed. Your card is on file — click Start trial again, or contact support@biqc.ai if this persists.';
+        toast.error(detail || 'Could not finalize your subscription.');
+        setTrialFailureMessage(msg);
         setTrialStep('idle');
         return;
       }
+
+      // Step 4 succeeded — clear any stale failure message so it doesn't
+      // linger if the user retried after a transient failure.
+      setTrialFailureMessage('');
 
       // Google Ads conversion — new sign-up with trial
       if (window.gtag) {
@@ -394,7 +410,7 @@ const RegisterSupabase = () => {
 
           <span className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full text-[11px] font-medium uppercase tracking-[0.08em]" style={{ background: 'var(--lava-wash, rgba(232,93,0,0.12))', color: 'var(--lava, #E85D00)', border: '1px solid var(--lava-soft, rgba(232,93,0,0.08))', fontFamily: MONO }}>
             <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 0 8px var(--lava, #E85D00)' }} />
-            14 days of Pro · No card
+            14 days of Growth
           </span>
 
           <h1 className="mb-2" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)', fontSize: '48px', letterSpacing: 'var(--ls-tight, -0.035em)', lineHeight: 1.05, fontWeight: 'var(--fw-display, 400)' }}>
@@ -528,6 +544,28 @@ const RegisterSupabase = () => {
                 </div>
               )}
             </div>
+
+            {/* ── Trial-failure banner: stays visible until retry or success ── */}
+            {trialFailureMessage && (
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: '14px 16px',
+                  borderRadius: 12,
+                  background: 'rgba(239,68,68,0.06)',
+                  border: '1px solid rgba(239,68,68,0.24)',
+                  color: '#B91C1C',
+                  fontFamily: UI,
+                  fontSize: 13.5,
+                  lineHeight: 1.5,
+                }}
+                data-testid="register-trial-failure-banner"
+                role="alert"
+              >
+                <strong style={{ display: 'block', marginBottom: 4 }}>Trial couldn't start</strong>
+                <span style={{ color: 'var(--ink-secondary, #525252)' }}>{trialFailureMessage}</span>
+              </div>
+            )}
 
             {/* ── Trust microcopy (Phase 6.11 spec) ── */}
             <div style={{
