@@ -143,9 +143,11 @@ export default function ProtectedRoute({ children, adminOnly }) {
     return () => { cancelled = true; };
   }, [adminOnly, authState, user]);
 
-  // Subscription gate — hard-enforced for all non-admin routes.
+  // Subscription gate — fires as soon as we have a user id, regardless
+  // of authState. This closes the LOADING-state window where a cached
+  // session could otherwise slip past before READY transitions.
   useEffect(() => {
-    if (authState !== AUTH_STATE.READY || !user) return;
+    if (!user?.id) return;
     let cancelled = false;
     (async () => {
       try {
@@ -173,7 +175,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [authState, user?.id]);
+  }, [user?.id]);
 
   // Still loading — but if we have a user/session, show content (don't block navigation)
   if (authState === AUTH_STATE.LOADING) {
@@ -202,9 +204,29 @@ export default function ProtectedRoute({ children, adminOnly }) {
     return <AuthError />;
   }
 
+  // ── Subscription gate — runs FIRST, before NEEDS_CALIBRATION ──
+  // Andreas 2026-04-20: closing /complete-signup mid-flow then signing
+  // back in let the user slide into /calibration because the
+  // NEEDS_CALIBRATION branch below allows it. This gate runs ahead of
+  // that branch so no path — calibration, advisor, soundboard — is
+  // reachable without an active/trialing subscription.
+  //
+  // /complete-signup itself and admin paths are exempt (they're the
+  // destination / they bypass all product gating).
+  const GATE_EXEMPT_PATHS = ['/complete-signup', '/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
+  const isGateExemptPath = GATE_EXEMPT_PATHS.some(p => location.pathname.startsWith(p));
+  if (!isGateExemptPath && (user || session)) {
+    if (!subscriptionChecked) {
+      return <LoadingScreen />;
+    }
+    if (!subscriptionAllowed) {
+      return <Navigate to="/complete-signup" replace />;
+    }
+  }
+
   // NEEDS_CALIBRATION → redirect to /calibration FIRST (before READY check)
   if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
-    const allowedPaths = ['/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import', '/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
+    const allowedPaths = ['/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import', '/admin', '/support-admin', '/observability', '/admin/prompt-lab', '/complete-signup'];
     if (allowedPaths.some(p => location.pathname.startsWith(p))) {
       return children;
     }
@@ -227,20 +249,8 @@ export default function ProtectedRoute({ children, adminOnly }) {
     // Admin paths always pass through
     if (isAdminPath) return children;
 
-    // 2026-04-20: subscription gate runs BEFORE onboarding / calibration
-    // so a user without a Stripe subscription can never reach /advisor,
-    // /calibration, /soundboard etc. /complete-signup is deliberately
-    // excluded from this gate — it's the page we redirect them TO.
-    if (location.pathname === '/complete-signup') {
-      return children;
-    }
-    if (!subscriptionChecked) {
-      // Brief loader while the /auth/me fetch resolves. Typically <300ms.
-      return <LoadingScreen />;
-    }
-    if (!subscriptionAllowed) {
-      return <Navigate to="/complete-signup" replace />;
-    }
+    // Subscription gate already fired upstream before NEEDS_CALIBRATION.
+    // If we got here the user has a valid active/trialing sub.
 
     // Allow /calibration for READY users so explicit recalibration is always possible.
     // Redirecting calibrated users away from this route prevents recovery when
