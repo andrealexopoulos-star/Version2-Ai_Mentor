@@ -53,6 +53,36 @@ const RegisterSupabase = () => {
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', full_name: '', company_name: '', industry: ''
   });
+  // 2026-04-20: wraps apiClient.post('/diagnostics/signup-error', ...) so
+  // every branch where the signup flow dies tells the backend what broke.
+  // No awaits in the caller — we fire-and-forget so diagnostic reporting
+  // never blocks the user's retry.
+  const reportSignupError = (step, message, rawStripeError = null, extra = {}) => {
+    try {
+      const se = rawStripeError || {};
+      const payload = {
+        step,
+        message: String(message || '').slice(0, 500),
+        email: formData?.email || null,
+        plan: selectedPlan || null,
+        stripe_error_code: se.code || null,
+        stripe_decline_code: se.decline_code || null,
+        stripe_error_type: se.type || null,
+        stripe_error_param: se.param || null,
+        raw: rawStripeError ? {
+          type: se.type, code: se.code, decline_code: se.decline_code,
+          param: se.param, message: se.message,
+        } : null,
+        ...extra,
+      };
+      // Also dump to console so anyone with devtools open can see.
+      console.error('[signup-error]', step, payload);
+      apiClient.post('/diagnostics/signup-error', payload).catch(() => {});
+    } catch (_e) {
+      // Reporting must never throw.
+    }
+  };
+
   // Phase 6.11 — CC-mandatory signup state
   const [selectedPlan, setSelectedPlan] = useState('starter');
   const [cardReady, setCardReady] = useState(false);
@@ -231,13 +261,17 @@ const RegisterSupabase = () => {
           navigate('/calibration');
           return;
         }
+        reportSignupError('setup_intent', detail || err?.message || 'signup-create-setup-intent failed', null, { http_status: err?.response?.status });
         toast.error(detail || 'Could not start your trial setup. Please try again.');
+        setTrialFailureMessage(`Couldn't prepare your Stripe setup: ${detail || err?.message || 'unknown error'}. Click Start trial again.`);
         setTrialStep('idle');
         return;
       }
 
       if (!customer_id || !client_secret) {
+        reportSignupError('setup_intent', 'missing customer_id or client_secret in response', null, { customer_id, has_client_secret: !!client_secret });
         toast.error('Trial setup returned an incomplete response. Please try again.');
+        setTrialFailureMessage('Stripe setup returned an incomplete response. Please try again.');
         setTrialStep('idle');
         return;
       }
@@ -245,12 +279,15 @@ const RegisterSupabase = () => {
       // ── Step 3: Stripe Elements confirms the card against the SI ──
       setTrialStep('confirm');
       if (!cardRef.current) {
+        reportSignupError('card_confirm', 'card form not ready (cardRef.current is null)');
         toast.error('Card form not ready yet. Please wait a moment and retry.');
+        setTrialFailureMessage('The card form is still loading — wait a couple of seconds and try again.');
         setTrialStep('idle');
         return;
       }
       const confirm = await cardRef.current.confirmWith(client_secret);
       if (confirm.error) {
+        reportSignupError('card_confirm', confirm.error, confirm.rawError, { customer_id });
         const msg = `Card couldn't be confirmed: ${confirm.error}. Double-check the card details below and click Start trial again.`;
         toast.error(confirm.error);
         setCardError(confirm.error);
@@ -272,6 +309,11 @@ const RegisterSupabase = () => {
         });
       } catch (err) {
         const detail = err?.response?.data?.detail || '';
+        reportSignupError('confirm_trial', detail || err?.message || 'confirm-trial-signup failed', null, {
+          http_status: err?.response?.status,
+          customer_id,
+          payment_method_id,
+        });
         const msg = detail
           ? `Subscription creation failed: ${detail}. Your card is on file. Click Start trial again, or contact support@biqc.ai if this persists.`
           : 'Subscription creation failed. Your card is on file — click Start trial again, or contact support@biqc.ai if this persists.';

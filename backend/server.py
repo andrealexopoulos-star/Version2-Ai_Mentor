@@ -461,6 +461,9 @@ api_router.include_router(debug_stripe_config_router)
 from routes.email_verification import router as email_verification_router
 api_router.include_router(email_verification_router)
 
+from routes.signup_diagnostics import router as signup_diagnostics_router
+api_router.include_router(signup_diagnostics_router)
+
 from routes.billing import router as billing_router
 api_router.include_router(billing_router)
 

@@ -137,12 +137,15 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
       const stripe = stripeRef.current;
       const elements = elementsRef.current;
       if (!stripe || !elements) {
-        return { error: 'Stripe not initialized yet.' };
+        return { error: 'Stripe not initialized yet.', rawError: { type: 'local', message: 'stripe_not_initialized' } };
       }
       // Force elements to validate + submit internally before confirmSetup.
       const submitResult = await elements.submit();
       if (submitResult && submitResult.error) {
-        return { error: submitResult.error.message || 'Card validation failed.' };
+        return {
+          error: submitResult.error.message || 'Card validation failed.',
+          rawError: submitResult.error,
+        };
       }
       const { error, setupIntent } = await stripe.confirmSetup({
         elements,
@@ -150,10 +153,13 @@ const StripeCardField = forwardRef(({ onReady, onError, disabled = false }, ref)
         redirect: 'if_required',
       });
       if (error) {
-        return { error: error.message || 'Card could not be confirmed.' };
+        return {
+          error: error.message || 'Card could not be confirmed.',
+          rawError: error,
+        };
       }
       if (!setupIntent || !setupIntent.payment_method) {
-        return { error: 'Stripe did not return a payment method.' };
+        return { error: 'Stripe did not return a payment method.', rawError: { type: 'local', message: 'no_payment_method_returned', setupIntent } };
       }
       return { paymentMethodId: setupIntent.payment_method };
     },
