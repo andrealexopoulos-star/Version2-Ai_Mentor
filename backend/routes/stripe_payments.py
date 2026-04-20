@@ -943,12 +943,24 @@ async def confirm_trial_signup(
         if getattr(subscription, "trial_end", None):
             trial_end_iso = datetime.fromtimestamp(subscription.trial_end, tz=timezone.utc).isoformat()
 
+        # Capture current_period_end from Stripe so the app shows when the
+        # next charge will happen. For a trialing subscription, Stripe returns
+        # trial_end + period_start + period_end = trial_end (all coincide).
+        # After the trial ends, invoice.payment_succeeded webhook refreshes
+        # this each billing cycle.
+        current_period_end_iso = None
+        cpe = getattr(subscription, "current_period_end", None)
+        if cpe:
+            current_period_end_iso = datetime.fromtimestamp(cpe, tz=timezone.utc).isoformat()
+
         _apply_tier_upgrade(sb, user_id, plan["tier"])
         _update_subscription_lifecycle(
             sb, user_id,
             status=subscription.status,
             stripe_customer_id=req.customer_id,
+            stripe_subscription_id=subscription.id,
             trial_ends_at=trial_end_iso,
+            current_period_end=current_period_end_iso,
             past_due_since=None,
         )
 
@@ -1284,6 +1296,7 @@ def _update_subscription_lifecycle(
     past_due_since: Any = _UNSET,
     trial_ends_at: Any = _UNSET,
     stripe_customer_id: Any = _UNSET,
+    stripe_subscription_id: Any = _UNSET,
 ) -> None:
     """Write only the non-UNSET lifecycle fields to users.
 
@@ -1303,6 +1316,8 @@ def _update_subscription_lifecycle(
         payload["trial_ends_at"] = trial_ends_at
     if stripe_customer_id is not _UNSET:
         payload["stripe_customer_id"] = stripe_customer_id
+    if stripe_subscription_id is not _UNSET:
+        payload["stripe_subscription_id"] = stripe_subscription_id
     if not payload:
         return
     try:
