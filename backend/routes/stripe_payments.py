@@ -1538,14 +1538,23 @@ async def stripe_webhook(request: Request):
                     # Non-terminal tick → refresh lifecycle state so the app
                     # reflects Stripe's truth (trialing→active transition,
                     # renewal period advancing, paused→active resume, etc.).
+                    #
+                    # 2026-04-20: use _UNSET when the event payload omits a
+                    # timestamp column. Some Stripe API versions (clover) place
+                    # period_start/end on items[0] instead of the root, and
+                    # their absence from the root should NOT be interpreted
+                    # as "clear this column". The confirm-trial-signup path
+                    # has already written a valid current_period_end; the
+                    # webhook must not clobber it with None.
                     user_id = _resolve_user_by_customer_id(sb, customer_id)
                     if user_id:
                         _update_subscription_lifecycle(
                             sb, user_id,
                             status=(status or None),
-                            current_period_end=current_period_end_ts,
-                            trial_ends_at=trial_end_ts,
+                            current_period_end=(current_period_end_ts if current_period_end_ts else _UNSET),
+                            trial_ends_at=(trial_end_ts if trial_end_ts else _UNSET),
                             stripe_customer_id=customer_id,
+                            stripe_subscription_id=subscription_id,
                         )
 
             elif event.type == "customer.subscription.deleted":
