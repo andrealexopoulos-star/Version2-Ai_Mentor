@@ -99,6 +99,14 @@ export default function ProtectedRoute({ children, adminOnly }) {
   const isCalibrationRoute = location.pathname === '/calibration';
   const recentLoginTs = getRecentLoginTimestamp();
 
+  // 2026-04-20 Andreas feedback: signup must be a HARD gate. Cached
+  // OAuth or email+pw sessions that never completed card capture were
+  // walking into /calibration with no Stripe subscription. This fetch
+  // runs once per session-mount and caches the verdict. Superadmins +
+  // master-account are exempt.
+  const [subscriptionChecked, setSubscriptionChecked] = useState(false);
+  const [subscriptionAllowed, setSubscriptionAllowed] = useState(true);
+
   const hasStoredAuth = useMemo(() => {
     try {
       if (localStorage.getItem('biqc-auth')) return true;
@@ -111,7 +119,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
   // Check admin role from backend when adminOnly is true
   useEffect(() => {
     if (!adminOnly || authState !== AUTH_STATE.READY || !user) return;
-    
+
     let cancelled = false;
     const checkAdmin = async () => {
       try {
@@ -130,10 +138,42 @@ export default function ProtectedRoute({ children, adminOnly }) {
         if (!cancelled) setAdminChecked(true);
       }
     };
-    
+
     checkAdmin();
     return () => { cancelled = true; };
   }, [adminOnly, authState, user]);
+
+  // Subscription gate — hard-enforced for all non-admin routes.
+  useEffect(() => {
+    if (authState !== AUTH_STATE.READY || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiClient.get('/auth/supabase/me');
+        const u = res?.data?.user || {};
+        const status = String(u.subscription_status || '').toLowerCase();
+        const role = String(u.role || '').toLowerCase();
+        const isMaster = u.is_master_account === true;
+        const isSuper = SUPER_ADMIN_ROLES.includes(role) || isMaster;
+        const hasSub = status === 'active' || status === 'trialing';
+        if (!cancelled) {
+          // Fail-open on master admin to never lock out the CEO. Fail-
+          // closed for everyone else so no user bypasses the card gate.
+          setSubscriptionAllowed(isSuper || hasSub);
+          setSubscriptionChecked(true);
+        }
+      } catch (_e) {
+        // /auth/me failed — don't lock the user out of their own app
+        // because of a transient backend error. Let them pass; the
+        // backend gate on /calibration, /advisor APIs still applies.
+        if (!cancelled) {
+          setSubscriptionAllowed(true);
+          setSubscriptionChecked(true);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [authState, user?.id]);
 
   // Still loading — but if we have a user/session, show content (don't block navigation)
   if (authState === AUTH_STATE.LOADING) {
@@ -173,11 +213,6 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
   // READY or has session → enforce gates
   if (authState === AUTH_STATE.READY || user || session) {
-    // Allow /calibration for READY users so explicit recalibration is always possible.
-    // Redirecting calibrated users away from this route prevents recovery when
-    // calibration state falls out of sync and blocks the new-user onboarding funnel.
-    if (isCalibrationRoute) return children;
-
     // Admin pages bypass onboarding/calibration checks entirely
     const ADMIN_PATHS = ['/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
     const isAdminPath = ADMIN_PATHS.some(p => location.pathname.startsWith(p));
@@ -192,15 +227,35 @@ export default function ProtectedRoute({ children, adminOnly }) {
     // Admin paths always pass through
     if (isAdminPath) return children;
 
+    // 2026-04-20: subscription gate runs BEFORE onboarding / calibration
+    // so a user without a Stripe subscription can never reach /advisor,
+    // /calibration, /soundboard etc. /complete-signup is deliberately
+    // excluded from this gate — it's the page we redirect them TO.
+    if (location.pathname === '/complete-signup') {
+      return children;
+    }
+    if (!subscriptionChecked) {
+      // Brief loader while the /auth/me fetch resolves. Typically <300ms.
+      return <LoadingScreen />;
+    }
+    if (!subscriptionAllowed) {
+      return <Navigate to="/complete-signup" replace />;
+    }
+
+    // Allow /calibration for READY users so explicit recalibration is always possible.
+    // Redirecting calibrated users away from this route prevents recovery when
+    // calibration state falls out of sync and blocks the new-user onboarding funnel.
+    if (isCalibrationRoute) return children;
+
     // Onboarding check — if null, default to showing content (don't block with loading screen)
     if (onboardingStatus === null) {
       return children;
     }
-    
+
     if (!onboardingStatus.completed && !ONBOARDING_EXEMPT_PATHS.includes(location.pathname)) {
       return <Navigate to="/onboarding" replace />;
     }
-    
+
     return children;
   }
 

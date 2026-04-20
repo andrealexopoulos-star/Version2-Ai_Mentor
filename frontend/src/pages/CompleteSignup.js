@@ -243,9 +243,7 @@ const CompleteSignup = () => {
             boxShadow: '0 14px 40px rgba(10,10,10,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
           }}>
             <div style={{ marginBottom: 18 }}>
-              <label className="text-[10px] font-semibold uppercase tracking-[0.08em] block mb-2"
-                style={{ fontFamily: MONO, color: '#737373' }}>Plan</label>
-              <PlanPicker selected={selectedPlan} onSelect={setSelectedPlan} />
+              <PlanPicker value={selectedPlan} onChange={setSelectedPlan} disabled={loading || trialStep !== 'idle'} />
             </div>
 
             {stripeConfigured ? (

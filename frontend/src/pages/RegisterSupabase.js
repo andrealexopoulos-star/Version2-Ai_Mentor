@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
@@ -9,9 +9,7 @@ import { Eye, EyeOff, Check, Lock } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { EVENTS, trackActivationStep, trackEvent } from '../lib/analytics';
 import BiqcLogoCard from '../components/BiqcLogoCard';
-import PlanPicker, { PLAN_OPTIONS } from '../components/PlanPicker';
-import StripeCardField from '../components/StripeCardField';
-import { hasStripeKey } from '../lib/stripeJs';
+// 2026-04-20: plan picker + Stripe card capture live on /complete-signup now.
 import useForceLightTheme from '../hooks/useForceLightTheme';
 
 /* ── Mockup-aligned CSS-variable font stacks ── */
@@ -53,61 +51,10 @@ const RegisterSupabase = () => {
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', full_name: '', company_name: '', industry: ''
   });
-  // 2026-04-20: wraps apiClient.post('/diagnostics/signup-error', ...) so
-  // every branch where the signup flow dies tells the backend what broke.
-  // No awaits in the caller — we fire-and-forget so diagnostic reporting
-  // never blocks the user's retry.
-  const reportSignupError = (step, message, rawStripeError = null, extra = {}) => {
-    try {
-      const se = rawStripeError || {};
-      const payload = {
-        step,
-        message: String(message || '').slice(0, 500),
-        email: formData?.email || null,
-        plan: selectedPlan || null,
-        stripe_error_code: se.code || null,
-        stripe_decline_code: se.decline_code || null,
-        stripe_error_type: se.type || null,
-        stripe_error_param: se.param || null,
-        raw: rawStripeError ? {
-          type: se.type, code: se.code, decline_code: se.decline_code,
-          param: se.param, message: se.message,
-        } : null,
-        ...extra,
-      };
-      // Also dump to console so anyone with devtools open can see.
-      console.error('[signup-error]', step, payload);
-      apiClient.post('/diagnostics/signup-error', payload).catch(() => {});
-    } catch (_e) {
-      // Reporting must never throw.
-    }
-  };
-
-  // Phase 6.11 — CC-mandatory signup state
-  const [selectedPlan, setSelectedPlan] = useState('starter');
-  const [cardReady, setCardReady] = useState(false);
-  const [cardError, setCardError] = useState('');
-  // 2026-04-20: when the client-side card confirmation or the backend
-  // confirm-trial-signup call fails, toasts disappear too fast — the user
-  // sees the form reset to idle and assumes nothing happened (Andreas
-  // feedback). Persist the failure reason so we can render a prominent,
-  // non-dismissing banner right above the submit button.
-  const [trialFailureMessage, setTrialFailureMessage] = useState('');
-  const [trialStep, setTrialStep] = useState('idle'); // idle | auth | intent | confirm | subscribe | done
-  const cardRef = useRef(null);
-  const stripeConfigured = hasStripeKey();
+  const [trialStep, setTrialStep] = useState('idle'); // idle | auth | done
 
   const passwordsMatch = formData.password === formData.confirmPassword;
-  const isFormValid = formData.email && formData.password && formData.password.length >= 6 && formData.full_name && formData.confirmPassword && passwordsMatch && selectedPlan && cardReady;
-
-  // Trial summary: 14 days from now, price from selected plan
-  const trialSummary = (() => {
-    const end = new Date();
-    end.setDate(end.getDate() + 14);
-    const endStr = end.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
-    const plan = PLAN_OPTIONS.find((p) => p.id === selectedPlan) || PLAN_OPTIONS[0];
-    return { endStr, price: plan.price, period: plan.period, planName: plan.name };
-  })();
+  const isFormValid = formData.email && formData.password && formData.password.length >= 6 && formData.full_name && formData.confirmPassword && passwordsMatch;
 
   const buildFallbackChallenge = () => {
     const left = Math.floor(Math.random() * 8) + 2;
@@ -246,104 +193,18 @@ const RegisterSupabase = () => {
         return;
       }
 
-      // ── Step 2: Stripe SetupIntent (server creates Customer + SI) ──
-      setTrialStep('intent');
-      let customer_id, client_secret;
-      try {
-        const res = await apiClient.post('/stripe/signup-create-setup-intent', { plan: selectedPlan });
-        customer_id = res.data?.customer_id;
-        client_secret = res.data?.client_secret;
-      } catch (err) {
-        const detail = err?.response?.data?.detail || '';
-        if (err?.response?.status === 409) {
-          // User already has subscription — jump straight to app
-          toast.success('Your subscription is already active. Taking you in.');
-          navigate('/calibration');
-          return;
-        }
-        reportSignupError('setup_intent', detail || err?.message || 'signup-create-setup-intent failed', null, { http_status: err?.response?.status });
-        toast.error(detail || 'Could not start your trial setup. Please try again.');
-        setTrialFailureMessage(`Couldn't prepare your Stripe setup: ${detail || err?.message || 'unknown error'}. Click Start trial again.`);
-        setTrialStep('idle');
-        return;
-      }
-
-      if (!customer_id || !client_secret) {
-        reportSignupError('setup_intent', 'missing customer_id or client_secret in response', null, { customer_id, has_client_secret: !!client_secret });
-        toast.error('Trial setup returned an incomplete response. Please try again.');
-        setTrialFailureMessage('Stripe setup returned an incomplete response. Please try again.');
-        setTrialStep('idle');
-        return;
-      }
-
-      // ── Step 3: Stripe Elements confirms the card against the SI ──
-      setTrialStep('confirm');
-      if (!cardRef.current) {
-        reportSignupError('card_confirm', 'card form not ready (cardRef.current is null)');
-        toast.error('Card form not ready yet. Please wait a moment and retry.');
-        setTrialFailureMessage('The card form is still loading — wait a couple of seconds and try again.');
-        setTrialStep('idle');
-        return;
-      }
-      const confirm = await cardRef.current.confirmWith(client_secret);
-      if (confirm.error) {
-        reportSignupError('card_confirm', confirm.error, confirm.rawError, { customer_id });
-        const msg = `Card couldn't be confirmed: ${confirm.error}. Double-check the card details below and click Start trial again.`;
-        toast.error(confirm.error);
-        setCardError(confirm.error);
-        setTrialFailureMessage(msg);
-        setTrialStep('idle');
-        return;
-      }
-      const payment_method_id = confirm.paymentMethodId;
-
-      // ── Step 4: Server creates trialing subscription ──
-      setTrialStep('subscribe');
-      try {
-        // Trial length is server-determined (backend enforces 14-day one-shot
-        // per user_id to block post-cancel trial-replay — Codex P1 fix).
-        await apiClient.post('/stripe/confirm-trial-signup', {
-          customer_id,
-          payment_method_id,
-          plan: selectedPlan,
-        });
-      } catch (err) {
-        const detail = err?.response?.data?.detail || '';
-        reportSignupError('confirm_trial', detail || err?.message || 'confirm-trial-signup failed', null, {
-          http_status: err?.response?.status,
-          customer_id,
-          payment_method_id,
-        });
-        const msg = detail
-          ? `Subscription creation failed: ${detail}. Your card is on file. Click Start trial again, or contact support@biqc.ai if this persists.`
-          : 'Subscription creation failed. Your card is on file — click Start trial again, or contact support@biqc.ai if this persists.';
-        toast.error(detail || 'Could not finalize your subscription.');
-        setTrialFailureMessage(msg);
-        setTrialStep('idle');
-        return;
-      }
-
-      // Step 4 succeeded — clear any stale failure message so it doesn't
-      // linger if the user retried after a transient failure.
-      setTrialFailureMessage('');
-
-      // GA4 sign-up event — routed to the single gtag config in
-      // public/index.html (G-KN4CB0XTVY). Andreas 2026-04-20: consolidated
-      // analytics to a single GA4 property; Google Ads conversion tag
-      // (AW-…) was removed so `send_to` is intentionally omitted.
+      // 2026-04-20 (Andreas feedback): /register-supabase is now
+      // auth-only. Plan selection + card capture moved to /complete-signup
+      // so that OAuth + email signups converge on a single card-capture
+      // page and ProtectedRoute can enforce one hard gate across both.
+      // GA4 signup event fires here; Stripe flow happens on the next page.
       if (window.gtag) {
-        window.gtag('event', 'sign_up', { method: 'email', plan: selectedPlan });
+        window.gtag('event', 'sign_up', { method: 'email' });
       }
 
       setTrialStep('done');
-      toast.success(`Trial started. Free until ${trialSummary.endStr}.`);
-      // 2026-04-20: route through /verify-email-sent instead of straight
-      // to /calibration. The backend fires the E1 verification email
-      // synchronously from confirm-trial-signup and ProtectedRoute reads
-      // users.email_verified_by_user — unverified users landing on
-      // /calibration would be bounced back here anyway, so skip the
-      // round-trip and take them to the "check your inbox" page directly.
-      navigate('/verify-email-sent');
+      toast.success('Account created. One more step — pick a plan.');
+      navigate('/complete-signup', { replace: true });
     } catch (error) {
       const raw = error.message || '';
       if (raw.includes('Supabase is not configured')) {
@@ -454,14 +315,14 @@ const RegisterSupabase = () => {
 
           <span className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full text-[11px] font-medium uppercase tracking-[0.08em]" style={{ background: 'var(--lava-wash, rgba(232,93,0,0.12))', color: 'var(--lava, #E85D00)', border: '1px solid var(--lava-soft, rgba(232,93,0,0.08))', fontFamily: MONO }}>
             <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 0 8px var(--lava, #E85D00)' }} />
-            14 days of Growth
+            Step 1 of 2
           </span>
 
           <h1 className="mb-2" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)', fontSize: '48px', letterSpacing: 'var(--ls-tight, -0.035em)', lineHeight: 1.05, fontWeight: 'var(--fw-display, 400)' }}>
-            Start your <em style={{ fontStyle: 'italic', color: 'var(--lava, #E85D00)' }}>free trial</em>.
+            Create your <em style={{ fontStyle: 'italic', color: 'var(--lava, #E85D00)' }}>BIQc account</em>.
           </h1>
           <p className="text-base mb-2" style={{ fontFamily: UI, color: 'var(--ink-secondary, #525252)' }}>
-            Connect Outlook or Gmail and BIQc starts reading the room within 90 seconds.
+            Name, email, password — then pick a plan and add a card to start your 14-day trial.
           </p>
 
           {!hasSupabaseConfig && (
@@ -516,11 +377,10 @@ const RegisterSupabase = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-            {/* Phase 6.11 — plan picker + Stripe Elements card capture.
-                14-day free trial, auto-charged at T+14. Card goes straight
-                to Stripe; BIQc never sees the number. */}
-            <PlanPicker value={selectedPlan} onChange={setSelectedPlan} disabled={loading || trialStep !== 'idle'} />
-
+            {/* 2026-04-20: plan picker + card capture moved to /complete-signup.
+                This page is now the auth step only — name, email, password.
+                After signup the user is redirected to /complete-signup to
+                select a plan + add a card. ProtectedRoute enforces the gate. */}
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="full_name" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #737373)' }}>Full name</label>
@@ -564,56 +424,10 @@ const RegisterSupabase = () => {
               </div>
             </div>
 
-            {/* ── Card capture (Stripe Elements) ── */}
-            <div style={{ marginTop: 20 }}>
-              {stripeConfigured ? (
-                <StripeCardField
-                  ref={cardRef}
-                  onReady={() => setCardReady(true)}
-                  onError={(msg) => setCardError(msg)}
-                  disabled={loading || trialStep !== 'idle'}
-                />
-              ) : (
-                <div style={{
-                  padding: '12px 14px',
-                  borderRadius: 10,
-                  background: 'var(--danger-wash, rgba(239,68,68,0.08))',
-                  border: '1px solid var(--danger-soft, rgba(239,68,68,0.2))',
-                  fontSize: 12.5,
-                  color: 'var(--danger, #EF4444)',
-                  fontFamily: MONO,
-                  letterSpacing: '-0.003em',
-                }}>
-                  Stripe is not configured. Set REACT_APP_STRIPE_PUBLISHABLE_KEY in Azure App Service → biqc-web → Configuration.
-                </div>
-              )}
-            </div>
-
-            {/* ── Trial-failure banner: stays visible until retry or success ── */}
-            {trialFailureMessage && (
-              <div
-                style={{
-                  marginTop: 16,
-                  padding: '14px 16px',
-                  borderRadius: 12,
-                  background: 'rgba(239,68,68,0.06)',
-                  border: '1px solid rgba(239,68,68,0.24)',
-                  color: '#B91C1C',
-                  fontFamily: UI,
-                  fontSize: 13.5,
-                  lineHeight: 1.5,
-                }}
-                data-testid="register-trial-failure-banner"
-                role="alert"
-              >
-                <strong style={{ display: 'block', marginBottom: 4 }}>Trial couldn't start</strong>
-                <span style={{ color: 'var(--ink-secondary, #525252)' }}>{trialFailureMessage}</span>
-              </div>
-            )}
-
-            {/* ── Trust microcopy (Phase 6.11 spec) ── */}
+            {/* Plan selection + card capture happen on the next step
+                (/complete-signup). This page is auth-only. */}
             <div style={{
-              marginTop: 12,
+              marginTop: 16,
               padding: '12px 14px',
               borderRadius: 10,
               background: 'rgba(10,10,10,0.03)',
@@ -623,25 +437,19 @@ const RegisterSupabase = () => {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                 <Lock size={14} strokeWidth={2} style={{ color: 'var(--ink-secondary, #525252)', marginTop: 2, flexShrink: 0 }} />
                 <div style={{ fontSize: 12.5, color: 'var(--ink-secondary, #525252)', lineHeight: 1.5, letterSpacing: '-0.003em' }}>
-                  <strong style={{ color: 'var(--ink-display, #0A0A0A)', fontWeight: 600 }}>Free until {trialSummary.endStr}.</strong>{' '}
-                  Then {trialSummary.price} {trialSummary.period} for {trialSummary.planName}.{' '}
-                  Cancel any time in the first 14 days for <strong style={{ color: 'var(--ink-display, #0A0A0A)', fontWeight: 600 }}>$0</strong>.{' '}
-                  Your card goes straight to Stripe — BIQc never sees the number.
+                  <strong style={{ color: 'var(--ink-display, #0A0A0A)', fontWeight: 600 }}>Next: pick a plan + add a card.</strong>{' '}
+                  Free for 14 days · Cancel any time for $0 · Your card goes straight to Stripe.
                 </div>
               </div>
             </div>
 
-            <button type="submit" disabled={!hasSupabaseConfig || !stripeConfigured || loading || oauthLoading || !isFormValid}
+            <button type="submit" disabled={!hasSupabaseConfig || loading || oauthLoading || !isFormValid}
               className="w-full flex items-center justify-center gap-2 mt-5 text-[15px] font-medium transition-all disabled:opacity-50"
               style={{ background: '#0A0A0A', color: '#FFFFFF', height: 48, fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)', boxShadow: '0 4px 12px rgba(10,10,10,0.12)', border: '1px solid #0A0A0A', borderRadius: '999px', cursor: 'pointer', padding: '16px', letterSpacing: '-0.005em' }}
               data-testid="register-submit-btn">
-              {loading ? (
-                trialStep === 'auth' ? 'Creating account...' :
-                trialStep === 'intent' ? 'Preparing trial setup...' :
-                trialStep === 'confirm' ? 'Securing your card...' :
-                trialStep === 'subscribe' ? 'Starting your trial...' :
-                'Working...'
-              ) : <>Start 14-day free trial<span className="ml-1">→</span></>}
+              {loading
+                ? (trialStep === 'auth' ? 'Creating account...' : 'Working...')
+                : <>Create account <span className="ml-1">→</span></>}
             </button>
 
             {recaptchaEnabled && (
