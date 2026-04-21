@@ -230,23 +230,21 @@ const HomePage = () => {
             color: 'var(--ink-display)',
           }}
         >
-          One intelligence layer for every{' '}
+          All your systems. One decision engine.{' '}
           <span style={{
             fontFamily: 'var(--font-marketing-display)',
             color: 'var(--ink-display)',
           }}>
-            decision that matters.
+            No noise. Just what matters.
           </span>
         </h1>
 
         {/* Subtitle — fixed color (was broken on light bg), Geist */}
         <p
           className="hero-fade-3 max-w-2xl mx-auto leading-relaxed mb-10"
-          style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', fontSize: 'clamp(15px, 1.8vw, 18px)', letterSpacing: '-0.005em' }}
+          style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', fontSize: 'clamp(15px, 1.8vw, 18px)', letterSpacing: '-0.005em', marginTop: 18 }}
         >
-          BIQc brings your business systems into one live Intelligence Platform — helping owners
-          and leaders make faster decisions, evaluate trade‑offs clearly, and execute with
-          confidence in real time.
+          BIQc reads every signal across your business, and tells you exactly what matters, so you can act with confidence.
         </p>
 
         {/* CTA — was orange gradient, now black pill. 2026-04-19 PDF #4b:
@@ -320,97 +318,95 @@ const HomePage = () => {
     </section>
 
     {/* ══════════════════════════════════════════════════════════
-        ANIMATED CONNECTOR — diagram → What You Get
+        CUSTOMER LOGO CAROUSEL — consent-confirmed 2026-04-21
+        Samsung, Phillips Healthcare, Twilio, Lending Tree,
+        Evo Homes Victoria, Blanca Melbourne
     ══════════════════════════════════════════════════════════ */}
-    <div style={{ background: 'var(--canvas-sage)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 0, paddingBottom: 0 }}>
+    <section
+      aria-label="Customers"
+      style={{ background: 'var(--canvas-sage)', padding: '40px 0 48px', position: 'relative', overflow: 'hidden', fontFamily: 'var(--font-marketing-ui)' }}
+      data-testid="customer-logos"
+    >
       <style>{`
-        @keyframes connectorPulse {
-          0%   { transform: translateX(-50%) translateY(0);    opacity: 0; }
-          20%  { opacity: 1; }
-          80%  { opacity: 1; }
-          100% { transform: translateX(-50%) translateY(72px); opacity: 0; }
+        @keyframes biqcLogoScroll {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
         }
-        @keyframes connectorLineDash {
-          0%   { stroke-dashoffset: 16; }
-          100% { stroke-dashoffset: 0; }
+        .biqc-logo-eyebrow {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.14em;
+          color: var(--ink-muted);
+          text-align: center;
+          margin: 0 0 28px;
         }
-        @keyframes labelFadeIn {
-          0%,40% { opacity: 0.3; }
-          60%,100% { opacity: 1; }
+        .biqc-logo-track-wrap {
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+          -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
         }
-        .connector-dot { animation: connectorPulse 2s ease-in-out infinite; }
-        .connector-label { animation: labelFadeIn 2s ease-in-out infinite; }
+        .biqc-logo-track {
+          display: flex;
+          align-items: center;
+          width: max-content;
+          animation: biqcLogoScroll 48s linear infinite;
+          will-change: transform;
+        }
+        .biqc-logo-track:hover { animation-play-state: paused; }
+        .biqc-logo-item {
+          flex-shrink: 0;
+          width: 180px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--ink-muted);
+          opacity: 0.6;
+          transition: opacity 0.25s, color 0.25s, transform 0.25s;
+        }
+        .biqc-logo-item:hover {
+          opacity: 1;
+          color: var(--ink-display);
+          transform: translateY(-1px);
+        }
+        .biqc-logo-item img {
+          height: 24px;
+          width: auto;
+          max-width: 140px;
+          object-fit: contain;
+          display: block;
+        }
+        .biqc-logo-text {
+          font-family: var(--font-marketing-display);
+          font-size: 20px;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+          font-style: italic;
+          line-height: 1;
+          white-space: nowrap;
+        }
       `}</style>
-
-      {/* Vertical line — was orange gradient, now neutral shade */}
-      <div style={{ position: 'relative', width: 2, height: 80 }}>
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(10,10,10,0.25), rgba(10,10,10,0.05))',
-          borderRadius: 1,
-        }} />
-        <div
-          className="connector-dot"
-          style={{
-            position: 'absolute', left: '50%',
-            width: 8, height: 8, borderRadius: '50%',
-            background: 'var(--lava)',
-            boxShadow: '0 0 10px rgba(232,93,0,0.4)',
-            top: 0,
-          }}
-        />
-      </div>
-
-      {/* Node — was orange tinted, now white on sage with subtle orange pulse */}
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-        padding: '18px 36px',
-        borderRadius: 16,
-        background: 'rgba(255,255,255,0.6)',
-        border: '1px solid rgba(10,10,10,0.08)',
-        boxShadow: '0 4px 20px rgba(10,10,10,0.04)',
-        marginTop: 0,
-      }}>
-        <div style={{ position: 'relative', width: 14, height: 14 }}>
-          <div style={{
-            width: 14, height: 14, borderRadius: '50%',
-            background: 'var(--lava)',
-            boxShadow: '0 0 0 4px rgba(232,93,0,0.12)',
-          }} />
+      <p className="biqc-logo-eyebrow">Trusted by operators building smarter businesses</p>
+      <div className="biqc-logo-track-wrap">
+        <div className="biqc-logo-track">
+          {[0, 1].map((copy) => (
+            <React.Fragment key={copy}>
+              <div className="biqc-logo-item"><img src="https://cdn.simpleicons.org/samsung/737373" alt="Samsung" /></div>
+              <div className="biqc-logo-item"><span className="biqc-logo-text">Phillips Healthcare</span></div>
+              <div className="biqc-logo-item"><img src="https://cdn.simpleicons.org/twilio/737373" alt="Twilio" /></div>
+              <div className="biqc-logo-item"><span className="biqc-logo-text">Lending Tree</span></div>
+              <div className="biqc-logo-item"><span className="biqc-logo-text">Evo Homes Victoria</span></div>
+              <div className="biqc-logo-item"><span className="biqc-logo-text">Blanca Melbourne</span></div>
+            </React.Fragment>
+          ))}
         </div>
-        <span
-          className="connector-label"
-          style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-display)', fontSize: 11, fontWeight: 600, letterSpacing: '0.02em', textTransform: 'uppercase' }}
-        >
-          Intelligence Output
-        </span>
-        <svg width="180" height="10" viewBox="0 0 180 10" fill="none" style={{ marginTop: -4 }}>
-          <line x1="0" y1="5" x2="172" y2="5" stroke="rgba(10,10,10,0.25)" strokeWidth="1" strokeDasharray="4 3">
-            <animate attributeName="stroke-dashoffset" from="14" to="0" dur="1.5s" repeatCount="indefinite" />
-          </line>
-          <polygon points="170,2 180,5 170,8" fill="rgba(10,10,10,0.35)" />
-        </svg>
       </div>
-
-      {/* Second vertical connector */}
-      <div style={{ position: 'relative', width: 2, height: 80 }}>
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(10,10,10,0.2), rgba(10,10,10,0.04))',
-          borderRadius: 1,
-        }} />
-        <div
-          className="connector-dot"
-          style={{
-            position: 'absolute', left: '50%',
-            width: 8, height: 8, borderRadius: '50%',
-            background: 'var(--lava)',
-            boxShadow: '0 0 10px rgba(232,93,0,0.4)',
-            top: 0, animationDelay: '0.5s',
-          }}
-        />
-      </div>
-    </div>
+    </section>
 
     {/* ══════════════════════════════════════════════════════════
         WHAT YOU GET — pain-point framing
@@ -596,89 +592,6 @@ const HomePage = () => {
               <h3 className="text-base mb-2" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-display)', fontWeight: 600, letterSpacing: '-0.015em' }}>{item.title}</h3>
               <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', letterSpacing: '-0.003em' }}>{item.desc}</p>
             </GlassCard>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    {/* SOCIAL PROOF — orange metrics + dividers → shades, testimonial cards monochrome */}
-    <section className="py-14 sm:py-20" style={{ background: 'var(--canvas-sage-soft)', fontFamily: 'var(--font-marketing-ui)' }} data-testid="testimonials-section">
-      <style>{`
-        .testimonial-card-enhanced:hover {
-          box-shadow: 0 10px 30px rgba(10,10,10,0.06) !important;
-          transform: translateY(-3px);
-        }
-      `}</style>
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-10">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="w-8 h-[1px]" style={{ background: 'rgba(10,10,10,0.18)' }} />
-            <span className="text-xs font-semibold tracking-widest uppercase" style={{ fontFamily: 'var(--font-marketing-ui)', color: 'var(--ink-secondary)', letterSpacing: '0.12em' }}>What Australian SMBs Say</span>
-            <div className="w-8 h-[1px]" style={{ background: 'rgba(10,10,10,0.18)' }} />
-          </div>
-          <h2 className="text-2xl sm:text-3xl" style={{ fontFamily: 'var(--font-marketing-display)', color: 'var(--ink-display)', fontWeight: 600, letterSpacing: '-0.035em', lineHeight: 1.1 }}>
-            Built for operators, not analysts.
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              quote: "We had no idea how much revenue was leaking through missed follow-ups and stalled deals. BIQc surfaced it within the first week \u2014 and the daily briefs keep us on top of it now.",
-              author: "Operations Director",
-              company: "Manufacturing SMB, NSW",
-              metric: "$47K recovered",
-            },
-            {
-              quote: "I used to spend half my Monday pulling data from five different systems just to understand where we stood. Now I get a brief before I\u2019ve finished my coffee. It\u2019s changed how I run my week.",
-              author: "Founder & CEO",
-              company: "Professional Services, VIC",
-              metric: "6hrs saved weekly",
-            },
-            {
-              quote: "We caught a compliance gap that would have cost us our largest contract. BIQc flagged it three weeks before our internal audit would have found it. That alone paid for the year.",
-              author: "Marketing Manager",
-              company: "Retail Group, QLD",
-              metric: "83% faster detection",
-            },
-          ].map((t, i) => (
-            <div
-              key={i}
-              className="testimonial-card-enhanced flex flex-col rounded-2xl p-8 transition-all duration-300"
-              style={{
-                background: '#FFFFFF',
-                border: '1px solid rgba(10,10,10,0.06)',
-              }}
-            >
-              {/* Prominent stat header — was orange, now plain ink */}
-              <p style={{
-                fontFamily: 'var(--font-marketing-display)',
-                fontSize: '28px',
-                fontWeight: 700,
-                color: 'var(--ink-display)',
-                marginBottom: '14px',
-                lineHeight: 1.05,
-                letterSpacing: '-0.035em',
-              }}>
-                {t.metric}
-              </p>
-
-              <div className="flex-1">
-                <p className="text-sm leading-relaxed mb-5" style={{
-                  fontFamily: 'var(--font-marketing-ui)',
-                  color: 'var(--ink-secondary)',
-                  fontStyle: 'italic',
-                  lineHeight: 1.7,
-                  letterSpacing: '-0.003em',
-                }}>
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[13px]" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-marketing-ui)', fontWeight: 600, letterSpacing: '-0.005em' }}>{t.author}</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-marketing-ui)', letterSpacing: '-0.002em' }}>{t.company}</p>
-              </div>
-            </div>
           ))}
         </div>
       </div>
