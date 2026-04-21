@@ -440,7 +440,12 @@ function AppRoutes() {
 
         {/* Paid routes */}
         <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="revenue"><RouteErrorBoundary><RevenuePage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
-        <Route path="/billing" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="billing"><RouteErrorBoundary><BillingPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        {/* /billing (BillingPage) deprecated 2026-04-22 — Track B4 rewrote
+            /billing/overview to the new token-allowance shape which only
+            Settings billing tab consumes correctly. BillingPage.js still
+            expects the old shape (payment_method/usage/subscription) and
+            would render stale/undefined. Redirect to the canonical UI. */}
+        <Route path="/billing" element={<Navigate to="/settings?tab=billing" replace />} />
         <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="operations"><RouteErrorBoundary><OperationsPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="risk-workforce"><RouteErrorBoundary><RiskPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="compliance"><RouteErrorBoundary><CompliancePage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
