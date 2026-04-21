@@ -94,6 +94,31 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
           opacity: 1;
           transform: scale(1.1);
         }
+        .biqc-diagram-brand-text {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 22px;
+          height: 22px;
+          padding: 0 6px;
+          border-radius: 5px;
+          background: rgba(10,10,10,0.05);
+          border: 1px solid rgba(10,10,10,0.08);
+          color: var(--ink-secondary, #525252);
+          font-family: var(--font-marketing-ui, system-ui), sans-serif;
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+          line-height: 1;
+          white-space: nowrap;
+          opacity: 0.78;
+          transition: opacity 0.2s, transform 0.2s, background 0.2s;
+        }
+        .biqc-diagram-brand-text:hover {
+          opacity: 1;
+          transform: scale(1.05);
+          background: rgba(10,10,10,0.08);
+        }
         .biqc-diagram-source-label {
           font-family: var(--font-marketing-ui);
           font-size: 15px;
@@ -831,7 +856,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
             <div className="biqc-diagram-source-card">
               <div className="biqc-diagram-brand-row">
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/gmail" alt="Gmail" />
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/microsoftoutlook" alt="Outlook" />
+                <span className="biqc-diagram-brand-text" title="Outlook">Outlook</span>
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/googlecalendar" alt="Calendar" />
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/icloud" alt="iCloud" />
               </div>
@@ -840,9 +865,9 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
 
             <div className="biqc-diagram-source-card">
               <div className="biqc-diagram-brand-row">
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/salesforce" alt="Salesforce" />
+                <span className="biqc-diagram-brand-text" title="Salesforce">Salesforce</span>
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/hubspot" alt="HubSpot" />
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/pipedrive" alt="Pipedrive" />
+                <span className="biqc-diagram-brand-text" title="Pipedrive">Pipedrive</span>
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/zoho" alt="Zoho" />
               </div>
               <div className="biqc-diagram-source-label">CRM</div>
@@ -853,17 +878,17 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/googledrive" alt="Drive" />
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/dropbox" alt="Dropbox" />
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/box" alt="Box" />
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/microsoftonedrive" alt="OneDrive" />
+                <span className="biqc-diagram-brand-text" title="OneDrive">OneDrive</span>
               </div>
               <div className="biqc-diagram-source-label">File storage</div>
             </div>
 
             <div className="biqc-diagram-source-card">
               <div className="biqc-diagram-brand-row">
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/bamboohr" alt="BambooHR" />
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/workday" alt="Workday" />
+                <span className="biqc-diagram-brand-text" title="BambooHR">BambooHR</span>
+                <span className="biqc-diagram-brand-text" title="Workday">Workday</span>
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/gusto" alt="Gusto" />
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/rippling" alt="Rippling" />
+                <span className="biqc-diagram-brand-text" title="Rippling">Rippling</span>
               </div>
               <div className="biqc-diagram-source-label">HR & payroll</div>
             </div>
@@ -873,7 +898,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/zendesk" alt="Zendesk" />
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/intercom" alt="Intercom" />
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/jira" alt="Jira" />
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/freshworks" alt="Freshworks" />
+                <span className="biqc-diagram-brand-text" title="Freshworks">Freshworks</span>
               </div>
               <div className="biqc-diagram-source-label">Support tickets</div>
             </div>
@@ -882,7 +907,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
               <div className="biqc-diagram-brand-row">
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/notion" alt="Notion" />
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/confluence" alt="Confluence" />
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/microsoftsharepoint" alt="SharePoint" />
+                <span className="biqc-diagram-brand-text" title="SharePoint">SharePoint</span>
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/coda" alt="Coda" />
               </div>
               <div className="biqc-diagram-source-label">Knowledge base</div>
@@ -890,8 +915,8 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
 
             <div className="biqc-diagram-source-card">
               <div className="biqc-diagram-brand-row">
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/slack" alt="Slack" />
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/microsoftteams" alt="Teams" />
+                <span className="biqc-diagram-brand-text" title="Slack">Slack</span>
+                <span className="biqc-diagram-brand-text" title="Teams">Teams</span>
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/discord" alt="Discord" />
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/whatsapp" alt="WhatsApp" />
               </div>
@@ -903,7 +928,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/googleanalytics" alt="GA" />
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/facebook" alt="FB" />
                 <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/instagram" alt="IG" />
-                <img className="biqc-diagram-brand-logo" src="https://cdn.simpleicons.org/linkedin" alt="LinkedIn" />
+                <span className="biqc-diagram-brand-text" title="LinkedIn">LinkedIn</span>
               </div>
               <div className="biqc-diagram-source-label">Marketing & analytics</div>
             </div>

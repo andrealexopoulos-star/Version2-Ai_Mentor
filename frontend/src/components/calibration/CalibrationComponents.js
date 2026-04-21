@@ -503,24 +503,23 @@ export const IdentityBar = ({ email, onSignOut }) => (
 // ── WOW Cards (Phase 4 — Forensic Insight Cards) ───────────────────────────
 
 const CARD_TYPE_META = {
-  revenue_leakage: { icon: DollarSign, color: '#E85D00', gradient: 'linear-gradient(135deg, #111A24 0%, #1A2633 100%)', borderColor: '#2D3B4A' },
-  competitor_delta: { icon: Target, color: '#E85D00', gradient: 'linear-gradient(135deg, #121B25 0%, #1C2836 100%)', borderColor: '#324252' },
-  hidden_issue: { icon: Eye, color: '#E85D00', gradient: 'linear-gradient(135deg, #111925 0%, #1A2432 100%)', borderColor: '#30404F' },
-  quick_win: { icon: Zap, color: '#FF8C33', gradient: 'linear-gradient(135deg, #13202C 0%, #1D2B39 100%)', borderColor: '#3A4A5B' },
+  revenue_leakage: { icon: DollarSign, color: '#E85D00' },
+  competitor_delta: { icon: Target, color: '#E85D00' },
+  hidden_issue: { icon: Eye, color: '#E85D00' },
+  quick_win: { icon: Zap, color: '#E85D00' },
 };
 
 const ConfidenceBadge = ({ level }) => {
-  const colors = {
-    high: { bg: '#213041', text: '#FF8C33', label: 'High Confidence' },
-    medium: { bg: '#273649', text: '#E85D00', label: 'Medium Confidence' },
-    low: { bg: '#2B394D', text: '#E85D00', label: 'Low Confidence' },
+  const labels = {
+    high: 'High Confidence',
+    medium: 'Medium Confidence',
+    low: 'Low Confidence',
   };
-  const c = colors[level] || colors.medium;
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
-      style={{ background: c.bg, color: c.text }}>
-      <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.text }} />
-      {c.label}
+      style={{ background: 'rgba(232,93,0,0.10)', color: 'var(--lava, #E85D00)' }}>
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--lava, #E85D00)' }} />
+      {labels[level] || labels.medium}
     </span>
   );
 };
@@ -539,8 +538,9 @@ const WowCard = ({ card, index }) => {
     <div
       className="rounded-xl p-5 transition-all duration-700"
       style={{
-        background: meta.gradient,
-        border: `1px solid ${meta.borderColor}`,
+        background: 'var(--surface, #FFFFFF)',
+        border: '1px solid var(--border, rgba(10,10,10,0.08))',
+        boxShadow: '0 4px 16px rgba(10,10,10,0.04)',
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(24px)',
       }}

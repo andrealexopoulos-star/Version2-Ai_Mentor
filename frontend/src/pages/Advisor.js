@@ -116,6 +116,30 @@ const Advisor = () => {
     return () => controller.abort();
   }, []);
 
+  // Fetch watchtower events (live signal feed)
+  // Bug fix 2026-04-21: this fetch was missing — feed was always empty
+  // even with Email/Xero/HubSpot connected.
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchWatchtower = async () => {
+      try {
+        const res = await apiClient.get('/intelligence/watchtower', { signal: controller.signal, timeout: 12000 });
+        if (!controller.signal.aborted) {
+          setWatchtowerEvents(res?.data?.events || []);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          console.error('Watchtower fetch failed:', err);
+          setWatchtowerEvents([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoadingWatchtower(false);
+      }
+    };
+    fetchWatchtower();
+    return () => controller.abort();
+  }, []);
+
   // Fetch email stats for quick action cards
   useEffect(() => {
     const controller = new AbortController();
@@ -700,7 +724,18 @@ const Advisor = () => {
                   </div>
                   <div className="shrink-0 text-right" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--ink-muted)' }}>{evt.time_ago || ''}</div>
                 </div>
-              )) : (
+              )) : loadingWatchtower ? (
+                <div className="p-10 text-center">
+                  <RefreshCw className="w-6 h-6 mx-auto mb-3 animate-spin" style={{ color: 'var(--ink-muted)' }} />
+                  <p className="text-sm" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Loading live signals…</p>
+                </div>
+              ) : (integrationData?.email?.connected || integrationData?.crm?.connected || integrationData?.accounting?.connected) ? (
+                <div className="p-10 text-center">
+                  <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)' }} />
+                  <p className="text-sm font-medium" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>No signals yet</p>
+                  <p className="text-xs mt-1 max-w-sm mx-auto" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Your integrations are connected. New signals will appear here as activity comes in.</p>
+                </div>
+              ) : (
                 <div className="p-10 text-center">
                   <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)' }} />
                   <p className="text-sm font-medium" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>No signals yet</p>
