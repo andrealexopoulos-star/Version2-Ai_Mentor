@@ -295,12 +295,36 @@ const MarketPage = () => {
   const handleDownloadPdf = async (type) => {
     setPdfGenerating(type);
     try {
-      const res = await apiClient.post(`/reports/${type}/pdf`);
-      if (res.data?.pdf_url) {
-        window.open(res.data.pdf_url, '_blank');
-      }
+      // Backend returns the PDF as bytes directly (application/pdf blob).
+      // We stream the blob into an object URL and trigger a client-side
+      // download — no second GET, no auth replay, no /tmp file, no
+      // BACKEND_URL dependency.
+      const res = await apiClient.post(`/reports/${type}/pdf`, null, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const disposition = res.headers?.['content-disposition'] || '';
+      const match = /filename="?([^"]+)"?/.exec(disposition);
+      const filename = match?.[1] || `biqc_${type}_${Date.now()}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (err) {
-      const detail = err?.response?.data?.detail || 'PDF generation failed.';
+      // When responseType is 'blob', error bodies are also Blobs. Try to
+      // read the JSON detail out of the blob before falling back.
+      let detail = 'PDF generation failed.';
+      try {
+        const errBlob = err?.response?.data;
+        if (errBlob instanceof Blob) {
+          const text = await errBlob.text();
+          try { detail = JSON.parse(text)?.detail || detail; } catch { detail = text || detail; }
+        } else if (err?.response?.data?.detail) {
+          detail = err.response.data.detail;
+        }
+      } catch { /* keep fallback */ }
       console.error('PDF generation error:', detail);
       alert(detail);
     }

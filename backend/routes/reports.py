@@ -5,6 +5,7 @@ import logging
 import re
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -530,20 +531,16 @@ async def generate_market_position_pdf(current_user: dict = Depends(get_current_
             ],
         )
 
-        os.makedirs("/tmp/reports", exist_ok=True)
         workspace_id = current_user.get('id', 'unknown')
         ts = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
-        filename = f"biqc_report_{workspace_id[:8]}_{ts}.pdf"
-        filepath = f"/tmp/reports/{filename}"
-        pdf.output(filepath)
+        filename = f"biqc_market_position_{workspace_id[:8]}_{ts}.pdf"
+        pdf_bytes = bytes(pdf.output())
 
-        backend_url = os.environ.get("BACKEND_URL", "")
-        return {
-            "status": "generated",
-            "filename": filename,
-            "pdf_url": f"{backend_url}/api/reports/download/{filename}",
-            "report_type": "market_position",
-        }
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
 
     except ImportError:
         raise HTTPException(status_code=500, detail="PDF generation library not available")
@@ -598,20 +595,16 @@ async def generate_benchmark_pdf(current_user: dict = Depends(get_current_user))
             ],
         )
 
-        os.makedirs("/tmp/reports", exist_ok=True)
         workspace_id = current_user.get('id', 'unknown')
         ts = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
-        filename = f"biqc_report_{workspace_id[:8]}_{ts}.pdf"
-        filepath = f"/tmp/reports/{filename}"
-        pdf.output(filepath)
+        filename = f"biqc_benchmark_{workspace_id[:8]}_{ts}.pdf"
+        pdf_bytes = bytes(pdf.output())
 
-        backend_url = os.environ.get("BACKEND_URL", "")
-        return {
-            "status": "generated",
-            "filename": filename,
-            "pdf_url": f"{backend_url}/api/reports/download/{filename}",
-            "report_type": "benchmark",
-        }
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
 
     except ImportError:
         raise HTTPException(status_code=500, detail="PDF generation library not available")
