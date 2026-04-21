@@ -396,12 +396,10 @@ const HomePage = () => {
         <div className="biqc-logo-track">
           {[0, 1].map((copy) => (
             <React.Fragment key={copy}>
-              <div className="biqc-logo-item"><img src="https://cdn.simpleicons.org/samsung/737373" alt="Samsung" /></div>
-              <div className="biqc-logo-item"><span className="biqc-logo-text">Phillips Healthcare</span></div>
-              <div className="biqc-logo-item"><img src="https://cdn.simpleicons.org/twilio/737373" alt="Twilio" /></div>
-              <div className="biqc-logo-item"><span className="biqc-logo-text">Lending Tree</span></div>
-              <div className="biqc-logo-item"><span className="biqc-logo-text">Evo Homes Victoria</span></div>
-              <div className="biqc-logo-item"><span className="biqc-logo-text">Blanca Melbourne</span></div>
+              <div className="biqc-logo-item"><img src="/logos/samsung.svg" alt="Samsung" /></div>
+              <div className="biqc-logo-item"><img src="/logos/philips.svg" alt="Philips" /></div>
+              <div className="biqc-logo-item"><img src="/logos/lendingtree.svg" alt="LendingTree" /></div>
+              <div className="biqc-logo-item"><img src="/logos/evo-homes-victoria.png" alt="Evo Homes Victoria" /></div>
             </React.Fragment>
           ))}
         </div>
