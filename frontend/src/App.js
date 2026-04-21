@@ -401,7 +401,11 @@ function AppRoutes() {
         {/* Onboarding */}
         <Route path="/onboarding-decision" element={<ProtectedRoute><RouteErrorBoundary><OnboardingDecision /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/onboarding" element={<ProtectedRoute><RouteErrorBoundary><OnboardingWizard /></RouteErrorBoundary></ProtectedRoute>} />
-        <Route path="/calibration" element={<ProtectedRoute><RouteErrorBoundary><CalibrationAdvisor /></RouteErrorBoundary></ProtectedRoute>} />
+        {/* Legacy /calibration (CalibrationAdvisor) deprecated 2026-04-22
+            — new signups route to /market/calibration (ForensicCalibration)
+            via PR #251, and CalibrationAdvisor hangs on 403s from edge
+            functions for fresh-signup users. Redirect to the live path. */}
+        <Route path="/calibration" element={<Navigate to="/market/calibration" replace />} />
         {/* /calibration-qa removed — calibration is triggered after first signup only */}
         <Route path="/profile-import" element={<ProtectedRoute><RouteErrorBoundary><ProfileImport /></RouteErrorBoundary></ProtectedRoute>} />
 

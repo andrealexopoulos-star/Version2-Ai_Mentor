@@ -336,18 +336,54 @@ async def admin_impersonate_user(user_id: str, admin: dict = Depends(get_super_a
 
 @router.delete("/admin/users/{user_id}")
 async def admin_delete_user(user_id: str, admin: dict = Depends(get_super_admin)):
+    """Hard-delete a user from BOTH public.users AND auth.users.
+
+    Bug fix 2026-04-22: previously this only deleted public.users. Next
+    signup with the same email hit users_email_key duplicate constraint
+    because auth.users still held the orphan. Now we delete both, so the
+    email is fully reusable for a fresh signup.
+    """
     sb = get_sb()
     if user_id == admin["id"]:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
+
+    # Delete public.users first — if user_id isn't in our mirror, bail
+    # before touching auth (surfaces as a clean 404, no orphan risk).
     result = sb.table("users").delete().eq("id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="User not found")
-    sb.table("analyses").delete().eq("user_id", user_id).execute()
-    from supabase_document_helpers import delete_user_documents_supabase
-    from supabase_intelligence_helpers import delete_user_chats_supabase
-    await delete_user_documents_supabase(sb, user_id)
-    await delete_user_chats_supabase(sb, user_id)
-    return {"message": "User and all associated data deleted"}
+
+    # Associated tables — best-effort (don't block auth cleanup on these)
+    try:
+        sb.table("analyses").delete().eq("user_id", user_id).execute()
+    except Exception as e:
+        logger.warning(f"[admin_delete_user] analyses cleanup failed for {user_id}: {e}")
+    try:
+        from supabase_document_helpers import delete_user_documents_supabase
+        from supabase_intelligence_helpers import delete_user_chats_supabase
+        await delete_user_documents_supabase(sb, user_id)
+        await delete_user_chats_supabase(sb, user_id)
+    except Exception as e:
+        logger.warning(f"[admin_delete_user] docs/chats cleanup failed for {user_id}: {e}")
+
+    # auth.users — this is the critical step that was missing. Without
+    # it, re-signup with the same email fails on users_email_key.
+    auth_deleted = False
+    try:
+        sb.auth.admin.delete_user(user_id)
+        auth_deleted = True
+    except Exception as e:
+        logger.error(
+            f"[admin_delete_user] AUTH.USERS delete failed for {user_id}: {e} "
+            f"— public.users row already deleted, so auth.users is now ORPHANED. "
+            f"Re-signup with the same email will fail until this is cleaned manually."
+        )
+
+    return {
+        "message": "User deleted" if auth_deleted else "User deleted (auth orphan — check logs)",
+        "public_users_deleted": True,
+        "auth_users_deleted": auth_deleted,
+    }
 
 
 # ─── Prompt Registry Management ───
