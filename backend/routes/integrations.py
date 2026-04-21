@@ -15,6 +15,12 @@ import logging
 import base64
 
 import httpx
+
+# Merge.dev partner name shown on every OAuth consent screen ("X would like
+# access to your HubSpot/Xero/etc. account"). Must be "BIQc", NOT the end
+# user's own org name — that was the 2026-04-21 demo-breaking bug where
+# HubSpot showed "The Strategy Squad would like access".
+MERGE_PARTNER_ORG_NAME = os.environ.get("MERGE_PARTNER_ORG_NAME", "BIQc")
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, OPENAI_KEY, AI_MODEL, cognitive_core, logger,
@@ -643,7 +649,7 @@ async def create_merge_link_token(
             # Build Merge API body — categories only (no integration field, Merge handles selection in modal)
             merge_body = {
                 "end_user_origin_id": account_id,
-                "end_user_organization_name": account_name,
+                "end_user_organization_name": MERGE_PARTNER_ORG_NAME,
                 "end_user_email_address": user_email,
                 "categories": categories
             }
@@ -2816,7 +2822,7 @@ async def connect_google_drive(current_user: dict = Depends(get_current_user)):
                 },
                 json={
                     "end_user_origin_id": account_id,
-                    "end_user_organization_name": account_name,
+                    "end_user_organization_name": MERGE_PARTNER_ORG_NAME,
                     "end_user_email_address": user_email,
                     "categories": ["file_storage"]  # Google Drive category
                 }
