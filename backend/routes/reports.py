@@ -15,6 +15,71 @@ router = APIRouter()
 from routes.auth import get_current_user
 
 
+# ── Unicode safety for fpdf2's latin-1 Helvetica ────────────────────────────
+# 2026-04-21 demo bug: o3-generated enrichment contains curly quotes,
+# em-dashes, ellipsis, and bullets. fpdf2's default Helvetica is latin-1
+# only — any of those chars raises UnicodeEncodeError during pdf.output(),
+# surfacing to the user as a generic "error" alert.
+_LATIN1_REPLACEMENTS = {
+    "\u2010": "-", "\u2011": "-", "\u2012": "-", "\u2013": "-", "\u2014": "-",
+    "\u2018": "'", "\u2019": "'", "\u201A": ",",
+    "\u201C": '"', "\u201D": '"', "\u201E": '"',
+    "\u2022": "*", "\u2026": "...",
+    "\u00A0": " ", "\u200B": "", "\u2009": " ", "\u202F": " ",
+    "\u2190": "<-", "\u2192": "->",
+    "\u2713": "v", "\u2717": "x",
+}
+
+
+def _latin1_safe(value) -> str:
+    """Strip/replace characters Helvetica can't render. Never raises."""
+    if value is None:
+        return ""
+    s = str(value)
+    for k, v in _LATIN1_REPLACEMENTS.items():
+        s = s.replace(k, v)
+    # Fallback: anything still outside latin-1 becomes '?'
+    return s.encode("latin-1", "replace").decode("latin-1")
+
+
+def _get_safe_pdf_class():
+    """Build an FPDF subclass that auto-sanitizes every text-writing method."""
+    from fpdf import FPDF
+
+    class _SafePDF(FPDF):
+        def cell(self, *args, **kwargs):
+            args = list(args)
+            # text is positional arg index 2 in fpdf2 (w, h, text, ...)
+            if len(args) >= 3:
+                args[2] = _latin1_safe(args[2])
+            for key in ("text", "txt"):
+                if key in kwargs:
+                    kwargs[key] = _latin1_safe(kwargs[key])
+            return super().cell(*args, **kwargs)
+
+        def multi_cell(self, *args, **kwargs):
+            args = list(args)
+            # text is positional arg index 2 in fpdf2 (w, h, text, ...)
+            if len(args) >= 3:
+                args[2] = _latin1_safe(args[2])
+            for key in ("text", "txt"):
+                if key in kwargs:
+                    kwargs[key] = _latin1_safe(kwargs[key])
+            return super().multi_cell(*args, **kwargs)
+
+        def write(self, *args, **kwargs):
+            args = list(args)
+            # text is positional arg index 1 in fpdf2 (h, text, ...)
+            if len(args) >= 2:
+                args[1] = _latin1_safe(args[1])
+            for key in ("text", "txt"):
+                if key in kwargs:
+                    kwargs[key] = _latin1_safe(kwargs[key])
+            return super().write(*args, **kwargs)
+
+    return _SafePDF
+
+
 class PDFRequest(BaseModel):
     integration_list: List[dict] = []
     events_count: int = 0
@@ -32,9 +97,7 @@ async def generate_pdf(req: PDFRequest, current_user: dict = Depends(get_current
     - Includes data snapshot and confidence summary
     """
     try:
-        from fpdf import FPDF
-
-        pdf = FPDF()
+        pdf = _get_safe_pdf_class()()
         pdf.add_page()
         pdf.set_auto_page_break(auto=True, margin=15)
 
@@ -190,9 +253,7 @@ def _build_executive_pdf(title: str, business_name: str, enrichment: dict,
     Returns:
         FPDF instance ready for output()
     """
-    from fpdf import FPDF
-
-    pdf = FPDF()
+    pdf = _get_safe_pdf_class()()
     pdf.set_auto_page_break(auto=True, margin=15)
 
     # ── Cover page ──
