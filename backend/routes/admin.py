@@ -4,6 +4,7 @@ from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 from routes.deps import get_super_admin, get_admin_user, get_current_user_from_request, get_sb, logger, get_user_rate_limit_state, RATE_LIMIT_FEATURE_LABELS
+from core.pii_redact import redact_email
 
 router = APIRouter()
 
@@ -488,7 +489,7 @@ async def update_prompt(prompt_key: str, payload: PromptUpdateRequest, admin: di
     from prompt_registry import invalidate_cache
     invalidate_cache(prompt_key)
 
-    logger.info(f"[admin] Prompt '{prompt_key}' updated by {admin.get('email')} (v{old_version} → v{new_version})")
+    logger.info(f"[admin] Prompt '{prompt_key}' updated by {redact_email(admin.get('email'))} (v{old_version} → v{new_version})")
     return {"status": "updated", "prompt_key": prompt_key, "version": new_version}
 
 

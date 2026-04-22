@@ -10,6 +10,7 @@ import os
 import logging
 from urllib.parse import quote, urlparse
 from supabase_client import get_supabase_client, init_supabase
+from core.pii_redact import redact_email
 
 supabase_admin = init_supabase()
 from datetime import datetime
@@ -164,7 +165,7 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
                         "updated_at": datetime.utcnow().isoformat(),
                     }).eq("id", user_id).execute()
                 except Exception as patch_err:
-                    logger.warning(f"Could not enforce master admin flags for {email}: {patch_err}")
+                    logger.warning(f"Could not enforce master admin flags for {redact_email(email)}: {patch_err}")
                 existing_by_id = _apply_master_admin_overrides(existing_by_id, email)
             logger.info(f"User with ID {user_id} already exists, returning existing profile")
             return existing_by_id
@@ -174,12 +175,12 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
         if existing_by_email:
             old_id = existing_by_email.get("id")
             if old_id != user_id:
-                logger.info(f"ID MISMATCH for {email}: DB={old_id}, Auth={user_id}. Merging.")
+                logger.info(f"ID MISMATCH for {redact_email(email)}: DB={old_id}, Auth={user_id}. Merging.")
                 
                 # Strategy: Update the ID in-place (single atomic operation, avoids delete+insert RLS issues)
                 try:
                     supabase_admin.table("users").update({"id": user_id, "updated_at": datetime.utcnow().isoformat()}).eq("email", email).execute()
-                    logger.info(f"Updated users table ID for {email}")
+                    logger.info(f"Updated users table ID for {redact_email(email)}")
                 except Exception as update_err:
                     logger.warning(f"Direct ID update failed ({update_err}), trying delete+insert")
                     try:
@@ -198,7 +199,7 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
                             "updated_at": datetime.utcnow().isoformat()
                         }
                         _insert_user_row_resilient(user_data)
-                        logger.info(f"Delete+insert merge succeeded for {email}")
+                        logger.info(f"Delete+insert merge succeeded for {redact_email(email)}")
                     except Exception as di_err:
                         logger.error(f"Delete+insert also failed ({di_err}), returning existing profile as-is")
                         existing_by_email["id"] = user_id
@@ -253,7 +254,7 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
         except Exception as cog_error:
             logger.warning(f"Could not create cognitive profile: {cog_error}")
         
-        logger.info(f"✅ Created NEW user profile for {email} with ID {user_id}")
+        logger.info(f"✅ Created NEW user profile for {redact_email(email)} with ID {user_id}")
         created_user = _apply_master_admin_overrides(user_response.data[0], email)
         try:
             supabase_admin.table("users").update({
@@ -268,11 +269,11 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
         
     except Exception as e:
         error_str = str(e)
-        logger.error(f"❌ CRITICAL: Error creating user profile for {email}: {e}")
+        logger.error(f"❌ CRITICAL: Error creating user profile for {redact_email(email)}: {e}")
         
         # Handle duplicate key error - user already exists
         if "duplicate key" in error_str or "23505" in error_str or "unique constraint" in error_str:
-            logger.info(f"User {email} already exists (duplicate key), fetching existing")
+            logger.info(f"User {redact_email(email)} already exists (duplicate key), fetching existing")
             existing_user = await get_user_by_email(email)
             if existing_user:
                 return existing_user
@@ -280,7 +281,7 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
         # CRITICAL FIX: Do NOT return in-memory profile
         # This creates "phantom users" that break all FK constraints
         # Instead: RETRY the insert or FAIL explicitly
-        logger.error(f"❌ CANNOT create user profile for {email} - failing explicitly")
+        logger.error(f"❌ CANNOT create user profile for {redact_email(email)} - failing explicitly")
         raise HTTPException(
             status_code=500, 
             detail=f"Failed to create user profile in database: {str(e)}"
@@ -341,12 +342,12 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
             if not db_user:
                 db_user = await get_user_by_email(user.email)
                 if db_user:
-                    logger.info(f"Token verify: ID mismatch for {user.email}, delegating to create_user_profile")
+                    logger.info(f"Token verify: ID mismatch for {redact_email(user.email)}, delegating to create_user_profile")
                     db_user = await create_user_profile(user_id=user.id, email=user.email, metadata=user.user_metadata)
                 else:
                     db_user = await create_user_profile(user_id=user.id, email=user.email, metadata=user.user_metadata)
         except Exception as db_err:
-            logger.warning(f"[Auth] DB lookup failed for {user.email}: {db_err} — returning minimal profile")
+            logger.warning(f"[Auth] DB lookup failed for {redact_email(user.email)}: {db_err} — returning minimal profile")
             db_user = {}
         if not isinstance(db_user, dict):
             db_user = {}
@@ -526,7 +527,7 @@ async def signup_with_email(request: SignUpRequest):
             msg = str(create_err).lower()
             if "already" in msg or "exists" in msg or "registered" in msg or "duplicate" in msg:
                 raise HTTPException(status_code=400, detail="User with this email already exists")
-            logger.error(f"admin.create_user failed for {request.email}: {create_err}")
+            logger.error(f"admin.create_user failed for {redact_email(request.email)}: {create_err}")
             raise HTTPException(status_code=500, detail=f"Failed to create user: {create_err}")
 
         auth_user = getattr(admin_response, "user", None) or (

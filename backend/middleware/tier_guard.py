@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Import resolver
 from tier_resolver import check_api_access, resolve_tier, SUPER_ADMIN_EMAIL
+from core.pii_redact import redact_email
 
 
 class TierGuardMiddleware(BaseHTTPMiddleware):
@@ -60,7 +61,7 @@ class TierGuardMiddleware(BaseHTTPMiddleware):
         result = check_api_access(api_path, user)
 
         if not result['allowed']:
-            logger.info(f"[TierGuard] BLOCKED: {user.get('email', '?')} (tier={result['tier']}) → {api_path} (needs={result.get('required_tier')})")
+            logger.info(f"[TierGuard] BLOCKED: {redact_email(user.get('email', '?'))} (tier={result['tier']}) → {api_path} (needs={result.get('required_tier')})")
             return JSONResponse(
                 status_code=403,
                 content={

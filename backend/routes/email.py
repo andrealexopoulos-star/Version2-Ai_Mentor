@@ -19,6 +19,7 @@ from dateutil import parser as dateutil_parser
 
 import httpx
 from core.llm_router import llm_chat
+from core.pii_redact import redact_email
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, OPENAI_KEY, AI_MODEL, logger,
@@ -409,7 +410,7 @@ async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
             token_data = response.data[0]
             logger.info(f"✅ Retrieved Outlook tokens from outlook_oauth_tokens for user {user_id}")
             logger.info(f"   Token expires_at: {token_data.get('expires_at')}")
-            logger.info(f"   Account email: {token_data.get('account_email')}")
+            logger.info(f"   Account email: {redact_email(token_data.get('account_email'))}")
             return {
                 "access_token": token_data["access_token"],
                 "refresh_token": token_data.get("refresh_token"),
@@ -679,7 +680,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     encoded_state = quote(state, safe='')
     
     # Log the OAuth initiation for security audit
-    logger.info(f"Outlook OAuth initiated for user: {current_user['email']} (ID: {user_id}), returnTo: {returnTo}")
+    logger.info(f"Outlook OAuth initiated for user: {redact_email(current_user.get('email'))} (ID: {user_id}), returnTo: {returnTo}")
     
     # IMPORTANT: prompt=select_account shows account picker
     # This allows user to choose which Microsoft account to use
@@ -744,7 +745,7 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     state = f"{state_data}_sig_{signature}"
     encoded_state = quote(state, safe='')
     
-    logger.info(f"Gmail OAuth initiated for user: {current_user['email']} (ID: {user_id}), returnTo: {returnTo}")
+    logger.info(f"Gmail OAuth initiated for user: {redact_email(current_user.get('email'))} (ID: {user_id}), returnTo: {returnTo}")
     
     # Google OAuth URL with select_account prompt for account picker
     auth_url = (
@@ -1142,12 +1143,12 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     
     microsoft_email = (user_info.get("mail") or user_info.get("userPrincipalName") or "").lower().strip()
     microsoft_name = user_info.get("displayName", "")
-    logger.info(f"Microsoft user email: {microsoft_email}")
+    logger.info(f"Microsoft user email: {redact_email(microsoft_email)}")
     
     # SIMPLIFIED: Just store the tokens - don't validate user lookup
     # User is already authenticated (passed get_current_user dependency)
     logger.info(f"Storing Outlook tokens for authenticated user {user_id}")
-    logger.info(f"Microsoft account: {microsoft_email}")
+    logger.info(f"Microsoft account: {redact_email(microsoft_email)}")
     
     # Calculate token expiration
     expires_in = token_data.get("expires_in", 3600)
@@ -1169,7 +1170,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
             },
             on_conflict="user_id"
         ).execute()
-        logger.info(f"✅ Outlook tokens stored for {microsoft_email}")
+        logger.info(f"✅ Outlook tokens stored for {redact_email(microsoft_email)}")
 
         # Update canonical email_connections table
         get_sb().table("email_connections").upsert(

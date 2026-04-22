@@ -29,6 +29,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from core.pii_redact import redact_email
 from routes.auth import get_current_user
 from services.email_service import (
     make_verification_token,
@@ -193,7 +194,7 @@ def issue_verification_email_for_user(sb, user_id: str) -> Dict[str, Any]:
         first_charge_amount=ctx["first_charge_amount"],
     )
     if not send_id:
-        logger.error("[verify] Resend returned no id for user=%s email=%s", user_id, ctx["email"])
+        logger.error("[verify] Resend returned no id for user=%s email=%s", user_id, redact_email(ctx["email"]))
         return {"status": "send_failed"}
 
     return {"status": "sent", "expires_at": expires.isoformat(), "resend_id": send_id}
@@ -375,7 +376,7 @@ async def request_password_reset(req: RequestPasswordResetRequest):
         if res.data:
             full_name = (res.data[0] or {}).get("full_name") or ""
     except Exception as exc:
-        logger.warning("[pwreset] user lookup failed for %s: %s", email, exc)
+        logger.warning("[pwreset] user lookup failed for %s: %s", redact_email(email), exc)
 
     # Generate a Supabase recovery link that will land the user on our
     # /update-password page with an auth token in the URL hash.
@@ -408,7 +409,7 @@ async def request_password_reset(req: RequestPasswordResetRequest):
                     options={"redirect_to": redirect_to},
                 )
             except Exception as inner:
-                logger.warning("[pwreset] generate_link failed both shapes for %s: %s", email, inner)
+                logger.warning("[pwreset] generate_link failed both shapes for %s: %s", redact_email(email), inner)
 
         if gen is not None:
             # The generated object shape varies — try common access patterns.
@@ -418,7 +419,7 @@ async def request_password_reset(req: RequestPasswordResetRequest):
             if not recovery_url:
                 recovery_url = getattr(gen, "action_link", None) or (gen.get("action_link") if isinstance(gen, dict) else None)
     except Exception as exc:
-        logger.warning("[pwreset] generate_link call raised for %s: %s", email, exc)
+        logger.warning("[pwreset] generate_link call raised for %s: %s", redact_email(email), exc)
 
     # If we could not produce a link (user doesn't exist, or Supabase
     # refused), silently succeed — do NOT tell the caller the address is
@@ -428,7 +429,7 @@ async def request_password_reset(req: RequestPasswordResetRequest):
 
     send_id = send_password_reset_email(to=email, full_name=full_name, reset_url=recovery_url)
     if not send_id:
-        logger.error("[pwreset] Resend returned no id for %s", email)
+        logger.error("[pwreset] Resend returned no id for %s", redact_email(email))
         # Still return 200 so the UI shows "check your email" — we don't
         # want a retry loop that floods the mail server if Resend is down.
     return {"status": "sent"}
