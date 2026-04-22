@@ -61,10 +61,23 @@ TIER_TOKEN_LIMITS: dict[str, dict[str, int]] = {
 # Sources: openai.com/api/pricing · anthropic.com/pricing · ai.google.dev/pricing
 # Conversion assumption when provider quotes USD: 1 USD ≈ 1.52 AUD (2026-04).
 MODEL_PRICING: dict[str, dict[str, float]] = {
-    # OpenAI GPT-5 family
-    "gpt-5.4-pro":   {"input_per_1m": 22.80, "output_per_1m": 91.20},
-    "gpt-5.4":       {"input_per_1m":  3.80, "output_per_1m": 15.20},
-    "gpt-5.3":       {"input_per_1m":  0.76, "output_per_1m":  3.04},
+    # OpenAI GPT-5 family — developers.openai.com/api/docs/pricing re-verified
+    # 2026-04-22 by direct WebFetch. Our old map had legacy rates; this is the
+    # single biggest delta correction — Pro under-priced 50-67% across the
+    # board.
+    #
+    # gpt-5.4-pro: $30/$180 USD = $45.60/$273.60 AUD (was $22.80/$91.20)
+    # gpt-5.4:     $2.50/$15 USD = $3.80/$22.80 AUD (input unchanged, output fixed)
+    # gpt-5.3-chat-latest + gpt-5.3-codex: $1.75/$14 USD = $2.66/$21.28 AUD
+    #
+    # NOT modelled: prompts >272K tokens on gpt-5.4(-pro) get 2x input +
+    # 1.5x output for the full session. Regional-processing endpoints get a
+    # flat 10% uplift. Flag for a separate modelling task if we hit either.
+    "gpt-5.4-pro":         {"input_per_1m": 45.60, "output_per_1m": 273.60},
+    "gpt-5.4":             {"input_per_1m":  3.80, "output_per_1m":  22.80},
+    "gpt-5.3":             {"input_per_1m":  2.66, "output_per_1m":  21.28},
+    "gpt-5.3-chat-latest": {"input_per_1m":  2.66, "output_per_1m":  21.28},
+    "gpt-5.3-codex":       {"input_per_1m":  2.66, "output_per_1m":  21.28},
     # Trinity GPT contributor — openai.com/api/pricing verified 2026-04-22
     # ($1.75 / $14.00 USD @ 1.52 AUD). Was silently $0 until this fix.
     "gpt-5.2":       {"input_per_1m":  2.66, "output_per_1m": 21.28},

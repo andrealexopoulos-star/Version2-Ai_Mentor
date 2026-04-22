@@ -49,10 +49,13 @@ const PRICING_VERSION = "v1";
 // Keys are canonical model IDs as returned by provider APIs. Unknown model →
 // cost_aud_micros = 0, but the row is still inserted (so we can spot gaps).
 const MODEL_PRICING: Record<string, { input_per_1m: number; output_per_1m: number }> = {
-  // OpenAI GPT-5 family
-  "gpt-5.4-pro":   { input_per_1m: 22.80, output_per_1m: 91.20 },
-  "gpt-5.4":       { input_per_1m:  3.80, output_per_1m: 15.20 },
-  "gpt-5.3":       { input_per_1m:  0.76, output_per_1m:  3.04 },
+  // OpenAI GPT-5 family — developers.openai.com/api/docs/pricing verified
+  // 2026-04-22. Old map had legacy rates; Pro was 50-67% under-priced.
+  "gpt-5.4-pro":         { input_per_1m: 45.60, output_per_1m: 273.60 },
+  "gpt-5.4":             { input_per_1m:  3.80, output_per_1m:  22.80 },
+  "gpt-5.3":             { input_per_1m:  2.66, output_per_1m:  21.28 },
+  "gpt-5.3-chat-latest": { input_per_1m:  2.66, output_per_1m:  21.28 },
+  "gpt-5.3-codex":       { input_per_1m:  2.66, output_per_1m:  21.28 },
   "gpt-5.2":       { input_per_1m:  2.66, output_per_1m: 21.28 }, // Trinity GPT contributor. Src: openai.com/api/pricing (verified 2026-04-22 via WebSearch) — $1.75/$14 USD @ 1.52 AUD
   // OpenAI reasoning / synthesis models
   "o3-pro":        { input_per_1m: 30.40, output_per_1m: 121.60 }, // Trinity synthesis. Src: apidog.com + MS Foundry blog (verified 2026-04-22) — $20/$80 USD @ 1.52 AUD. NOTE: more expensive per-token than Opus 4.6
