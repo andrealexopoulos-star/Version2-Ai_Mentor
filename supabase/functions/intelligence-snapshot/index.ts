@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
-import { recordUsage } from "../_shared/metering.ts";
+import { recordUsage, recordUsageSonar } from "../_shared/metering.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -48,7 +48,7 @@ async function mergeFetch(token: string, endpoint: string, limit = 20): Promise<
   }
 }
 
-async function perplexitySearch(query: string): Promise<string> {
+async function perplexitySearch(query: string, userId: string = "", action: string = "market_recon"): Promise<string> {
   if (!PERPLEXITY_KEY) return "";
   try {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -65,7 +65,17 @@ async function perplexitySearch(query: string): Promise<string> {
     });
     if (!res.ok) return "";
     const payload = await res.json();
-    return payload?.choices?.[0]?.message?.content || "";
+    const answer = payload?.choices?.[0]?.message?.content || "";
+    // usage_ledger emit (systemic metering — Track B v2)
+    recordUsageSonar({
+      userId,
+      model: "sonar",
+      promptText: query,
+      responseText: answer,
+      feature: "intelligence_snapshot",
+      action,
+    });
+    return answer;
   } catch {
     return "";
   }
@@ -162,9 +172,9 @@ serve(async (req) => {
     const marketQuerySeed = `${profile?.industry || ""} ${profile?.location || "Australia"}`.trim();
     const [marketTrends, marketCompetitors, marketRegulatory] = marketQuerySeed
       ? await Promise.all([
-          perplexitySearch(`${marketQuerySeed} market trends outlook ${new Date().getFullYear()}`),
-          perplexitySearch(`${profile?.business_name || marketQuerySeed} competitors`),
-          perplexitySearch(`${marketQuerySeed} regulation compliance changes ${new Date().getFullYear()}`),
+          perplexitySearch(`${marketQuerySeed} market trends outlook ${new Date().getFullYear()}`, userId, "market_trends"),
+          perplexitySearch(`${profile?.business_name || marketQuerySeed} competitors`, userId, "competitors"),
+          perplexitySearch(`${marketQuerySeed} regulation compliance changes ${new Date().getFullYear()}`, userId, "regulatory"),
         ])
       : ["", "", ""];
 

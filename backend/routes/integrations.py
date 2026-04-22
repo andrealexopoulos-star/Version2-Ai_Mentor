@@ -2708,15 +2708,22 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
 
     candidate_signals.sort(key=lambda item: item.get("risk_score", 0), reverse=True)
 
-    # ---- Top actions (Sprint B #15) ---------------------------------------
+    # ---- Top actions (Sprint B #15 + #16 personalization) ----------------
     # Score candidates with the shared priority scorer and pick the highest-
     # priority items. The scorer returns shallow copies with risk_score,
     # title, action_hint, why_this_ranks_here attached.
-    from services.priority_scorer import compute_top_actions
+    #
+    # Sprint B #16: thread a PersonalizationContext so risk_appetite +
+    # signal_feedback history shift rankings per-user. Context fetch is
+    # defensive (missing tables / no profile → empty context → scorer falls
+    # back to non-personalized behaviour).
+    from services.priority_scorer import compute_top_actions, fetch_personalization_context
+
+    personalization = fetch_personalization_context(sb, current_user.get("id"))
 
     TOP_ACTIONS_THRESHOLD = 3.0  # empirical: severity*recency*evidence >= 3
     TOP_ACTIONS_MAX = 3
-    ranked = compute_top_actions(candidate_signals, n=TOP_ACTIONS_MAX)
+    ranked = compute_top_actions(candidate_signals, n=TOP_ACTIONS_MAX, context=personalization)
     filtered = [item for item in ranked if item.get("risk_score", 0) >= TOP_ACTIONS_THRESHOLD]
     # dynamic N: at least 1 if anything scored, capped at TOP_ACTIONS_MAX,
     # and only items crossing the threshold — so 0 candidates => 0 actions.

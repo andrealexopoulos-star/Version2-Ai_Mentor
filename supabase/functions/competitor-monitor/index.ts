@@ -27,7 +27,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth, enforceUserOwnership } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
-import { recordUsage } from "../_shared/metering.ts";
+import { recordUsage, recordUsageSonar } from "../_shared/metering.ts";
 
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
@@ -44,7 +44,7 @@ interface CompetitorSignal {
   severity: "high" | "medium" | "low";
 }
 
-async function searchPerplexity(query: string): Promise<string> {
+async function searchPerplexity(query: string, userId: string = ""): Promise<string> {
   if (!PERPLEXITY_API_KEY) return "";
 
   try {
@@ -68,7 +68,17 @@ async function searchPerplexity(query: string): Promise<string> {
     });
 
     const data = await res.json();
-    return data.choices?.[0]?.message?.content || "";
+    const answer = data.choices?.[0]?.message?.content || "";
+    // usage_ledger emit (systemic metering — Track B v2)
+    recordUsageSonar({
+      userId,
+      model: "sonar",
+      promptText: query,
+      responseText: answer,
+      feature: "competitor_monitor",
+      action: "competitor_search",
+    });
+    return answer;
   } catch {
     return "";
   }
@@ -171,7 +181,7 @@ async function monitorUser(sb: any, userId: string): Promise<{ signals: number; 
   const searchQuery = `Latest news, pricing changes, product launches, and hiring for competitors of ${businessName} in the ${industry} industry in Australia. Focus on the last 7 days.${website ? ` Their website is ${website}.` : ''}${namedList}`;
 
   // Search current competitive landscape
-  const currentSignals = await searchPerplexity(searchQuery);
+  const currentSignals = await searchPerplexity(searchQuery, userId);
   if (!currentSignals) return { signals: 0, actions: 0 };
 
   // Load previous scan

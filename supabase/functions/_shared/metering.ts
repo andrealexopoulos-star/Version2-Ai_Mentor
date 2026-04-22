@@ -89,14 +89,26 @@ const OPENAI_CACHED_INPUT_MULT   = 0.50;
 const _unknownModelWarned = new Set<string>();
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
-type Provider = "openai" | "anthropic" | "google" | "unknown";
+type Provider = "openai" | "anthropic" | "google" | "perplexity" | "unknown";
 
 function providerOf(model: string): Provider {
   const m = (model || "").toLowerCase();
   if (m.startsWith("claude")) return "anthropic";
   if (m.startsWith("gemini")) return "google";
-  if (m.startsWith("gpt") || m.startsWith("text-embedding") || m.includes("openai")) return "openai";
+  if (m.startsWith("sonar") || m.includes("perplexity")) return "perplexity";
+  if (m.startsWith("gpt") || m.startsWith("o3") || m.startsWith("text-embedding") || m.includes("openai")) return "openai";
   return "unknown";
+}
+
+/**
+ * Rough token estimate for providers that don't return usage counts in the
+ * response body (Perplexity Sonar). The 4-chars-per-token heuristic is the
+ * standard OpenAI approximation for English prose. Acceptable for GP
+ * reporting — off by 10-20% on aggregate but directionally correct.
+ */
+export function estimateTokens(text: string | null | undefined): number {
+  if (!text) return 0;
+  return Math.max(1, Math.ceil(text.length / 4));
 }
 
 function normalizeTier(tier?: string | null): string {
@@ -251,6 +263,39 @@ export async function recordUsage(params: RecordUsageParams): Promise<void> {
     // Synchronous failure in builder construction — log and swallow.
     console.error("[metering] usage_ledger insert scheduling error:", err);
   }
+}
+
+/**
+ * Convenience helper for Perplexity (Sonar) — the Perplexity API does NOT
+ * return usage.prompt_tokens / completion_tokens in the response body, so we
+ * estimate from character lengths and delegate to recordUsage. Also stamps
+ * provider='perplexity' explicitly since the model prefix gets detected
+ * correctly but being explicit keeps the ledger clean.
+ *
+ * Note: Sonar also incurs a per-request search fee (varies by context size)
+ * which is NOT yet modelled — token cost is the dominant component.
+ */
+export async function recordUsageSonar(params: {
+  userId: string;
+  model: string;              // "sonar" | "sonar-pro"
+  promptText: string;
+  responseText: string;
+  feature?: string;
+  action?: string;
+  requestId?: string;
+  tier?: string;
+}): Promise<void> {
+  return recordUsage({
+    userId: params.userId,
+    model: params.model || "sonar",
+    inputTokens: estimateTokens(params.promptText),
+    outputTokens: estimateTokens(params.responseText),
+    provider: "perplexity",
+    feature: params.feature,
+    action: params.action,
+    requestId: params.requestId,
+    tier: params.tier,
+  });
 }
 
 export { MODEL_PRICING, providerOf, normalizeTier, computeCostAudMicros };

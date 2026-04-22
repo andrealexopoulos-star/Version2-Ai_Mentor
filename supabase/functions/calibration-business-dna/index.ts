@@ -17,7 +17,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
-import { recordUsage } from "../_shared/metering.ts";
+import { recordUsage, recordUsageSonar } from "../_shared/metering.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -147,7 +147,7 @@ function buildScanUrls(baseUrl: string): string[] {
 }
 
 // Perplexity deep search — primary intelligence source
-async function deepSearch(query: string, maxTokens = 1000): Promise<string> {
+async function deepSearch(query: string, maxTokens = 1000, userId: string = "", action: string = "calibration_dna_search"): Promise<string> {
   if (!PERPLEXITY_API_KEY) return "";
   try {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -161,7 +161,17 @@ async function deepSearch(query: string, maxTokens = 1000): Promise<string> {
     });
     if (res.ok) {
       const d = await res.json();
-      return d.choices?.[0]?.message?.content || "";
+      const answer = d.choices?.[0]?.message?.content || "";
+      // usage_ledger emit (systemic metering — Track B v2)
+      recordUsageSonar({
+        userId,
+        model: "sonar-pro",
+        promptText: query,
+        responseText: answer,
+        feature: "calibration_business_dna",
+        action,
+      });
+      return answer;
     }
   } catch (e) { console.error("[perplexity]", e); }
   return "";
@@ -408,24 +418,24 @@ serve(async (req) => {
           `What is the business at ${domain}? Provide: exact registered business name, trading name, ABN if available, physical address, city, state, country, phone number, email address, industry, business type (Pty Ltd, sole trader, etc), years operating. Be specific and factual. If information is not publicly available, say so.` +
           (businessNameHint ? ` The business may be called "${businessNameHint}".` : '') +
           (locationHint ? ` Located near ${locationHint}.` : ''),
-          1000
+          1000, user.id, "dna_identity"
         ),
         deepSearch(
           `What products and services does ${domain} offer? Provide: detailed list of all services/products, pricing model if visible, unique value proposition, competitive advantages, target market, ideal customer profile. Be specific about what they actually do, not generic descriptions.` +
           (businessNameHint ? ` Business name: "${businessNameHint}".` : ''),
-          1000
+          1000, user.id, "dna_services"
         ),
         deepSearch(
           `What is the market position of ${domain}? Provide: geographic focus, business model (B2B/B2C/etc), customer count estimate, revenue range estimate, growth strategy, main business challenges, industry position. Be factual — state what is publicly observable.`,
-          1000
+          1000, user.id, "dna_market"
         ),
         deepSearch(
           `Who runs ${domain}? Provide: founder name and background, key team members and roles, team size, hiring status. Also provide: mission statement, vision, short-term goals, long-term goals if publicly stated on their website or LinkedIn.`,
-          1000
+          1000, user.id, "dna_team"
         ),
         deepSearch(
           `Who are the main competitors of ${domain}? List their top 3-5 competitors in the same industry and geographic area. For each: name, website, what they offer, how they compare. Also: what is ${domain}'s competitive moat — what protects them from competition?`,
-          1000
+          1000, user.id, "dna_competitors"
         ),
       ]);
 
@@ -488,7 +498,7 @@ serve(async (req) => {
         `Include: likely industry, target market, business model, competitive landscape, growth opportunities, main challenges.` +
         (businessNameHint ? ` Business name: "${businessNameHint}".` : '') +
         (locationHint ? ` Located: ${locationHint}.` : ''),
-        1000
+        1000, user.id, "dna_from_description"
       );
       if (descResult) { perplexityContent = descResult; sources.push("Perplexity (from description)"); }
     }

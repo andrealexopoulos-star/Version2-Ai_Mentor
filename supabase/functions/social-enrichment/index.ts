@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { verifyAuth } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { recordUsageSonar } from "../_shared/metering.ts";
 
 type Platform =
   | "linkedin"
@@ -128,11 +129,13 @@ async function fetchPage(url: string): Promise<string | null> {
 async function queryPerplexity(
   domain: string,
   businessName: string | undefined,
+  userId: string = "",
 ): Promise<Record<Platform, string> | null> {
   const apiKey = (Deno.env.get("PERPLEXITY_API_KEY") || "").trim();
   if (!apiKey) return null;
 
   const subject = businessName || domain;
+  const userContent = `What are the official social media profiles for ${subject}?`;
   try {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -152,7 +155,7 @@ async function queryPerplexity(
           },
           {
             role: "user",
-            content: `What are the official social media profiles for ${subject}?`,
+            content: userContent,
           },
         ],
         max_tokens: 1000,
@@ -163,6 +166,15 @@ async function queryPerplexity(
 
     const data = await res.json();
     let text = (data.choices?.[0]?.message?.content || "").trim();
+    // usage_ledger emit (systemic metering — Track B v2)
+    recordUsageSonar({
+      userId,
+      model: "sonar",
+      promptText: userContent,
+      responseText: text,
+      feature: "social_enrichment",
+      action: "social_handle_lookup",
+    });
     if (text.startsWith("```")) {
       text = text.replace(/^```[^\n]*\n?/, "").replace(/```\s*$/, "").trim();
     }
@@ -275,7 +287,7 @@ serve(async (req) => {
 
     // Perplexity AI verification
     const domain = new URL(websiteUrl).hostname;
-    const perplexityResult = await queryPerplexity(domain, businessName);
+    const perplexityResult = await queryPerplexity(domain, businessName, auth.userId || "");
 
     if (perplexityResult) {
       sources.push("perplexity_ai");

@@ -15,7 +15,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
-import { recordUsage } from "../_shared/metering.ts";
+import { recordUsage, recordUsageSonar } from "../_shared/metering.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -37,7 +37,7 @@ async function fetchMerge(token: string, endpoint: string, limit = 20) {
 }
 
 // ─── Perplexity (replaces Firecrawl) ───
-async function searchMarket(query: string): Promise<string> {
+async function searchMarket(query: string, userId: string = "", action: string = "market_recon"): Promise<string> {
   if (!PERPLEXITY_API_KEY) return "";
   try {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -47,7 +47,17 @@ async function searchMarket(query: string): Promise<string> {
     });
     if (res.ok) {
       const d = await res.json();
-      return d.choices?.[0]?.message?.content || "";
+      const answer = d.choices?.[0]?.message?.content || "";
+      // usage_ledger emit (systemic metering — Track B v2)
+      recordUsageSonar({
+        userId,
+        model: "sonar",
+        promptText: query,
+        responseText: answer,
+        feature: "strategic_console_ai",
+        action,
+      });
+      return answer;
     }
   } catch (e) { console.error("[perplexity]", e); }
   return "";
@@ -137,8 +147,8 @@ async function gatherContext(supabase: any, userId: string, integrations: any[])
     const marketQuery = `${bp.industry} Australia market trends news ${new Date().getFullYear()}`;
     const competitorQuery = `${bp.business_name} competitors ${bp.industry} Australia`;
     const [marketResults, competitorResults] = await Promise.all([
-      searchMarket(marketQuery),
-      searchMarket(competitorQuery),
+      searchMarket(marketQuery, userId, "market_trends"),
+      searchMarket(competitorQuery, userId, "competitor_search"),
     ]);
     if (marketResults || competitorResults) {
       ctx.market_intel = {

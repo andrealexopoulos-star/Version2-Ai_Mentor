@@ -14,7 +14,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
-import { recordUsage } from "../_shared/metering.ts";
+import { recordUsage, recordUsageSonar } from "../_shared/metering.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -33,7 +33,7 @@ async function fetchMerge(token: string, endpoint: string, limit = 20) {
   return [];
 }
 
-async function perplexitySearch(query: string): Promise<string> {
+async function perplexitySearch(query: string, userId: string = "", action: string = "market_recon"): Promise<string> {
   if (!PERPLEXITY_API_KEY) return "";
   try {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -41,7 +41,20 @@ async function perplexitySearch(query: string): Promise<string> {
       headers: { "Authorization": `Bearer ${PERPLEXITY_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({ model: "sonar", messages: [{ role: "user", content: query }], max_tokens: 1000 }),
     });
-    if (res.ok) { const d = await res.json(); return d.choices?.[0]?.message?.content || ""; }
+    if (res.ok) {
+      const d = await res.json();
+      const answer = d.choices?.[0]?.message?.content || "";
+      // usage_ledger emit (systemic metering — Track B v2)
+      recordUsageSonar({
+        userId,
+        model: "sonar",
+        promptText: query,
+        responseText: answer,
+        feature: "market_analysis_ai",
+        action,
+      });
+      return answer;
+    }
   } catch (e) { console.error("[perplexity]", e); }
   return "";
 }
@@ -208,10 +221,10 @@ serve(async (req) => {
 
     // Market intelligence via Perplexity
     const [marketIntel, competitorIntel, pricingIntel, trendIntel] = await Promise.all([
-      perplexitySearch(`${product_or_service} market size ${region} ${new Date().getFullYear()}`),
-      perplexitySearch(`${product_or_service} top competitors ${region}`),
-      perplexitySearch(`${product_or_service} pricing trends ${region}`),
-      perplexitySearch(`${product_or_service} industry trends outlook ${region} ${new Date().getFullYear()}`),
+      perplexitySearch(`${product_or_service} market size ${region} ${new Date().getFullYear()}`, user.id, "market_size"),
+      perplexitySearch(`${product_or_service} top competitors ${region}`, user.id, "competitors"),
+      perplexitySearch(`${product_or_service} pricing trends ${region}`, user.id, "pricing_trends"),
+      perplexitySearch(`${product_or_service} industry trends outlook ${region} ${new Date().getFullYear()}`, user.id, "industry_trends"),
     ]);
 
     ctx.market_research = {

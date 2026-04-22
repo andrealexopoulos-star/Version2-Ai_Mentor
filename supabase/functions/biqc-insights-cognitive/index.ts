@@ -8,7 +8,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
-import { recordUsage } from "../_shared/metering.ts";
+import { recordUsage, recordUsageSonar } from "../_shared/metering.ts";
 import { verifyAuth } from "../_shared/auth.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
@@ -32,7 +32,7 @@ async function fetchMerge(token: string, endpoint: string, limit = 20) {
 }
 
 // ─── Perplexity ───
-async function searchMarket(query: string): Promise<string> {
+async function searchMarket(query: string, userId: string = ""): Promise<string> {
   if (!PERPLEXITY_API_KEY) return "";
   try {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -42,7 +42,8 @@ async function searchMarket(query: string): Promise<string> {
     });
     if (res.ok) {
       const d = await res.json();
-      // Track Perplexity usage (no token counts available, estimate)
+      const answer = d.choices?.[0]?.message?.content || "";
+      // Legacy usage_tracking (kept — Andreas reads from this in places)
       try {
         const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         await sb.from("usage_tracking").insert({
@@ -50,12 +51,21 @@ async function searchMarket(query: string): Promise<string> {
           api_provider: "perplexity",
           model: "sonar",
           tokens_in: query.length,
-          tokens_out: (d.choices?.[0]?.message?.content || "").length,
+          tokens_out: answer.length,
           cost_estimate: 0.005,
           called_at: new Date().toISOString(),
         });
       } catch {}
-      return d.choices?.[0]?.message?.content || "";
+      // usage_ledger emit (systemic metering — Track B v2)
+      recordUsageSonar({
+        userId,
+        model: "sonar",
+        promptText: query,
+        responseText: answer,
+        feature: "insights_cognitive",
+        action: "market_recon",
+      });
+      return answer;
     }
   } catch (e) { console.error("[perplexity]", e); }
   return "";
@@ -205,8 +215,8 @@ async function gatherFullContext(supabase: any, userId: string, integrations: an
   // Market intelligence
   if (bp?.industry) {
     const [marketTrends, competitorIntel] = await Promise.all([
-      searchMarket(`${bp.industry} ${bp.location || "Australia"} market trends outlook ${new Date().getFullYear()}`),
-      searchMarket(`${bp.business_name || ""} competitors ${bp.industry} ${bp.location || "Australia"}`),
+      searchMarket(`${bp.industry} ${bp.location || "Australia"} market trends outlook ${new Date().getFullYear()}`, userId),
+      searchMarket(`${bp.business_name || ""} competitors ${bp.industry} ${bp.location || "Australia"}`, userId),
     ]);
     ctx.market_intelligence = { industry_trends: marketTrends || "No data.", competitor_landscape: competitorIntel || "No data." };
     sources.push("Perplexity (market intel)");
