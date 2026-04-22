@@ -704,3 +704,210 @@ async def seed_demo_data(current_user: dict = Depends(get_current_user)):
     result = seed_demo_account(get_sb(), user_id)
     return result
 
+
+# ==================== PROGRESSIVE ONBOARDING CHECKLIST (Sprint B #12) ====================
+# Retention lever — users who complete more checklist items retain at ~3x rate per
+# typical SaaS benchmarks. Each step reads its done-state from existing tables;
+# never presumes. Six steps: signup → calibration → integration → signal reviewed →
+# action closed → invite teammate. Step 6 is a ghost placeholder for Sprint E #43
+# (multi-user). Response is served under /api/onboarding/progress.
+
+_STEP_DEFS = [
+    {
+        "key": "signup",
+        "label": "Sign up",
+        "helper_text": "You're in — the first step to turning noise into decisions.",
+        "href": None,
+    },
+    {
+        "key": "calibration",
+        "label": "Complete calibration",
+        "helper_text": "Calibration tells BIQc your context so every signal maps to your business.",
+        "href": "/market/calibration",
+    },
+    {
+        "key": "integration",
+        "label": "Connect first integration",
+        "helper_text": "Integrations power the evidence — without them BIQc is running blind.",
+        "href": "/integrations",
+    },
+    {
+        "key": "signal_reviewed",
+        "label": "Review first signal",
+        "helper_text": "Reading a signal teaches BIQc what matters to you — it gets smarter each time.",
+        "href": "/advisor",
+    },
+    {
+        "key": "action_closed",
+        "label": "Close first action",
+        "helper_text": "Closing the loop is where retention compounds — signals become outcomes.",
+        "href": "/actions",
+    },
+    {
+        "key": "invite_teammate",
+        "label": "Invite a teammate",
+        "helper_text": "Coming soon with Pro — collaborative decisions, shared context.",
+        "href": None,
+        "ghost": True,
+    },
+]
+
+
+def _evaluate_onboarding_progress(sb, user_id: str) -> dict:
+    """Evaluate each onboarding step against live Supabase state.
+
+    This function is the unit-test seam: tests pass a mocked `sb` and assert
+    each step's `done` flips correctly. Every query is wrapped so a table
+    outage never blocks the whole checklist — the step silently reports
+    `done=False` and the rest still render.
+    """
+    steps: list[dict] = []
+
+    def _mk(key: str, done: bool, done_at: Optional[str] = None) -> dict:
+        defn = next(s for s in _STEP_DEFS if s["key"] == key)
+        return {
+            "key": key,
+            "label": defn["label"],
+            "helper_text": defn["helper_text"],
+            "href": defn.get("href"),
+            "ghost": defn.get("ghost", False),
+            "done": bool(done),
+            "done_at": done_at,
+        }
+
+    # 1. Sign up — always done (route is authenticated).
+    steps.append(_mk("signup", True, None))
+
+    # 2. Calibration — row in business_dna_enrichment keyed on user_id.
+    #    Upserted by POST /api/enrichment/website (calibration.py:2861).
+    try:
+        res = sb.table("business_dna_enrichment").select(
+            "user_id, updated_at"
+        ).eq("user_id", user_id).limit(1).execute()
+        row = (res.data or [None])[0]
+        steps.append(_mk("calibration", bool(row), (row or {}).get("updated_at")))
+    except Exception as e:
+        logger.warning(f"[onboarding/progress] calibration check failed: {e}")
+        steps.append(_mk("calibration", False))
+
+    # 3. Integration — workspace_integrations.status == 'connected' (primary)
+    #    OR email_connections.connected == True (fallback).
+    #    workspace_integrations uses workspace_id (= user_id per integrations.py:824).
+    integration_done = False
+    integration_at: Optional[str] = None
+    try:
+        res = sb.table("workspace_integrations").select(
+            "status, connected_at"
+        ).eq("workspace_id", user_id).eq("status", "connected").limit(1).execute()
+        row = (res.data or [None])[0]
+        if row:
+            integration_done = True
+            integration_at = row.get("connected_at")
+    except Exception as e:
+        logger.warning(f"[onboarding/progress] workspace_integrations check failed: {e}")
+    if not integration_done:
+        try:
+            res = sb.table("email_connections").select(
+                "provider, connected"
+            ).eq("user_id", user_id).eq("connected", True).limit(1).execute()
+            row = (res.data or [None])[0]
+            if row:
+                integration_done = True
+        except Exception as e:
+            logger.warning(f"[onboarding/progress] email_connections check failed: {e}")
+    steps.append(_mk("integration", integration_done, integration_at))
+
+    # 4. Signal reviewed — alerts_queue row for this user with viewed_at NOT NULL.
+    #    alerts.py:297 stamps viewed_at when the user opens an alert.
+    signal_done = False
+    signal_at: Optional[str] = None
+    try:
+        res = sb.table("alerts_queue").select(
+            "viewed_at"
+        ).eq("user_id", user_id).not_.is_("viewed_at", "null").order(
+            "viewed_at", desc=True
+        ).limit(1).execute()
+        row = (res.data or [None])[0]
+        if row:
+            signal_done = True
+            signal_at = row.get("viewed_at")
+    except Exception as e:
+        logger.warning(f"[onboarding/progress] alerts_queue viewed check failed: {e}")
+    steps.append(_mk("signal_reviewed", signal_done, signal_at))
+
+    # 5. Action closed — alerts_queue.dismissed_at NOT NULL
+    #    (alerts.py:186 stamps dismissed_at on explicit dismissal).
+    action_done = False
+    action_at: Optional[str] = None
+    try:
+        res = sb.table("alerts_queue").select(
+            "dismissed_at"
+        ).eq("user_id", user_id).not_.is_("dismissed_at", "null").order(
+            "dismissed_at", desc=True
+        ).limit(1).execute()
+        row = (res.data or [None])[0]
+        if row:
+            action_done = True
+            action_at = row.get("dismissed_at")
+    except Exception as e:
+        logger.warning(f"[onboarding/progress] alerts_queue dismissed check failed: {e}")
+    # Fallback: observation_event_dismissals (mirrored by alerts dismiss handler).
+    if not action_done:
+        try:
+            res = sb.table("observation_event_dismissals").select(
+                "dismissed_at"
+            ).eq("user_id", user_id).order(
+                "dismissed_at", desc=True
+            ).limit(1).execute()
+            row = (res.data or [None])[0]
+            if row:
+                action_done = True
+                action_at = row.get("dismissed_at")
+        except Exception as e:
+            logger.warning(f"[onboarding/progress] observation_event_dismissals check failed: {e}")
+    steps.append(_mk("action_closed", action_done, action_at))
+
+    # 6. Invite teammate — placeholder for Sprint E #43 (multi-user). Always not done.
+    #    Rendered as a ghost item on the frontend.
+    steps.append(_mk("invite_teammate", False))
+
+    # Compute aggregate progress. Ghost steps do NOT count toward 100%.
+    counted = [s for s in steps if not s.get("ghost")]
+    done_count = sum(1 for s in counted if s["done"])
+    total = len(counted) or 1
+    percent = round(100.0 * done_count / total)
+
+    # Current step index: first non-ghost, non-done step. If all done, point to
+    # the ghost step so frontend can still render a "you're done" state.
+    current_index = None
+    for idx, s in enumerate(steps):
+        if not s["done"] and not s.get("ghost"):
+            current_index = idx
+            break
+    if current_index is None:
+        # All countable steps done → highlight the ghost invite step.
+        current_index = next(
+            (i for i, s in enumerate(steps) if s.get("ghost")), len(steps) - 1
+        )
+
+    return {
+        "steps": steps,
+        "percent_complete": percent,
+        "current_step_index": current_index,
+        "countable_done": done_count,
+        "countable_total": total,
+    }
+
+
+@router.get("/onboarding/progress")
+async def get_onboarding_progress(current_user: dict = Depends(get_current_user)):
+    """Progressive onboarding checklist (Sprint B #12).
+
+    Returns the six-step journey from signup → first action closed, each step's
+    done-state evaluated against the live state of the respective table.
+    Frontend renders this as a horizontal step strip above the Advisor KPI row
+    whenever percent_complete < 100.
+    """
+    user_id = current_user["id"]
+    return _evaluate_onboarding_progress(get_sb(), user_id)
+

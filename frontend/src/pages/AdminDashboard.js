@@ -5,12 +5,12 @@ import { supabase } from '../context/SupabaseAuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
 import {
-  Users, Activity, Shield, Eye, Search, RefreshCw, Ban, CheckCircle, UserPlus,
-  TrendingUp, DollarSign, Headphones, BarChart3, ChevronRight, CreditCard,
-  AlertTriangle, Loader2, X, Cpu, Lock, Zap, Globe, Server, Bell, FileText,
-  Settings, Workflow, Database, Radio, Heart, Key, AlertOctagon, Gauge,
-  Brain, Bot, Fingerprint, ShieldCheck, Scale, Rocket, ExternalLink, Clock,
-  ToggleLeft, Power, Pause, Play, Hash, Terminal, MonitorSmartphone, Plug
+  Users, Activity, Shield, Eye, Search, RefreshCw, Ban, CheckCircle,
+  TrendingUp, DollarSign, BarChart3, ChevronRight,
+  Loader2, X, Cpu, Lock, Zap, Globe, Server, FileText,
+  Settings, Database, Radio, Key,
+  Brain, Fingerprint, ShieldCheck, Scale, Rocket, ExternalLink, Clock,
+  Hash, Plug
 } from 'lucide-react';
 
 const D = "var(--font-display)";
@@ -52,9 +52,17 @@ const Row = ({ icon: Icon, label, value, status, onClick }) => (
     {onClick && <ChevronRight className="w-3.5 h-3.5 text-[var(--ink-muted)]" />}
   </div>
 );
+const ComingSoon = ({ message = 'More controls coming soon.' }) => (
+  <Pnl>
+    <div className="text-center py-8">
+      <Clock className="w-8 h-8 mx-auto mb-3 text-[var(--ink-muted)]" />
+      <p className="text-sm text-[var(--ink-muted)]" style={{ fontFamily: B }}>{message}</p>
+    </div>
+  </Pnl>
+);
 
 const PAGES = [
-  { id: 'command', label: 'Command Centre', icon: Gauge },
+  { id: 'command', label: 'Command Centre', icon: BarChart3 },
   { id: 'users', label: 'User Admin', icon: Users },
   { id: 'governance', label: 'Governance', icon: Scale },
   { id: 'security', label: 'Security', icon: Shield },
@@ -78,6 +86,7 @@ const AdminDashboard = () => {
   const [rateLimitDetail, setRateLimitDetail] = useState(null);
   const [rateLimitDefaults, setRateLimitDefaults] = useState(null);
   const [rateLimitSaving, setRateLimitSaving] = useState(false);
+  const [billing, setBilling] = useState({ loaded: false, transactions: [], mrr: 0, arr: 0, paid: 0, trialing: 0 });
 
   useEffect(() => { loadData(); }, []);
 
@@ -93,6 +102,20 @@ const AdminDashboard = () => {
       try { const rl = await apiClient.get('/admin/rate-limits/defaults'); setRateLimitDefaults(rl.data); } catch {}
       // Load health
       try { const h = await apiClient.get('/health/detailed'); setHealthData(h.data); } catch {}
+      // Load billing (direct Supabase — no backend endpoint yet)
+      try {
+        const { data: tx } = await supabase
+          .from('payment_transactions')
+          .select('user_id, tier, payment_status, amount, created_at, stripe_subscription_id')
+          .in('payment_status', ['trialing', 'active', 'paid', 'succeeded'])
+          .order('created_at', { ascending: false })
+          .limit(50);
+        const rows = tx || [];
+        const active = rows.filter(r => ['active', 'paid', 'succeeded'].includes(r.payment_status));
+        const trialing = rows.filter(r => r.payment_status === 'trialing');
+        const mrr = active.reduce((s, r) => s + Number(r.amount || 0), 0);
+        setBilling({ loaded: true, transactions: rows, mrr, arr: mrr * 12, paid: active.length, trialing: trialing.length });
+      } catch { setBilling(b => ({ ...b, loaded: true })); }
     } catch {} finally { setLoading(false); }
   };
 
@@ -165,6 +188,8 @@ const AdminDashboard = () => {
 
   const filteredUsers = users.filter(u => !search || [u.email, u.full_name, u.company_name].some(v => (v || '').toLowerCase().includes(search.toLowerCase())));
   const su = users.find(u => u.id === selectedUser);
+  const calibratedCount = stats?.calibrated_users ?? stats?.calibrated ?? 0;
+  const integrationsCount = stats?.total_integrations ?? stats?.with_integrations ?? 0;
 
   return (
     <DashboardLayout>
@@ -214,26 +239,13 @@ const AdminDashboard = () => {
                 </Sec>
                 <Sec title="Strategic Platform Intelligence">
                   <div className="space-y-2">
-                    <Row icon={AlertTriangle} label="Revenue concentration risk" value="No billing data" status="unknown" />
+                    <Row icon={DollarSign} label="Active subscriptions" value={`${billing.paid} paid • ${billing.trialing} trialing`} status={billing.paid + billing.trialing > 0 ? 'healthy' : 'unknown'} />
                     <Row icon={TrendingUp} label="User growth trend" value={`${users.length} total`} status={users.length > 5 ? 'healthy' : 'warning'} />
-                    <Row icon={Cpu} label="AI cost trajectory" value="Check usage_tracking" status="warning" />
-                    <Row icon={Users} label="Calibration completion rate" value={`${stats?.calibrated || 0}/${users.length}`} status="healthy" />
-                    <Row icon={Zap} label="Integration adoption" value="Check per-user" status="healthy" />
+                    <Row icon={Users} label="Calibration completion" value={`${calibratedCount}/${users.length}`} status="healthy" />
+                    <Row icon={Zap} label="Integrations connected" value={`${integrationsCount} total`} status="healthy" />
                   </div>
                 </Sec>
               </div>
-              <Sec title="Active Inevitabilities (Platform Level)">
-                <div className="space-y-2">
-                  <div className="p-4 rounded-lg" style={{ background: '#E85D00' + '08', border: '1px solid #E85D0020' }}>
-                    <div className="flex items-center gap-2 mb-1"><StatusDot status="critical" /><span className="text-sm font-medium text-[var(--ink-display)]" style={{ fontFamily: B }}>No billing connected — $0 MRR</span></div>
-                    <p className="text-xs text-[var(--ink-secondary)] ml-4" style={{ fontFamily: B }}>Revenue: $0. All users on free tier. Connect Stripe to enable subscriptions.</p>
-                  </div>
-                  <div className="p-4 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
-                    <div className="flex items-center gap-2 mb-1"><StatusDot status="warning" /><span className="text-sm font-medium text-[var(--ink-display)]" style={{ fontFamily: B }}>2 Edge Functions without source control</span></div>
-                    <p className="text-xs text-[var(--ink-secondary)] ml-4" style={{ fontFamily: B }}>intelligence-snapshot and signal-evaluator deployed but not in git. Recovery needed.</p>
-                  </div>
-                </div>
-              </Sec>
             </div>
           )}
 
@@ -326,7 +338,7 @@ const AdminDashboard = () => {
                         })}
                         <div className="grid grid-cols-3 gap-2">
                           <button onClick={saveRateLimits} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030', fontFamily: B }} data-testid="admin-save-rate-limits-btn">
-                            {rateLimitSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Gauge className="w-3.5 h-3.5" />} Save Limits
+                            {rateLimitSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Shield className="w-3.5 h-3.5" />} Save Limits
                           </button>
                           <button onClick={resetRateOverrides} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#64748B15', color: 'var(--ink-muted)', border: '1px solid #64748B30', fontFamily: B }} data-testid="admin-reset-rate-overrides-btn">
                             <RefreshCw className="w-3.5 h-3.5" /> Reset to Tier
@@ -386,10 +398,6 @@ const AdminDashboard = () => {
                 <Sec title="Governance Controls">
                   <div className="space-y-2">
                     <Row icon={FileText} label="Immutable audit trail" value="Active" status="healthy" />
-                    <Row icon={Key} label="Delegated authority with expiry" value="Planned" status="unknown" />
-                    <Row icon={Scale} label="Approval chains (financial threshold)" value="Planned" status="unknown" />
-                    <Row icon={Eye} label="Session replay for privileged users" value="Planned" status="unknown" />
-                    <Row icon={AlertOctagon} label="Break-glass access protocol" value="Planned" status="unknown" />
                     <Row icon={Lock} label="Privilege elevation logging" value="Active" status="healthy" />
                   </div>
                 </Sec>
@@ -397,17 +405,14 @@ const AdminDashboard = () => {
               <Sec title="Data Sovereignty & Partition Assurance">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {[
-                    { label: 'Data Location', value: 'Sydney & Melbourne, AU', icon: Globe, status: 'Active' },
-                    { label: 'Cross-tenant Query Protection', value: 'RLS enforced', icon: Shield, status: 'Active' },
-                    { label: 'Backup Recovery', value: 'Point-in-time, 30 days', icon: Database, status: 'Active' },
-                    { label: 'Data Lineage Tracing', value: 'Planned', icon: Search, status: 'Planned' },
-                    { label: 'Retention Policy Dashboard', value: 'Planned', icon: Clock, status: 'Planned' },
-                    { label: 'Forensic Recovery Mode', value: 'Planned', icon: Terminal, status: 'Planned' },
+                    { label: 'Data Location', value: 'Sydney & Melbourne, AU', icon: Globe },
+                    { label: 'Cross-tenant Query Protection', value: 'RLS enforced', icon: Shield },
+                    { label: 'Backup Recovery', value: 'Point-in-time, 30 days', icon: Database },
                   ].map(item => (
                     <div key={item.label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <item.icon className="w-4 h-4 text-[var(--ink-muted)] mb-2" />
                       <span className="text-xs text-[var(--ink-display)] block" style={{ fontFamily: B }}>{item.label}</span>
-                      <span className="text-[10px]" style={{ fontFamily: M, color: item.status === 'Active' ? '#10B981' : '#64748B' }}>{item.value}</span>
+                      <span className="text-[10px]" style={{ fontFamily: M, color: '#10B981' }}>{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -432,12 +437,6 @@ const AdminDashboard = () => {
                       ['TLS 1.3 in transit', 'Active', 'healthy'],
                       ['Supabase RLS (Row Level Security)', 'Active', 'healthy'],
                       ['OAuth 2.0 (Google + Microsoft)', 'Active', 'healthy'],
-                      ['IP Allowlisting', 'Planned', 'unknown'],
-                      ['Device Fingerprinting', 'Planned', 'unknown'],
-                      ['Geo-fencing Rules', 'Planned', 'unknown'],
-                      ['MFA per Role Tier', 'Planned', 'unknown'],
-                      ['Anomaly Login Detection', 'Planned', 'unknown'],
-                      ['Real-time Privilege Abuse Detection', 'Planned', 'unknown'],
                     ].map(([l, v, s]) => <Row key={l} label={l} value={v} status={s} />)}
                   </div>
                 </Sec>
@@ -450,10 +449,6 @@ const AdminDashboard = () => {
                       ['Security & Infrastructure', '/trust/security', 'Ready'],
                       ['Trust Centre', '/trust/centre', 'Ready'],
                       ['SOC2 Type II Report', null, 'In Progress'],
-                      ['Penetration Test Report', null, 'Planned'],
-                      ['Sub-processor List', null, 'Planned'],
-                      ['Breach Response Workflow', null, 'Planned'],
-                      ['Data Deletion Certification', null, 'Planned'],
                     ].map(([l, href, s]) => (
                       <div key={l} className="flex items-center gap-3 px-4 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <StatusDot status={s === 'Ready' ? 'healthy' : s === 'In Progress' ? 'warning' : 'unknown'} />
@@ -477,51 +472,17 @@ const AdminDashboard = () => {
                 <Mc label="Token Tracking" value="Active" icon={Hash} color="#10B981" sub="usage_tracking table" />
                 <Mc label="Cost Control" value="Monitor" icon={DollarSign} color="#E85D00" sub="Per-function, per-user" />
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <Sec title="AI Agent Registry">
-                  <div className="space-y-2">
-                    {[
-                      ['biqc-insights-cognitive', 'OpenAI + Perplexity', '4 deploys', 'Core brain'],
-                      ['intelligence-snapshot', 'OpenAI', '43 deploys', 'Fallback cognitive'],
-                      ['strategic-console-ai', 'OpenAI', '4 deploys', 'BRIEF + ASK modes'],
-                      ['boardroom-diagnosis', 'OpenAI', '5 deploys', 'Deep-dive diagnosis'],
-                      ['cfo-cash-analysis', 'OpenAI + Merge.dev', '1 deploy', 'Financial analysis'],
-                      ['market-analysis-ai', 'OpenAI + Firecrawl', '2 deploys', 'SWOT analysis'],
-                      ['competitor-monitor', 'Perplexity + OpenAI', '1 deploy', 'Weekly scan'],
-                      ['deep-web-recon', 'OpenAI + Firecrawl', '4 deploys', 'Competitive intel'],
-                      ['sop-generator', 'OpenAI', '1 deploy', 'SOP/checklist gen'],
-                      ['calibration-psych', 'OpenAI', '4 deploys', '9-step profiling'],
-                      ['calibration-business-dna', 'OpenAI + Firecrawl', '2 deploys', 'Website extraction'],
-                      ['email_priority', 'OpenAI', '41 deploys', 'Email triage'],
-                    ].map(([name, provider, deploys, desc]) => (
-                      <div key={name} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                        <Bot className="w-4 h-4 text-[#3B82F6] shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-xs text-[var(--ink-display)] block truncate" style={{ fontFamily: M }}>{name}</span>
-                          <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: B }}>{desc}</span>
-                        </div>
-                        <span className="text-[10px] text-[var(--ink-muted)] shrink-0" style={{ fontFamily: M }}>{deploys}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Sec>
-                <Sec title="AI Governance Controls">
-                  <div className="space-y-2">
-                    {[
-                      ['Token burn dashboard', 'Active — usage_tracking', 'healthy'],
-                      ['Per-function cost tracking', 'Active', 'healthy'],
-                      ['Per-user cost tracking', 'Active', 'healthy'],
-                      ['Prompt hash logging', 'Active — prompt_audit_logs', 'healthy'],
-                      ['AI decision audit trail', 'Active — advisory_log', 'healthy'],
-                      ['Prompt injection detection', 'Planned', 'unknown'],
-                      ['Agent action approval thresholds', 'Planned', 'unknown'],
-                      ['AI confidence scoring visibility', 'Planned', 'unknown'],
-                      ['Red team simulation environment', 'Planned', 'unknown'],
-                      ['Model usage budget alerts', 'Planned', 'unknown'],
-                    ].map(([l, v, s]) => <Row key={l} label={l} value={v} status={s} />)}
-                  </div>
-                </Sec>
-              </div>
+              <Sec title="AI Governance Controls">
+                <div className="space-y-2">
+                  {[
+                    ['Token burn dashboard', 'Active — usage_tracking', 'healthy'],
+                    ['Per-function cost tracking', 'Active', 'healthy'],
+                    ['Per-user cost tracking', 'Active', 'healthy'],
+                    ['Prompt hash logging', 'Active — prompt_audit_logs', 'healthy'],
+                    ['AI decision audit trail', 'Active — advisory_log', 'healthy'],
+                  ].map(([l, v, s]) => <Row key={l} label={l} value={v} status={s} />)}
+                </div>
+              </Sec>
             </div>
           )}
 
@@ -529,46 +490,44 @@ const AdminDashboard = () => {
           {page === 'commercial' && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Mc label="MRR" value="$0" icon={DollarSign} color="#E85D00" sub="Connect Stripe" alert />
-                <Mc label="ARR" value="$0" icon={TrendingUp} color="var(--ink-display)" />
-                <Mc label="Paid Users" value="0" icon={Users} color="#64748B" sub={`${users.length} free`} />
-                <Mc label="Churn Rate" value="N/A" icon={AlertTriangle} color="#64748B" sub="No billing data" />
+                <Mc label="MRR" value={`$${billing.mrr.toLocaleString()}`} icon={DollarSign} color={billing.mrr > 0 ? '#10B981' : '#E85D00'} sub={billing.loaded ? 'Active subscriptions' : 'Loading...'} />
+                <Mc label="ARR" value={`$${billing.arr.toLocaleString()}`} icon={TrendingUp} color="var(--ink-display)" sub="MRR × 12" />
+                <Mc label="Paid Users" value={billing.paid} icon={Users} color={billing.paid > 0 ? '#10B981' : '#64748B'} sub={`${users.length} total accounts`} />
+                <Mc label="Trialing" value={billing.trialing} icon={Clock} color="#F59E0B" sub="7-day Stripe trial" />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <Sec title="Revenue Intelligence">
                   <div className="space-y-2">
                     {[
-                      ['MRR by tenant', 'Needs Stripe', 'unknown'],
-                      ['Usage-to-revenue ratio', 'Needs Stripe', 'unknown'],
-                      ['Feature adoption telemetry', 'Partial — calibration + integrations', 'warning'],
-                      ['Churn risk signals', 'Planned', 'unknown'],
-                      ['Plan downgrade detection', 'Needs Stripe', 'unknown'],
-                      ['CAC vs LTV dashboard', 'Needs Stripe + Analytics', 'unknown'],
-                      ['Billing anomaly detection', 'Needs Stripe', 'unknown'],
+                      ['Feature adoption telemetry', 'Active — calibration + integrations', 'healthy'],
                       ['Overuse abuse detection', 'Active — usage_tracking', 'healthy'],
+                      ['Stripe webhook events', 'Active — stripe_webhook_events', 'healthy'],
+                      ['Payment reconciliation log', 'Active — stripe_reconcile_log', 'healthy'],
                     ].map(([l, v, s]) => <Row key={l} label={l} value={v} status={s} />)}
                   </div>
                 </Sec>
-                <Sec title="Sales Pipeline">
+                <Sec title="Live Subscriptions">
                   <div className="space-y-2">
-                    {[
-                      { name: 'Meridian Group', stage: 'Demo Done', value: '$2,400/mo', status: 'hot' },
-                      { name: 'Coastal Logistics', stage: 'Trial', value: '$1,800/mo', status: 'warm' },
-                      { name: 'Summit Partners', stage: 'Proposal', value: '$3,200/mo', status: 'warm' },
-                      { name: 'Apex Dental', stage: 'Contact', value: '$1,200/mo', status: 'new' },
-                      { name: 'Harbor Finance', stage: 'Demo Booked', value: '$2,800/mo', status: 'hot' },
-                    ].map(l => (
-                      <div key={l.name} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                        <StatusDot status={l.status === 'hot' ? 'critical' : l.status === 'warm' ? 'warning' : 'healthy'} />
-                        <div className="flex-1">
-                          <span className="text-xs text-[var(--ink-display)]" style={{ fontFamily: B }}>{l.name}</span>
-                          <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: M }}>{l.stage}</span>
-                        </div>
-                        <span className="text-xs text-[var(--ink-display)]" style={{ fontFamily: M }}>{l.value}</span>
+                    {billing.loaded && billing.transactions.length === 0 && (
+                      <div className="p-4 rounded-lg text-center" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                        <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: B }}>No subscriptions yet</p>
                       </div>
-                    ))}
+                    )}
+                    {billing.transactions.slice(0, 8).map((t, i) => {
+                      const user = users.find(u => u.id === t.user_id);
+                      const statusDot = t.payment_status === 'trialing' ? 'warning' : 'healthy';
+                      return (
+                        <div key={`${t.user_id}-${i}`} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                          <StatusDot status={statusDot} />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs text-[var(--ink-display)] block truncate" style={{ fontFamily: B }}>{user?.company_name || user?.full_name || user?.email || 'Orphaned record'}</span>
+                            <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: M }}>{t.tier} • {t.payment_status}</span>
+                          </div>
+                          <span className="text-xs text-[var(--ink-display)]" style={{ fontFamily: M }}>${Number(t.amount || 0).toFixed(0)}/mo</span>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="text-[10px] text-[var(--ink-muted)] mt-2 italic" style={{ fontFamily: B }}>Mock data. Connect CRM for live pipeline.</p>
                 </Sec>
               </div>
               <Pnl>
@@ -593,54 +552,7 @@ const AdminDashboard = () => {
           {/* ═══════════ OPERATIONS ═══════════ */}
           {page === 'operations' && (
             <div className="space-y-6">
-              <Sec title="Emergency Kill Switches">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {[
-                    { label: 'Tenant Suspension', desc: 'Suspend with data preserved', icon: Pause, active: true },
-                    { label: 'Platform Read-Only Mode', desc: 'Disable all writes', icon: Lock, active: false },
-                    { label: 'Feature Emergency Disable', desc: 'Kill specific features', icon: Power, active: false },
-                    { label: 'API Freeze', desc: 'Block all API access', icon: AlertOctagon, active: false },
-                    { label: 'AI Execution Halt', desc: 'Stop all Edge Functions', icon: Brain, active: false },
-                    { label: 'Emergency Broadcast', desc: 'Notify all users', icon: Radio, active: false },
-                  ].map(ks => (
-                    <div key={ks.label} className="flex items-center gap-3 p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                      <ks.icon className="w-5 h-5 text-[var(--ink-muted)] shrink-0" />
-                      <div className="flex-1">
-                        <span className="text-sm text-[var(--ink-display)]" style={{ fontFamily: B }}>{ks.label}</span>
-                        <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: B }}>{ks.desc}</span>
-                      </div>
-                      <div className={`w-9 h-5 rounded-full cursor-pointer flex items-center px-0.5`} style={{ background: ks.active ? '#E85D00' : 'rgba(140,170,210,0.15)' }}>
-                        <div className={`w-4 h-4 rounded-full ${ks.active ? 'ml-auto bg-white' : 'bg-[#64748B]'}`} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Sec>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <Sec title="Automation Rules">
-                  <div className="space-y-2">
-                    {[
-                      ['Auto-lockout after 5 failed logins', 'Planned', 'unknown'],
-                      ['API key rotation (90 days)', 'Planned', 'unknown'],
-                      ['Usage caps with throttling', 'Planned', 'unknown'],
-                      ['Billing enforcement automation', 'Needs Stripe', 'unknown'],
-                      ['Scheduled governance scans', 'Planned', 'unknown'],
-                      ['Auto risk-pattern lockout', 'Planned', 'unknown'],
-                    ].map(([l, v, s]) => <Row key={l} label={l} value={v} status={s} />)}
-                  </div>
-                </Sec>
-                <Sec title="Internal Team Oversight">
-                  <div className="space-y-2">
-                    {[
-                      ['Admin action leaderboard', 'Planned', 'unknown'],
-                      ['SLA adherence monitoring', 'Planned', 'unknown'],
-                      ['Ticket resolution heatmaps', 'Planned', 'unknown'],
-                      ['Developer deployment frequency', 'Planned', 'unknown'],
-                      ['Change failure rate', 'Planned', 'unknown'],
-                    ].map(([l, v, s]) => <Row key={l} label={l} value={v} status={s} />)}
-                  </div>
-                </Sec>
-              </div>
+              <ComingSoon message="Operational controls (kill switches, automation rules, team oversight) arriving in a later sprint. See User Admin tab for suspend/unsuspend." />
             </div>
           )}
 
@@ -649,21 +561,16 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Mc label="Active Users" value={users.length} icon={Users} color="var(--ink-display)" />
-                <Mc label="Calibrated" value={stats?.calibrated || 0} icon={Shield} color="#3B82F6" sub={`${users.length > 0 ? Math.round(((stats?.calibrated || 0) / users.length) * 100) : 0}% rate`} />
-                <Mc label="With Integrations" value={stats?.with_integrations || '—'} icon={Plug} color="#10B981" />
-                <Mc label="Activation Rate" value="—" icon={Rocket} color="#E85D00" sub="Needs telemetry" />
+                <Mc label="Calibrated" value={calibratedCount} icon={Shield} color="#3B82F6" sub={`${users.length > 0 ? Math.round((calibratedCount / users.length) * 100) : 0}% rate`} />
+                <Mc label="Integrations" value={integrationsCount} icon={Plug} color="#10B981" sub="Total connected" />
+                <Mc label="Trialing" value={billing.trialing} icon={Clock} color="#F59E0B" sub="Stripe 7-day trial" />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <Sec title="Growth Infrastructure">
                   <div className="space-y-2">
                     {[
-                      ['White-label provisioning', 'Planned', 'unknown'],
-                      ['Automated tenant cloning', 'Planned', 'unknown'],
-                      ['Bulk tenant migration', 'Planned', 'unknown'],
-                      ['Sandbox workspace generator', 'Planned', 'unknown'],
-                      ['Referral tracking', 'Planned', 'unknown'],
                       ['Integration usage monitoring', 'Active — per-user', 'healthy'],
-                      ['Activation milestone tracking', 'Partial — calibration', 'warning'],
+                      ['Activation milestone tracking', 'Active — calibration', 'healthy'],
                     ].map(([l, v, s]) => <Row key={l} label={l} value={v} status={s} />)}
                   </div>
                 </Sec>
@@ -673,38 +580,18 @@ const AdminDashboard = () => {
                       ['Transparent uptime panel', '/trust/centre', 'Ready'],
                       ['Data location disclosure', '/trust', 'Ready'],
                       ['Live security status', '/trust/security', 'Ready'],
-                      ['Last backup indicator', null, 'Planned'],
                       ['Encryption badge detail', '/trust/security', 'Ready'],
-                      ['Audit export button', null, 'Planned'],
-                      ['Admin access transparency log', null, 'Planned'],
                     ].map(([l, href, s]) => (
                       <div key={l} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                        <StatusDot status={s === 'Ready' ? 'healthy' : 'unknown'} />
+                        <StatusDot status="healthy" />
                         <span className="text-xs text-[var(--ink-display)] flex-1" style={{ fontFamily: B }}>{l}</span>
-                        <Badge text={s} color={s === 'Ready' ? '#10B981' : '#64748B'} />
+                        <Badge text={s} color="#10B981" />
+                        {href && <a href={href} target="_blank" rel="noreferrer" className="text-[var(--ink-muted)] hover:text-[#E85D00]"><ExternalLink className="w-3 h-3" /></a>}
                       </div>
                     ))}
                   </div>
                 </Sec>
               </div>
-              <Sec title="Configuration Intelligence">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {[
-                    { label: 'Impact Preview', desc: 'Simulate config changes before apply', status: 'Planned' },
-                    { label: 'Dependency Graph', desc: 'Visualise Edge Function dependencies', status: 'Planned' },
-                    { label: 'Rollback Control', desc: 'Version control for config changes', status: 'Planned' },
-                    { label: 'Config Drift Detection', desc: 'Alert when config deviates from baseline', status: 'Planned' },
-                    { label: 'Feature Flags', desc: 'Environment-specific feature management', status: 'Planned' },
-                    { label: 'Canary Releases', desc: 'Gradual rollout to subset of users', status: 'Planned' },
-                  ].map(item => (
-                    <div key={item.label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                      <span className="text-xs text-[var(--ink-display)] block mb-1" style={{ fontFamily: B }}>{item.label}</span>
-                      <span className="text-[10px] text-[var(--ink-muted)] block mb-2" style={{ fontFamily: B }}>{item.desc}</span>
-                      <Badge text={item.status} color="#64748B" />
-                    </div>
-                  ))}
-                </div>
-              </Sec>
             </div>
           )}
         </div>

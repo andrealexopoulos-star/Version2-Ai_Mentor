@@ -10,6 +10,7 @@ import {
   Mail, CheckSquare, Puzzle
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import OnboardingChecklist from '../components/advisor/OnboardingChecklist';
 // DailyBriefCard component replaced by inline brief matching approved mockup
 // ProactiveAlerts and PredictionsPanel removed — not in approved mockup
 import { fontFamily } from '../design-system/tokens';
@@ -618,6 +619,10 @@ const Advisor = () => {
             </button>
           </div>
         </div>
+
+        {/* ── Progressive Onboarding Checklist (Sprint B #12) ── */}
+        {/* Self-hides when percent_complete === 100 or user dismisses. */}
+        <OnboardingChecklist />
 
         {/* ── KPI Row — ALL values from real APIs ── */}
         {snapshotData?.generated_at && (
