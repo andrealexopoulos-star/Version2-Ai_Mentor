@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import OnboardingChecklist from '../components/advisor/OnboardingChecklist';
+import ObservationEventsCounter from '../components/advisor/ObservationEventsCounter';
 import ColdStartFeed from '../components/ColdStartFeed';
 import TierNudge from '../components/TierNudge';
 import SignalActionsMenu from '../components/SignalActionsMenu';
@@ -626,6 +627,12 @@ const Advisor = () => {
         {/* ── Progressive Onboarding Checklist (Sprint B #12) ── */}
         {/* Self-hides when percent_complete === 100 or user dismisses. */}
         <OnboardingChecklist />
+
+        {/* ── Observation Events Counter (A.2 — 2026-04-23) ──
+            Shows total observation_events for the user with Daily / Weekly /
+            Monthly toggle. Proof-of-value for the restored intelligence loop
+            (Bug #3 fix PR #352). */}
+        <ObservationEventsCounter />
 
         {/* ── KPI Row — ALL values from real APIs ── */}
         {snapshotData?.generated_at && (

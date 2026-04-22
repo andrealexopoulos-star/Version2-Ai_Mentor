@@ -626,6 +626,54 @@ async def get_integration_status(current_user: dict = Depends(get_current_user))
         return {"integrations": {}, "connected_count": 0, "total_count": 0}
 
 
+@router.get("/intelligence/observation-stats")
+async def get_observation_stats(current_user: dict = Depends(get_current_user)):
+    """Count `observation_events` for the current user across daily, weekly,
+    and monthly windows — for the Advisor-page counter (A.2 / 2026-04-23).
+
+    Returns one payload with all three windows + total so the frontend can
+    switch between them without additional round-trips.
+    """
+    from datetime import datetime, timezone, timedelta
+
+    user_id = current_user["id"]
+    sb = init_supabase()
+    now = datetime.now(timezone.utc)
+    windows = {
+        "daily":   now - timedelta(days=1),
+        "weekly":  now - timedelta(days=7),
+        "monthly": now - timedelta(days=30),
+    }
+
+    result: Dict[str, Any] = {}
+    for label, cutoff in windows.items():
+        try:
+            r = sb.table("observation_events") \
+                .select("id", count="exact") \
+                .eq("user_id", user_id) \
+                .gte("observed_at", cutoff.isoformat()) \
+                .limit(1) \
+                .execute()
+            result[label] = int(getattr(r, "count", 0) or 0)
+        except Exception as e:
+            logger.warning(f"[observation-stats] {label} count failed: {e}")
+            result[label] = 0
+
+    try:
+        r_total = sb.table("observation_events") \
+            .select("id", count="exact") \
+            .eq("user_id", user_id) \
+            .limit(1) \
+            .execute()
+        result["total"] = int(getattr(r_total, "count", 0) or 0)
+    except Exception as e:
+        logger.warning(f"[observation-stats] total count failed: {e}")
+        result["total"] = 0
+
+    result["generated_at"] = now.isoformat()
+    return result
+
+
 @router.get("/intelligence/governance-summary")
 async def get_governance_summary(current_user: dict = Depends(get_current_user)):
     try:
