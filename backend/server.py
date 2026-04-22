@@ -497,6 +497,10 @@ api_router.include_router(action_items_router)
 from routes.alerts import router as alerts_router
 api_router.include_router(alerts_router)
 
+# Sprint B #17 — snooze + structured feedback on observation_events.
+from routes.signals import router as signals_router
+api_router.include_router(signals_router)
+
 from routes.cognitive_stats import router as cognitive_stats_router
 api_router.include_router(cognitive_stats_router)
 
