@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { apiClient } from '../lib/api';
 import { supabase } from '../context/SupabaseAuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import KillSwitchPanel from '../components/admin/KillSwitchPanel';
 import { toast } from 'sonner';
 import {
   Users, Activity, Shield, Eye, Search, RefreshCw, Ban, CheckCircle,
@@ -549,10 +550,10 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {/* ═══════════ OPERATIONS ═══════════ */}
+          {/* ═══════════ OPERATIONS — Sprint D #28c kill switches ═══════════ */}
           {page === 'operations' && (
             <div className="space-y-6">
-              <ComingSoon message="Operational controls (kill switches, automation rules, team oversight) arriving in a later sprint. See User Admin tab for suspend/unsuspend." />
+              <KillSwitchPanel />
             </div>
           )}
 

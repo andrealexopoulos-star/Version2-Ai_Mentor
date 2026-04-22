@@ -756,3 +756,86 @@ async def get_api_providers(current_user: dict = Depends(get_current_user)):
 
     out.sort(key=lambda r: (_STATUS_SORT_ORDER.get(r["status"], 99), r["provider"]))
     return {"providers": out, "count": len(out)}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Sprint D #28c — Feature flags / kill switches (migration 124, 2026-04-22)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class FeatureFlagToggle(BaseModel):
+    enabled: bool
+
+
+@router.get("/super-admin/feature-flags")
+async def list_feature_flags(current_user: dict = Depends(get_current_user)):
+    """List every kill switch with its current state.
+
+    Reads the `feature_flags` table seeded in migration 124. The super admin
+    UI renders this list as a grid of toggles.
+    """
+    _require_super_admin(current_user)
+    sb = _get_service_client()
+    try:
+        res = (
+            sb.table("feature_flags")
+            .select("flag_key, enabled, description, updated_at, updated_by")
+            .order("flag_key")
+            .execute()
+        )
+        rows = res.data or []
+        return {"flags": rows, "count": len(rows)}
+    except Exception as exc:
+        logger.error("[feature-flags.list] failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to load feature flags")
+
+
+@router.patch("/super-admin/feature-flags/{flag_key}")
+async def toggle_feature_flag(
+    flag_key: str,
+    body: FeatureFlagToggle,
+    current_user: dict = Depends(get_current_user),
+):
+    """Flip a specific kill switch.
+
+    Writes `enabled` + `updated_at` + `updated_by` and mirrors to
+    `admin_actions` for audit history.
+    """
+    _require_super_admin(current_user)
+    # Restrict the key pattern so a typo doesn't leak into the table as a new row.
+    if not flag_key or len(flag_key) > 64 or not flag_key.replace("_", "").isalnum():
+        raise HTTPException(status_code=400, detail="invalid flag_key")
+
+    sb = _get_service_client()
+    now = datetime.now(timezone.utc).isoformat()
+    admin_id = current_user.get("id")
+
+    try:
+        res = (
+            sb.table("feature_flags")
+            .update({
+                "enabled": bool(body.enabled),
+                "updated_at": now,
+                "updated_by": admin_id,
+            })
+            .eq("flag_key", flag_key)
+            .execute()
+        )
+        if not (res.data or []):
+            raise HTTPException(status_code=404, detail=f"flag_key not found: {flag_key}")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("[feature-flags.toggle] failed for %s: %s", flag_key, exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to toggle flag")
+
+    # Audit trail — best-effort; missing audit table should not fail the toggle.
+    try:
+        sb.table("admin_actions").insert({
+            "admin_user_id": admin_id,
+            "action_type": "feature_flag_toggle",
+            "new_value": {"flag_key": flag_key, "enabled": bool(body.enabled)},
+        }).execute()
+    except Exception as audit_exc:  # pragma: no cover
+        logger.warning("[feature-flags.toggle] audit insert failed: %s", audit_exc)
+
+    return {"flag_key": flag_key, "enabled": bool(body.enabled), "updated_at": now}
