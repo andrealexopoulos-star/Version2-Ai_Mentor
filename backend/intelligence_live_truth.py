@@ -476,20 +476,69 @@ def get_latest_snapshot_context(sb, user_id: str) -> Dict[str, Any]:
         return {"summary": {}, "executive_memo": None, "generated_at": None}
 
 
+OBSERVATION_EVENT_WINDOW_HOURS = 72
+
+
+def _format_time_ago(delta: timedelta) -> str:
+    """Human-format a timedelta into a compact '2m' / '14m' / '3h' / '2d' string.
+
+    Negative deltas (future-dated events from clock skew) are clamped to 'now'.
+    """
+    total_seconds = delta.total_seconds()
+    if total_seconds < 0:
+        return "now"
+    total_minutes = int(total_seconds // 60)
+    if total_minutes < 1:
+        return "now"
+    if total_minutes < 60:
+        return f"{total_minutes}m"
+    total_hours = total_minutes // 60
+    if total_hours < 24:
+        return f"{total_hours}h"
+    total_days = total_hours // 24
+    return f"{total_days}d"
+
+
+def _get_dismissed_observation_event_ids(sb, user_id: str) -> set:
+    """Return the set of observation_event IDs the user has dismissed.
+
+    Reads from observation_event_dismissals (migration 116). If the table is
+    absent (e.g. migration not yet applied to local stack), log and return an
+    empty set so the feed still renders rather than 500s.
+    """
+    try:
+        result = sb.table("observation_event_dismissals").select(
+            "event_id"
+        ).eq("user_id", user_id).execute()
+        return {row.get("event_id") for row in (result.data or []) if row.get("event_id")}
+    except Exception as e:
+        logger.warning(f"[live-truth] dismissals lookup failed (table may be missing): {e}")
+        return set()
+
+
 def get_recent_observation_events(sb, user_id: str, limit: int = 25) -> Dict[str, Any]:
     try:
+        window_start = (datetime.now(timezone.utc) - timedelta(hours=OBSERVATION_EVENT_WINDOW_HOURS)).isoformat()
+        dismissed_ids = _get_dismissed_observation_event_ids(sb, user_id)
+        # Fetch extra rows so the post-filter dismissal removal still leaves
+        # room to hit the caller-requested `limit`.
+        fetch_limit = limit + len(dismissed_ids) if dismissed_ids else limit
         result = sb.table("observation_events").select(
             "id, signal_name, domain, severity, source, observed_at, payload, executive_summary, fingerprint", count="exact"
-        ).eq("user_id", user_id).order("observed_at", desc=True).limit(limit).execute()
+        ).eq("user_id", user_id).gte("observed_at", window_start).order("observed_at", desc=True).limit(fetch_limit).execute()
         events = []
         seen = set()
         for row in (result.data or []):
+            if row.get("id") in dismissed_ids:
+                continue
             payload = parse_json_field(row.get("payload")) or {}
             fp = row.get("fingerprint") or f"{row.get('signal_name', '')}|{row.get('source', '')}|{payload.get('entity_id', '')}"
             if fp in seen:
                 continue
             seen.add(fp)
             events.append({**row, "signal_payload": payload})
+            if len(events) >= limit:
+                break
         return {
             "events": events,
             "count": len(events),
@@ -525,6 +574,30 @@ def build_watchtower_events(observation_events: List[Dict[str, Any]], limit: int
         title = payload.get("title") or signal_name.replace("_", " ").title()
         recommendation = payload.get("recommendation") or payload.get("action") or "Review signal and take corrective action."
 
+        observed_at_raw = row.get("observed_at")
+        time_ago: Optional[str] = None
+        age_hours: Optional[float] = None
+        observed_at_iso: Optional[str] = None
+        try:
+            if isinstance(observed_at_raw, str) and observed_at_raw.strip():
+                observed_at_iso = observed_at_raw
+                observed_at_dt = datetime.fromisoformat(observed_at_raw.replace("Z", "+00:00"))
+                if observed_at_dt.tzinfo is None:
+                    observed_at_dt = observed_at_dt.replace(tzinfo=timezone.utc)
+                delta = datetime.now(timezone.utc) - observed_at_dt
+                time_ago = _format_time_ago(delta)
+                age_hours = round(delta.total_seconds() / 3600.0, 2)
+            elif isinstance(observed_at_raw, datetime):
+                observed_at_dt = observed_at_raw if observed_at_raw.tzinfo else observed_at_raw.replace(tzinfo=timezone.utc)
+                observed_at_iso = observed_at_dt.isoformat()
+                delta = datetime.now(timezone.utc) - observed_at_dt
+                time_ago = _format_time_ago(delta)
+                age_hours = round(delta.total_seconds() / 3600.0, 2)
+        except Exception:
+            # Frontend handles null gracefully
+            time_ago = None
+            age_hours = None
+
         mapped.append({
             "id": row.get("id") or f"obs-{signal_name}",
             "signal": signal_name,
@@ -538,7 +611,10 @@ def build_watchtower_events(observation_events: List[Dict[str, Any]], limit: int
             "severity": severity,
             "domain": row.get("domain") or payload.get("domain") or "general",
             "source": row.get("source") or payload.get("source") or "observation_events",
-            "created_at": row.get("observed_at"),
+            "created_at": observed_at_raw,
+            "observed_at_iso": observed_at_iso,
+            "time_ago": time_ago,
+            "age_hours": age_hours,
         })
 
     deduped: List[Dict[str, Any]] = []
