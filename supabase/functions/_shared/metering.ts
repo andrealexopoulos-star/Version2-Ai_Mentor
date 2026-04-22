@@ -53,12 +53,17 @@ const MODEL_PRICING: Record<string, { input_per_1m: number; output_per_1m: numbe
   "gpt-5.4-pro":   { input_per_1m: 22.80, output_per_1m: 91.20 },
   "gpt-5.4":       { input_per_1m:  3.80, output_per_1m: 15.20 },
   "gpt-5.3":       { input_per_1m:  0.76, output_per_1m:  3.04 },
+  "gpt-5.2":       { input_per_1m:  2.66, output_per_1m: 21.28 }, // Trinity GPT contributor. Src: openai.com/api/pricing (verified 2026-04-22 via WebSearch) — $1.75/$14 USD @ 1.52 AUD
+  // OpenAI reasoning / synthesis models
+  "o3-pro":        { input_per_1m: 30.40, output_per_1m: 121.60 }, // Trinity synthesis. Src: apidog.com + MS Foundry blog (verified 2026-04-22) — $20/$80 USD @ 1.52 AUD. NOTE: more expensive per-token than Opus 4.6
+  "o3":            { input_per_1m:  3.04, output_per_1m:  12.16 }, // Reasoning. Src: apidog + OpenAI community (2026-04-22) — $2/$8 USD @ 1.52
   // OpenAI GPT-4o family (still used by several edge functions)
   "gpt-4o":        { input_per_1m:  3.80, output_per_1m: 15.20 },
   "gpt-4o-mini":   { input_per_1m:  0.23, output_per_1m:  0.91 },
   "gpt-4o-realtime-preview-2024-12-17": { input_per_1m: 7.60, output_per_1m: 30.40 },
   // Google Gemini 3
   "gemini-3-pro-preview":   { input_per_1m: 1.90, output_per_1m:  7.60 },
+  "gemini-3.1-pro-preview": { input_per_1m: 3.04, output_per_1m: 18.24 }, // Trinity Gemini contributor. Src: ai.google.dev/pricing (verified 2026-04-22 via WebFetch) — $2/$12 USD (≤200k prompt) @ 1.52 AUD
   "gemini-3-flash-preview": { input_per_1m: 0.11, output_per_1m:  0.46 },
   // Anthropic Claude 4.6
   "claude-opus-4-6":   { input_per_1m: 22.80, output_per_1m: 114.00 },

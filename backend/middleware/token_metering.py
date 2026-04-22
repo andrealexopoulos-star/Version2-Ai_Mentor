@@ -65,10 +65,26 @@ MODEL_PRICING: dict[str, dict[str, float]] = {
     "gpt-5.4-pro":   {"input_per_1m": 22.80, "output_per_1m": 91.20},
     "gpt-5.4":       {"input_per_1m":  3.80, "output_per_1m": 15.20},
     "gpt-5.3":       {"input_per_1m":  0.76, "output_per_1m":  3.04},
+    # Trinity GPT contributor — openai.com/api/pricing verified 2026-04-22
+    # ($1.75 / $14.00 USD @ 1.52 AUD). Was silently $0 until this fix.
+    "gpt-5.2":       {"input_per_1m":  2.66, "output_per_1m": 21.28},
+    # OpenAI reasoning models
+    # o3-pro is the Trinity synthesis model — apidog + MS Foundry blog verified
+    # 2026-04-22 ($20 / $80 USD @ 1.52 AUD). NOTE: MORE EXPENSIVE per-token
+    # than Claude Opus 4.6 — every synthesis call was silently $0 before fix.
+    "o3-pro":        {"input_per_1m": 30.40, "output_per_1m": 121.60},
+    "o3":            {"input_per_1m":  3.04, "output_per_1m":  12.16},
     # OpenAI realtime / voice
     "gpt-4o-realtime-preview-2024-12-17": {"input_per_1m": 7.60, "output_per_1m": 30.40},
+    # OpenAI GPT-4o family
+    "gpt-4o":        {"input_per_1m":  3.80, "output_per_1m": 15.20},
+    "gpt-4o-mini":   {"input_per_1m":  0.23, "output_per_1m":  0.91},
     # Google Gemini 3
     "gemini-3-pro-preview":   {"input_per_1m": 1.90, "output_per_1m":  7.60},
+    # ai.google.dev/pricing WebFetch verified 2026-04-22 — $2/$12 USD @ ≤200k
+    # prompt tokens (above 200k doubles). Used by biqc-trinity Gemini contributor
+    # and biqc-insights-cognitive.
+    "gemini-3.1-pro-preview": {"input_per_1m": 3.04, "output_per_1m": 18.24},
     "gemini-3-flash-preview": {"input_per_1m": 0.11, "output_per_1m":  0.46},
     # Anthropic Claude 4.6
     "claude-opus-4-6":   {"input_per_1m": 22.80, "output_per_1m": 114.00},
