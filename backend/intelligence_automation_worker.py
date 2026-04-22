@@ -105,11 +105,17 @@ async def daily_intelligence_scan():
 
 
 async def _run_supernatural_engines(user_id: str):
-    """Run proactive + predictive + narrative engines for a user."""
+    """Run proactive + predictive + narrative engines for a user.
+
+    Engine methods are synchronous; offload to a thread pool via
+    ``asyncio.to_thread`` so the FastAPI event loop stays responsive while
+    the engines do DB + LLM work. (Hotfix A.1 — 2026-04-23 — addresses
+    peer-review blocker on PR #352.)
+    """
     try:
         from proactive_intelligence import ProactiveIntelligenceEngine
         engine = ProactiveIntelligenceEngine(supabase_admin)
-        result = engine.run_full_scan(user_id)
+        result = await asyncio.to_thread(engine.run_full_scan, user_id)
         if result.get("alerts_created", 0) > 0:
             logger.info(f"[PROACTIVE] {result['alerts_created']} alerts for user {user_id[:8]}...")
     except Exception as e:
@@ -118,7 +124,7 @@ async def _run_supernatural_engines(user_id: str):
     try:
         from predictive_intelligence import PredictiveIntelligenceEngine
         engine = PredictiveIntelligenceEngine(supabase_admin)
-        result = engine.run_all_predictions(user_id)
+        result = await asyncio.to_thread(engine.run_all_predictions, user_id)
         if result.get("predictions_created", 0) > 0:
             logger.info(f"[PREDICTIVE] {result['predictions_created']} predictions for user {user_id[:8]}...")
     except Exception as e:
@@ -127,7 +133,7 @@ async def _run_supernatural_engines(user_id: str):
     try:
         from narrative_synthesis import NarrativeSynthesisEngine
         engine = NarrativeSynthesisEngine(supabase_admin)
-        result = engine.generate_weekly_narrative(user_id)
+        result = await asyncio.to_thread(engine.generate_weekly_narrative, user_id)
         if result.get("narrative_id"):
             logger.info(f"[NARRATIVE] Generated narrative for user {user_id[:8]}...")
     except Exception as e:
@@ -149,6 +155,23 @@ SCHEDULE_DISPATCH = {
 async def process_intelligence_queue():
     """Poll intelligence_queue for queued items and dispatch to handlers."""
     try:
+        # Hotfix A.1 — worker-crash recovery. Any row stuck in 'processing'
+        # for >30 min is a zombie (worker died mid-handler or Azure restart).
+        # Reset to 'queued' so the next poll re-tries it. Bounded blast radius:
+        # only affects stale rows, never in-flight ones.
+        thirty_min_ago = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+        try:
+            zombie_reset = supabase_admin.table("intelligence_queue").update({
+                "status": "queued",
+                "started_at": None,
+            }).eq("status", "processing").lt("started_at", thirty_min_ago).execute()
+            if zombie_reset.data:
+                logger.warning(
+                    f"[QUEUE] Reset {len(zombie_reset.data)} zombie 'processing' rows >30 min old"
+                )
+        except Exception as zombie_err:
+            logger.debug(f"[QUEUE] Zombie reset skipped: {zombie_err}")
+
         # Fetch next batch of queued items (oldest first, highest priority first)
         result = supabase_admin.table("intelligence_queue") \
             .select("*") \
@@ -183,7 +206,10 @@ async def process_intelligence_queue():
                     cls = getattr(mod, class_name)
                     instance = cls(supabase_admin)
                     method = getattr(instance, method_name)
-                    method(user_id)
+                    # Dispatched engine methods are synchronous — offload to
+                    # a thread pool so we don't block the event loop (hotfix
+                    # A.1 — 2026-04-23 addresses peer-review blocker).
+                    await asyncio.to_thread(method, user_id)
                 else:
                     # For schedule_keys without local dispatch, just run standard intelligence
                     await run_automatic_intelligence(user_id)
