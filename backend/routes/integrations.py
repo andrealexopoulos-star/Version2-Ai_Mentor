@@ -2708,6 +2708,25 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
 
     candidate_signals.sort(key=lambda item: item.get("risk_score", 0), reverse=True)
 
+    # ---- Top actions (Sprint B #15) ---------------------------------------
+    # Score candidates with the shared priority scorer and pick the highest-
+    # priority items. The scorer returns shallow copies with risk_score,
+    # title, action_hint, why_this_ranks_here attached.
+    from services.priority_scorer import compute_top_actions
+
+    TOP_ACTIONS_THRESHOLD = 3.0  # empirical: severity*recency*evidence >= 3
+    TOP_ACTIONS_MAX = 3
+    ranked = compute_top_actions(candidate_signals, n=TOP_ACTIONS_MAX)
+    filtered = [item for item in ranked if item.get("risk_score", 0) >= TOP_ACTIONS_THRESHOLD]
+    # dynamic N: at least 1 if anything scored, capped at TOP_ACTIONS_MAX,
+    # and only items crossing the threshold — so 0 candidates => 0 actions.
+    top_actions = filtered if filtered else (ranked[:1] if ranked else [])
+    top_actions = top_actions[:TOP_ACTIONS_MAX]
+    top_action_keys = {item.get("signal_key") for item in top_actions if item.get("signal_key")}
+    # Exclude top actions from the bucketed card pool so the headline and
+    # the feed below render DIFFERENT data (no duplicate rendering bug).
+    candidate_signals = [c for c in candidate_signals if c.get("signal_key") not in top_action_keys]
+
     def pull(bucket_hint: str):
         for idx, signal in enumerate(candidate_signals):
             if signal.get("bucket_hint") == bucket_hint:
@@ -2754,6 +2773,20 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "summary": cash_error_summary,
         })
 
+    # Trim top_actions payload to the fields the frontend needs.
+    top_actions_payload = [
+        {
+            "signal_key": item.get("signal_key"),
+            "title": item.get("title"),
+            "why_this_ranks_here": item.get("why_this_ranks_here"),
+            "risk_score": item.get("risk_score"),
+            "action_hint": item.get("action_hint"),
+            "source": item.get("source"),
+            "bucket_hint": item.get("bucket_hint"),
+        }
+        for item in top_actions
+    ]
+
     return {
         "all_clear": all_clear,
         "connected_tools": connected_tools,
@@ -2776,6 +2809,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "cash_exposure": cash_provenance
         },
         "cards": cards,
+        "top_actions": top_actions_payload,
     }
 
 

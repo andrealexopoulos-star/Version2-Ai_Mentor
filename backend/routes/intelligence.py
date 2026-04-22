@@ -202,6 +202,59 @@ async def baseline_defaults(current_user: dict = Depends(get_current_user)):
 # Pulls real data from CRM, forensic calibration, business profile
 # to provide the Market page with live intelligence
 
+@router.get("/industry-signals")
+async def get_industry_signals(
+    limit: int = 5,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Cold-start feed (Sprint B #14) — generic SMB signals for brand-new users
+    whose integrations + watchtower feed are empty.
+
+    Returns the `limit` most recent rows matching the user's industry,
+    falling back to industry='general' when no industry-specific content
+    exists. No user-specific data is read.
+    """
+    from supabase_intelligence_helpers import get_business_profile_supabase
+
+    sb = get_sb()
+    safe_limit = max(1, min(int(limit or 5), 20))
+
+    # Determine the user's industry; fall back to 'general' on any miss.
+    industry_key = "general"
+    try:
+        profile = await get_business_profile_supabase(sb, current_user["id"])
+        if profile and profile.get("industry"):
+            industry_key = str(profile["industry"]).strip().lower() or "general"
+    except Exception as e:
+        logger.warning(f"[industry-signals] profile lookup failed: {e}")
+
+    def _fetch(industry_value: str) -> List[Dict[str, Any]]:
+        try:
+            res = (
+                sb.table("industry_signals")
+                .select("id,title,description,source,industry,published_at")
+                .eq("industry", industry_value)
+                .order("published_at", desc=True)
+                .limit(safe_limit)
+                .execute()
+            )
+            return res.data or []
+        except Exception as exc:
+            logger.warning(f"[industry-signals] fetch failed for {industry_value}: {exc}")
+            return []
+
+    rows = _fetch(industry_key)
+    if not rows and industry_key != "general":
+        rows = _fetch("general")
+
+    return {
+        "signals": rows,
+        "industry": industry_key,
+        "count": len(rows),
+    }
+
+
 @router.get("/market-intelligence")
 async def get_market_intelligence(current_user: dict = Depends(get_current_user)):
     """

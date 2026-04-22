@@ -16,10 +16,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SYNC_MODEL = "gpt-4o-mini";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions(req);
@@ -130,7 +132,7 @@ Country: ${bp?.target_country || "Australia"}`;
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: SYNC_MODEL,
         messages: [
           { role: "system", content: "You extract structured business profile data from calibration conversations. Return valid JSON only. Use null for anything not explicitly mentioned." },
           { role: "user", content: extractionPrompt },
@@ -147,13 +149,23 @@ Country: ${bp?.target_country || "Australia"}`;
       const usage = aiData.usage || {};
       try { extracted = JSON.parse(raw); } catch { extracted = {}; }
 
-      // Track usage
+      // usage_ledger emit (systemic metering — Track B v2)
+      recordUsage({
+        userId,
+        model: SYNC_MODEL,
+        inputTokens: usage.prompt_tokens || 0,
+        outputTokens: usage.completion_tokens || 0,
+        cachedInputTokens: usage.prompt_tokens_details?.cached_tokens || 0,
+        feature: "calibration_sync",
+      });
+
+      // Legacy usage_tracking
       try {
         await sb.from("usage_tracking").insert({
           user_id: userId,
           function_name: "calibration-sync",
           api_provider: "openai",
-          model: "gpt-4o-mini",
+          model: SYNC_MODEL,
           tokens_in: usage.prompt_tokens || 0,
           tokens_out: usage.completion_tokens || 0,
           cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,

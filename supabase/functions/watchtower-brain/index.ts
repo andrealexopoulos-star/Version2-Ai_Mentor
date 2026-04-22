@@ -2,6 +2,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { verifyAuth } from "../_shared/auth.ts"
 import { corsHeaders, handleOptions } from "../_shared/cors.ts"
+import { recordUsage } from "../_shared/metering.ts"
+
+const WATCHTOWER_MODEL = "gpt-4o-mini"
 
 // 🛡️ THE MASTER CONTROL PROMPT (HARDENED)
 // This prompt forces the AI to control the flow and refuse off-topic chat.
@@ -80,7 +83,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', 
+        model: WATCHTOWER_MODEL,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           ...(history || []),
@@ -98,6 +101,18 @@ serve(async (req) => {
         headers: corsHeaders(req),
       })
     }
+
+    // usage_ledger emit (systemic metering — Track B v2)
+    const usage = data.usage || {}
+    recordUsage({
+      userId: auth.userId || "",
+      model: WATCHTOWER_MODEL,
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      cachedInputTokens: usage.prompt_tokens_details?.cached_tokens || 0,
+      feature: "watchtower_brain",
+    })
+
     return new Response(data.choices[0].message.content, {
       headers: corsHeaders(req),
     })

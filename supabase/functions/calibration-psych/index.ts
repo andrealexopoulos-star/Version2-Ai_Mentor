@@ -7,6 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -186,6 +187,7 @@ async function askOpenAI(
   step: number,
   profile: Record<string, unknown>,
   conversationHistory: Array<{ role: string; content: string }>,
+  userId: string,
 ): Promise<{ parsed: Record<string, unknown>; responseId: string }> {
   const profileSummary = Object.keys(profile).length > 0
     ? `\nOPERATOR PROFILE CAPTURED SO FAR:\n${JSON.stringify(profile, null, 2)}\n---`
@@ -231,19 +233,35 @@ async function askOpenAI(
     ?.find((o: Record<string, unknown>) => o.type === "message")
     ?.content?.find((c: Record<string, unknown>) => c.type === "output_text")?.text;
 
+  const usage = data.usage || {};
+  const inputTokens = usage.input_tokens || usage.prompt_tokens || 0;
+  const outputTokens = usage.output_tokens || usage.completion_tokens || 0;
+
+  // usage_ledger emit (systemic metering — Track B v2)
+  recordUsage({
+    userId,
+    model: MODEL,
+    inputTokens,
+    outputTokens,
+    cachedInputTokens:
+      usage.input_tokens_details?.cached_tokens ||
+      usage.prompt_tokens_details?.cached_tokens || 0,
+    feature: "calibration_psych",
+    action: `step_${step}`,
+  });
+
+  // Legacy usage_tracking
   try {
-    const usage = data.usage || {};
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     await sb.from("usage_tracking").insert({
+      user_id: userId,
       function_name: "calibration-psych",
       api_provider: "openai",
       model: MODEL,
-      tokens_in: usage.input_tokens || usage.prompt_tokens || 0,
-      tokens_out: usage.output_tokens || usage.completion_tokens || 0,
+      tokens_in: inputTokens,
+      tokens_out: outputTokens,
       cost_estimate:
-        ((usage.input_tokens || usage.prompt_tokens || 0) * 0.00015 +
-          (usage.output_tokens || usage.completion_tokens || 0) * 0.0006) /
-        1000,
+        (inputTokens * 0.00015 + outputTokens * 0.0006) / 1000,
       called_at: new Date().toISOString(),
     });
   } catch { /* non-critical */ }
@@ -332,7 +350,7 @@ serve(async (req: Request) => {
       const initMessage = modelAvailable
         ? await (async () => {
             try {
-              const { parsed } = await askOpenAI("init", 1, {}, []);
+              const { parsed } = await askOpenAI("init", 1, {}, [], userId);
               return normalizeStr(parsed.message) || SEED_QUESTION;
             } catch {
               return SEED_QUESTION;
@@ -376,7 +394,7 @@ serve(async (req: Request) => {
     let responseId = `local-${Date.now()}`;
 
     if (modelAvailable) {
-      const llmTurn = await askOpenAI(message, currentStep, op, history);
+      const llmTurn = await askOpenAI(message, currentStep, op, history, userId);
       parsed = llmTurn.parsed;
       responseId = llmTurn.responseId;
     } else {

@@ -15,12 +15,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
+const CONSOLE_MODEL = "gpt-5.4-pro";
 
 // ─── Fetch Merge.dev data ───
 async function fetchMerge(token: string, endpoint: string, limit = 20) {
@@ -260,7 +262,7 @@ ${JSON.stringify(ctx, null, 2)}`;
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-5.4-pro",
+        model: CONSOLE_MODEL,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -283,13 +285,24 @@ ${JSON.stringify(ctx, null, 2)}`;
     const raw = aiData.choices?.[0]?.message?.content || "";
     const usage = aiData.usage || {};
 
-    // Track usage
+    // usage_ledger emit (systemic metering — Track B v2)
+    recordUsage({
+      userId: user.id,
+      model: CONSOLE_MODEL,
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      cachedInputTokens: usage.prompt_tokens_details?.cached_tokens || 0,
+      feature: "strategic_console_ai",
+      action: mode,
+    });
+
+    // Legacy usage_tracking
     try {
       await supabase.from("usage_tracking").insert({
         user_id: user.id,
         function_name: "strategic-console-ai",
         api_provider: "openai",
-        model: "gpt-5.4-pro",
+        model: CONSOLE_MODEL,
         tokens_in: usage.prompt_tokens || 0,
         tokens_out: usage.completion_tokens || 0,
         cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,

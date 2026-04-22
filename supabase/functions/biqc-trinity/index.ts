@@ -15,6 +15,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -24,7 +25,15 @@ const GOOGLE_KEY    = Deno.env.get("GOOGLE_API_KEY")!;
 
 
 // ── Call a model via Emergent universal API ────────────────────────────────────
-async function callModel(provider: string, model: string, systemMsg: string, userMsg: string, temperature = 0.7): Promise<string> {
+// Returns { text, inputTokens, outputTokens, cachedInputTokens, actualModel }
+// so the caller can emit to usage_ledger with the real model id.
+async function callModel(
+  provider: string,
+  model: string,
+  systemMsg: string,
+  userMsg: string,
+  temperature = 0.7,
+): Promise<{ text: string; inputTokens: number; outputTokens: number; cachedInputTokens: number; actualModel: string }> {
   if (provider === "openai") {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -33,7 +42,14 @@ async function callModel(provider: string, model: string, systemMsg: string, use
     });
     if (!res.ok) throw new Error(`OpenAI error ${res.status}`);
     const d = await res.json();
-    return d.choices?.[0]?.message?.content || "";
+    const u = d.usage || {};
+    return {
+      text: d.choices?.[0]?.message?.content || "",
+      inputTokens: u.prompt_tokens || 0,
+      outputTokens: u.completion_tokens || 0,
+      cachedInputTokens: u.prompt_tokens_details?.cached_tokens || 0,
+      actualModel: d.model || model,
+    };
   }
 
   if (provider === "anthropic") {
@@ -44,7 +60,14 @@ async function callModel(provider: string, model: string, systemMsg: string, use
     });
     if (!res.ok) throw new Error(`Anthropic error ${res.status}`);
     const d = await res.json();
-    return d.content?.[0]?.text || "";
+    const u = d.usage || {};
+    return {
+      text: d.content?.[0]?.text || "",
+      inputTokens: u.input_tokens || 0,
+      outputTokens: u.output_tokens || 0,
+      cachedInputTokens: u.cache_read_input_tokens || 0,
+      actualModel: d.model || model,
+    };
   }
 
   if (provider === "gemini") {
@@ -59,7 +82,14 @@ async function callModel(provider: string, model: string, systemMsg: string, use
     );
     if (!res.ok) throw new Error(`Gemini error ${res.status}`);
     const d = await res.json();
-    return d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const u = d.usageMetadata || {};
+    return {
+      text: d.candidates?.[0]?.content?.parts?.[0]?.text || "",
+      inputTokens: Number(u.promptTokenCount || 0),
+      outputTokens: Number(u.candidatesTokenCount || 0),
+      cachedInputTokens: Number(u.cachedContentTokenCount || 0),
+      actualModel: geminiModel,
+    };
   }
 
   throw new Error(`Unknown provider: ${provider}`);
@@ -121,15 +151,50 @@ Deno.serve(async (req) => {
     // ── Run all three models in PARALLEL ────────────────────────────────────────
     console.log("[TRINITY] Dispatching to GPT-5.2, Claude Opus 4.6, Gemini 2.5 Pro in parallel...");
 
+    const GPT_MODEL = "gpt-5.2";
+    const CLAUDE_MODEL = "claude-opus-4-6";
+    const GEMINI_MODEL = "gemini-3.1-pro-preview";
+    const SYNTH_MODEL = "o3-pro";
+
     const [gptResult, claudeResult, geminiResult] = await Promise.allSettled([
-      callModel("openai", "gpt-5.2", GPT_SYSTEM(business_context), message, 0.3),
-      callModel("anthropic", "claude-opus-4-6", CLAUDE_SYSTEM(business_context), message, 0.6),
-      callModel("gemini", "gemini-3.1-pro-preview", GEMINI_SYSTEM(business_context), message, 0.7),
+      callModel("openai", GPT_MODEL, GPT_SYSTEM(business_context), message, 0.3),
+      callModel("anthropic", CLAUDE_MODEL, CLAUDE_SYSTEM(business_context), message, 0.6),
+      callModel("gemini", GEMINI_MODEL, GEMINI_SYSTEM(business_context), message, 0.7),
     ]);
 
-    const gptAnalysis   = gptResult.status   === "fulfilled" ? gptResult.value   : `[GPT unavailable: ${(gptResult as any).reason?.message?.slice(0,100)}]`;
-    const claudeAnalysis = claudeResult.status === "fulfilled" ? claudeResult.value : `[Claude unavailable: ${(claudeResult as any).reason?.message?.slice(0,100)}]`;
-    const geminiAnalysis = geminiResult.status === "fulfilled" ? geminiResult.value : `[Gemini unavailable: ${(geminiResult as any).reason?.message?.slice(0,100)}]`;
+    const gptPayload    = gptResult.status    === "fulfilled" ? gptResult.value    : null;
+    const claudePayload = claudeResult.status === "fulfilled" ? claudeResult.value : null;
+    const geminiPayload = geminiResult.status === "fulfilled" ? geminiResult.value : null;
+
+    const gptAnalysis    = gptPayload    ? gptPayload.text    : `[GPT unavailable: ${(gptResult as any).reason?.message?.slice(0,100)}]`;
+    const claudeAnalysis = claudePayload ? claudePayload.text : `[Claude unavailable: ${(claudeResult as any).reason?.message?.slice(0,100)}]`;
+    const geminiAnalysis = geminiPayload ? geminiPayload.text : `[Gemini unavailable: ${(geminiResult as any).reason?.message?.slice(0,100)}]`;
+
+    // usage_ledger emits for each of the three contributors (fire-and-forget)
+    if (gptPayload) {
+      recordUsage({
+        userId, model: gptPayload.actualModel,
+        inputTokens: gptPayload.inputTokens, outputTokens: gptPayload.outputTokens,
+        cachedInputTokens: gptPayload.cachedInputTokens,
+        feature: "biqc_trinity", action: "contributor_gpt",
+      });
+    }
+    if (claudePayload) {
+      recordUsage({
+        userId, model: claudePayload.actualModel,
+        inputTokens: claudePayload.inputTokens, outputTokens: claudePayload.outputTokens,
+        cachedInputTokens: claudePayload.cachedInputTokens,
+        feature: "biqc_trinity", action: "contributor_claude",
+      });
+    }
+    if (geminiPayload) {
+      recordUsage({
+        userId, model: geminiPayload.actualModel,
+        inputTokens: geminiPayload.inputTokens, outputTokens: geminiPayload.outputTokens,
+        cachedInputTokens: geminiPayload.cachedInputTokens,
+        feature: "biqc_trinity", action: "contributor_gemini",
+      });
+    }
 
     const parallelMs = Date.now() - startTime;
     console.log(`[TRINITY] All three responded in ${parallelMs}ms`);
@@ -151,7 +216,16 @@ ${business_context.slice(0, 2000)}
 
 Now synthesize these three perspectives into one cohesive, authoritative executive response.`;
 
-    const synthesis = await callModel("openai", "o3-pro", SYNTHESIS_SYSTEM, synthesisPrompt, 0.7);
+    const synthPayload = await callModel("openai", SYNTH_MODEL, SYNTHESIS_SYSTEM, synthesisPrompt, 0.7);
+    const synthesis = synthPayload.text;
+
+    // usage_ledger emit for the synthesizer
+    recordUsage({
+      userId, model: synthPayload.actualModel,
+      inputTokens: synthPayload.inputTokens, outputTokens: synthPayload.outputTokens,
+      cachedInputTokens: synthPayload.cachedInputTokens,
+      feature: "biqc_trinity", action: "synthesis",
+    });
 
     const totalMs = Date.now() - startTime;
     console.log(`[TRINITY] Complete in ${totalMs}ms`);

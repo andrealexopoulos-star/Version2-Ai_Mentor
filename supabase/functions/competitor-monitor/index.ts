@@ -27,12 +27,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth, enforceUserOwnership } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const COMPETITOR_MONITOR_BATCH_SECRET = Deno.env.get("COMPETITOR_MONITOR_BATCH_SECRET") || "";
+const COMPETITOR_MODEL = "gpt-5.3";
 
 interface CompetitorSignal {
   name: string;
@@ -77,6 +79,7 @@ async function analyseChanges(
   industry: string,
   previousSignals: string,
   currentSignals: string,
+  userId: string,
 ): Promise<CompetitorSignal[]> {
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -86,7 +89,7 @@ async function analyseChanges(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5.3",
+        model: COMPETITOR_MODEL,
         messages: [
           {
             role: "system",
@@ -110,13 +113,24 @@ Be factual. No fabrication.`,
     const content = data.choices?.[0]?.message?.content || "{}";
     const usage = data.usage || {};
 
-    // Track OpenAI usage
+    // usage_ledger emit (systemic metering — Track B v2)
+    recordUsage({
+      userId,
+      model: COMPETITOR_MODEL,
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      cachedInputTokens: usage.prompt_tokens_details?.cached_tokens || 0,
+      feature: "competitor_monitor",
+    });
+
+    // Legacy usage_tracking
     try {
       const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
       await sb.from("usage_tracking").insert({
+        user_id: userId,
         function_name: "competitor-monitor",
         api_provider: "openai",
-        model: "gpt-5.3",
+        model: COMPETITOR_MODEL,
         tokens_in: usage.prompt_tokens || 0,
         tokens_out: usage.completion_tokens || 0,
         cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
@@ -173,7 +187,7 @@ async function monitorUser(sb: any, userId: string): Promise<{ signals: number; 
   const previousSignals = prevScan?.description || "";
 
   // Analyse changes
-  const changes = await analyseChanges(businessName, industry, previousSignals, currentSignals);
+  const changes = await analyseChanges(businessName, industry, previousSignals, currentSignals, userId);
 
   // Persist scan result to a separate field to avoid clobbering calibration's competitor_scan_result
   await sb.from("business_profiles").update({

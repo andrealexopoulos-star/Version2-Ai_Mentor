@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -9,6 +10,7 @@ const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 const PERPLEXITY_KEY = Deno.env.get("Perplexity_API") || "";
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
 const MERGE_CACHE_HOURS = 6;
+const SNAPSHOT_MODEL = "gpt-4o-mini";
 
 const SYSTEM = "You are BIQc, a Cognitive Intelligence System for an Australian business owner. " +
   "You sit above operational systems and perform signal perception, pattern recognition, decision compression, and executive framing. " +
@@ -207,7 +209,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: SNAPSHOT_MODEL,
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: `Generate executive intelligence snapshot from:\n${JSON.stringify(context)}` },
@@ -228,6 +230,17 @@ serve(async (req) => {
 
     const aiData = await aiRes.json();
     const raw = aiData?.choices?.[0]?.message?.content || "{}";
+    const usage = aiData?.usage || {};
+
+    // usage_ledger emit (systemic metering — Track B v2)
+    recordUsage({
+      userId,
+      model: SNAPSHOT_MODEL,
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      cachedInputTokens: usage.prompt_tokens_details?.cached_tokens || 0,
+      feature: "intelligence_snapshot",
+    });
     let cognitiveOutput: any;
     try {
       cognitiveOutput = JSON.parse(raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());

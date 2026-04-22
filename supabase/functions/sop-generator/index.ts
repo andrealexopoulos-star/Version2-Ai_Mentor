@@ -23,10 +23,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SOP_MODEL = "gpt-5.3";
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   sop: `You are BIQc's SOP Generator — a senior operations consultant who creates clear, practical Standard Operating Procedures for Australian SMBs.
@@ -67,7 +69,7 @@ Output format:
 Be practical. SMBs have limited resources — prioritise ruthlessly.`,
 };
 
-async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<string> {
+async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<{ content: string; usage: any }> {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -75,7 +77,7 @@ async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<str
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-5.3",
+      model: SOP_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -86,9 +88,10 @@ async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<str
   });
 
   const data = await response.json();
-  // Track usage (called from serve handler with sb context)
-  data._usage = data.usage || {};
-  return data.choices?.[0]?.message?.content || "Generation failed. Please try again.";
+  return {
+    content: data.choices?.[0]?.message?.content || "Generation failed. Please try again.",
+    usage: data.usage || {},
+  };
 }
 
 serve(async (req) => {
@@ -147,17 +150,28 @@ serve(async (req) => {
     const systemPrompt = SYSTEM_PROMPTS[genType] || SYSTEM_PROMPTS.sop;
     const fullPrompt = `${prompt}${businessContext}${additionalContext ? `\n\nAdditional context: ${additionalContext}` : ""}`;
 
-    const content = await callOpenAI(systemPrompt, fullPrompt);
+    const { content, usage } = await callOpenAI(systemPrompt, fullPrompt);
 
-    // Track usage
+    // usage_ledger emit (systemic metering — Track B v2)
+    recordUsage({
+      userId: user.id,
+      model: SOP_MODEL,
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      cachedInputTokens: usage.prompt_tokens_details?.cached_tokens || 0,
+      feature: "sop_generator",
+      action: genType,
+    });
+
+    // Legacy usage_tracking (kept for backward-compat dashboards)
     try {
       await sb.from("usage_tracking").insert({
         user_id: user.id,
         function_name: "sop-generator",
         api_provider: "openai",
-        model: "gpt-5.3",
-        tokens_in: fullPrompt.length,
-        tokens_out: content.length,
+        model: SOP_MODEL,
+        tokens_in: usage.prompt_tokens || 0,
+        tokens_out: usage.completion_tokens || 0,
         cost_estimate: 0.002,
         called_at: new Date().toISOString(),
       });

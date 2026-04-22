@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import OnboardingChecklist from '../components/advisor/OnboardingChecklist';
+import ColdStartFeed from '../components/ColdStartFeed';
 // DailyBriefCard component replaced by inline brief matching approved mockup
 // ProactiveAlerts and PredictionsPanel removed — not in approved mockup
 import { fontFamily } from '../design-system/tokens';
@@ -735,20 +736,19 @@ const Advisor = () => {
                   <p className="text-sm" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Loading live signals…</p>
                 </div>
               ) : (integrationData?.email?.connected || integrationData?.crm?.connected || integrationData?.accounting?.connected) ? (
+                // Sprint A #8 — quiet-but-connected empty state (integrations
+                // ARE connected, no signals yet). This is NOT the cold-start
+                // path; surface still belongs to the user's own pipeline.
                 <div className="p-10 text-center">
                   <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)' }} />
                   <p className="text-sm font-medium" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>No signals yet</p>
                   <p className="text-xs mt-1 max-w-sm mx-auto" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Your integrations are connected. New signals will appear here as activity comes in.</p>
                 </div>
               ) : (
-                <div className="p-10 text-center">
-                  <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)' }} />
-                  <p className="text-sm font-medium" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>No signals yet</p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Connect your inbox and CRM to start surfacing business intelligence.</p>
-                  <button onClick={() => navigate('/connect-email')} className="mt-4 px-4 py-2 text-sm font-semibold" style={{ background: 'var(--lava)', color: 'var(--ink-inverse)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)' }}>
-                    Connect inbox <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
-                  </button>
-                </div>
+                // Sprint B #14 — cold-start: no watchtower events AND no
+                // integrations connected. Render the industry-signals feed
+                // so the Advisor never renders blank for a fresh user.
+                <ColdStartFeed limit={5} />
               )}
             </div>
           </div>
@@ -781,8 +781,12 @@ const Advisor = () => {
                   const stalledDeals = executiveSurface?.snapshot?.stalled_deals_72h || 0;
                   const overdueInvoices = executiveSurface?.snapshot?.overdue_invoices || 0;
                   const totalOverdue = executiveSurface?.snapshot?.total_overdue || 0;
-                  const urgentCount = (decideNow ? 1 : 0) + (stalledDeals > 0 ? 1 : 0) + (overdueInvoices > 0 ? 1 : 0);
-                  const hasAnyData = memo || decideNow || stalledDeals > 0 || overdueInvoices > 0;
+                  // Sprint B #15: real priority model — urgentCount is now the
+                  // count of actually-prioritised top actions (0..3, dynamic),
+                  // not a boolean sum of snapshot flags.
+                  const topActions = Array.isArray(executiveSurface?.top_actions) ? executiveSurface.top_actions : [];
+                  const urgentCount = topActions.length;
+                  const hasAnyData = memo || decideNow || stalledDeals > 0 || overdueInvoices > 0 || urgentCount > 0;
                   if (!hasAnyData) {
                     return (
                       <>
@@ -840,6 +844,26 @@ const Advisor = () => {
                           <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}>{stalledDeals > 0 ? 'Stalled deals' : overdueInvoices > 0 ? 'Overdue' : 'Signals'}</div>
                         </div>
                       </div>
+                      {topActions.length > 0 && (
+                        <div className="mt-5 flex flex-col gap-3" data-testid="advisor-top-actions">
+                          {topActions.map((a, idx) => (
+                            <div key={a.signal_key || idx} className="biqc-diagram-row" style={{ padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface-sunken)' }}>
+                              <div className="flex items-start gap-2">
+                                <span className="text-[10px] uppercase mt-0.5" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)', letterSpacing: 'var(--ls-caps)' }}>#{idx + 1}</span>
+                                <div className="flex-1 min-w-0">
+                                  <div style={{ fontSize: 'var(--size-sm)', fontWeight: 'var(--fw-semi)', color: 'var(--ink-display)', lineHeight: 1.3 }}>{a.title}</div>
+                                  {a.action_hint && (
+                                    <div className="mt-1" style={{ fontSize: '12px', color: 'var(--ink-secondary)' }}>{a.action_hint}</div>
+                                  )}
+                                  {a.why_this_ranks_here && (
+                                    <div className="mt-1 text-[10px] uppercase" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}>{a.why_this_ranks_here}</div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </>
                   );
                 })()}
