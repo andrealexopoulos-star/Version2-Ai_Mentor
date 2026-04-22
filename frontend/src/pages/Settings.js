@@ -626,11 +626,33 @@ const Settings = () => {
   };
 
   const handleExportData = async () => {
+    // Sprint C #21 — sync download. Previously queued a background job whose
+    // storage-upload step was broken, so users got a "download link shortly"
+    // toast that never materialised. This now returns the JSON directly so
+    // the user gets their data in the same click.
     setExporting(true);
     try {
-      await apiClient.post('/user/export');
-      toast.success('Data export started — you\'ll receive a download link shortly');
-    } catch { toast.error('Failed to start data export'); }
+      const res = await apiClient.get('/user/export/download-now', { responseType: 'blob' });
+      // Derive filename from Content-Disposition if present
+      const cd = res.headers?.['content-disposition'] || res.headers?.get?.('content-disposition') || '';
+      const m = /filename="?([^";]+)"?/.exec(cd);
+      const filename = m ? m[1] : `biqc_export_${new Date().toISOString().slice(0, 10)}.json`;
+
+      // Trigger browser download
+      const blob = res.data instanceof Blob ? res.data : new Blob([JSON.stringify(res.data)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success('Your data has been downloaded');
+    } catch (err) {
+      console.error('[export] failed:', err);
+      toast.error('Failed to export your data — try again in a moment');
+    }
     finally { setExporting(false); }
   };
 

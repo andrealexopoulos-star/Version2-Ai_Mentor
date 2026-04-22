@@ -12,6 +12,7 @@ Backs the full Settings page from mockups:
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -124,6 +125,143 @@ async def save_thresholds(thresholds: SignalThresholds, user=Depends(get_current
 
 
 # ───────────────────────── Data Export ─────────────────────────
+
+# Sprint C #21 (2026-04-22) — synchronous self-service data export.
+#
+# The existing POST /user/export path queues a Redis job handled by
+# biqc_jobs._handle_data_export. That worker collects the rows but never
+# uploads a file to storage, so users who clicked "Export" got a "download
+# link shortly" toast and nothing ever arrived (retention-breaking: GDPR
+# rights of access exist in expectation but not in practice).
+#
+# This sync endpoint returns the user's data as a JSON download immediately.
+# Scope intentionally narrow: all tables with `user_id` that we believe a
+# user has a right to receive. Columns that contain other users' data
+# (e.g. account-owner records with nested rows) are NOT traversed — the
+# query is a flat SELECT * WHERE user_id = X per table.
+#
+# Safety:
+# - SYNC-only endpoint — no background job, no storage upload, no retention.
+#   Response streamed directly to the caller. If the user's data set is
+#   enormous (tens of MBs) we'll revisit with streaming; for now acceptable.
+# - Rate-limited implicitly by upstream auth. Abuse is bounded because
+#   the endpoint returns only data the authenticated user owns.
+# - Includes a generation timestamp + schema_version so downstream tools
+#   can ingest the archive reliably.
+
+# Tables a user has an explicit right to access their own data from.
+# Order matters for the JSON output only — it's alphabetical within groups.
+# Do NOT add tables that contain other users' data unless you can filter
+# by user_id cleanly.
+_USER_EXPORT_TABLES: tuple[str, ...] = (
+    # Profile + settings
+    "business_profiles",
+    "user_settings",
+    "user_preferences",
+    "onboarding",
+    # Communication + work
+    "chat_history",
+    "documents",
+    "sops",
+    "email_intelligence",
+    "calendar_intelligence",
+    # Intelligence + actions
+    "intelligence_actions",
+    "strategy_profiles",
+    "cognitive_profiles",
+    "observation_events",
+    "observation_event_dismissals",
+    # Sprint B #17 — feedback trail
+    "signal_snoozes",
+    "signal_feedback",
+    # Usage + billing (read-only view into the ledger)
+    "usage_ledger",
+    "payment_transactions",
+    # Integration + alerts
+    "alerts_queue",
+    "action_items",
+    "merge_integrations",
+)
+
+# Maximum rows per table returned in the sync export — prevents a runaway
+# payload for users with very long usage_ledger / chat_history histories.
+# If hit, the response clearly marks the table as truncated.
+_USER_EXPORT_ROW_CAP = 5000
+
+
+@router.get("/user/export/download-now")
+async def export_download_now(user=Depends(get_current_user)):
+    """Sync JSON export of everything the user has a right to their own copy of.
+
+    Returns a FastAPI JSONResponse with `Content-Disposition: attachment`
+    so browsers treat it as a download. The payload shape:
+
+        {
+          "schema_version": "1",
+          "generated_at": "<ISO8601>",
+          "user_id": "<uuid>",
+          "email": "<user email>",
+          "tables": {
+            "business_profiles": [ ... rows ... ],
+            ...
+            "signal_feedback": [ ... ],
+          },
+          "truncated_tables": ["table_name", ...]   # only if any hit the cap
+        }
+    """
+    from fastapi.responses import JSONResponse
+
+    sb = get_sb()
+    user_id = user["id"]
+    tables_payload: dict[str, list | dict] = {}
+    truncated: list[str] = []
+    skipped: dict[str, str] = {}
+
+    for table in _USER_EXPORT_TABLES:
+        try:
+            # Select all columns; cap rows via .limit to bound payload size.
+            res = (
+                sb.table(table)
+                .select("*")
+                .eq("user_id", user_id)
+                .limit(_USER_EXPORT_ROW_CAP + 1)  # +1 so we can detect cap
+                .execute()
+            )
+            rows = res.data or []
+            if len(rows) > _USER_EXPORT_ROW_CAP:
+                truncated.append(table)
+                rows = rows[:_USER_EXPORT_ROW_CAP]
+            tables_payload[table] = rows
+        except Exception as exc:
+            # Defensive: a missing table (e.g. local/staging drift) or an
+            # RLS-blocked read must not 500 the whole export. Mark the
+            # individual table as skipped and continue.
+            logger.warning(
+                "[export-now] table=%s failed for user=%s: %s", table, user_id, exc
+            )
+            skipped[table] = str(exc)[:200]
+            tables_payload[table] = []
+
+    payload = {
+        "schema_version": "1",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "user_id": user_id,
+        "email": user.get("email"),
+        "row_cap_per_table": _USER_EXPORT_ROW_CAP,
+        "tables": tables_payload,
+        "truncated_tables": truncated,
+        "skipped_tables": skipped,
+    }
+
+    filename = f"biqc_export_{user_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+    return JSONResponse(
+        content=payload,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
 
 @router.post("/user/export")
 async def request_export(user=Depends(get_current_user)):
