@@ -226,7 +226,13 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
   // NEEDS_CALIBRATION → redirect to /calibration FIRST (before READY check)
   if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
-    const allowedPaths = ['/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import', '/admin', '/support-admin', '/observability', '/admin/prompt-lab', '/complete-signup'];
+    // 2026-04-23 P0: /market/calibration is the live calibration route (PR #251
+    // deprecated /calibration → <Navigate to="/market/calibration">). Without
+    // /market/calibration in this allow-list, NEEDS_CALIBRATION new-signups hit
+    // an infinite redirect loop: /market/calibration → (not allowed) → Navigate
+    // to /calibration → (route redirects) → /market/calibration → forever.
+    // Reproduced with andre.alexopoulos@outlook.com fresh signup 2026-04-22 22:53 UTC.
+    const allowedPaths = ['/calibration', '/market/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import', '/admin', '/support-admin', '/observability', '/admin/prompt-lab', '/complete-signup'];
     if (allowedPaths.some(p => location.pathname.startsWith(p))) {
       return children;
     }
