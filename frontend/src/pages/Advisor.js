@@ -13,6 +13,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import OnboardingChecklist from '../components/advisor/OnboardingChecklist';
 import ColdStartFeed from '../components/ColdStartFeed';
 import TierNudge from '../components/TierNudge';
+import SignalActionsMenu from '../components/SignalActionsMenu';
 // DailyBriefCard component replaced by inline brief matching approved mockup
 // ProactiveAlerts and PredictionsPanel removed — not in approved mockup
 import { fontFamily } from '../design-system/tokens';
@@ -737,7 +738,19 @@ const Advisor = () => {
                     <div style={{ fontSize: 'var(--size-body)', fontWeight: 'var(--fw-semi)', color: 'var(--ink-display)', lineHeight: 1.3 }}>{evt.title || evt.summary || 'Signal detected'}</div>
                     {evt.description && <div className="mt-1 leading-relaxed" style={{ fontSize: '13px', color: 'var(--ink-secondary)' }}>{evt.description}</div>}
                   </div>
-                  <div className="shrink-0 text-right" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--ink-muted)' }}>{evt.time_ago || ''}</div>
+                  <div className="shrink-0 flex items-start gap-2">
+                    <div className="text-right" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--ink-muted)' }}>{evt.time_ago || ''}</div>
+                    {/* Sprint B #17 Phase 2 — per-row snooze + feedback menu */}
+                    <SignalActionsMenu
+                      eventId={evt.id}
+                      sourceSurface="advisor"
+                      onAfterAction={() => {
+                        // Optimistic remove from the feed — the server-side
+                        // snooze filter will keep it hidden on next refresh.
+                        setWatchtowerEvents(prev => prev.filter(e => e.id !== evt.id));
+                      }}
+                    />
+                  </div>
                 </div>
               )) : loadingWatchtower ? (
                 <div className="p-10 text-center">
