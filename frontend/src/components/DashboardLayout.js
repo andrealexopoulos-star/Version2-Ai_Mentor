@@ -10,6 +10,7 @@ import TrialCountdownCard from './TrialCountdownCard';
 import AlertStack from './AlertStack';
 import { DailyBriefBanner } from './DailyBriefCard';
 import NeedsReconnectBanner from './dashboard/NeedsReconnectBanner';
+import TrustBadges from './shared/TrustBadges';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from './ui/dropdown-menu';
@@ -900,6 +901,11 @@ const DashboardLayout = ({ children }) => {
               </div>
             )}
             {children}
+            {/* Sprint C #20: in-app trust strip — AU-hosted / AES-256 /
+                Privacy Act / 14-day guarantee. Marketing pages already carry
+                these (HomePage.js L290/L537); logged-in surfaces didn't until
+                now. Dismissable per-user via localStorage. */}
+            <TrustBadges />
           </div>
         </main>
 

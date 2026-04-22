@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { verifyAuth, enforceUserOwnership } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 
 interface SWOTResult {
@@ -167,6 +168,7 @@ async function synthesizeSWOT(
   scrapedSections: Array<{ source: string; content: string }>,
   businessName: string | undefined,
   aiErrors: string[],
+  userId?: string,
 ): Promise<{ swot: SWOTResult; executive_summary: string }> {
   const empty: SWOTResult = {
     strengths: [],
@@ -229,6 +231,20 @@ Return JSON ONLY (no markdown fences):
 
     const data = await res.json();
     let raw = (data.choices?.[0]?.message?.content || "").trim();
+
+    // usage_ledger emit (systemic metering — Track B v2)
+    if (userId) {
+      const dUsage = data.usage || {};
+      recordUsage({
+        userId,
+        model,
+        inputTokens: dUsage.prompt_tokens || 0,
+        outputTokens: dUsage.completion_tokens || 0,
+        cachedInputTokens: dUsage.prompt_tokens_details?.cached_tokens || 0,
+        feature: "deep_web_recon",
+        action: "swot_synthesis",
+      });
+    }
 
     if (raw.startsWith("```")) {
       raw = raw.replace(/^```[^\n]*\n?/, "").replace(/```\s*$/, "").trim();
@@ -354,6 +370,7 @@ serve(async (req) => {
       scrapedSections,
       body.business_name,
       aiErrors,
+      targetUserId || undefined,
     );
 
     const hasAi = Boolean(Deno.env.get("OPENAI_API_KEY"));

@@ -13,6 +13,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -143,7 +144,7 @@ async function fetchImapEmails(_credentials: any): Promise<any[]> {
 
 // ── AI classification ─────────────────────────────────────────────────────────
 
-async function classifyWithAI(emails: any[]): Promise<any[]> {
+async function classifyWithAI(emails: any[], userId?: string): Promise<any[]> {
   if (!emails.length) return [];
   if (!OPENAI_KEY) throw new Error("OPENAI_API_KEY not configured");
 
@@ -187,6 +188,20 @@ Return JSON with "results" array and each row:
 
   const completion = await res.json();
   const content = completion.choices?.[0]?.message?.content || "{}";
+
+  // usage_ledger emit (systemic metering — Track B v2)
+  if (userId) {
+    const eUsage = completion.usage || {};
+    recordUsage({
+      userId,
+      model: "gpt-4o-mini",
+      inputTokens: eUsage.prompt_tokens || 0,
+      outputTokens: eUsage.completion_tokens || 0,
+      cachedInputTokens: eUsage.prompt_tokens_details?.cached_tokens || 0,
+      feature: "email_priority",
+      action: "email_classification",
+    });
+  }
 
   let parsed: any;
   try {
@@ -381,7 +396,7 @@ Deno.serve(async (req) => {
         due_date: null,
       }));
     const toClassify = emails.filter((e) => !cacheMap.has(e.id));
-    const newlyClassified = await classifyWithAI(toClassify);
+    const newlyClassified = await classifyWithAI(toClassify, userId);
     const classified = [...cachedClassified, ...newlyClassified];
 
     // 3. Persist to Supabase

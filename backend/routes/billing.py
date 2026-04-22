@@ -43,6 +43,25 @@ class AutoTopupPatchBody(BaseModel):
     enabled: bool
 
 
+# Sprint B #18 (2026-04-22): cancel-reason capture before Stripe portal
+# redirect. Keys must stay in sync with supabase/migrations/120_cancel_reasons.sql
+# CHECK constraint and frontend components/CancelReasonModal.js REASONS.
+ALLOWED_CANCEL_REASONS = frozenset({
+    "too_expensive",
+    "not_enough_value",
+    "missing_feature",
+    "switching_tool",
+    "pausing",
+    "other",
+})
+_CANCEL_NOTE_MAX_LEN = 2000
+
+
+class CancelReasonBody(BaseModel):
+    reason_key: str
+    note: Optional[str] = None
+
+
 # ─── Legacy usage-feature map (still referenced by the old _safe_usage_summary
 #     below — dead code post-B4 but kept so the module loads unchanged).
 _LEGACY_FEATURE_MAP = {
@@ -527,6 +546,91 @@ async def patch_auto_topup(
     except Exception as e:
         logger.error(f"[billing-auto-topup] Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── Endpoint: POST /billing/cancel-reason (Sprint B #18, 2026-04-22) ──
+#
+# Captured BEFORE the user is redirected to the Stripe billing portal.
+# This is an enhancement, not a gate: the frontend continues to the portal
+# regardless of whether submission succeeds, fails, or is skipped. We
+# therefore return 200 even on insert failure — the caller should not
+# block the user's access to cancel. Errors are logged, not propagated.
+
+def _days_since(raw_created_at: Any) -> Optional[int]:
+    parsed = _parse_iso_ts(raw_created_at)
+    if not parsed:
+        return None
+    delta = datetime.now(timezone.utc) - parsed
+    return max(0, int(delta.days))
+
+
+@router.post("/billing/cancel-reason")
+async def post_cancel_reason(
+    body: CancelReasonBody,
+    current_user: dict = Depends(get_current_user),
+):
+    """Persist a cancel-reason row. Returns {ok: true} on success.
+
+    Validates reason_key against ALLOWED_CANCEL_REASONS. Note is clipped
+    to _CANCEL_NOTE_MAX_LEN chars (same as DB CHECK constraint). Insert
+    failures are logged but surfaced as ok=false rather than HTTP 500 —
+    this endpoint MUST NOT block the subsequent Stripe portal redirect.
+    """
+    reason_key = (body.reason_key or "").strip().lower()
+    if reason_key not in ALLOWED_CANCEL_REASONS:
+        raise HTTPException(status_code=422, detail="Invalid reason_key")
+
+    raw_note = (body.note or "").strip()
+    note: Optional[str] = raw_note[:_CANCEL_NOTE_MAX_LEN] if raw_note else None
+
+    user_id = current_user["id"]
+    sb = get_sb()
+
+    # Enrich with snapshot fields so cohort views stay stable even if the
+    # user later changes tier or the users row is updated.
+    current_tier: Optional[str] = None
+    days_since_signup: Optional[int] = None
+    try:
+        user_row = (
+            sb.table("users")
+            .select("subscription_tier,created_at")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
+        rows = (user_row.data or []) if user_row is not None else []
+        if rows:
+            current_tier = rows[0].get("subscription_tier")
+            days_since_signup = _days_since(rows[0].get("created_at"))
+    except Exception as exc:
+        logger.warning(
+            "[billing-cancel-reason] user snapshot lookup failed for %s: %s",
+            user_id, exc,
+        )
+
+    payload = {
+        "user_id": user_id,
+        "reason_key": reason_key,
+        "note": note,
+        "current_tier": current_tier,
+        "days_since_signup": days_since_signup,
+    }
+
+    try:
+        sb.table("cancel_reasons").insert(payload).execute()
+        logger.info(
+            "[billing-cancel-reason] user=%s reason=%s tier=%s days=%s has_note=%s",
+            user_id, reason_key, current_tier, days_since_signup, bool(note),
+        )
+        return {"ok": True}
+    except Exception as exc:
+        # Do NOT 500 — frontend must still proceed to portal. Return ok=false
+        # so the UI can log/Sentry without blocking the user.
+        logger.error(
+            "[billing-cancel-reason] insert failed for user=%s reason=%s: %s",
+            user_id, reason_key, exc, exc_info=True,
+        )
+        return {"ok": False, "error": "persist_failed"}
 
 
 # ─── Preserved endpoints (unchanged) ──────────────────────────────────

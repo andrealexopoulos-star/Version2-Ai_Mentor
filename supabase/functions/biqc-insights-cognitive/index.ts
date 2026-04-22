@@ -8,6 +8,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { recordUsage } from "../_shared/metering.ts";
 import { verifyAuth } from "../_shared/auth.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
@@ -553,6 +554,17 @@ serve(async (req) => {
           if (aiRes.ok) {
             const aiData = await aiRes.json();
             const raw = aiData.choices?.[0]?.message?.content || "{}";
+            const pUsage = aiData.usage || {};
+            // usage_ledger emit (precompute path)
+            recordUsage({
+              userId: u.user_id,
+              model: OPENAI_MODEL,
+              inputTokens: pUsage.prompt_tokens || 0,
+              outputTokens: pUsage.completion_tokens || 0,
+              cachedInputTokens: pUsage.prompt_tokens_details?.cached_tokens || 0,
+              feature: "insights_cognitive",
+              action: "cognitive_precompute",
+            });
             let cognitive; try { cognitive = JSON.parse(raw); } catch { cognitive = {}; }
             await supabase.from("intelligence_snapshots").insert({
               id: crypto.randomUUID(), user_id: u.user_id, snapshot_type: "cognitive_v2",
@@ -804,6 +816,34 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
         called_at: new Date().toISOString(),
       });
     } catch (e) { console.error("[usage] tracking failed:", e); }
+
+    // usage_ledger emit (systemic metering — Track B v2)
+    recordUsage({
+      userId: user.id,
+      model: OPENAI_MODEL,
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      cachedInputTokens: usage.prompt_tokens_details?.cached_tokens || 0,
+      feature: "insights_cognitive",
+      action: "cognitive_synthesis",
+    });
+
+    // Gemini market-intel call also consumes tokens — log it separately if usable
+    try {
+      const gUsage = marketData?.usageMetadata || {};
+      const gIn = Number(gUsage.promptTokenCount || 0);
+      const gOut = Number(gUsage.candidatesTokenCount || 0);
+      if (gIn + gOut > 0) {
+        recordUsage({
+          userId: user.id,
+          model: geminiModelName,
+          inputTokens: gIn,
+          outputTokens: gOut,
+          feature: "insights_cognitive",
+          action: "market_intel_gemini",
+        });
+      }
+    } catch { /* best effort */ }
 
     let cognitive;
     try {

@@ -1,0 +1,243 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// _shared/metering.ts — usage_ledger emit helper for Deno edge functions
+//
+// WHY: Python usage_ledger is empty because 90%+ of BIQc LLM calls happen in
+// edge functions that never wrote to it. This helper is the Deno mirror of
+// backend/core/token_meter.py:emit_consume — same semantics, same columns,
+// same pricing map (MODEL_PRICING is kept in lock-step with
+// backend/middleware/token_metering.py).
+//
+// Usage (inside any edge function):
+//   import { recordUsage } from "../_shared/metering.ts";
+//   ...
+//   const aiData = await aiRes.json();
+//   const usage = aiData.usage || {};
+//   recordUsage({
+//     userId: user.id,
+//     model: "gpt-5.4",
+//     inputTokens: usage.prompt_tokens || 0,
+//     outputTokens: usage.completion_tokens || 0,
+//     cachedInputTokens: usage.prompt_tokens_details?.cached_tokens || 0,
+//     feature: "insights_cognitive",
+//   });
+//
+// Contract:
+//   - Fire-and-forget. Does NOT throw. Does NOT block the LLM response path.
+//   - Returns Promise<void>; callers can `await` it (no-op beyond scheduling)
+//     or ignore it. Either way the insert runs in the background.
+//   - Kill switch: env USAGE_LEDGER_ENABLED=false disables every emit.
+//
+// Schema spec: supabase/migrations/111_usage_ledger.sql
+//   kind='consume' REQUIRES model IS NOT NULL AND provider IS NOT NULL.
+//   tokens (bigint, >=0) = input + output (no cached double-count).
+//   cost_aud_micros is AUD * 1_000_000 (integer for exact accounting).
+// ═══════════════════════════════════════════════════════════════════════════
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ─── Env / kill switch ─────────────────────────────────────────────────────
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const USAGE_LEDGER_ENABLED = !["0", "false", "no", "off"].includes(
+  (Deno.env.get("USAGE_LEDGER_ENABLED") || "true").trim().toLowerCase(),
+);
+const USD_TO_AUD = parseFloat(Deno.env.get("AUD_USD_RATE") || "1.52");
+const PRICING_VERSION = "v1";
+
+// ─── Model pricing (AUD per 1M tokens) ────────────────────────────────────
+// MUST mirror backend/middleware/token_metering.py:MODEL_PRICING.
+// Keys are canonical model IDs as returned by provider APIs. Unknown model →
+// cost_aud_micros = 0, but the row is still inserted (so we can spot gaps).
+const MODEL_PRICING: Record<string, { input_per_1m: number; output_per_1m: number }> = {
+  // OpenAI GPT-5 family
+  "gpt-5.4-pro":   { input_per_1m: 22.80, output_per_1m: 91.20 },
+  "gpt-5.4":       { input_per_1m:  3.80, output_per_1m: 15.20 },
+  "gpt-5.3":       { input_per_1m:  0.76, output_per_1m:  3.04 },
+  // OpenAI GPT-4o family (still used by several edge functions)
+  "gpt-4o":        { input_per_1m:  3.80, output_per_1m: 15.20 },
+  "gpt-4o-mini":   { input_per_1m:  0.23, output_per_1m:  0.91 },
+  "gpt-4o-realtime-preview-2024-12-17": { input_per_1m: 7.60, output_per_1m: 30.40 },
+  // Google Gemini 3
+  "gemini-3-pro-preview":   { input_per_1m: 1.90, output_per_1m:  7.60 },
+  "gemini-3-flash-preview": { input_per_1m: 0.11, output_per_1m:  0.46 },
+  // Anthropic Claude 4.6
+  "claude-opus-4-6":   { input_per_1m: 22.80, output_per_1m: 114.00 },
+  "claude-sonnet-4-6": { input_per_1m:  4.56, output_per_1m:  22.80 },
+  // Embeddings (output is always 0)
+  "text-embedding-3-small": { input_per_1m: 0.03, output_per_1m: 0.0 },
+};
+
+// Provider cache-bucket multipliers — keep in lock-step with core/plans.py
+const ANTHROPIC_CACHE_WRITE_MULT = 1.25;
+const ANTHROPIC_CACHE_READ_MULT  = 0.10;
+const OPENAI_CACHED_INPUT_MULT   = 0.50;
+
+// One-shot warn guard — avoid log spam for unknown models
+const _unknownModelWarned = new Set<string>();
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+type Provider = "openai" | "anthropic" | "google" | "unknown";
+
+function providerOf(model: string): Provider {
+  const m = (model || "").toLowerCase();
+  if (m.startsWith("claude")) return "anthropic";
+  if (m.startsWith("gemini")) return "google";
+  if (m.startsWith("gpt") || m.startsWith("text-embedding") || m.includes("openai")) return "openai";
+  return "unknown";
+}
+
+function normalizeTier(tier?: string | null): string {
+  const t = (tier || "free").toLowerCase().trim();
+  if (t === "superadmin" || t === "super_admin") return "super_admin";
+  if (t === "custom" || t === "custom_build") return "custom_build";
+  if (t === "professional" || t === "pro") return "pro";
+  if (t === "foundation" || t === "growth" || t === "starter") return "starter";
+  if (["business", "enterprise", "trial", "free"].includes(t)) return t;
+  return "free";
+}
+
+function computeCostAudMicros(
+  model: string,
+  inputTokens: number,
+  outputTokens: number,
+  cachedInputTokens: number,
+): number {
+  if (!model) return 0;
+  const price = MODEL_PRICING[model];
+  if (!price) {
+    if (!_unknownModelWarned.has(model)) {
+      _unknownModelWarned.add(model);
+      console.warn(`[metering] unknown model in MODEL_PRICING: ${model} (cost_aud_micros=0)`);
+    }
+    return 0;
+  }
+
+  const ti = Math.max(0, inputTokens || 0);
+  const to = Math.max(0, outputTokens || 0);
+  const tc = Math.max(0, cachedInputTokens || 0);
+
+  const inRate  = price.input_per_1m || 0;
+  const outRate = price.output_per_1m || 0;
+  const prov = providerOf(model);
+
+  let inputCost: number;
+  if (prov === "openai") {
+    const nonCached = Math.max(0, ti - tc);
+    inputCost = (nonCached / 1_000_000) * inRate
+              + (tc / 1_000_000) * inRate * OPENAI_CACHED_INPUT_MULT;
+  } else if (prov === "anthropic") {
+    // Cache-writes aren't exposed in this helper's signature yet; callers that
+    // need them can extend. Matches Python default where tw=0.
+    inputCost = (ti / 1_000_000) * inRate
+              + (tc / 1_000_000) * inRate * ANTHROPIC_CACHE_READ_MULT;
+  } else {
+    inputCost = (ti / 1_000_000) * inRate;
+  }
+
+  const outputCost = (to / 1_000_000) * outRate;
+  const aud = inputCost + outputCost;
+  return Math.max(0, Math.round(aud * 1_000_000));
+}
+
+// ─── Service-role Supabase client (singleton per edge invocation) ──────────
+let _cachedClient: ReturnType<typeof createClient> | null = null;
+function getServiceClient() {
+  if (_cachedClient) return _cachedClient;
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+  _cachedClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+  return _cachedClient;
+}
+
+// ─── Public API ────────────────────────────────────────────────────────────
+export interface RecordUsageParams {
+  userId: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number;
+  feature?: string;
+  action?: string;
+  provider?: string;
+  requestId?: string;
+  cacheHit?: boolean;
+  tier?: string;
+}
+
+/**
+ * Fire-and-forget insert into public.usage_ledger (kind='consume').
+ *
+ * Never throws. Never blocks the caller meaningfully — all DB work runs in
+ * a detached promise. Safe to `await` (the await resolves as soon as the
+ * background write is scheduled) or to ignore entirely.
+ *
+ * Guards: missing user_id → return. 0+0 tokens → return. DB error → logged,
+ * swallowed, no effect on caller.
+ */
+export async function recordUsage(params: RecordUsageParams): Promise<void> {
+  if (!USAGE_LEDGER_ENABLED) return;
+  if (!params.userId) return;
+
+  const ti = Math.max(0, params.inputTokens || 0);
+  const to = Math.max(0, params.outputTokens || 0);
+  const tc = Math.max(0, params.cachedInputTokens || 0);
+  if (ti === 0 && to === 0) return;
+
+  const tt = ti + to;
+  const model = params.model || "";
+  const prov = params.provider || providerOf(model);
+  if (prov === "unknown" && model) {
+    console.warn(`[metering] unknown provider for model=${model} — stamping 'unknown'`);
+  }
+
+  const costMicros = computeCostAudMicros(model, ti, to, tc);
+
+  const row = {
+    user_id: params.userId,
+    kind: "consume",
+    tokens: tt,
+    input_tokens: ti,
+    output_tokens: to,
+    cached_input_tokens: tc,
+    model,
+    provider: prov,
+    feature: params.feature ?? "llm_call",
+    action: params.action ?? null,
+    request_id: params.requestId ?? null,
+    cost_aud_micros: costMicros,
+    cache_hit: params.cacheHit ?? null,
+    tier_at_event: normalizeTier(params.tier),
+    metadata: { fx_rate: USD_TO_AUD, pricing_version: PRICING_VERSION, source: "edge" },
+    created_at: new Date().toISOString(),
+  };
+
+  const sb = getServiceClient();
+  if (!sb) {
+    console.error("[metering] SUPABASE_URL / SERVICE_ROLE_KEY missing — skipping insert");
+    return;
+  }
+
+  // Fire-and-forget: schedule the insert and return. supabase-js's builder is
+  // a PostgrestBuilder (thenable, not a native Promise), so we wrap it in
+  // Promise.resolve() to guarantee proper .catch() chaining.
+  try {
+    Promise.resolve(sb.from("usage_ledger").insert(row))
+      .then((result: { error: unknown } | null | undefined) => {
+        if (result && (result as { error: unknown }).error) {
+          console.error(
+            "[metering] usage_ledger insert failed:",
+            (result as { error: unknown }).error,
+          );
+        }
+      })
+      .catch((err: unknown) => {
+        console.error("[metering] usage_ledger insert threw:", err);
+      });
+  } catch (err) {
+    // Synchronous failure in builder construction — log and swallow.
+    console.error("[metering] usage_ledger insert scheduling error:", err);
+  }
+}
+
+export { MODEL_PRICING, providerOf, normalizeTier, computeCostAudMicros };

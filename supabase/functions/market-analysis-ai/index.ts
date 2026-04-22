@@ -14,6 +14,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -255,6 +256,19 @@ ${JSON.stringify(ctx, null, 2)}`;
 
     const aiData = await aiRes.json();
     const raw = aiData.choices?.[0]?.message?.content || "";
+
+    // usage_ledger emit (systemic metering — Track B v2)
+    const mUsage = aiData.usage || {};
+    const mModel = Deno.env.get("OPENAI_MODEL") || "gpt-4o";
+    recordUsage({
+      userId: user.id,
+      model: mModel,
+      inputTokens: mUsage.prompt_tokens || 0,
+      outputTokens: mUsage.completion_tokens || 0,
+      cachedInputTokens: mUsage.prompt_tokens_details?.cached_tokens || 0,
+      feature: "market_analysis_ai",
+      action: "swot_synthesis",
+    });
 
     let analysis;
     try {

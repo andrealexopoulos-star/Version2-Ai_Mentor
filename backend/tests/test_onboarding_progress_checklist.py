@@ -70,9 +70,10 @@ class _MockSB:
 
 @pytest.fixture
 def evaluator():
-    """Import late so conftest path shims are applied first."""
-    from routes.onboarding import _evaluate_onboarding_progress
-    return _evaluate_onboarding_progress
+    """Import the pure evaluator from services/ — no FastAPI / Supabase SDK
+    imports, so this fixture works on any Python >=3.7."""
+    from services.onboarding_progress import evaluate_onboarding_progress
+    return evaluate_onboarding_progress
 
 
 USER_ID = "11111111-1111-1111-1111-111111111111"

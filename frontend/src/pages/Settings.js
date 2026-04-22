@@ -15,6 +15,7 @@ import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
 import { supabase } from '../context/SupabaseAuthContext';
+import CancelReasonModal from '../components/CancelReasonModal';
 const settingsCardStyle = {
   background: 'var(--surface, #fff)',
   border: '1px solid var(--border, rgba(10,10,10,0.08))',
@@ -47,6 +48,8 @@ const SettingsBillingContent = ({ navigate, user }) => {
   const [loading, setBillingLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [topupSaving, setTopupSaving] = useState(false);
+  // Sprint B #18 (2026-04-22): cancel-reason modal before Stripe portal.
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
   const load = () => {
     setBillingLoading(true);
@@ -116,16 +119,40 @@ const SettingsBillingContent = ({ navigate, user }) => {
   const recentTopups = overview?.recent_topups || [];
   const recentInvoices = overview?.recent_invoices || [];
 
-  const openStripePortal = async () => {
+  // Sprint B #18 (2026-04-22): intercept portal click with cancel-reason modal.
+  // openStripePortal is the entry point for all 3 buttons. It no longer fires
+  // the redirect itself — it opens the modal, which then calls _proceedToPortal.
+  const openStripePortal = () => {
+    setCancelModalOpen(true);
+  };
+
+  const _proceedToPortal = async (reason) => {
     setPortalLoading(true);
     try {
+      // Fire-and-forget cancel-reason capture. Never blocks the redirect:
+      // if persist fails the backend returns ok:false, not 500. Even if the
+      // POST itself throws (network), we continue to Stripe.
+      if (reason && reason.reason_key) {
+        try {
+          await apiClient.post('/billing/cancel-reason', reason);
+        } catch (e) {
+          // Swallow — retention capture must not gate access to cancel.
+          // eslint-disable-next-line no-console
+          console.warn('[cancel-reason] submit failed, continuing to portal:', e);
+        }
+      }
       const res = await apiClient.post('/stripe/portal-session');
-      if (res.data?.url) window.location.href = res.data.url;
-      else toast.error('Unable to open billing portal');
+      if (res.data?.url) {
+        setCancelModalOpen(false);
+        window.location.href = res.data.url;
+        return;
+      }
+      toast.error('Unable to open billing portal');
     } catch {
       toast.error('Failed to open billing portal');
     } finally {
       setPortalLoading(false);
+      setCancelModalOpen(false);
     }
   };
 
@@ -405,6 +432,14 @@ const SettingsBillingContent = ({ navigate, user }) => {
       <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-muted, #737373)' }}>
         Billing questions? <a href="mailto:support@biqc.ai" style={{ color: 'var(--lava, #E85D00)' }}>support@biqc.ai</a>
       </p>
+
+      {/* Sprint B #18 (2026-04-22): cancel-reason capture before Stripe portal. */}
+      <CancelReasonModal
+        isOpen={cancelModalOpen}
+        onClose={() => { if (!portalLoading) setCancelModalOpen(false); }}
+        onProceed={_proceedToPortal}
+        submitting={portalLoading}
+      />
     </div>
   );
 };

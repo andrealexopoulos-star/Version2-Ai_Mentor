@@ -17,6 +17,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
+import { recordUsage } from "../_shared/metering.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -531,6 +532,19 @@ serve(async (req) => {
 
     const aiData = await aiRes.json();
     const raw = aiData.choices?.[0]?.message?.content || "";
+
+    // usage_ledger emit (systemic metering — Track B v2)
+    const cUsage = aiData.usage || {};
+    recordUsage({
+      userId: user.id,
+      model: "gpt-4o",
+      inputTokens: cUsage.prompt_tokens || 0,
+      outputTokens: cUsage.completion_tokens || 0,
+      cachedInputTokens: cUsage.prompt_tokens_details?.cached_tokens || 0,
+      feature: "calibration_business_dna",
+      action: "dna_extraction",
+    });
+
     let extracted;
     try {
       extracted = JSON.parse(raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
