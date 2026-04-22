@@ -2,6 +2,7 @@
 from __future__ import annotations  # enables `str | None` etc. on Python 3.9
 
 import asyncio
+import contextvars
 import os
 import logging
 import httpx
@@ -11,6 +12,115 @@ logger = logging.getLogger(__name__)
 # Token metering — lazy import to avoid circular deps at module load
 _token_metering = None
 _budget_enforcer = None
+
+# ── llm_global_pause kill-switch (migration 124, Sprint D #28c) ───────────
+# When flag is OFF we short-circuit BEFORE hitting a provider. Flag value is
+# cached per-request via a ContextVar so a single request never hammers the DB
+# on multi-leg calls (e.g. Trinity fans out 3 providers + 1 synthesis). A None
+# sentinel means "not yet resolved for this request".
+#
+# CRITICAL: fail-open. If the flag lookup itself errors (table missing, DB down,
+# RPC missing), we proceed with the provider call. A DB hiccup must not cascade
+# into a platform-wide LLM outage.
+_LLM_PAUSE_LOGGED = False  # warn-once per process when paused
+_llm_pause_cache: contextvars.ContextVar[bool | None] = contextvars.ContextVar(
+    "llm_pause_cache", default=None
+)
+
+LLM_PAUSED_SENTINEL = {
+    "content": "[LLM temporarily paused by administrator — cached responses unavailable for this query]",
+    "model": "paused",
+    "paused": True,
+}
+
+
+def _reset_llm_pause_cache() -> None:
+    """Test helper — clear the per-request cache between pytest cases."""
+    try:
+        _llm_pause_cache.set(None)
+    except Exception:
+        pass
+
+
+async def _is_llm_paused(sb) -> bool:
+    """Return True when `llm_global_pause` flag is OFF (i.e. LLM calls paused).
+
+    Reads via the SECURITY DEFINER helper `public.is_feature_flag_enabled`
+    (migration 124) with default=TRUE → helper returns TRUE when the row is
+    missing, which means "LLM enabled", which means we return False (not paused).
+
+    Failure modes (table missing, RPC missing, DB down, network error) all log
+    at DEBUG and return False — fail-OPEN so a flag subsystem outage cannot
+    knock the entire LLM platform offline.
+    """
+    cached = _llm_pause_cache.get()
+    if cached is not None:
+        return cached
+
+    if sb is None:
+        _llm_pause_cache.set(False)
+        return False
+
+    enabled = True  # default-open
+    try:
+        result = sb.rpc(
+            "is_feature_flag_enabled",
+            {"flag": "llm_global_pause", "default_value": True},
+        ).execute()
+        raw = getattr(result, "data", None)
+        # supabase-py returns either a bool directly or a list of dicts for
+        # scalar-returning RPCs depending on version. Handle both.
+        if isinstance(raw, bool):
+            enabled = raw
+        elif isinstance(raw, list) and raw:
+            first = raw[0]
+            if isinstance(first, dict):
+                enabled = bool(next(iter(first.values()), True))
+            else:
+                enabled = bool(first)
+        elif isinstance(raw, dict):
+            enabled = bool(next(iter(raw.values()), True))
+        else:
+            enabled = True  # unknown shape → assume enabled
+    except Exception as exc:
+        logger.debug(
+            "[LLM Router] llm_global_pause flag lookup failed (fail-open): %s",
+            exc,
+        )
+        enabled = True
+
+    paused = not enabled
+    _llm_pause_cache.set(paused)
+
+    if paused:
+        global _LLM_PAUSE_LOGGED
+        if not _LLM_PAUSE_LOGGED:
+            logger.warning(
+                "[LLM Router] llm_global_pause is OFF — returning sentinel for LLM calls"
+            )
+            _LLM_PAUSE_LOGGED = True
+    return paused
+
+
+async def _check_llm_pause_and_maybe_sentinel() -> dict | None:
+    """If paused, return a fresh sentinel dict. Else return None.
+
+    Kept as its own helper so every public entry point can do:
+        sentinel = await _check_llm_pause_and_maybe_sentinel()
+        if sentinel is not None:
+            return sentinel["content"]   # or the shape the caller wants
+    """
+    try:
+        from routes.deps import get_sb
+        sb = get_sb()
+    except Exception as exc:
+        logger.debug("[LLM Router] pause-check skipped (sb unavailable): %s", exc)
+        return None
+
+    if await _is_llm_paused(sb):
+        # Return a FRESH copy so callers that mutate won't poison the constant.
+        return dict(LLM_PAUSED_SENTINEL)
+    return None
 
 def _get_metering():
     global _token_metering
@@ -282,6 +392,12 @@ async def llm_chat(
     user_id: str = None,
     tier: str = None,
 ) -> str:
+    # Sprint D #28c — llm_global_pause kill-switch. Fires BEFORE budget + provider
+    # so a superadmin pause stops all spend immediately. Fails open on flag errors.
+    sentinel = await _check_llm_pause_and_maybe_sentinel()
+    if sentinel is not None:
+        return sentinel["content"]
+
     # Step 9 / P1-6 — free-tier 402 hard-stop fires BEFORE the provider call
     # so we don't pay for a response the caller has no quota to receive.
     await _check_budget_or_raise(user_id, tier)
@@ -358,6 +474,13 @@ async def llm_trinity_chat(
     tier: str = None,
 ) -> str:
     """Parallel OpenAI + Gemini + Anthropic analysis with synthesis."""
+    # Sprint D #28c — llm_global_pause kill-switch. Trinity is the single most
+    # expensive path in the system; pause check short-circuits before we fan
+    # out 3 providers + a synthesis leg. Fails open on flag errors.
+    sentinel = await _check_llm_pause_and_maybe_sentinel()
+    if sentinel is not None:
+        return sentinel["content"]
+
     # Step 9 / P1-6 — Trinity is the most expensive call path (3 providers
     # in parallel + a synthesis pass). If the free-tier enforcer fires
     # anywhere it should fire here first.
@@ -501,6 +624,13 @@ async def llm_chat_with_usage(
     user_id: str = None,
     tier: str = None,
 ) -> tuple:
+    # Sprint D #28c — llm_global_pause kill-switch. llm_chat_with_usage shares
+    # the same short-circuit policy as llm_chat. Returns a zero-usage tuple so
+    # callers that unpack (content, usage) don't crash. Fails open on flag errors.
+    sentinel = await _check_llm_pause_and_maybe_sentinel()
+    if sentinel is not None:
+        return sentinel["content"], {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
     # Step 9 / P1-6 — mirror of the llm_chat guard. llm_chat_with_usage is
     # used by callers that need raw token counts for post-processing (e.g.
     # calibration scoring); same cost-containment applies.

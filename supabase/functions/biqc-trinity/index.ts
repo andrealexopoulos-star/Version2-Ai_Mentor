@@ -126,6 +126,32 @@ SYNTHESIS RULES:
 6. Cite data sources inline: "Your HubSpot pipeline shows...", "Market data indicates...", "Your Xero invoices..."
 7. NEVER start with "I" — start with the most important insight`;
 
+// ── Feature-flag kill-switch (migration 124 / Sprint D #28c) ──────────────────
+// Single cheap SELECT against public.feature_flags per invocation. Fails OPEN —
+// if the table is missing, the RPC errors, or RLS rejects the service role for
+// any reason, we proceed with the Trinity call rather than cascading a DB hiccup
+// into a platform-wide outage. Invoked from the main handler right after auth
+// parsing, before ANY provider call fans out.
+async function isTrinityEnabled(sb: any): Promise<boolean> {
+  try {
+    const { data, error } = await sb
+      .from("feature_flags")
+      .select("enabled")
+      .eq("flag_key", "trinity_synthesis_enabled")
+      .maybeSingle();
+    if (error) {
+      console.warn("[TRINITY] flag lookup errored, defaulting to ENABLED:", error.message || error);
+      return true;
+    }
+    // Row missing → default-open. Row present → trust its bool.
+    if (!data) return true;
+    return data.enabled !== false;
+  } catch (err: any) {
+    console.warn("[TRINITY] flag lookup threw, defaulting to ENABLED:", err?.message || err);
+    return true;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions(req);
   const auth = await verifyAuth(req);
@@ -144,6 +170,18 @@ Deno.serve(async (req) => {
 
   const { message, business_context = "", conversation_id = null, mode_requested = "trinity", agent_id = "boardroom" } = body;
   if (!message) return new Response(JSON.stringify({ error: "message required" }), { status: 400, headers: corsHeaders(req) });
+
+  // Kill-switch: if trinity_synthesis_enabled is OFF, short-circuit BEFORE any
+  // of GPT/Claude/Gemini/o3-pro burn money. Cached per-invocation (single SELECT,
+  // not per-leg). Fails open on flag-table errors.
+  const trinityOn = await isTrinityEnabled(adminSb);
+  if (!trinityOn) {
+    console.log("[TRINITY] trinity_synthesis_enabled=false — short-circuit 503");
+    return new Response(
+      JSON.stringify({ error: "trinity_synthesis paused by admin", reason: "feature_flag" }),
+      { status: 503, headers: corsHeaders(req) },
+    );
+  }
 
   const startTime = Date.now();
 
