@@ -61,13 +61,20 @@ const MODEL_PRICING: Record<string, { input_per_1m: number; output_per_1m: numbe
   "gpt-4o":        { input_per_1m:  3.80, output_per_1m: 15.20 },
   "gpt-4o-mini":   { input_per_1m:  0.23, output_per_1m:  0.91 },
   "gpt-4o-realtime-preview-2024-12-17": { input_per_1m: 7.60, output_per_1m: 30.40 },
-  // Google Gemini 3
-  "gemini-3-pro-preview":   { input_per_1m: 1.90, output_per_1m:  7.60 },
-  "gemini-3.1-pro-preview": { input_per_1m: 3.04, output_per_1m: 18.24 }, // Trinity Gemini contributor. Src: ai.google.dev/pricing (verified 2026-04-22 via WebFetch) — $2/$12 USD (≤200k prompt) @ 1.52 AUD
-  "gemini-3-flash-preview": { input_per_1m: 0.11, output_per_1m:  0.46 },
-  // Anthropic Claude 4.6
-  "claude-opus-4-6":   { input_per_1m: 22.80, output_per_1m: 114.00 },
+  // Google Gemini 3 — ai.google.dev/pricing re-verified 2026-04-22.
+  // Old values were Gemini 2.5 legacy rates; G3 doubled across the board.
+  // Pro tier >200k prompt = 2x price ($4/$18 USD). Not yet modelled — flagged.
+  "gemini-3-pro-preview":   { input_per_1m: 3.04, output_per_1m: 18.24 },
+  "gemini-3.1-pro-preview": { input_per_1m: 3.04, output_per_1m: 18.24 },
+  "gemini-3-flash-preview": { input_per_1m: 0.76, output_per_1m:  4.56 },
+  // Anthropic Claude — claude.com/pricing re-verified 2026-04-22.
+  // Opus 4.7 is the CURRENT variant per the live pricing page; 4.6 is legacy.
+  // Opus was previously mapped at $15/$75 USD — the real rate is $5/$25.
+  // Our ledger was OVER-reporting Anthropic cost by 3x until this fix.
+  "claude-opus-4-7":   { input_per_1m:  7.60, output_per_1m:  38.00 },
+  "claude-opus-4-6":   { input_per_1m:  7.60, output_per_1m:  38.00 },
   "claude-sonnet-4-6": { input_per_1m:  4.56, output_per_1m:  22.80 },
+  "claude-haiku-4-5":  { input_per_1m:  1.52, output_per_1m:   7.60 },
   // Perplexity (Sonar) — used by biqc-insights-cognitive, market-analysis-ai,
   // competitor-monitor, strategic-console-ai, intelligence-snapshot,
   // social-enrichment, calibration-business-dna. Src: docs.perplexity.ai/docs/

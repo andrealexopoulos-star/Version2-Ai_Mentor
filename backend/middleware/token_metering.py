@@ -79,16 +79,26 @@ MODEL_PRICING: dict[str, dict[str, float]] = {
     # OpenAI GPT-4o family
     "gpt-4o":        {"input_per_1m":  3.80, "output_per_1m": 15.20},
     "gpt-4o-mini":   {"input_per_1m":  0.23, "output_per_1m":  0.91},
-    # Google Gemini 3
-    "gemini-3-pro-preview":   {"input_per_1m": 1.90, "output_per_1m":  7.60},
-    # ai.google.dev/pricing WebFetch verified 2026-04-22 — $2/$12 USD @ ≤200k
-    # prompt tokens (above 200k doubles). Used by biqc-trinity Gemini contributor
-    # and biqc-insights-cognitive.
+    # Google Gemini 3 — ai.google.dev/pricing re-verified 2026-04-22.
+    # Prices doubled from Gemini 2.5 era; our old map was using legacy rates.
+    # Gemini 3 Pro text @ ≤200k: $2/$12 USD = $3.04/$18.24 AUD
+    # Gemini 3 Pro text @ >200k: $4/$18 USD = $6.08/$27.36 AUD (NOT yet modelled — flag)
+    "gemini-3-pro-preview":   {"input_per_1m": 3.04, "output_per_1m": 18.24},
     "gemini-3.1-pro-preview": {"input_per_1m": 3.04, "output_per_1m": 18.24},
-    "gemini-3-flash-preview": {"input_per_1m": 0.11, "output_per_1m":  0.46},
-    # Anthropic Claude 4.6
-    "claude-opus-4-6":   {"input_per_1m": 22.80, "output_per_1m": 114.00},
+    # Gemini 3 Flash text: $0.50/$3.00 USD = $0.76/$4.56 AUD (was mapped at
+    # Gemini 2.5 Flash legacy $0.075/$0.30 — under-reporting flash calls by 10x)
+    "gemini-3-flash-preview": {"input_per_1m": 0.76, "output_per_1m":  4.56},
+    # Anthropic Claude — claude.com/pricing re-verified 2026-04-22.
+    # NOTE: Anthropic's live page shows Opus 4.7 as the CURRENT Opus variant.
+    # Opus 4.6 may be deprecated; we still map it for any in-flight calls but
+    # the new Trinity default should use claude-opus-4-7.
+    # Opus:    $5/$25 USD  = $7.60/$38.00 AUD (was mapped 3x over at $15/$75)
+    # Sonnet:  $3/$15 USD  = $4.56/$22.80 AUD (unchanged — verified)
+    # Haiku:   $1/$5 USD   = $1.52/$7.60 AUD  (NEW)
+    "claude-opus-4-7":   {"input_per_1m":  7.60, "output_per_1m":  38.00},
+    "claude-opus-4-6":   {"input_per_1m":  7.60, "output_per_1m":  38.00},
     "claude-sonnet-4-6": {"input_per_1m":  4.56, "output_per_1m":  22.80},
+    "claude-haiku-4-5":  {"input_per_1m":  1.52, "output_per_1m":   7.60},
     # Perplexity (Sonar) — used by edge fns: biqc-insights-cognitive,
     # market-analysis-ai, competitor-monitor, strategic-console-ai,
     # intelligence-snapshot, social-enrichment, calibration-business-dna.
