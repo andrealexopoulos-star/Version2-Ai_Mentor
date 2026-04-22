@@ -286,5 +286,227 @@ class TestBackendAPIs:
         print(f"PASS: soundboard/chat requires auth (status {response.status_code})")
 
 
+class TestAlertsDismissMirror:
+    """Sprint A #8 follow-up — dismissing an alert on /settings/alerts must
+    also land in observation_event_dismissals so the Advisor Live Signal
+    Feed hides the same signal.
+
+    This is a pure-Python unit test. It does not need a live backend: the
+    dismiss handler is a regular async function with sync supabase calls,
+    so we swap in a FakeSupabase, invoke the handler with asyncio.run(),
+    and assert that (a) the alert was marked dismissed and (b) the mirror
+    landed in observation_event_dismissals with the right shape.
+    """
+
+    @staticmethod
+    def _import_dismiss_handler():
+        """Import routes.alerts.dismiss_alert with dep-stubs in place so the
+        test runs on any Python version without spinning up Supabase.
+
+        We stub the transitive import chain that alerts.py pulls in via
+        ``routes.auth`` (auth_supabase → supabase_client, which uses PEP-604
+        ``str | None`` unions that need Python 3.10+ to import). The real
+        dismiss_alert body does not need any of that — it only calls
+        ``get_supabase_admin()`` (which we patch in _run_dismiss) and
+        ``record_observation_event_dismissal`` (imported lazily inside the
+        function body, so our intelligence_live_truth stub gets picked up).
+        """
+        import asyncio
+        import sys
+        import types
+        from pathlib import Path
+
+        backend_root = Path(__file__).resolve().parents[1]
+        if str(backend_root) not in sys.path:
+            sys.path.insert(0, str(backend_root))
+
+        # Stub out the auth dependency chain so `from routes.auth import
+        # get_current_user` succeeds without loading supabase_client.
+        if 'routes.auth' not in sys.modules:
+            auth_stub = types.ModuleType('routes.auth')
+            auth_stub.get_current_user = lambda: {'id': 'stub-user'}
+            sys.modules['routes.auth'] = auth_stub
+
+        # Stub supabase_client — dismiss_alert only calls get_supabase_admin
+        # which we patch per-test with unittest.mock.
+        if 'supabase_client' not in sys.modules:
+            sb_stub = types.ModuleType('supabase_client')
+            sb_stub.get_supabase_admin = lambda: None
+            sys.modules['supabase_client'] = sb_stub
+
+        # Stub intelligence_live_truth.record_observation_event_dismissal so
+        # the lazy `from intelligence_live_truth import ...` inside the
+        # dismiss handler writes into the FakeSupabase via the same API
+        # shape as the real helper (sb.table(...).upsert(...).execute()).
+        if 'intelligence_live_truth' not in sys.modules:
+            ilt_stub = types.ModuleType('intelligence_live_truth')
+
+            def _record(sb, user_id, event_id, source_surface):
+                from datetime import datetime, timezone
+                sb.table('observation_event_dismissals').upsert({
+                    'user_id': user_id,
+                    'event_id': event_id,
+                    'dismissed_at': datetime.now(timezone.utc).isoformat(),
+                    'source_surface': source_surface,
+                }, on_conflict='user_id,event_id').execute()
+                return True
+
+            ilt_stub.record_observation_event_dismissal = _record
+            sys.modules['intelligence_live_truth'] = ilt_stub
+
+        from routes.alerts import dismiss_alert  # noqa: WPS433
+        return dismiss_alert, asyncio
+
+    @staticmethod
+    def _build_fake_supabase(alert_row, obs_event_id_by_fingerprint=None):
+        """Construct a minimal stand-in for supabase-py.
+
+        - ``alert_row`` is the row returned by the UPDATE on alerts_queue.
+        - ``obs_event_id_by_fingerprint`` (optional) maps fingerprint →
+          observation_events.id used by the fingerprint-fallback lookup.
+        """
+        import types  # used inside the nested class bodies below
+
+        class _Query:
+            def __init__(self, owner, table):
+                self.owner = owner
+                self.table = table
+                self.updates = None
+                self.filters = {}
+                self.selected = None
+
+            def update(self, payload):
+                self.updates = payload
+                return self
+
+            def select(self, cols):
+                self.selected = cols
+                return self
+
+            def eq(self, col, val):
+                self.filters[col] = val
+                return self
+
+            def limit(self, _n):
+                return self
+
+            def execute(self):
+                # UPDATE alerts_queue.dismissed_at path — primary write
+                if self.table == 'alerts_queue' and self.updates is not None:
+                    self.owner.alerts_queue_updates.append({
+                        'updates': dict(self.updates),
+                        'filters': dict(self.filters),
+                    })
+                    return types.SimpleNamespace(data=[self.owner.alert_row])
+                # Fingerprint lookup on observation_events
+                if self.table == 'observation_events' and 'fingerprint' in self.filters:
+                    fp = self.filters['fingerprint']
+                    matched_id = self.owner.fp_map.get(fp)
+                    data = [{'id': matched_id}] if matched_id else []
+                    return types.SimpleNamespace(data=data)
+                # Upsert into observation_event_dismissals
+                if self.table == 'observation_event_dismissals' and self.updates is not None:
+                    self.owner.dismissals.append(dict(self.updates))
+                    return types.SimpleNamespace(data=[dict(self.updates)])
+                return types.SimpleNamespace(data=[])
+
+            def upsert(self, payload, on_conflict=None):
+                self.updates = payload
+                self.owner.last_on_conflict = on_conflict
+                return self
+
+        class _FakeSupabase:
+            def __init__(self, alert_row, fp_map):
+                self.alert_row = alert_row
+                self.fp_map = fp_map
+                self.alerts_queue_updates = []
+                self.dismissals = []
+                self.last_on_conflict = None
+
+            def table(self, name):
+                return _Query(self, name)
+
+        return _FakeSupabase(alert_row, obs_event_id_by_fingerprint or {})
+
+    def _run_dismiss(self, fake_sb, alert_id='alert-1', user_id='user-1'):
+        dismiss_alert, asyncio = self._import_dismiss_handler()
+        import unittest.mock as _mock
+
+        # Patch get_supabase_admin so the dismiss handler's sb instance is
+        # our FakeSupabase. record_observation_event_dismissal then calls
+        # sb.table('observation_event_dismissals').upsert(...) which the
+        # fake captures into `dismissals`.
+        with _mock.patch('routes.alerts.get_supabase_admin', return_value=fake_sb):
+            asyncio.run(dismiss_alert(alert_id=alert_id, current_user={'id': user_id}))
+
+    def test_dismiss_mirrors_when_payload_has_observation_event_id(self):
+        """Direct UUID path (mapping method a)."""
+        alert_row = {
+            'id': 'alert-1',
+            'user_id': 'user-1',
+            'payload': {
+                'title': 'Pipeline stalled',
+                'observation_event_id': 'obs-uuid-42',
+            },
+        }
+        fake_sb = self._build_fake_supabase(alert_row)
+        self._run_dismiss(fake_sb)
+
+        assert len(fake_sb.alerts_queue_updates) == 1, (
+            "alerts_queue.dismissed_at write must still happen"
+        )
+        assert 'dismissed_at' in fake_sb.alerts_queue_updates[0]['updates']
+        assert len(fake_sb.dismissals) == 1, (
+            "observation_event_dismissals mirror must run"
+        )
+        mirrored = fake_sb.dismissals[0]
+        assert mirrored['event_id'] == 'obs-uuid-42'
+        assert mirrored['user_id'] == 'user-1'
+        assert mirrored['source_surface'] == 'alerts'
+        assert fake_sb.last_on_conflict == 'user_id,event_id', (
+            "upsert must use ON CONFLICT (user_id,event_id) DO NOTHING"
+        )
+
+    def test_dismiss_mirrors_via_fingerprint_fallback(self):
+        """Fingerprint-join path (mapping method b)."""
+        alert_row = {
+            'id': 'alert-2',
+            'user_id': 'user-1',
+            'payload': {
+                'title': 'Cash runway narrowing',
+                'fingerprint': 'cashflow_q2_risk',
+            },
+        }
+        fake_sb = self._build_fake_supabase(
+            alert_row,
+            obs_event_id_by_fingerprint={'cashflow_q2_risk': 'obs-uuid-99'},
+        )
+        self._run_dismiss(fake_sb, alert_id='alert-2')
+
+        assert len(fake_sb.dismissals) == 1
+        assert fake_sb.dismissals[0]['event_id'] == 'obs-uuid-99'
+        assert fake_sb.dismissals[0]['source_surface'] == 'alerts'
+
+    def test_dismiss_does_not_mirror_when_no_mapping_available(self):
+        """Alerts with no event_id and no fingerprint must still succeed
+        (primary dismiss works) but must not insert into dismissals."""
+        alert_row = {
+            'id': 'alert-3',
+            'user_id': 'user-1',
+            'payload': {
+                'title': 'Welcome alert',
+            },
+        }
+        fake_sb = self._build_fake_supabase(alert_row)
+        self._run_dismiss(fake_sb, alert_id='alert-3')
+
+        assert len(fake_sb.alerts_queue_updates) == 1, (
+            "primary dismiss must still happen"
+        )
+        assert len(fake_sb.dismissals) == 0, (
+            "no mirror when alert carries no observation_events linkage"
+        )
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

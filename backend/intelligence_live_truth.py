@@ -516,6 +516,33 @@ def _get_dismissed_observation_event_ids(sb, user_id: str) -> set:
         return set()
 
 
+def record_observation_event_dismissal(sb, user_id: str, event_id: str, source_surface: str) -> bool:
+    """Idempotent upsert into observation_event_dismissals (migration 116).
+
+    Mirrors a dismissal from any surface (alerts / advisor / live_feed /
+    notifications / watchtower_handle) so get_recent_observation_events hides
+    the event from the Live Signal Feed.
+
+    Safe to call with an id that does not match any observation_events row —
+    the FK check raises and is swallowed, so we simply no-op.
+    """
+    if not user_id or not event_id:
+        return False
+    try:
+        sb.table("observation_event_dismissals").upsert({
+            "user_id": user_id,
+            "event_id": event_id,
+            "dismissed_at": datetime.now(timezone.utc).isoformat(),
+            "source_surface": source_surface,
+        }, on_conflict="user_id,event_id").execute()
+        return True
+    except Exception as e:
+        logger.warning(
+            f"[live-truth] dismissal upsert failed event={event_id} surface={source_surface}: {e}"
+        )
+        return False
+
+
 def get_recent_observation_events(sb, user_id: str, limit: int = 25) -> Dict[str, Any]:
     try:
         window_start = (datetime.now(timezone.utc) - timedelta(hours=OBSERVATION_EVENT_WINDOW_HOURS)).isoformat()

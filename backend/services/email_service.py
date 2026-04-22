@@ -879,6 +879,12 @@ def _send_via_resend(*, to: str, subject: str, html: str, text: str,
     }
     if reply_to:
         payload["reply_to"] = reply_to
+    # Lazy import so telemetry never blocks the mail path if the module
+    # fails to load (2026-04-22 / migration 118).
+    try:
+        from core.provider_tracker import record_provider_call_sync as _track_resend
+    except Exception:  # pragma: no cover
+        _track_resend = None  # type: ignore[assignment]
     try:
         with httpx.Client(timeout=15.0) as client:
             r = client.post(
@@ -896,11 +902,17 @@ def _send_via_resend(*, to: str, subject: str, html: str, text: str,
                 data = {}
             email_id = data.get("id")
             logger.info("[email] sent to=%s subject=%r id=%s", to, subject, email_id)
+            if _track_resend:
+                _track_resend("resend")
             return email_id
         logger.error("[email] send failed to=%s status=%s body=%s", to, r.status_code, r.text[:300])
+        if _track_resend:
+            _track_resend("resend", error=f"http_{r.status_code}")
         return None
     except Exception as exc:
         logger.error("[email] send exception to=%s subject=%r: %s", to, subject, exc)
+        if _track_resend:
+            _track_resend("resend", error=str(exc)[:200])
         return None
 
 

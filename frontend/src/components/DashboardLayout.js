@@ -19,7 +19,7 @@ import {
   Radar, HelpCircle, LayoutDashboard, AlertTriangle, Link2,
   ClipboardList, MessageSquare, Lock, Eye, FlaskConical,
   BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox, CreditCard,
-  Search
+  Search, Key
 } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
 import { getRouteAccess } from '../lib/tierResolver';
@@ -346,6 +346,7 @@ const DashboardLayout = ({ children }) => {
           { icon: BookOpen, label: 'Knowledge Base', path: '/knowledge-base' },
           { icon: Activity, label: 'Observability', path: '/observability' },
           { icon: Zap, label: 'Prompt Lab', path: '/admin/prompt-lab' },
+          { icon: Key, label: 'API Providers', path: '/super-admin/providers' },
           { icon: Shield, label: 'Support Console', path: '/support-admin' },
           { icon: Eye, label: 'Watchtower', path: '/watchtower' },
         ]},

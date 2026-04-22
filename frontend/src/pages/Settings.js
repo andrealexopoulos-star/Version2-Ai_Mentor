@@ -96,6 +96,19 @@ const SettingsBillingContent = ({ navigate, user }) => {
     ? 'var(--danger, #DC2626)'
     : pct >= 60 ? 'var(--warning, #E85D00)' : 'var(--positive, #16A34A)';
 
+  // Daily meter (Andreas scope 2026-04-22) — resets at UTC 00:00
+  const tokensToday = overview?.tokens_today ?? 0;
+  const dailyAverage = overview?.daily_average ?? 0;
+  const pctOfNormal = overview?.percent_of_daily_normal; // null when no baseline
+  const dailyBarPct = (pctOfNormal === null || pctOfNormal === undefined)
+    ? null
+    : Math.min(200, Math.round(pctOfNormal * 100));
+  const dailyBarColor = dailyBarPct === null
+    ? 'var(--ink-muted, #737373)'
+    : dailyBarPct >= 150 ? 'var(--danger, #DC2626)'
+    : dailyBarPct >= 110 ? 'var(--warning, #E85D00)'
+    : 'var(--positive, #16A34A)';
+
   const nextCharge = overview?.next_charge;
   const nextChargeDate = fmtDate(nextCharge?.date);
   const trialEndDate = fmtDate(overview?.trial_ends_at);
@@ -206,6 +219,63 @@ const SettingsBillingContent = ({ navigate, user }) => {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Daily memory counter (Andreas scope 2026-04-22 — resets UTC 00:00) */}
+      <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border, rgba(10,10,10,0.08))', borderRadius: 'var(--r-lg, 12px)', padding: 'var(--sp-5, 20px)' }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted, #737373)' }}>
+            Tokens used today
+          </p>
+          {unmetered && (
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
+              letterSpacing: 'var(--ls-caps, 0.08em)', padding: '2px 8px',
+              borderRadius: 'var(--r-full, 999px)', fontWeight: 600,
+              background: 'rgba(10,10,10,0.06)', color: 'var(--ink-secondary, #525252)',
+            }}>
+              Unmetered
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 34, color: 'var(--ink-display, #0A0A0A)', lineHeight: 1 }}>
+            {fmtTokens(tokensToday)}
+          </div>
+          {!unmetered && dailyBarPct !== null && (
+            <span
+              title={`Your rolling daily average this period is ${fmtTokens(Math.round(dailyAverage))} tokens.`}
+              style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-secondary, #525252)' }}
+            >
+              {dailyBarPct}% of daily normal
+            </span>
+          )}
+          {!unmetered && dailyBarPct === null && (
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted, #737373)' }}>
+              — no baseline yet
+            </span>
+          )}
+        </div>
+        {!unmetered && dailyBarPct !== null && (
+          <div style={{ height: 6, borderRadius: 'var(--r-full, 999px)', background: 'var(--surface-sunken, rgba(10,10,10,0.04))', overflow: 'hidden', marginTop: 12 }}>
+            <div style={{
+              width: `${Math.min(100, dailyBarPct / 2)}%`,
+              height: '100%',
+              background: dailyBarColor,
+              transition: 'width 0.6s ease',
+            }} />
+          </div>
+        )}
+        {!unmetered && (
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted, #737373)', marginTop: 10 }}>
+            This period: {fmtTokens(consumed)} / {fmtTokens((allowance || 0) + toppedUp)}
+          </p>
+        )}
+        {unmetered && (
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted, #737373)', marginTop: 10 }}>
+            No cap on your plan. Daily counter resets at UTC 00:00.
+          </p>
+        )}
       </div>
 
       {/* Token allowance bar */}

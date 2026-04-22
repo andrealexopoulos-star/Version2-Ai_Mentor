@@ -3,6 +3,7 @@
 All actions audit-logged. All routes require super_admin role + feature flag.
 """
 import logging
+import os
 from datetime import datetime, timezone
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
@@ -633,3 +634,125 @@ async def trigger_morning_brief_worker(
             status_code=502,
             detail=f"Morning brief worker failed: {type(exc).__name__}: {exc}",
         )
+
+
+# ═══ API PROVIDERS DASHBOARD (Migration 118 / 2026-04-22) ═══════════
+#
+# Super-admin API Providers dashboard. One row per external vendor BIQc
+# uses, showing name, env var status, plan allocation note, running
+# call_count, cumulative cost (AUD), status (up/down/unknown/error), and
+# last error / last called. Scope locked by Andreas 2026-04-22: one row
+# per provider; per-GP drill-down is deferred.
+
+# Provider catalog: slug → (env var, plan allocation note). Plan notes
+# point at vendor dashboards where BIQc's paid plan caps live; Andreas can
+# later fill concrete numbers via an admin update path (deferred).
+_PROVIDER_CATALOG: tuple[dict, ...] = (
+    {"provider": "openai",     "env_var_name": "OPENAI_API_KEY",
+     "plan_allocation_note": "Usage-based; model pricing in MODEL_PRICING (backend/middleware/token_metering.py L63-78)",
+     "plan_url": "https://platform.openai.com/account/limits"},
+    {"provider": "anthropic",  "env_var_name": "ANTHROPIC_API_KEY",
+     "plan_allocation_note": "Usage-based; Claude 4.6 in MODEL_PRICING",
+     "plan_url": "https://console.anthropic.com/settings/limits"},
+    {"provider": "gemini",     "env_var_name": "GOOGLE_API_KEY",
+     "plan_allocation_note": "Usage-based; Gemini 3 Pro/Flash in MODEL_PRICING",
+     "plan_url": "https://aistudio.google.com/apikey"},
+    {"provider": "browse_ai",  "env_var_name": "BROWSE_AI_API_KEY",
+     "plan_allocation_note": "Task runs per subscription — set in Browse AI dashboard",
+     "plan_url": "https://dashboard.browse.ai/plan"},
+    {"provider": "semrush",    "env_var_name": "SEMRUSH_API_KEY",
+     "plan_allocation_note": "API units per subscription — set in SEMrush dashboard",
+     "plan_url": "https://www.semrush.com/accounts/subscription-info/"},
+    {"provider": "firecrawl",  "env_var_name": "FIRECRAWL_API_KEY",
+     "plan_allocation_note": "Credits per plan — set in Firecrawl dashboard",
+     "plan_url": "https://www.firecrawl.dev/app/usage"},
+    {"provider": "perplexity", "env_var_name": "PERPLEXITY_API_KEY",
+     "plan_allocation_note": "Usage-based per model; set in Perplexity dashboard",
+     "plan_url": "https://www.perplexity.ai/settings/api"},
+    {"provider": "resend",     "env_var_name": "RESEND_API_KEY",
+     "plan_allocation_note": "Monthly emails per tier — set in Resend dashboard",
+     "plan_url": "https://resend.com/settings/billing"},
+    {"provider": "stripe",     "env_var_name": "STRIPE_API_KEY",
+     "plan_allocation_note": "Per-transaction fees; no plan cap",
+     "plan_url": "https://dashboard.stripe.com/settings/billing"},
+    {"provider": "merge",      "env_var_name": "MERGE_API_KEY",
+     "plan_allocation_note": "Linked-accounts per subscription — set in Merge dashboard",
+     "plan_url": "https://app.merge.dev/billing"},
+    {"provider": "supabase",   "env_var_name": "SUPABASE_SERVICE_ROLE_KEY",
+     "plan_allocation_note": "Project tier (DB + egress); set in Supabase dashboard",
+     "plan_url": "https://supabase.com/dashboard/org/_/billing"},
+    {"provider": "serper",     "env_var_name": "SERPER_API_KEY",
+     "plan_allocation_note": "Credits per plan; set in serper.dev dashboard",
+     "plan_url": "https://serper.dev/billing"},
+    {"provider": "sentry",     "env_var_name": "SENTRY_DSN",
+     "plan_allocation_note": "Events/month per org; set in Sentry dashboard",
+     "plan_url": "https://sentry.io/settings/billing/"},
+)
+
+_STATUS_SORT_ORDER = {"error": 0, "down": 1, "unknown": 2, "up": 3}
+
+
+@router.get("/super-admin/api-providers")
+async def get_api_providers(current_user: dict = Depends(get_current_user)):
+    """Return one row per external provider BIQc uses.
+
+    Super-admin only. Shape:
+      [{
+        provider, env_var_name, key_configured, plan_allocation_note, plan_url,
+        call_count, total_cost_aud, status, last_error, last_error_at, last_called_at
+      }]
+
+    Sort order: status='error' first, then 'down', then 'unknown', then 'up'.
+
+    On each call we:
+      1. Run refresh_provider_usage() to roll fresh LLM rows in from
+         usage_ledger (idempotent).
+      2. Fetch all provider_usage rows.
+      3. Merge with the in-process catalog so missing-provider rows still
+         render with key_configured + plan_allocation_note visible.
+      4. Attach `key_configured = bool(os.environ.get(env_var_name))` at
+         request time so the dashboard shows live env-var status.
+    """
+    _require_super_admin(current_user)
+
+    sb = _get_service_client()
+
+    # 1) Refresh LLM rows from usage_ledger (safe if no rows yet).
+    try:
+        sb.rpc("refresh_provider_usage", {}).execute()
+    except Exception as exc:
+        logger.warning("[api-providers] refresh_provider_usage rpc failed: %s", exc)
+
+    # 2) Fetch all tally rows.
+    try:
+        res = sb.table("provider_usage").select(
+            "provider, call_count, total_cost_aud_micros, last_called_at, "
+            "last_error, last_error_at, status"
+        ).execute()
+        rows_by_slug = {(r.get("provider") or "").lower(): r for r in (res.data or [])}
+    except Exception as exc:
+        logger.warning("[api-providers] provider_usage select failed: %s", exc)
+        rows_by_slug = {}
+
+    out: list[dict] = []
+    for meta in _PROVIDER_CATALOG:
+        slug = meta["provider"]
+        row = rows_by_slug.get(slug, {}) or {}
+        micros = int(row.get("total_cost_aud_micros") or 0)
+        out.append({
+            "provider": slug,
+            "env_var_name": meta["env_var_name"],
+            "key_configured": bool(os.environ.get(meta["env_var_name"])),
+            "plan_allocation_note": meta["plan_allocation_note"],
+            "plan_url": meta["plan_url"],
+            "call_count": int(row.get("call_count") or 0),
+            "total_cost_aud": round(micros / 1_000_000.0, 4),
+            "total_cost_aud_micros": micros,
+            "status": row.get("status") or "unknown",
+            "last_error": row.get("last_error"),
+            "last_error_at": row.get("last_error_at"),
+            "last_called_at": row.get("last_called_at"),
+        })
+
+    out.sort(key=lambda r: (_STATUS_SORT_ORDER.get(r["status"], 99), r["provider"]))
+    return {"providers": out, "count": len(out)}

@@ -2125,6 +2125,22 @@ async def dismiss_notification(notification_id: str, current_user: dict = Depend
             "notification_id": notification_id,
             "dismissed_at": datetime.now(timezone.utc).isoformat()
         }, on_conflict="user_id,notification_id").execute()
+
+        # Notifications with the `obs_<uuid>` prefix are fallback renders of
+        # observation_events (see notifications list endpoint which builds
+        # "id": f"obs_{event['id']}"). Mirror the dismissal so the Live Signal
+        # Feed hides the same event (migration 116).
+        if isinstance(notification_id, str) and notification_id.startswith("obs_"):
+            try:
+                from intelligence_live_truth import record_observation_event_dismissal
+                record_observation_event_dismissal(
+                    get_sb(), current_user["id"], notification_id[4:], 'notifications'
+                )
+            except Exception as mirror_err:
+                logger.warning(
+                    f"[notifications/dismiss] observation_event mirror failed: {mirror_err}"
+                )
+
         return {"status": "dismissed"}
     except Exception as e:
         logger.error(f"[notifications/dismiss] Error: {e}", exc_info=True)

@@ -55,6 +55,10 @@ class _FakeQuery:
         self.filters.append(("gte", col, val))
         return self
 
+    def lt(self, col: str, val: Any) -> "_FakeQuery":
+        self.filters.append(("lt", col, val))
+        return self
+
     def limit(self, n: int) -> "_FakeQuery":
         self.limit_n = n
         return self
@@ -413,3 +417,88 @@ def test_user_state_degrades_to_empty_dict_on_error(billing_module, fake_sb):
         raise RuntimeError("DB unreachable")
     fake_sb.response_handlers["users"] = boom
     assert billing_module._safe_user_subscription_state(fake_sb, "user-err") == {}
+
+
+# ─── Daily token meter (Andreas scope 2026-04-22) ─────────────────
+
+def test_today_utc_start_is_midnight_utc(billing_module):
+    """Daily counter resets at UTC 00:00 — verify the anchor is normalised."""
+    from datetime import datetime, timezone
+    now = datetime(2026, 4, 22, 14, 37, 5, tzinfo=timezone.utc)
+    start = billing_module._today_utc_start(now)
+    assert start == datetime(2026, 4, 22, 0, 0, 0, tzinfo=timezone.utc)
+    assert start.tzinfo is timezone.utc
+
+
+def test_sum_consume_since_aggregates_three_calls_today(billing_module, fake_sb):
+    """User made 3 LLM calls today (500 tokens each) — counter reads 1500."""
+    from datetime import datetime, timezone
+    captured: List[_FakeQuery] = []
+
+    def handler(q: _FakeQuery):
+        captured.append(q)
+        return _FakeExecResult([
+            {"tokens": 500},
+            {"tokens": 500},
+            {"tokens": 500},
+        ])
+    fake_sb.response_handlers["usage_ledger"] = handler
+
+    since = datetime(2026, 4, 22, 0, 0, 0, tzinfo=timezone.utc)
+    total = billing_module._sum_consume_since(fake_sb, "user-daily", since)
+
+    assert total == 1500
+    assert len(captured) == 1
+    # must filter by user_id, kind='consume', created_at >= since
+    filters = captured[0].filters
+    assert ("eq", "user_id", "user-daily") in filters
+    assert ("eq", "kind", "consume") in filters
+    assert any(f[0] == "gte" and f[1] == "created_at" for f in filters)
+
+
+def test_sum_consume_since_degrades_on_db_error(billing_module, fake_sb):
+    """Ledger read failure must NOT break /billing/overview — returns 0."""
+    from datetime import datetime, timezone
+
+    def boom(q):
+        raise RuntimeError("simulated ledger outage")
+    fake_sb.response_handlers["usage_ledger"] = boom
+
+    since = datetime(2026, 4, 22, 0, 0, 0, tzinfo=timezone.utc)
+    assert billing_module._sum_consume_since(fake_sb, "user-bust", since) == 0
+
+
+def test_daily_average_returns_zero_when_period_just_started(billing_module, fake_sb):
+    """period_start == today_start → no full days elapsed → baseline 0.
+    Prevents divide-by-zero in percent_of_daily_normal."""
+    from datetime import datetime, timezone
+    today_start = datetime(2026, 4, 22, 0, 0, 0, tzinfo=timezone.utc)
+    assert billing_module._daily_average_since(
+        fake_sb, "user-new", today_start, today_start,
+    ) == 0.0
+
+
+def test_daily_average_divides_period_consumed_by_days_elapsed(billing_module, fake_sb):
+    """Period started 4 days ago, user consumed 4000 tokens → avg 1000/day.
+    Today's consumption is EXCLUDED (lt today_start) so partial-day skew
+    doesn't inflate the baseline."""
+    from datetime import datetime, timezone
+    captured: List[_FakeQuery] = []
+
+    def handler(q: _FakeQuery):
+        captured.append(q)
+        return _FakeExecResult([{"tokens": 4000}])
+    fake_sb.response_handlers["usage_ledger"] = handler
+
+    period_start = datetime(2026, 4, 18, 0, 0, 0, tzinfo=timezone.utc)
+    today_start  = datetime(2026, 4, 22, 0, 0, 0, tzinfo=timezone.utc)
+
+    avg = billing_module._daily_average_since(
+        fake_sb, "user-avg", period_start, today_start,
+    )
+
+    assert avg == 1000.0
+    # must have BOTH gte period_start AND lt today_start
+    filters = captured[0].filters
+    assert any(f[0] == "gte" and f[1] == "created_at" for f in filters)
+    assert any(f[0] == "lt" and f[1] == "created_at" for f in filters)

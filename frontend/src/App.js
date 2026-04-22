@@ -121,6 +121,7 @@ const AdminPricingPage = React.lazy(() => import(/* webpackChunkName: "admin" */
 const AdminUxFeedbackPage = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/AdminUxFeedbackPage'));
 const AdminScopeCheckpointsPage = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/AdminScopeCheckpointsPage'));
 const SupportConsolePage = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/SupportConsolePage'));
+const SuperAdminProviders = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/SuperAdminProviders'));
 const ObservabilityPage = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/ObservabilityPage'));
 const PromptLab = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/PromptLab'));
 
@@ -487,6 +488,7 @@ function AppRoutes() {
         <Route path="/admin/scope-checkpoints" element={<ProtectedRoute adminOnly><RouteErrorBoundary><AdminScopeCheckpointsPage /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/admin/prompt-lab" element={<ProtectedRoute adminOnly><RouteErrorBoundary><PromptLab /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/support-admin" element={<ProtectedRoute adminOnly><RouteErrorBoundary><SupportConsolePage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/super-admin/providers" element={<ProtectedRoute adminOnly><RouteErrorBoundary><SuperAdminProviders /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/observability" element={<ProtectedRoute adminOnly><RouteErrorBoundary><ObservabilityPage /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

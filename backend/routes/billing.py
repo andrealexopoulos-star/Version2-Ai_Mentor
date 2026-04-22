@@ -299,6 +299,60 @@ def _sum_ledger_by_kind(sb, user_id: str, since: datetime) -> Dict[str, int]:
     return out
 
 
+def _today_utc_start(now: Optional[datetime] = None) -> datetime:
+    """UTC 00:00 for today. Daily counter resets on the UTC day boundary —
+    consistent with how _resolve_period_start treats first-of-month when no
+    reset row exists. Keeps the meter deterministic across tz jumps."""
+    now = now or datetime.now(timezone.utc)
+    return datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+
+
+def _sum_consume_since(sb, user_id: str, since: datetime) -> int:
+    """Sum kind='consume' tokens since `since`. Separate from _sum_ledger_by_kind
+    because the daily window calls this independently of the period window —
+    we want two SELECTs not one, so a ledger reset mid-day doesn't zero the
+    today counter (resets are period-scoped, not day-scoped)."""
+    total = 0
+    try:
+        res = (
+            sb.table("usage_ledger")
+            .select("tokens")
+            .eq("user_id", user_id)
+            .eq("kind", "consume")
+            .gte("created_at", _iso(since))
+            .execute()
+        )
+        for row in (res.data or []):
+            total += int(row.get("tokens") or 0)
+    except Exception as exc:
+        logger.warning("usage_ledger daily sum failed for %s: %s", user_id, exc)
+    return total
+
+
+def _daily_average_since(sb, user_id: str, period_start: datetime, today_start: datetime) -> float:
+    """Average tokens/day across full days elapsed in the current period
+    (exclusive of today, which is still accumulating). Returns 0.0 if the
+    period just started — caller should treat that as "no baseline yet"."""
+    if today_start <= period_start:
+        return 0.0
+    try:
+        res = (
+            sb.table("usage_ledger")
+            .select("tokens")
+            .eq("user_id", user_id)
+            .eq("kind", "consume")
+            .gte("created_at", _iso(period_start))
+            .lt("created_at", _iso(today_start))
+            .execute()
+        )
+        total = sum(int(row.get("tokens") or 0) for row in (res.data or []))
+    except Exception as exc:
+        logger.warning("usage_ledger average calc failed for %s: %s", user_id, exc)
+        return 0.0
+    days_elapsed = max(1, (today_start - period_start).days)
+    return total / days_elapsed
+
+
 def _recent_topups(sb, user_id: str, limit: int = 5) -> List[Dict[str, Any]]:
     try:
         res = (
@@ -388,6 +442,17 @@ async def get_billing_overview(current_user: dict = Depends(get_current_user)):
         consumed = totals["consume"]
         topped_up = totals["topup"]
 
+        # Daily meter (2026-04-22): UTC 00:00 today → now. Always computed,
+        # including super_admin (the UI hides the ratio, keeps the raw count).
+        today_start = _today_utc_start()
+        tokens_today = _sum_consume_since(sb, user_id, today_start)
+        daily_average = _daily_average_since(sb, user_id, period_start, today_start)
+        # percent_of_daily_normal: today / rolling average. None when no baseline
+        # (period < 1 full day) so the UI can render "—" instead of /0 ratio.
+        percent_of_daily_normal: Optional[float] = None
+        if daily_average > 0:
+            percent_of_daily_normal = round(tokens_today / daily_average, 4)
+
         if unmetered:
             net_remaining = -1
             percent_consumed = 0.0
@@ -411,6 +476,11 @@ async def get_billing_overview(current_user: dict = Depends(get_current_user)):
             "topped_up_this_period": topped_up,
             "net_remaining": net_remaining,
             "percent_consumed": percent_consumed,
+            # Daily meter fields (Andreas scope 2026-04-22)
+            "tokens_today": tokens_today,
+            "daily_average": round(daily_average, 2),
+            "percent_of_daily_normal": percent_of_daily_normal,
+            "day_start": _iso(today_start),
             "next_charge": _next_charge(user_state, tier),
             "auto_topup_enabled": bool(user_state.get("auto_topup_enabled", True)),
             "payment_required": bool(user_state.get("payment_required", False)),

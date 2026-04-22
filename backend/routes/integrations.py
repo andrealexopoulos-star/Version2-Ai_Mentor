@@ -1984,7 +1984,20 @@ async def alert_action(request: Request, current_user: dict = Depends(get_curren
             await watchtower.handle_event(str(alert_id), user_id)
     except Exception as e:
         logger.warning(f"[alert-action] Watchtower handle failed: {e}")
-    
+
+    # Mirror into observation_event_dismissals for complete/ignore so the Live
+    # Signal Feed hides events already handled from the Advisor surface. The
+    # Advisor feed's alert_id is the observation_events.id — see
+    # build_watchtower_events() in intelligence_live_truth.py which passes
+    # row["id"] straight through. Helper is idempotent + FK-safe: a mismatched
+    # id (non-observation alert) is silently dropped.
+    if action in ("complete", "ignore"):
+        try:
+            from intelligence_live_truth import record_observation_event_dismissal
+            record_observation_event_dismissal(get_sb(), user_id, str(alert_id), 'advisor')
+        except Exception as e:
+            logger.warning(f"[alert-action] observation_event mirror failed: {e}")
+
     # Log the action to Supabase
     try:
         get_sb().table("alert_actions").insert({
@@ -2776,12 +2789,21 @@ async def handle_watchtower_event(
     Mark a Watchtower event as handled
     """
     from watchtower_store import get_watchtower_store
-    
+
     user_id = current_user["id"]
-    
+
     watchtower = get_watchtower_store()
     success = await watchtower.handle_event(event_id, user_id)
-    
+
+    # Mirror into observation_event_dismissals when event_id maps to an
+    # observation_events.id (the Advisor feed surfaces those ids). Helper is
+    # idempotent + FK-safe: no-ops for pure watchtower_events ids.
+    try:
+        from intelligence_live_truth import record_observation_event_dismissal
+        record_observation_event_dismissal(get_sb(), user_id, event_id, 'watchtower_handle')
+    except Exception as e:
+        logger.warning(f"[watchtower/handle] observation_event mirror failed: {e}")
+
     return {
         "success": success
     }

@@ -22,13 +22,26 @@ router = APIRouter()
 # ─── Schemas ─────────────────────────────────────────────────────────────────
 
 class AlertPayload(BaseModel):
-    """Content shown in the alert banner."""
+    """Content shown in the alert banner.
+
+    ``observation_event_id`` / ``fingerprint`` are optional cross-surface
+    linking keys. When an alert was emitted off the back of an
+    ``observation_events`` row, the emitter SHOULD set one of these so the
+    dismiss handler can mirror the dismissal into
+    ``observation_event_dismissals`` (migration 116) and keep the Advisor
+    Live Signal Feed consistent with the Alerts page.
+    """
     title: str = Field(..., max_length=200)
     body: Optional[str] = Field(None, max_length=600)
     cta_label: Optional[str] = Field(None, max_length=50)
     cta_href: Optional[str] = Field(None, max_length=300)
     icon: Optional[str] = Field(None, max_length=50)          # lucide icon name
     severity: Optional[str] = Field('info', pattern='^(urgent|warning|info|success)$')
+    # Cross-surface dismissal linking (Sprint A #8 follow-up).
+    # Prefer observation_event_id when the emitter already has the UUID.
+    # Fall back to fingerprint — the dismiss handler will join on it.
+    observation_event_id: Optional[str] = Field(None, max_length=64)
+    fingerprint: Optional[str] = Field(None, max_length=300)
 
 
 class AlertEmit(BaseModel):
@@ -169,11 +182,64 @@ async def dismiss_alert(alert_id: str, current_user: dict = Depends(get_current_
     """User explicitly dismissed the alert. Strong negative learning signal."""
     sb = get_supabase_admin()
     now = datetime.now(timezone.utc).isoformat()
-    sb.table('alerts_queue') \
+    res = sb.table('alerts_queue') \
         .update({'dismissed_at': now, 'viewed_at': now}) \
         .eq('id', alert_id) \
         .eq('user_id', current_user['id']) \
         .execute()
+
+    # Mirror into observation_event_dismissals so a signal dismissed from the
+    # Alerts page also vanishes from the Advisor Live Signal Feed rendered
+    # out of observation_events (migration 116, Sprint A #8).
+    #
+    # Mapping (in order of preference):
+    #   1. payload.observation_event_id / payload.event_id  — direct UUID
+    #   2. payload.fingerprint joined to observation_events.fingerprint
+    #      for this user — unique index exists on (user_id, fingerprint).
+    #
+    # Failures here MUST NOT fail the primary dismiss. The helper itself uses
+    # upsert ON CONFLICT DO NOTHING so double-clicks and retries are safe.
+    try:
+        row = (res.data or [{}])[0] if res and res.data else {}
+        payload = row.get('payload') or {}
+        if isinstance(payload, str):
+            import json as _json
+            try:
+                payload = _json.loads(payload)
+            except Exception:
+                payload = {}
+
+        obs_event_id = (
+            payload.get('observation_event_id')
+            or payload.get('event_id')
+            or row.get('observation_event_id')
+        )
+
+        # Fingerprint fallback — look up the observation_events row by
+        # (user_id, fingerprint). If no match, this alert simply wasn't
+        # sourced from an observation event and we no-op silently.
+        if not obs_event_id:
+            fp = payload.get('fingerprint') or row.get('fingerprint')
+            if fp:
+                try:
+                    fp_result = sb.table('observation_events').select('id') \
+                        .eq('user_id', current_user['id']) \
+                        .eq('fingerprint', fp) \
+                        .limit(1) \
+                        .execute()
+                    if fp_result.data:
+                        obs_event_id = fp_result.data[0].get('id')
+                except Exception as fp_err:
+                    logger.warning(
+                        f"[alerts/dismiss] fingerprint lookup failed alert={alert_id} fp={fp}: {fp_err}"
+                    )
+
+        if obs_event_id:
+            from intelligence_live_truth import record_observation_event_dismissal
+            record_observation_event_dismissal(sb, current_user['id'], str(obs_event_id), 'alerts')
+    except Exception as e:
+        logger.warning(f"[alerts/dismiss] observation_event mirror failed: {e}")
+
     return {'ok': True}
 
 
