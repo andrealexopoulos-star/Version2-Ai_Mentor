@@ -68,6 +68,14 @@ const MODEL_PRICING: Record<string, { input_per_1m: number; output_per_1m: numbe
   // Anthropic Claude 4.6
   "claude-opus-4-6":   { input_per_1m: 22.80, output_per_1m: 114.00 },
   "claude-sonnet-4-6": { input_per_1m:  4.56, output_per_1m:  22.80 },
+  // Perplexity (Sonar) — used by biqc-insights-cognitive, market-analysis-ai,
+  // competitor-monitor, strategic-console-ai, intelligence-snapshot,
+  // social-enrichment, calibration-business-dna. Src: docs.perplexity.ai/docs/
+  // getting-started/pricing verified 2026-04-22 via WebSearch. Note: Sonar
+  // calls also incur a small per-request search fee that varies by context
+  // size — NOT yet modelled here. Token cost is the dominant component.
+  "sonar":         { input_per_1m:  0.38, output_per_1m:  3.80 }, // $0.25 / $2.50 USD @ 1.52 AUD
+  "sonar-pro":     { input_per_1m:  4.56, output_per_1m: 22.80 }, // $3.00 / $15.00 USD @ 1.52 AUD
   // Embeddings (output is always 0)
   "text-embedding-3-small": { input_per_1m: 0.03, output_per_1m: 0.0 },
 };
