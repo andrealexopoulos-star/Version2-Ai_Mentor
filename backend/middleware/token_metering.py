@@ -95,10 +95,16 @@ MODEL_PRICING: dict[str, dict[str, float]] = {
     # Opus:    $5/$25 USD  = $7.60/$38.00 AUD (was mapped 3x over at $15/$75)
     # Sonnet:  $3/$15 USD  = $4.56/$22.80 AUD (unchanged — verified)
     # Haiku:   $1/$5 USD   = $1.52/$7.60 AUD  (NEW)
-    "claude-opus-4-7":   {"input_per_1m":  7.60, "output_per_1m":  38.00},
-    "claude-opus-4-6":   {"input_per_1m":  7.60, "output_per_1m":  38.00},
-    "claude-sonnet-4-6": {"input_per_1m":  4.56, "output_per_1m":  22.80},
-    "claude-haiku-4-5":  {"input_per_1m":  1.52, "output_per_1m":   7.60},
+    "claude-opus-4-7":    {"input_per_1m":  7.60, "output_per_1m":  38.00},
+    "claude-opus-4-6":    {"input_per_1m":  7.60, "output_per_1m":  38.00},
+    "claude-sonnet-4-6":  {"input_per_1m":  4.56, "output_per_1m":  22.80},
+    # Legacy Claude 4.0 Sonnet model ID (dated snapshot form). Claude Code /
+    # Claude Desktop both still route to this ID — discovered 2026-04-22 via
+    # Andreas's Anthropic usage page (4.06M input tokens logged in April
+    # under this name). Rate matches current Sonnet 4.6 per Anthropic's
+    # live pricing page.
+    "claude-sonnet-4-20250514": {"input_per_1m":  4.56, "output_per_1m":  22.80},
+    "claude-haiku-4-5":   {"input_per_1m":  1.52, "output_per_1m":   7.60},
     # Perplexity (Sonar) — used by edge fns: biqc-insights-cognitive,
     # market-analysis-ai, competitor-monitor, strategic-console-ai,
     # intelligence-snapshot, social-enrichment, calibration-business-dna.

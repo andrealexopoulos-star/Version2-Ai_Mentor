@@ -71,10 +71,12 @@ const MODEL_PRICING: Record<string, { input_per_1m: number; output_per_1m: numbe
   // Opus 4.7 is the CURRENT variant per the live pricing page; 4.6 is legacy.
   // Opus was previously mapped at $15/$75 USD — the real rate is $5/$25.
   // Our ledger was OVER-reporting Anthropic cost by 3x until this fix.
-  "claude-opus-4-7":   { input_per_1m:  7.60, output_per_1m:  38.00 },
-  "claude-opus-4-6":   { input_per_1m:  7.60, output_per_1m:  38.00 },
-  "claude-sonnet-4-6": { input_per_1m:  4.56, output_per_1m:  22.80 },
-  "claude-haiku-4-5":  { input_per_1m:  1.52, output_per_1m:   7.60 },
+  "claude-opus-4-7":    { input_per_1m:  7.60, output_per_1m:  38.00 },
+  "claude-opus-4-6":    { input_per_1m:  7.60, output_per_1m:  38.00 },
+  "claude-sonnet-4-6":  { input_per_1m:  4.56, output_per_1m:  22.80 },
+  // Legacy dated Sonnet 4.0 ID (Claude Code / Desktop still route here).
+  "claude-sonnet-4-20250514": { input_per_1m:  4.56, output_per_1m:  22.80 },
+  "claude-haiku-4-5":   { input_per_1m:  1.52, output_per_1m:   7.60 },
   // Perplexity (Sonar) — used by biqc-insights-cognitive, market-analysis-ai,
   // competitor-monitor, strategic-console-ai, intelligence-snapshot,
   // social-enrichment, calibration-business-dna. Src: docs.perplexity.ai/docs/
