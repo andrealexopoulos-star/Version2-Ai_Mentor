@@ -4,6 +4,7 @@ Supabase query helpers for email and calendar data
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone, timedelta
+import asyncio
 import logging
 
 from routes.deps import get_lookback_days, _normalize_subscription_tier
@@ -37,19 +38,51 @@ def _apply_tier_date_filter(query, supabase_client, user_id: str):
 # =============================================
 
 async def store_email_supabase(supabase_client, email_data: Dict[str, Any]) -> bool:
-    """Store email in Supabase outlook_emails table (provider-agnostic)"""
-    try:
-        # Upsert using provider-agnostic constraint
-        # Constraint: (account_id, provider, graph_message_id)
-        result = supabase_client.table("outlook_emails").upsert(
-            email_data,
-            on_conflict="account_id,provider,graph_message_id"
-        ).execute()
-        
-        return bool(result.data)
-    except Exception as e:
-        logger.error(f"Error storing email in Supabase: {e}")
-        return False
+    """Store email in Supabase outlook_emails table (provider-agnostic).
+
+    Retries on transient Supabase/Cloudflare 5xx errors. Observed failure:
+    2026-04-22 11:35 UTC — PostgREST returned Cloudflare 502 HTML during a
+    brief provider blip; the prior try/except silently dropped the email.
+    Max 3 attempts with 1s -> 2s -> 4s backoff. Non-retryable errors
+    (auth / schema / constraint) fail fast on the first attempt.
+    """
+    max_attempts = 3
+    delay_s = 1.0
+    transient_markers = (
+        "502", "503", "504",
+        "bad gateway", "gateway time", "timeout",
+        "could not be generated", "connection reset", "connection aborted",
+    )
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            # Upsert using provider-agnostic constraint
+            # Constraint: (account_id, provider, graph_message_id)
+            result = supabase_client.table("outlook_emails").upsert(
+                email_data,
+                on_conflict="account_id,provider,graph_message_id",
+            ).execute()
+            return bool(result.data)
+        except Exception as e:
+            err_lower = str(e).lower()
+            is_transient = any(m in err_lower for m in transient_markers)
+
+            if not is_transient or attempt == max_attempts:
+                kind = "transient-exhausted" if is_transient else "permanent"
+                logger.error(
+                    "Error storing email in Supabase "
+                    f"(attempt {attempt}/{max_attempts}, {kind}): {e}"
+                )
+                return False
+
+            logger.warning(
+                "Transient Supabase error storing email "
+                f"(attempt {attempt}/{max_attempts}), retrying in {delay_s}s: {str(e)[:200]}"
+            )
+            await asyncio.sleep(delay_s)
+            delay_s *= 2
+
+    return False  # unreachable — defensive
 
 
 async def get_user_emails_supabase(
