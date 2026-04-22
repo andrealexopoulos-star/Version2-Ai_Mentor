@@ -516,6 +516,27 @@ def _get_dismissed_observation_event_ids(sb, user_id: str) -> set:
         return set()
 
 
+def _get_active_snoozed_event_ids(sb, user_id: str) -> set:
+    """Return the set of observation_event IDs that are currently snoozed
+    (snoozed_until > now()). Reads from signal_snoozes (migration 122).
+
+    Safe if the table is absent — returns empty set and logs once.
+
+    Sprint B #17: snoozing hides the event from the live feed until the
+    snoozed_until timestamp. When the timestamp passes the event auto-returns
+    to the feed — no cron needed, just a filter on read.
+    """
+    try:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        result = sb.table("signal_snoozes").select(
+            "event_id"
+        ).eq("user_id", user_id).gt("snoozed_until", now_iso).execute()
+        return {row.get("event_id") for row in (result.data or []) if row.get("event_id")}
+    except Exception as e:
+        logger.warning(f"[live-truth] snooze lookup failed (table may be missing): {e}")
+        return set()
+
+
 def record_observation_event_dismissal(sb, user_id: str, event_id: str, source_surface: str) -> bool:
     """Idempotent upsert into observation_event_dismissals (migration 116).
 
@@ -547,16 +568,21 @@ def get_recent_observation_events(sb, user_id: str, limit: int = 25) -> Dict[str
     try:
         window_start = (datetime.now(timezone.utc) - timedelta(hours=OBSERVATION_EVENT_WINDOW_HOURS)).isoformat()
         dismissed_ids = _get_dismissed_observation_event_ids(sb, user_id)
-        # Fetch extra rows so the post-filter dismissal removal still leaves
-        # room to hit the caller-requested `limit`.
-        fetch_limit = limit + len(dismissed_ids) if dismissed_ids else limit
+        # Sprint B #17: hide events the user has actively snoozed. The set
+        # returned is ONLY currently-active snoozes (snoozed_until > now());
+        # expired snoozes pass through and the event re-appears automatically.
+        snoozed_ids = _get_active_snoozed_event_ids(sb, user_id)
+        excluded_ids = dismissed_ids | snoozed_ids
+        # Fetch extra rows so the post-filter removal still leaves room to hit
+        # the caller-requested `limit`.
+        fetch_limit = limit + len(excluded_ids) if excluded_ids else limit
         result = sb.table("observation_events").select(
             "id, signal_name, domain, severity, source, observed_at, payload, executive_summary, fingerprint", count="exact"
         ).eq("user_id", user_id).gte("observed_at", window_start).order("observed_at", desc=True).limit(fetch_limit).execute()
         events = []
         seen = set()
         for row in (result.data or []):
-            if row.get("id") in dismissed_ids:
+            if row.get("id") in excluded_ids:
                 continue
             payload = parse_json_field(row.get("payload")) or {}
             fp = row.get("fingerprint") or f"{row.get('signal_name', '')}|{row.get('source', '')}|{payload.get('entity_id', '')}"
