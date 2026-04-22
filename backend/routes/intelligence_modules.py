@@ -1345,3 +1345,98 @@ async def list_decisions(status: str = None, domain: str = None, limit: int = 50
     except Exception as e:
         logger.error(f"Decisions list failed: {e}", exc_info=True)
         raise HTTPException(500, "Failed to list decisions")
+
+
+# ═══════════════════════════════════════════════════════════════
+# CRON-INVOKED: Morning Brief queue processor (Sprint A #2)
+# ═══════════════════════════════════════════════════════════════
+#
+# Endpoint the `intel_process_morning_brief` pg_cron job POSTs to every
+# 5 minutes (see migration 116). Drains a batch of intelligence_queue
+# rows for schedule_key='morning_brief' and sends the E15 email.
+#
+# Auth is a shared-secret header (NOT a user JWT) because the call
+# originates from inside the DB via pg_net and can't easily carry an
+# admin bearer. The secret lives in env var MORNING_BRIEF_WORKER_SECRET
+# and must match across:
+#   - Backend runtime (this check)
+#   - Migration 116 (embeds it in the Authorization header or a
+#     custom X-BIQc-Cron-Secret header — we accept EITHER, see below)
+#
+# Why a separate endpoint (not the super-admin one):
+#   • Cron can't sign a user JWT. Shared-secret is the right shape.
+#   • Keeps the super-admin endpoint behind the normal admin auth
+#     chain without forcing cron to inherit any of that surface.
+#   • Distinct endpoint = distinct Azure app-insights metric for
+#     "cron is hitting us" vs "a human clicked the admin button".
+
+import os as _os_intel  # local alias — avoid shadowing file-level `os` if present
+from fastapi import Header
+
+_MORNING_BRIEF_SECRET_ENV = "MORNING_BRIEF_WORKER_SECRET"
+
+
+def _require_cron_secret(provided: Optional[str]) -> None:
+    """Constant-time compare the provided shared secret against the
+    configured env var. Raises 401/503 on mismatch.
+
+    Fails CLOSED when the env var is missing — a misconfig should not
+    make the endpoint unauthenticated.
+    """
+    configured = (_os_intel.environ.get(_MORNING_BRIEF_SECRET_ENV) or "").strip()
+    if not configured:
+        raise HTTPException(
+            status_code=503,
+            detail=f"{_MORNING_BRIEF_SECRET_ENV} not configured on backend",
+        )
+    import hmac
+    if not provided or not hmac.compare_digest(str(provided).strip(), configured):
+        raise HTTPException(status_code=401, detail="Invalid cron secret")
+
+
+@router.post("/intelligence/process-morning-brief")
+async def process_morning_brief_endpoint(
+    x_biqc_cron_secret: Optional[str] = Header(default=None, alias="X-BIQc-Cron-Secret"),
+    authorization: Optional[str] = Header(default=None),
+    batch_size: int = 200,
+):
+    """Drain the morning_brief queue and send E15 emails.
+
+    Auth (accepts either):
+      * X-BIQc-Cron-Secret: <secret>
+      * Authorization: Bearer <secret>
+
+    Query params
+    ------------
+    batch_size : int, default 200
+        Max queue rows per call. Clamped to [1, 500]. With pg_cron firing
+        every 5 min, 200/call × 12/hr = 2400 briefs/hr capacity per cron
+        worker — well above current user base.
+
+    Returns
+    -------
+    Worker summary dict: {total_processed, sent, failed, skipped, ...}.
+    """
+    # Resolve provided secret (prefer explicit header; fall back to Bearer).
+    provided = x_biqc_cron_secret
+    if not provided and authorization:
+        token = authorization.strip()
+        if token.lower().startswith("bearer "):
+            provided = token[7:].strip()
+        else:
+            provided = token
+    _require_cron_secret(provided)
+
+    batch_size = max(1, min(int(batch_size or 200), 500))
+    try:
+        from jobs.morning_brief_worker import run_morning_brief_worker
+        summary = await run_morning_brief_worker(batch_size=batch_size)
+        return summary
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(f"[morning_brief_worker] cron-triggered run failed: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Morning brief worker failed: {type(exc).__name__}: {exc}",
+        )

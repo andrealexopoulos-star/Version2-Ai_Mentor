@@ -567,3 +567,69 @@ async def trigger_pricing_gap_alert(
             status_code=502,
             detail=f"Pricing gap alert failed: {type(exc).__name__}: {exc}",
         )
+
+
+# ═══ MORNING BRIEF WORKER (Sprint A #2 / E15) ════════════════════════
+#
+# Drains intelligence_queue rows where schedule_key='morning_brief' and
+# status='queued', builds + sends the E15 Morning Brief email, and
+# marks rows completed/failed.
+#
+# Triggered in production by the `intel_process_morning_brief` pg_cron
+# job (migration 117) which POSTs to /api/intelligence/process-morning-brief.
+# This super-admin endpoint is for manual smoke tests + emergency drains
+# when the cron is paused.
+
+@router.post("/super-admin/run-morning-brief-worker")
+async def trigger_morning_brief_worker(
+    batch_size: int = 50,
+    current_user: dict = Depends(get_current_user),
+):
+    """Run one pass of the morning_brief worker and return a summary.
+
+    Super-admin only. Safe to call any time — the worker is idempotent
+    (claim-lock via status='processing') and a no-op when the queue is
+    empty.
+
+    Query params
+    ------------
+    batch_size : int, default 50
+        Maximum queue rows to drain in this pass. Clamped to [1, 500].
+
+    Returns
+    -------
+    JSON summary: {total_processed, sent, failed, skipped,
+                   batch_size, started_at, finished_at}.
+    """
+    _require_super_admin(current_user)
+    # Clamp to sane bounds — a malicious/typoed batch_size=1_000_000
+    # would happily exhaust Resend rate limit in one call.
+    batch_size = max(1, min(int(batch_size or 50), 500))
+    try:
+        from jobs.morning_brief_worker import run_morning_brief_worker
+        summary = await run_morning_brief_worker(batch_size=batch_size)
+        # Audit row — mirrors the stripe_reconcile / pricing_gap pattern.
+        try:
+            sb = _get_service_client()
+            sb.table("admin_actions").insert({
+                "admin_user_id": current_user.get("id"),
+                "action_type": "morning_brief_worker_run",
+                "new_value": {
+                    "batch_size": summary.get("batch_size"),
+                    "total_processed": summary.get("total_processed"),
+                    "sent": summary.get("sent"),
+                    "failed": summary.get("failed"),
+                    "skipped": summary.get("skipped"),
+                },
+            }).execute()
+        except Exception as audit_exc:  # pragma: no cover — audit must never block
+            logger.warning("[MorningBriefWorker] audit insert failed: %s", audit_exc)
+        return summary
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("[MorningBriefWorker] run failed: %s", exc, exc_info=True)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Morning brief worker failed: {type(exc).__name__}: {exc}",
+        )

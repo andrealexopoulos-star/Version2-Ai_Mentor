@@ -686,6 +686,179 @@ def tmpl_topup_failed(*, full_name: str, plan_name: str, amount: str,
     return subject, _layout(preheader=preheader, body_html=body_html), text
 
 
+# ────────────────────────── Template: E15 morning brief ───────────────────────
+
+def tmpl_morning_brief(*, full_name: str, greeting: str,
+                       top_actions: Optional[list] = None,
+                       overnight_signals: Optional[list] = None,
+                       advisor_url: str = "",
+                       unsubscribe_url: str = "") -> Tuple[str, str, str]:
+    """E15 — daily Morning Brief (05:00 AEST). Consumed by
+    backend/jobs/morning_brief_worker.py reading from intelligence_queue.
+
+    Contract
+    --------
+    top_actions       : list[dict{'text': str, 'impact': str}]  (0..N)
+    overnight_signals : list[dict{'title': str, 'description': str}]  (0..3)
+
+    Empty-state (both lists empty) uses the "All quiet" copy per spec.
+    We still always render a valid, brand-consistent email — Track A
+    commitment is that retention depends on daily out-of-app value, so
+    a silent morning (real signal in itself) still gets an email.
+
+    Args
+    ----
+    greeting        : date-string rendered in the eyebrow (caller computes
+                      in Australia/Sydney tz so we don't couple this
+                      module to a timezone library).
+    unsubscribe_url : per-user unsub link. Falls back to the global
+                      mailto when empty (matches footer default).
+    """
+    top_actions = list(top_actions or [])[:5]
+    overnight_signals = list(overnight_signals or [])[:3]
+    n = len(top_actions)
+
+    raw_first = (full_name or "").split(" ")[0] if full_name else "there"
+    greet_name = _esc(raw_first)
+    greet_date = _esc(greeting)
+    advisor_e = _esc(advisor_url or f"{APP_URL}/advisor")
+
+    # Empty state: both lists literally empty -> all-quiet copy.
+    is_quiet = (n == 0 and not overnight_signals)
+
+    if is_quiet:
+        subject = "Your morning brief — all quiet"
+        preheader = "No alerts overnight. We'll keep watching."
+    else:
+        # Subject uses the count of ACTIONS (not signals). Spec:
+        # "Your morning brief — {N} things to act on". When N=0 (signals
+        # only) we fall back to a signals-led subject so it never reads
+        # "0 things to act on" (nonsensical).
+        if n == 0:
+            subject = "Your morning brief — overnight signals"
+            preheader = f"{len(overnight_signals)} thing(s) changed overnight. No actions yet."
+        else:
+            word = "thing" if n == 1 else "things"
+            subject = f"Your morning brief — {n} {word} to act on"
+            # Short preheader — leading card of top action (truncated).
+            first_action_text = (top_actions[0].get("text") if top_actions else "") or ""
+            snippet = first_action_text.strip()
+            if len(snippet) > 120:
+                snippet = snippet[:117].rstrip() + "..."
+            preheader = f"{snippet or f'{n} action(s) lined up for you today.'}"
+
+    # ── Body sections ──────────────────────────────────────────────────
+    if is_quiet:
+        actions_block = f"""
+<div style="margin:0 0 24px;padding:18px 20px;background:{LAVA_WASH};border:1px solid {LAVA_RING};border-radius:14px;">
+  <div class="biqc-lava-text" style="font-family:{FONT_MONO};font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:{LAVA_DEEP};font-weight:700;margin-bottom:6px;">This morning</div>
+  <div class="biqc-ink" style="color:{INK};font-weight:600;font-size:16px;">All quiet this morning.</div>
+  <div class="biqc-ink-sec" style="margin-top:6px;color:{INK_SEC};font-size:13px;">We&rsquo;ll keep watching your business and nudge you when something changes.</div>
+</div>
+"""
+        signals_block = ""
+    else:
+        # Top actions section
+        if top_actions:
+            items_html_parts = []
+            for a in top_actions:
+                action_text = _esc(a.get("text") or "Review this item.")
+                impact_text = _esc(a.get("impact") or "")
+                impact_html = (
+                    f'<div class="biqc-ink-sec" style="margin-top:4px;color:{INK_SEC};font-size:13px;line-height:1.55;">{impact_text}</div>'
+                    if impact_text else ""
+                )
+                items_html_parts.append(
+                    f'<li style="margin-bottom:14px;padding-left:4px;">'
+                    f'<div class="biqc-ink" style="color:{INK};font-weight:600;font-size:15px;line-height:1.45;">{action_text}</div>'
+                    f'{impact_html}'
+                    f'</li>'
+                )
+            items_html = "".join(items_html_parts)
+            title_word = "thing" if n == 1 else "things"
+            actions_block = f"""
+<div class="biqc-lava-text" style="font-family:{FONT_MONO};font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:{LAVA_DEEP};font-weight:700;margin:0 0 10px;">Top {n} {title_word} to act on</div>
+<ul style="margin:0 0 24px;padding-left:20px;list-style:disc;color:{INK};">
+  {items_html}
+</ul>
+"""
+        else:
+            actions_block = ""
+
+        # Overnight signals section
+        if overnight_signals:
+            sig_rows = []
+            last_idx = len(overnight_signals) - 1
+            for i, s in enumerate(overnight_signals):
+                title = _esc(s.get("title") or "Signal")
+                desc = _esc(s.get("description") or "")
+                desc_html = (
+                    f'<div class="biqc-ink-sec" style="margin-top:4px;color:{INK_SEC};font-size:13px;line-height:1.55;">{desc}</div>'
+                    if desc else ""
+                )
+                sig_rows.append(
+                    f'<tr><td style="padding:14px 16px;background:{SURFACE_SUNK};border:1px solid {BORDER};border-radius:12px;">'
+                    f'<div class="biqc-ink" style="color:{INK};font-weight:600;font-size:14px;line-height:1.45;">{title}</div>'
+                    f'{desc_html}'
+                    f'</td></tr>'
+                )
+                # Inter-card spacer (not after the last row)
+                if i != last_idx:
+                    sig_rows.append('<tr><td style="height:10px;line-height:10px;font-size:10px;">&nbsp;</td></tr>')
+            sig_html = "".join(sig_rows)
+            signals_block = f"""
+<div class="biqc-lava-text" style="font-family:{FONT_MONO};font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:{LAVA_DEEP};font-weight:700;margin:4px 0 10px;">What changed overnight</div>
+<table role="presentation" width="100%" style="margin:0 0 24px;border-collapse:separate;border-spacing:0;">
+  {sig_html}
+</table>
+"""
+        else:
+            signals_block = ""
+
+    body_html = f"""
+<div class="biqc-ink-muted" style="font-family:{FONT_MONO};font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:{INK_MUTED};font-weight:700;margin:0 0 6px;">{greet_date}</div>
+<h1 class="biqc-h1 biqc-ink" style="margin:0 0 18px;font-family:{FONT_DISPLAY};font-size:30px;font-weight:600;letter-spacing:-0.02em;line-height:1.12;color:{INK_DISPLAY};">Good morning, {greet_name}.</h1>
+{actions_block}
+{signals_block}
+<p style="margin:0 0 26px;text-align:center;">{_button('Open advisor', advisor_url or f"{APP_URL}/advisor")}</p>
+<p class="biqc-ink-muted" style="margin:0;font-size:13px;color:{INK_MUTED};line-height:1.55;">This is your daily BIQc brief. Reply to this email if anything doesn&rsquo;t feel right &mdash; it goes to a real person.</p>
+"""
+
+    # ── Plain-text version ────────────────────────────────────────────
+    lines: list = []
+    lines.append(f"{greeting}")
+    lines.append("")
+    lines.append(f"Good morning, {raw_first}.")
+    lines.append("")
+    if is_quiet:
+        lines.append("All quiet this morning. We'll keep watching.")
+        lines.append("")
+    else:
+        if top_actions:
+            title_word = "thing" if n == 1 else "things"
+            lines.append(f"TOP {n} {title_word.upper()} TO ACT ON")
+            for i, a in enumerate(top_actions, 1):
+                lines.append(f"  {i}. {a.get('text') or 'Review this item.'}")
+                impact = (a.get("impact") or "").strip()
+                if impact:
+                    lines.append(f"     {impact}")
+            lines.append("")
+        if overnight_signals:
+            lines.append("WHAT CHANGED OVERNIGHT")
+            for s in overnight_signals:
+                lines.append(f"  - {s.get('title') or 'Signal'}")
+                desc = (s.get("description") or "").strip()
+                if desc:
+                    lines.append(f"    {desc}")
+            lines.append("")
+    lines.append(f"Open advisor: {advisor_url or f'{APP_URL}/advisor'}")
+    lines.append("")
+    lines.append("— The BIQc team")
+    text = "\n".join(lines)
+
+    return subject, _layout(preheader=preheader, body_html=body_html), text
+
+
 # ────────────────────────── Resend HTTP client ────────────────────────────────
 
 def _send_via_resend(*, to: str, subject: str, html: str, text: str,
@@ -894,6 +1067,29 @@ def send_topup_failed_email(*, to: str, full_name: str, plan_name: str,
         full_name=full_name, plan_name=plan_name,
         amount=amount, reason=reason,
         update_payment_url=f"{APP_URL}/settings/billing",
+    )
+    return _send_via_resend(to=to, subject=subject, html=html_body, text=text,
+                            reply_to="support@biqc.ai")
+
+
+# ────────────────────────── Morning brief (E15) ───────────────────────────────
+
+def send_morning_brief_email(*, to: str, full_name: str, greeting: str,
+                             top_actions: Optional[list] = None,
+                             overnight_signals: Optional[list] = None,
+                             advisor_url: Optional[str] = None) -> Optional[str]:
+    """E15 — daily Morning Brief. Fired from backend/jobs/morning_brief_worker.py
+    which drains intelligence_queue rows with schedule_key='morning_brief'.
+
+    Empty-state handling lives inside `tmpl_morning_brief` — the caller
+    should pass whatever lists they have (may be empty) and the template
+    renders the "all quiet" copy when both are empty.
+    """
+    subject, html_body, text = tmpl_morning_brief(
+        full_name=full_name, greeting=greeting,
+        top_actions=top_actions or [], overnight_signals=overnight_signals or [],
+        advisor_url=advisor_url or f"{APP_URL}/advisor",
+        unsubscribe_url=UNSUBSCRIBE_MAILTO,
     )
     return _send_via_resend(to=to, subject=subject, html=html_body, text=text,
                             reply_to="support@biqc.ai")
