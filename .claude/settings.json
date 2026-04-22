@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | grep -q 'session_handoff_.*\\.md$' && printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"You just wrote a session_handoff file. Before responding to the user, execute Protocol 1 (AI-Limits Compensation) from ~/.claude/projects/-Users-andreasalexopoulos-Documents-Claude/memory/feedback_compensate_for_ai_limits.md: (1) acknowledge any AI limits that applied to this session (training cutoff, context, no market corpora); (2) append a Compensation Ledger section to the handoff with limits hit / workarounds applied / gaps still open / items deferred; (3) flag any retention risks you observed to the Retention Master Plan if not already captured.\"}}\\n' ; true",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // empty' | grep -qE 'git[[:space:]]+push[[:space:]]+origin[[:space:]]+main' && printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"You just pushed to main. Execute Protocol 2 (Post-Deploy Verification) from ~/.claude/projects/-Users-andreasalexopoulos-Documents-Claude/memory/feedback_compensate_for_ai_limits.md: (1) capture the GH run ID via gh run list --limit 1; (2) watch to completion with gh run watch ID --exit-status; (3) verify the deployed bundle actually contains the new code (grep asset-manifest + bundle markers for specific strings that prove new code is live); (4) spawn a verification sub-agent that authenticates as andre@thestrategysquad.com.au and hits the changed endpoint or page; (5) report PASS/FAIL with evidence; (6) append a Deploy Verification Ledger entry to the active session_handoff. Do NOT claim deployed successfully until verification passes.\"}}\\n' ; true",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

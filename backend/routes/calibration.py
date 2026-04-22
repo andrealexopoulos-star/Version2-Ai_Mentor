@@ -425,6 +425,238 @@ def _infer_target_market(text: str, description: str = "") -> str:
     return ", ".join(ordered)
 
 
+# ═══════════════════════════════════════════════════════════════
+# SENTINEL / META-GAP / COMPETITOR-NOISE FILTERS
+# ───────────────────────────────────────────────────────────────
+# These scrub LLM-emitted placeholder text and SERP noise BEFORE
+# any write into `business_dna_enrichment.enrichment`, and are
+# re-applied at render time in /intelligence/cmo-report as
+# defense-in-depth against legacy rows that still contain junk.
+# ═══════════════════════════════════════════════════════════════
+
+# Exact sentinel strings that some earlier pipelines persisted
+# verbatim as an "industry" or other scalar value.
+_SENTINEL_STRINGS = frozenset({
+    "unknown — insufficient website data for industry classification",
+    "unknown - insufficient website data for industry classification",
+    "unknown — insufficient data",
+    "unknown - insufficient data",
+})
+
+# Match any "unknown — <...> classification" / "unknown — <...> data"
+# pattern that slipped through. Uses em-dash OR hyphen.
+_SENTINEL_PATTERN = re.compile(
+    r"^\s*unknown\s*[—\-]\s*.+?(classification|data)\s*$",
+    re.IGNORECASE,
+)
+
+# Meta-gap phrases that the LLM sometimes emits as a SWOT bullet
+# or priority action when it couldn't determine anything real.
+# Flagged case-insensitive.
+_META_GAP_PATTERN = re.compile(
+    r"\b(lack of|insufficient|cannot be (determined|inferred)|unable to|"
+    r"not (available|provided)|classification|no (data|information))\b",
+    re.IGNORECASE,
+)
+
+# If a meta-gap phrase appears but the sentence ALSO contains a
+# following actionable verb, keep it — it's likely "lack of X -> do Y".
+_ACTION_VERB_PATTERN = re.compile(
+    r"\b("
+    r"launch|develop|implement|create|build|improve|increase|optimi[sz]e|"
+    r"address|invest|expand|strengthen|target|execute|deploy|drive|"
+    r"prioriti[sz]e|focus|establish|deliver|measure|test|refine|"
+    r"scale|reposition|pivot|accelerate|activate|audit|align|consolidate|"
+    r"refresh|restructure|ship|spin up|set up|roll out"
+    r")\b",
+    re.IGNORECASE,
+)
+
+# Competitor-name noise words. Any candidate whose lowercased text
+# contains any of these tokens as a word boundary is rejected. Also
+# rejects anything ending in a year (20xx) which is almost always a
+# report title, not a company.
+_COMPETITOR_NOISE_PATTERN = re.compile(
+    r"\b(market|analysis|report|outlook|executive summary|"
+    r"research report|industry (size|growth))\b",
+    re.IGNORECASE,
+)
+_COMPETITOR_YEAR_SUFFIX = re.compile(r"20\d{2}\s*$")
+
+
+def _is_sentinel_value(text: Any) -> bool:
+    """True when `text` is one of the known calibration sentinels."""
+    if not isinstance(text, str):
+        return False
+    normalized = text.strip().lower()
+    if not normalized:
+        return False
+    if normalized in _SENTINEL_STRINGS:
+        return True
+    if _SENTINEL_PATTERN.match(normalized):
+        return True
+    return False
+
+
+def _scrub_sentinel(text: Any) -> Any:
+    """Replace known sentinels with an empty string. Non-strings pass through."""
+    if isinstance(text, str) and _is_sentinel_value(text):
+        return ""
+    return text
+
+
+def _is_meta_gap_text(text: Any) -> bool:
+    """
+    True when `text` is a meta-gap placeholder that we should drop from
+    SWOT arrays / priority actions. False when the text either has an
+    action verb that makes it genuinely actionable OR is long enough
+    (>80 chars) to plausibly contain real insight.
+
+    OVERRIDE — dense meta-gap (>=2 distinct meta-gap phrases in one
+    string) is always dropped, regardless of length or action verb.
+    This is the pattern of the 2026-04-21 live demo bug: "Lack of
+    specific industry classification sector data hinders precise
+    market positioning" (87 chars + passive 'hinders', no action verb,
+    but matches both 'lack of' AND 'classification' — trivially meta).
+    """
+    if not isinstance(text, str):
+        return False
+    stripped = text.strip()
+    if not stripped:
+        return False
+    if not _META_GAP_PATTERN.search(stripped):
+        return False
+    # Dense meta-gap override: 2+ meta-gap phrases in one string is
+    # almost always AI self-pitying about data quality, not insight.
+    # Drop unconditionally.
+    dense_matches = _META_GAP_PATTERN.findall(stripped)
+    if len(dense_matches) >= 2:
+        return True
+    # Escape hatch 1: contains an action verb -> real insight like
+    # "Lack of paid funnel — launch diagnostic CTA sequence".
+    if _ACTION_VERB_PATTERN.search(stripped):
+        return False
+    # Escape hatch 2: long prose usually buries a real point even if it
+    # triggers a meta-gap word in passing.
+    if len(stripped) > 80:
+        return False
+    return True
+
+
+def _filter_meta_gap_list(items: Any) -> List[Any]:
+    """Return `items` with meta-gap strings stripped. Non-list -> []."""
+    if not isinstance(items, list):
+        return []
+    return [it for it in items if not _is_meta_gap_text(it)]
+
+
+def _clean_swot_dict(swot: Any) -> Dict[str, List[Any]]:
+    """
+    Apply meta-gap filter + sentinel scrub to each SWOT bucket.
+    Returns an empty-shaped dict on malformed input.
+    """
+    if not isinstance(swot, dict):
+        return {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []}
+    cleaned: Dict[str, List[Any]] = {}
+    for bucket in ("strengths", "weaknesses", "opportunities", "threats"):
+        raw = swot.get(bucket, [])
+        scrubbed = [_scrub_sentinel(it) for it in (raw if isinstance(raw, list) else [])]
+        cleaned[bucket] = [it for it in _filter_meta_gap_list(scrubbed) if it]
+    # preserve any extra keys (e.g. competitor_swot stash) unmodified
+    for k, v in swot.items():
+        if k not in cleaned:
+            cleaned[k] = v
+    return cleaned
+
+
+def _is_noisy_competitor(name: Any) -> bool:
+    """True when `name` looks like a SERP title rather than a real competitor."""
+    if not isinstance(name, str):
+        return True
+    stripped = name.strip()
+    if not stripped or len(stripped) < 3:
+        return True
+    if len(stripped) > 60:
+        return True
+    if _COMPETITOR_YEAR_SUFFIX.search(stripped):
+        return True
+    if _COMPETITOR_NOISE_PATTERN.search(stripped):
+        return True
+    return False
+
+
+def _filter_competitor_candidates(names: Any) -> List[str]:
+    """Strip SERP-report titles and other noise from a competitor list."""
+    if not isinstance(names, list):
+        return []
+    out: List[str] = []
+    seen = set()
+    for raw in names:
+        if not isinstance(raw, str):
+            continue
+        cand = raw.strip()
+        if _is_noisy_competitor(cand):
+            continue
+        key = cand.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(cand)
+    return out
+
+
+def _sanitize_enrichment_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Apply sentinel scrub + meta-gap filter + competitor noise filter to the
+    fields we persist into `business_dna_enrichment.enrichment`. Mutates in
+    place and also returns the same dict for chaining convenience.
+    """
+    if not isinstance(payload, dict):
+        return payload
+
+    # 1) Scalar sentinel scrub. Fields that must never contain placeholder junk.
+    for scalar_field in (
+        "industry", "market_position", "competitor_analysis",
+        "executive_summary", "cmo_executive_brief", "unique_value_proposition",
+        "target_market", "competitive_advantages", "description", "forensic_memo",
+    ):
+        if scalar_field in payload:
+            payload[scalar_field] = _scrub_sentinel(payload.get(scalar_field))
+
+    # 2) Meta-gap filter on SWOT + priority action arrays.
+    if "swot" in payload:
+        payload["swot"] = _clean_swot_dict(payload.get("swot"))
+    if "cmo_priority_actions" in payload:
+        payload["cmo_priority_actions"] = _filter_meta_gap_list(
+            payload.get("cmo_priority_actions")
+        )
+    if "industry_action_items" in payload:
+        payload["industry_action_items"] = _filter_meta_gap_list(
+            payload.get("industry_action_items")
+        )
+
+    # 3) Competitor-noise filter.
+    if "competitors" in payload:
+        payload["competitors"] = _filter_competitor_candidates(payload.get("competitors"))
+
+    # 4) Nested competitor_swot snapshots — drop whole entry when its `name`
+    #    is noisy, and clean sub-SWOT arrays on survivors.
+    if isinstance(payload.get("competitor_swot"), list):
+        pruned = []
+        for snap in payload["competitor_swot"]:
+            if not isinstance(snap, dict):
+                continue
+            if _is_noisy_competitor(snap.get("name")):
+                continue
+            for sub in ("strengths", "weaknesses", "opportunities_against_them"):
+                if sub in snap:
+                    snap[sub] = _filter_meta_gap_list(snap.get(sub))
+            pruned.append(snap)
+        payload["competitor_swot"] = pruned
+
+    return payload
+
+
 def _infer_competitors_from_results(results: List[Dict[str, Any]], business_name: str, domain: str) -> List[str]:
     if not results:
         return []
@@ -451,6 +683,10 @@ def _infer_competitors_from_results(results: List[Dict[str, Any]], business_name
         if business_lower and business_lower in lowered:
             continue
         if lowered in seen:
+            continue
+        # Noise filter: reject SERP report titles / year-suffixed entries /
+        # overlong strings that are clearly not company names.
+        if _is_noisy_competitor(raw_name):
             continue
         seen.add(lowered)
         competitors.append(raw_name)
@@ -1790,6 +2026,15 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if cached:
                 logger.info("[enrichment/website] cache HIT for %s", scan_domain)
 
+                # Apply the same sentinel / meta-gap / competitor filters to
+                # cached payloads so older rows that predate the filters do
+                # not leak garbage into downstream reports. Idempotent on
+                # clean payloads.
+                try:
+                    cached = _sanitize_enrichment_payload(cached)
+                except Exception as scrub_err:
+                    logger.warning("[enrichment/website] cache sanitize failed: %s", scrub_err)
+
                 # Persist cached enrichment to business_dna_enrichment so
                 # Market & Position / Benchmark pages can read it for this user.
                 # Without this, cache hits bypass the persistence block and the
@@ -2020,6 +2265,10 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             try:
                 parsed = _extract_json_candidate(ai_json)
                 if isinstance(parsed, dict):
+                    # Sanitize the LLM's JSON payload BEFORE merge so nothing
+                    # that fails our sentinel / meta-gap / competitor filters
+                    # reaches the stored enrichment in the first place.
+                    parsed = _sanitize_enrichment_payload(parsed)
                     enrichment.update({k: parsed.get(k, enrichment.get(k)) for k in enrichment.keys() if k in parsed})
                     if isinstance(parsed.get("competitors"), list):
                         enrichment["competitors"] = parsed.get("competitors")
@@ -2031,6 +2280,12 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         enrichment["cmo_priority_actions"] = parsed.get("cmo_priority_actions")
             except Exception:
                 logger.warning("[enrichment/website] Could not parse AI JSON synthesis; using deterministic fallback")
+
+            # Final sanitize pass on the merged enrichment: the deterministic
+            # seed uses the industry sentinel string as a placeholder value
+            # (line ~1979 "unknown — insufficient website data..."). Scrub it
+            # and anything else that snuck through before persistence.
+            enrichment = _sanitize_enrichment_payload(enrichment)
 
             # deterministic social handle fallback extraction across crawled content + search links.
             social_patterns = {
@@ -2567,6 +2822,12 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 }
             except Exception as footprint_error:
                 logger.warning(f"[enrichment/website] digital_footprint compute skipped: {footprint_error}")
+
+            # Final defence-in-depth sanitize before any persistence. Anything
+            # that added meta-gap / sentinel values after the AI merge (e.g.
+            # deterministic SWOT fallback, semrush enrichment, ai_errors) is
+            # still scrubbed before reaching the DB or the response body.
+            enrichment = _sanitize_enrichment_payload(enrichment)
 
             # ═══ PERSIST ENRICHMENT TO business_dna_enrichment ═══
             # Latest-scan-wins upsert keyed on (user_id, business_profile_id). Allows

@@ -437,9 +437,33 @@ async def llm_trinity_chat(
     )
     synthesis_user = "\n\n".join([f"[{label}]\n{text[:2600]}" for label, text in candidates])
 
+    # 2026-04-22 Andreas directive: Trinity synthesis routes to flagship Opus
+    # (most powerful model). Cost tracked via usage_ledger.cost_aud_micros
+    # with feature='trinity_synthesis'. Do NOT fallback to Sonnet or any
+    # non-flagship model for this leg — Trinity is our premium reasoning feature.
+    # Fallbacks to OpenAI/Gemini only engage if ANTHROPIC_API_KEY is absent or
+    # the Opus call itself errors at the transport layer (network/5xx) — in
+    # that degraded case we prefer a response over a hard failure.
+    if ANTHROPIC_API_KEY:
+        try:
+            content, usage = await _anthropic_chat(
+                model=ANTHROPIC_MODEL_OPUS,
+                system_message=synthesis_system,
+                user_message=synthesis_user,
+                messages=None,
+                temperature=0.35,
+                max_tokens=max_tokens,
+                timeout=timeout,
+                api_key=ANTHROPIC_API_KEY,
+            )
+            await _record_usage(user_id, ANTHROPIC_MODEL_OPUS, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
+            return content
+        except Exception as exc:
+            logger.warning(f"[Trinity] flagship Opus synthesis failed, falling back: {exc}")
+
     if OPENAI_API_KEY:
         fused, usage = await _openai_chat(
-            model=OPENAI_MODEL_NORMAL,
+            model=OPENAI_MODEL_DEEP,
             system_message=synthesis_system,
             user_message=synthesis_user,
             messages=None,
@@ -448,22 +472,8 @@ async def llm_trinity_chat(
             timeout=timeout,
             api_key=OPENAI_API_KEY,
         )
-        await _record_usage(user_id, OPENAI_MODEL_NORMAL, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
+        await _record_usage(user_id, OPENAI_MODEL_DEEP, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
         return fused
-
-    if ANTHROPIC_API_KEY:
-        content, usage = await _anthropic_chat(
-            model=ANTHROPIC_MODEL_SONNET,
-            system_message=synthesis_system,
-            user_message=synthesis_user,
-            messages=None,
-            temperature=0.35,
-            max_tokens=max_tokens,
-            timeout=timeout,
-            api_key=ANTHROPIC_API_KEY,
-        )
-        await _record_usage(user_id, ANTHROPIC_MODEL_SONNET, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
-        return content
 
     content, usage = await _gemini_chat(
         model=GEMINI_MODEL_PRO,

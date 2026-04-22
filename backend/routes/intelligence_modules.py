@@ -654,145 +654,416 @@ async def get_governance_summary(current_user: dict = Depends(get_current_user))
 
 # ═══ CMO REPORT ═══
 
+# Response shape that the frontend (CMOReportPage.js) consumes. Keep
+# these keys stable; the page falls back to empty values for each.
+# Consumed keys grepped from frontend/src/pages/CMOReportPage.js:
+#   company_name, report_date, executive_summary, market_position{overall,
+#   brand, digital, sentiment, competitive}, competitors[{name, market_share,
+#   strengths, digital_visibility, threat_level, is_you}], position_dots,
+#   swot{strengths, weaknesses, opportunities, threats}, reviews{rating,
+#   count, positive_pct, neutral_pct, negative_pct}, review_themes{positive,
+#   negative}, review_excerpts, roadmap{quick_wins, priorities, strategic},
+#   geographic{established, growth}, confidence, report_id, report_date,
+#   version, status, scan_source, engine, data_points.
+
+
+def _cmo_empty_shell(user_id: str, company: str = "Your Business") -> Dict[str, Any]:
+    """Canonical empty state when enrichment has not run yet. The frontend
+    renders "No data available yet" placeholders for each section."""
+    return {
+        "company_name": company,
+        "report_date": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
+        "executive_summary": None,
+        "market_position": {"overall": 0, "brand": 0, "digital": 0, "sentiment": 0, "competitive": 0},
+        "competitors": [],
+        "position_dots": [],
+        "swot": {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []},
+        "reviews": {"rating": 0, "count": 0, "positive_pct": 0, "neutral_pct": 0, "negative_pct": 0},
+        "review_themes": {"positive": [], "negative": []},
+        "review_excerpts": [],
+        "roadmap": {"quick_wins": [], "priorities": [], "strategic": []},
+        "geographic": {"established": [], "growth": []},
+        "confidence": 0,
+        "report_id": f"CMO-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{(user_id or 'anon')[:8]}",
+        "state": "calibrating",
+        "state_message": "Complete calibration first — deep scan has not produced intelligence for this workspace yet.",
+        "cmo_priority_actions": [],
+        "industry_action_items": [],
+        "competitor_swot": [],
+        "seo_analysis": {},
+        "digital_footprint": {},
+    }
+
+
+def _coerce_score(val: Any, default: int = 0) -> int:
+    """Coerce a value to an int in [0, 100]. Accepts int/float/numeric str."""
+    try:
+        n = int(round(float(val)))
+    except (TypeError, ValueError):
+        return default
+    return max(0, min(100, n))
+
+
+def _derive_market_position_from_enrichment(enr: Dict[str, Any]) -> Dict[str, int]:
+    """
+    Map the enrichment sub-objects to the 5-dial market-position score the
+    frontend expects. Falls back to 0 so the UI renders as "calibrating".
+    """
+    seo = enr.get("seo_analysis") if isinstance(enr.get("seo_analysis"), dict) else {}
+    social = enr.get("social_media_analysis") if isinstance(enr.get("social_media_analysis"), dict) else {}
+    website = enr.get("website_health") if isinstance(enr.get("website_health"), dict) else {}
+    digital = enr.get("digital_footprint") if isinstance(enr.get("digital_footprint"), dict) else {}
+    reviews_intel = enr.get("customer_review_intelligence") if isinstance(enr.get("customer_review_intelligence"), dict) else {}
+
+    brand = _coerce_score(website.get("score"))
+    digital_presence = _coerce_score(digital.get("score") or seo.get("score"))
+    sentiment = _coerce_score(reviews_intel.get("sentiment_score"))
+    # Crude competitive score: fewer competitor leaders identified means
+    # less pressure visible. Never fabricated — zero when we have nothing.
+    comp_leaders = enr.get("competitor_leaders") or enr.get("competitors") or []
+    competitive = 0
+    if isinstance(comp_leaders, list) and comp_leaders:
+        # Proxy: density of named competitors (1..5) -> 20..100
+        competitive = _coerce_score(min(len(comp_leaders), 5) * 20)
+    buckets = [s for s in (brand, digital_presence, sentiment, competitive) if s]
+    overall = int(round(sum(buckets) / len(buckets))) if buckets else 0
+    return {
+        "overall": overall,
+        "brand": brand,
+        "digital": digital_presence,
+        "sentiment": sentiment,
+        "competitive": competitive,
+    }
+
+
+def _shape_competitors_from_enrichment(enr: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Transform `competitor_swot` snapshots / `competitors` list into the
+    row shape the frontend table renders. Each row: name, market_share,
+    strengths, digital_visibility, threat_level, is_you."""
+    from routes.calibration import _is_noisy_competitor  # reuse filter
+
+    rows: List[Dict[str, Any]] = []
+    comp_swot = enr.get("competitor_swot") if isinstance(enr.get("competitor_swot"), list) else []
+    for snap in comp_swot[:5]:
+        if not isinstance(snap, dict):
+            continue
+        name = snap.get("name") or ""
+        if _is_noisy_competitor(name):
+            continue
+        strengths_list = snap.get("strengths") if isinstance(snap.get("strengths"), list) else []
+        rows.append({
+            "name": name,
+            "market_share": snap.get("market_share") or "N/A",
+            "strengths": (strengths_list[0] if strengths_list else "N/A"),
+            "digital_visibility": snap.get("digital_visibility") or "N/A",
+            "threat_level": (snap.get("threat_level") or "low").lower(),
+            "is_you": False,
+        })
+    if rows:
+        return rows
+    # Fallback: use the flat competitors list when no snapshots are present.
+    flat = enr.get("competitors") if isinstance(enr.get("competitors"), list) else []
+    for name in flat[:5]:
+        if not isinstance(name, str) or _is_noisy_competitor(name):
+            continue
+        rows.append({
+            "name": name,
+            "market_share": "N/A",
+            "strengths": "N/A",
+            "digital_visibility": "N/A",
+            "threat_level": "medium",
+            "is_you": False,
+        })
+    return rows
+
+
+def _shape_roadmap_from_enrichment(enr: Dict[str, Any]) -> Dict[str, List[Any]]:
+    """Split cmo_priority_actions + industry_action_items into the 7/30/90-day
+    columns the frontend roadmap renders. No fabrication — empty when we have
+    nothing."""
+    priority = enr.get("cmo_priority_actions") if isinstance(enr.get("cmo_priority_actions"), list) else []
+    industry = enr.get("industry_action_items") if isinstance(enr.get("industry_action_items"), list) else []
+
+    def _wrap(items: List[Any], pri: str) -> List[Dict[str, str]]:
+        out = []
+        for it in items:
+            text = it if isinstance(it, str) else (it.get("text") if isinstance(it, dict) else None)
+            if not text:
+                continue
+            out.append({"text": text, "priority": pri})
+        return out
+
+    # 7-day quick wins: top-of-list priority actions (first 3, tagged critical).
+    # 30-day priorities: remaining priority actions (tagged high).
+    # 90-day strategic: all industry action items (tagged medium).
+    quick_wins = _wrap(priority[:3], "critical")
+    priorities = _wrap(priority[3:8], "high")
+    strategic = _wrap(industry[:5], "medium")
+    return {"quick_wins": quick_wins, "priorities": priorities, "strategic": strategic}
+
+
+def _shape_reviews_from_enrichment(enr: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract the aggregate rating + sentiment split the frontend renders."""
+    agg = enr.get("review_aggregation") if isinstance(enr.get("review_aggregation"), dict) else {}
+    intel = enr.get("customer_review_intelligence") if isinstance(enr.get("customer_review_intelligence"), dict) else {}
+    positive = _coerce_score(intel.get("positive_pct") or agg.get("positive_pct"))
+    negative = _coerce_score(intel.get("negative_pct") or agg.get("negative_pct"))
+    neutral = max(0, 100 - positive - negative) if (positive or negative) else 0
+    try:
+        rating_val = float(agg.get("average_rating") or intel.get("rating") or 0)
+    except (TypeError, ValueError):
+        rating_val = 0
+    try:
+        count_val = int(agg.get("review_count") or intel.get("count") or 0)
+    except (TypeError, ValueError):
+        count_val = 0
+    return {
+        "rating": round(rating_val, 1) if rating_val else 0,
+        "count": count_val,
+        "positive_pct": positive,
+        "neutral_pct": neutral,
+        "negative_pct": negative,
+    }
+
+
+def _apply_render_time_filters(report: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Defence-in-depth: even if stored enrichment rows from before the filters
+    landed still contain sentinel strings or meta-gap bullets, strip them at
+    response time. Safe to call on any report payload.
+    """
+    try:
+        from routes.calibration import (
+            _scrub_sentinel,
+            _filter_meta_gap_list,
+            _filter_competitor_candidates,
+            _is_noisy_competitor,
+        )
+    except Exception:
+        return report
+
+    # Scalar sentinel scrub on narrative fields.
+    for k in ("executive_summary",):
+        if isinstance(report.get(k), str):
+            v = _scrub_sentinel(report[k])
+            report[k] = v if v else None
+
+    # SWOT scrub.
+    swot = report.get("swot") if isinstance(report.get("swot"), dict) else {}
+    for bucket in ("strengths", "weaknesses", "opportunities", "threats"):
+        raw = swot.get(bucket, [])
+        if isinstance(raw, list):
+            scrubbed = [_scrub_sentinel(x) for x in raw]
+            swot[bucket] = [x for x in _filter_meta_gap_list(scrubbed) if x]
+    report["swot"] = swot
+
+    # Competitor table rows.
+    comps = report.get("competitors")
+    if isinstance(comps, list):
+        report["competitors"] = [
+            c for c in comps
+            if isinstance(c, dict) and not _is_noisy_competitor(c.get("name"))
+        ]
+
+    # Roadmap items: scrub both string-form and {text, priority}-form entries.
+    roadmap = report.get("roadmap") if isinstance(report.get("roadmap"), dict) else {}
+    for col in ("quick_wins", "priorities", "strategic"):
+        raw = roadmap.get(col, [])
+        if not isinstance(raw, list):
+            continue
+        out = []
+        for it in raw:
+            text = it if isinstance(it, str) else (it.get("text") if isinstance(it, dict) else None)
+            if not text:
+                continue
+            text = _scrub_sentinel(text)
+            if not text:
+                continue
+            if _filter_meta_gap_list([text]):  # non-empty when surviving filter
+                if isinstance(it, dict):
+                    it["text"] = text
+                    out.append(it)
+                else:
+                    out.append(text)
+        roadmap[col] = out
+    report["roadmap"] = roadmap
+
+    # Priority / industry action arrays mirrored alongside roadmap.
+    for k in ("cmo_priority_actions", "industry_action_items"):
+        raw = report.get(k)
+        if isinstance(raw, list):
+            scrubbed = [_scrub_sentinel(x) if isinstance(x, str) else x for x in raw]
+            report[k] = _filter_meta_gap_list(scrubbed)
+
+    # Competitor SWOT snapshots.
+    csw = report.get("competitor_swot")
+    if isinstance(csw, list):
+        report["competitor_swot"] = [
+            s for s in csw
+            if isinstance(s, dict) and not _is_noisy_competitor(s.get("name"))
+        ]
+
+    return report
+
+
 @router.get("/intelligence/cmo-report")
 async def get_cmo_report(current_user: dict = Depends(get_current_user)):
-    """Build a CMO-style intelligence report from the user's workspace data."""
-    user_id = current_user["id"]
-    try:
-        sb = init_supabase()
+    """
+    Build the CMO intelligence report from `business_dna_enrichment.enrichment`
+    as the primary data source. Falls back to a clean "calibrating" state if
+    no enrichment row exists for the user.
 
-        # Fetch business profile for company name
+    Previously this endpoint read from `intelligence_actions` +
+    `build_intelligence_summary` RPC — both of which return empty for new
+    users, producing half-populated stubs. Rewired 2026-04-22 (Sprint A #3+#4)
+    to read the deep-scan enrichment bundle that calibration actually writes.
+    """
+    user_id = current_user["id"]
+    sb = init_supabase()
+
+    # 1) Company name for the header. Best-effort only.
+    company = "Your Business"
+    try:
         profile_result = sb.table("business_profiles") \
-            .select("company_name, industry, market_position") \
+            .select("business_name, company_name") \
             .eq("user_id", user_id) \
+            .order("created_at", desc=True) \
             .limit(1) \
             .execute()
         profile = (profile_result.data or [{}])[0] if profile_result.data else {}
+        company = profile.get("business_name") or profile.get("company_name") or company
+    except Exception as profile_err:
+        logger.debug(f"[cmo-report] business_profiles lookup skipped: {profile_err}")
 
-        # Fetch recent intelligence actions for report data
-        actions_result = sb.table("intelligence_actions") \
-            .select("source, title, description, severity, status, created_at") \
+    # 2) Primary data source: latest `business_dna_enrichment` row for user.
+    enrichment: Dict[str, Any] = {}
+    enrichment_created_at: Optional[str] = None
+    try:
+        enr_result = sb.table("business_dna_enrichment") \
+            .select("enrichment, digital_footprint, created_at, updated_at") \
             .eq("user_id", user_id) \
             .order("created_at", desc=True) \
-            .limit(100) \
+            .limit(1) \
+            .maybe_single() \
             .execute()
-        actions = actions_result.data or []
+        row = enr_result.data if (enr_result and enr_result.data) else None
+        if row and isinstance(row, dict):
+            raw_enrichment = row.get("enrichment") or {}
+            if isinstance(raw_enrichment, dict):
+                enrichment = raw_enrichment
+            # digital_footprint lives as its own column AND inside enrichment.
+            # Prefer the column if populated so we don't double-wash anything.
+            col_fp = row.get("digital_footprint")
+            if isinstance(col_fp, dict) and col_fp:
+                enrichment.setdefault("digital_footprint", col_fp)
+            enrichment_created_at = row.get("created_at") or row.get("updated_at")
+    except Exception as enr_err:
+        logger.warning(f"[cmo-report] business_dna_enrichment lookup failed: {enr_err}")
 
-        # Fetch watchtower positions for competitive data
-        watchtower_data = {}
-        try:
-            wt_result = sb.rpc("compute_watchtower_positions", {"p_workspace_id": user_id}).execute()
-            watchtower_data = wt_result.data or {}
-        except Exception:
-            pass
+    # 3) No enrichment -> clean calibrating state (not a half-populated stub).
+    if not enrichment:
+        return _cmo_empty_shell(user_id, company)
 
-        # Fetch intelligence summary for scores
-        summary_data = {}
-        try:
-            sum_result = sb.rpc("build_intelligence_summary", {"p_workspace_id": user_id}).execute()
-            summary_data = sum_result.data or {}
-        except Exception:
-            pass
+    # 4) Map enrichment -> CMO response shape.
+    company_from_enrichment = (
+        enrichment.get("business_name")
+        or enrichment.get("title")
+        or company
+    )
 
-        # Build market position from summary
-        market_intel = summary_data.get("market_intelligence", {}) if isinstance(summary_data, dict) else {}
-        modules = summary_data.get("modules", {}) if isinstance(summary_data, dict) else {}
+    # Executive summary falls through a priority chain: CMO-specific brief
+    # first, then generic executive_summary, then forensic memo.
+    exec_summary = (
+        enrichment.get("cmo_executive_brief")
+        or enrichment.get("executive_summary")
+        or enrichment.get("forensic_memo")
+        or None
+    )
 
-        market_position = {
-            "overall": market_intel.get("market_position_score", 0) if isinstance(market_intel, dict) else 0,
-            "brand": market_intel.get("brand_strength", 0) if isinstance(market_intel, dict) else 0,
-            "digital": market_intel.get("digital_presence", 0) if isinstance(market_intel, dict) else 0,
-            "sentiment": market_intel.get("sentiment_score", 0) if isinstance(market_intel, dict) else 0,
-            "competitive": market_intel.get("competitive_position", 0) if isinstance(market_intel, dict) else 0,
-        }
+    generated_at = enrichment_created_at or datetime.now(timezone.utc).isoformat()
+    try:
+        generated_dt = _safe_parse_iso(generated_at) or datetime.now(timezone.utc)
+    except Exception:
+        generated_dt = datetime.now(timezone.utc)
 
-        # Build competitors from watchtower data
-        competitors = []
-        if isinstance(watchtower_data, dict):
-            for comp in watchtower_data.get("competitors", []):
-                if isinstance(comp, dict):
-                    competitors.append({
-                        "name": comp.get("name", "Unknown"),
-                        "market_share": comp.get("market_share", "N/A"),
-                        "strengths": comp.get("strengths", "N/A"),
-                        "digital_visibility": comp.get("digital_visibility", "N/A"),
-                        "threat_level": comp.get("threat_level", "low"),
-                        "is_you": comp.get("is_you", False),
-                    })
+    # Confidence: prefer enrichment.confidence (can be string or numeric).
+    conf_raw = enrichment.get("confidence")
+    if isinstance(conf_raw, (int, float)):
+        confidence = _coerce_score(conf_raw)
+    elif isinstance(conf_raw, str):
+        conf_map = {"high": 85, "medium": 60, "low": 35}
+        confidence = conf_map.get(conf_raw.strip().lower(), 0)
+    else:
+        confidence = 0
 
-        # Build SWOT from intelligence actions
-        swot = {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []}
-        for action in actions:
-            sev = (action.get("severity") or "").lower()
-            title = action.get("title") or ""
-            if sev == "positive" or action.get("status") == "complete":
-                if len(swot["strengths"]) < 5:
-                    swot["strengths"].append(title)
-            elif sev == "critical" or sev == "high":
-                if len(swot["threats"]) < 5:
-                    swot["threats"].append(title)
-            elif sev == "warning" or sev == "medium":
-                if len(swot["weaknesses"]) < 5:
-                    swot["weaknesses"].append(title)
-            elif sev == "info" or sev == "low":
-                if len(swot["opportunities"]) < 5:
-                    swot["opportunities"].append(title)
+    response: Dict[str, Any] = {
+        "company_name": company_from_enrichment,
+        "report_date": generated_dt.strftime("%d/%m/%Y"),
+        "generated_at": generated_at,
+        "executive_summary": exec_summary,
+        "market_position": _derive_market_position_from_enrichment(enrichment),
+        "competitors": _shape_competitors_from_enrichment(enrichment),
+        "position_dots": [],  # calibration does not compute x/y yet
+        "swot": enrichment.get("swot") if isinstance(enrichment.get("swot"), dict) else {
+            "strengths": [], "weaknesses": [], "opportunities": [], "threats": []
+        },
+        "reviews": _shape_reviews_from_enrichment(enrichment),
+        "review_themes": {
+            "positive": (enrichment.get("customer_review_highlights", {}).get("positive_themes") or [])
+                if isinstance(enrichment.get("customer_review_highlights"), dict) else [],
+            "negative": (enrichment.get("customer_review_highlights", {}).get("negative_themes") or [])
+                if isinstance(enrichment.get("customer_review_highlights"), dict) else [],
+        },
+        "review_excerpts": enrichment.get("review_excerpts") or [],
+        "roadmap": _shape_roadmap_from_enrichment(enrichment),
+        "geographic": {
+            "established": enrichment.get("established_regions") or [],
+            "growth": enrichment.get("growth_regions") or [],
+        },
+        "confidence": confidence,
+        "report_id": f"CMO-{generated_dt.strftime('%Y%m%d')}-{user_id[:8]}",
+        # Extras surfaced to the frontend where applicable.
+        "cmo_priority_actions": enrichment.get("cmo_priority_actions") or [],
+        "industry_action_items": enrichment.get("industry_action_items") or [],
+        "competitor_swot": enrichment.get("competitor_swot") or [],
+        "seo_analysis": enrichment.get("seo_analysis") or {},
+        "digital_footprint": enrichment.get("digital_footprint") or {},
+        # Header meta fields.
+        "engine": "BIQc Intelligence Engine",
+        "scan_source": enrichment.get("website_url") or "Deep calibration scan",
+        "data_points": enrichment.get("data_points") or f"{sum(1 for v in enrichment.values() if v)} signals",
+        "state": "ready",
+    }
 
-        # Build reviews summary
-        reviews = {
-            "rating": market_intel.get("review_rating", 0) if isinstance(market_intel, dict) else 0,
-            "count": market_intel.get("review_count", 0) if isinstance(market_intel, dict) else 0,
-            "positive_pct": market_intel.get("positive_pct", 0) if isinstance(market_intel, dict) else 0,
-            "neutral_pct": market_intel.get("neutral_pct", 0) if isinstance(market_intel, dict) else 0,
-            "negative_pct": market_intel.get("negative_pct", 0) if isinstance(market_intel, dict) else 0,
-        }
+    # 5) Optional delta overlay from `intelligence_actions`: treat them ONLY
+    #    as delta updates to refresh stale enrichment.actions — never as the
+    #    primary source of SWOT/roadmap. If enrichment does not expose an
+    #    `actions` field, we still surface the most recent few as a light
+    #    "recent signals" augmentation without overwriting the core report.
+    try:
+        if isinstance(enrichment.get("actions"), list):
+            actions_result = sb.table("intelligence_actions") \
+                .select("id, source, title, description, severity, status, created_at") \
+                .eq("user_id", user_id) \
+                .order("created_at", desc=True) \
+                .limit(20) \
+                .execute()
+            recent = actions_result.data or []
+            # Only refresh when intelligence_actions has newer rows than the
+            # enrichment snapshot.
+            if recent and enrichment_created_at:
+                enr_dt = _safe_parse_iso(enrichment_created_at)
+                newest_action_dt = _safe_parse_iso(recent[0].get("created_at"))
+                if enr_dt and newest_action_dt and newest_action_dt > enr_dt:
+                    response["actions_delta"] = recent
+    except Exception as actions_err:
+        logger.debug(f"[cmo-report] intelligence_actions delta skipped: {actions_err}")
 
-        # Build roadmap from action plan
-        action_plan = summary_data.get("action_plan", {}) if isinstance(summary_data, dict) else {}
-        roadmap = {
-            "quick_wins": action_plan.get("quick_wins", []) if isinstance(action_plan, dict) else [],
-            "priorities": action_plan.get("priorities", []) if isinstance(action_plan, dict) else [],
-            "strategic": action_plan.get("strategic", []) if isinstance(action_plan, dict) else [],
-        }
+    # 6) Render-time safety filter: even if enrichment still contains legacy
+    #    sentinels or meta-gap bullets, strip them before returning.
+    response = _apply_render_time_filters(response)
 
-        # Build geographic data
-        geographic = {
-            "established": market_intel.get("established_regions", []) if isinstance(market_intel, dict) else [],
-            "growth": market_intel.get("growth_regions", []) if isinstance(market_intel, dict) else [],
-        }
-
-        # Compute confidence
-        data_points = len(actions) + (1 if watchtower_data else 0) + (1 if summary_data else 0)
-        confidence = min(95, max(10, data_points * 2))
-
-        return {
-            "company_name": profile.get("company_name", "Your Business"),
-            "report_date": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
-            "executive_summary": f"Intelligence report for {profile.get('company_name', 'your business')} based on {len(actions)} data signals across all connected sources.",
-            "market_position": market_position,
-            "competitors": competitors,
-            "swot": swot,
-            "reviews": reviews,
-            "roadmap": roadmap,
-            "geographic": geographic,
-            "confidence": confidence,
-            "report_id": f"CMO-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{user_id[:8]}",
-        }
-    except Exception as e:
-        logger.warning(f"CMO report generation failed: {e}")
-        return {
-            "company_name": "Your Business",
-            "report_date": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
-            "executive_summary": None,
-            "market_position": {"overall": 0, "brand": 0, "digital": 0, "sentiment": 0, "competitive": 0},
-            "competitors": [],
-            "swot": {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []},
-            "reviews": {"rating": 0, "count": 0, "positive_pct": 0, "neutral_pct": 0, "negative_pct": 0},
-            "roadmap": {"quick_wins": [], "priorities": [], "strategic": []},
-            "geographic": {"established": [], "growth": []},
-            "confidence": 0,
-            "report_id": "",
-        }
+    return response
 
 
 # ═══════════════════════════════════════════════════════════════

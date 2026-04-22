@@ -1557,3 +1557,6 @@ SERPAPI
 # Environment files
 *.env
 *.env.*
+
+# Claude Code personal overrides (team settings live in .claude/settings.json)
+.claude/settings.local.json

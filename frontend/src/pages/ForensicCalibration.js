@@ -7,7 +7,7 @@ import { apiClient } from '../lib/api';
 import {
   ArrowRight, CheckCircle2, Lock, Globe, Users, TrendingUp,
   MapPin, Star, Monitor, Home, BarChart3, RefreshCw, FileText,
-  Search, Circle,
+  Search, Circle, AlertTriangle,
 } from 'lucide-react';
 // Design tokens are consumed via CSS custom properties (--font-display, --font-ui, etc.)
 
@@ -850,6 +850,150 @@ function ensurePulseKeyframes() {
 }
 
 /* ────────────────────────────────────────────── */
+/*  Scan Error Panel                               */
+/*  Shown on wizardStep 2 when enrichment fails.   */
+/*  REPLACES the pipeline animation — never falls  */
+/*  back to fabricated data (market_score=50 etc). */
+/* ────────────────────────────────────────────── */
+function ScanErrorPanel({ error, url, onRetry, onBack }) {
+  const detail = error?.message || 'The enrichment service did not respond.';
+  const statusLabel = error?.status ? ` (HTTP ${error.status})` : '';
+  const supportSubject = encodeURIComponent(
+    `Calibration scan failed${url ? ` — ${url}` : ''}${statusLabel}`
+  );
+  const supportBody = encodeURIComponent(
+    `Hi BIQc support,\n\nMy Forensic Calibration scan could not complete.\n\nURL attempted: ${url || '(none)'}\nError: ${detail}${statusLabel}\n\n`
+  );
+
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      data-testid="calibration-scan-error"
+      style={{
+        ...card,
+        padding: 'var(--sp-8)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        gap: 'var(--sp-4)',
+      }}
+    >
+      <div
+        style={{
+          width: 56, height: 56, borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: C.lavaWash,
+          border: `1px solid ${C.lavaRing}`,
+        }}
+      >
+        <AlertTriangle size={28} style={{ color: C.lava }} />
+      </div>
+
+      <h2
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'var(--size-h3)',
+          fontWeight: 600,
+          color: C.ink,
+          margin: 0,
+          letterSpacing: 'var(--ls-display)',
+          lineHeight: 'var(--lh-display)',
+        }}
+      >
+        Scan couldn’t complete
+      </h2>
+
+      <p
+        style={{
+          fontFamily: 'var(--font-ui)',
+          fontSize: 'var(--size-sm)',
+          color: C.inkSecondary,
+          margin: 0,
+          maxWidth: 480,
+        }}
+      >
+        We weren’t able to finish enrichment for{' '}
+        <span style={{ color: C.ink, fontWeight: 600 }}>{url || 'this URL'}</span>.
+        No intelligence profile was generated — please try again or contact support.
+      </p>
+
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 520,
+          background: C.surfaceSunken,
+          border: `1px solid ${C.border}`,
+          borderRadius: 'var(--r-lg)',
+          padding: 'var(--sp-3) var(--sp-4)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 12,
+          color: C.inkMuted,
+          textAlign: 'left',
+          wordBreak: 'break-word',
+        }}
+      >
+        {detail}{statusLabel}
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 'var(--sp-3)',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          marginTop: 'var(--sp-2)',
+        }}
+      >
+        <button
+          onClick={onRetry}
+          data-testid="calibration-scan-error-retry"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            background: C.lava, color: 'var(--ink-inverse, #fff)',
+            border: 'none', padding: '10px 20px',
+            borderRadius: 'var(--r-lg)',
+            fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 600,
+            cursor: 'pointer',
+            boxShadow: '0 2px 4px rgba(232,93,0,0.28), 0 12px 32px -8px rgba(232,93,0,0.36)',
+          }}
+        >
+          <RefreshCw size={16} /> Try again
+        </button>
+        <a
+          href={`mailto:support@biqc.ai?subject=${supportSubject}&body=${supportBody}`}
+          data-testid="calibration-scan-error-support"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            background: 'transparent', color: C.inkBody,
+            border: `1px solid ${C.border}`,
+            padding: '10px 20px',
+            borderRadius: 'var(--r-lg)',
+            fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          Contact support
+        </a>
+        <button
+          onClick={onBack}
+          data-testid="calibration-scan-error-back"
+          style={{
+            background: 'transparent', color: C.inkSecondary,
+            border: 'none', padding: '10px 12px',
+            fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 500,
+            cursor: 'pointer',
+          }}
+        >
+          Back to URL entry
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────── */
 /*  Main Page Component                            */
 /* ────────────────────────────────────────────── */
 const ForensicCalibration = () => {
@@ -864,6 +1008,7 @@ const ForensicCalibration = () => {
   const [liveValues, setLiveValues] = useState({});
   const [loadingExisting, setLoadingExisting] = useState(true);
   const [existingResult, setExistingResult] = useState(null);
+  const [scanError, setScanError] = useState(null);       // { message } — non-null triggers the error panel
 
   const scanTimerRef = useRef(null);
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
@@ -996,6 +1141,7 @@ const ForensicCalibration = () => {
     setPipelineStep(0);
     setLiveValues({});
     setEnrichmentData(null);
+    setScanError(null);
 
     /* Reset pipeline done texts */
     PIPELINE_STEPS.forEach(ps => { ps.doneText = null; });
@@ -1004,16 +1150,33 @@ const ForensicCalibration = () => {
       const res = await apiClient.post('/enrichment/website', { url: fullUrl, action: 'scan' }, { timeout: 120000 });
       animatePipeline(res.data);
     } catch (err) {
-      /* On error, still animate through pipeline with fallback data */
+      /* Enrichment failed — surface the error to the user. NEVER silently fall back
+         to fabricated data (market_score=50 etc) — that misled users into thinking
+         they had a real Intelligence Profile when the scan actually crashed. */
+      // eslint-disable-next-line no-console
       console.error('[Calibration] Enrichment scan failed:', err);
-      animatePipeline({
-        enrichment: {
-          business_name: displayUrl.replace(/^www\./, '').split('.')[0].replace(/-/g, ' '),
-          industry: 'Business Services',
-          location: 'Australia',
-          market_score: 50,
-        }
+
+      /* Abort any in-flight pipeline animation and reset pipeline visuals. */
+      if (scanTimerRef.current) {
+        clearTimeout(scanTimerRef.current);
+        scanTimerRef.current = null;
+      }
+      setScanProgress(0);
+      setPipelineStep(0);
+      setLiveValues({});
+
+      /* Extract the best human-readable detail from the axios error. */
+      const detail =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        'The enrichment service did not respond.';
+      setScanError({
+        message: typeof detail === 'string' ? detail : 'The enrichment service did not respond.',
+        status: err?.response?.status || null,
       });
+      /* wizardStep stays at 2 — the error panel replaces the pipeline animation. */
     }
   }, [animatePipeline]);
 
@@ -1027,8 +1190,19 @@ const ForensicCalibration = () => {
     setPipelineStep(0);
     setLiveValues({});
     setExistingResult(null);
+    setScanError(null);
     PIPELINE_STEPS.forEach(ps => { ps.doneText = null; });
   }, []);
+
+  /* ── Retry after scan failure — rerun handleScan against the same URL ── */
+  const handleRetryScan = useCallback(() => {
+    setScanError(null);
+    if (scanUrl) {
+      handleScan(scanUrl);
+    } else {
+      handleRecalibrate();
+    }
+  }, [scanUrl, handleScan, handleRecalibrate]);
 
   /* ── Access gate ── */
   if (!hasPaidAccess) {
@@ -1101,13 +1275,22 @@ const ForensicCalibration = () => {
           <StepUrlInput onScan={handleScan} />
         )}
 
-        {wizardStep === 2 && (
+        {wizardStep === 2 && !scanError && (
           <StepScanning
             url={scanUrl}
             enrichmentData={enrichmentData}
             scanProgress={scanProgress}
             pipelineStep={pipelineStep}
             liveValues={liveValues}
+          />
+        )}
+
+        {wizardStep === 2 && scanError && (
+          <ScanErrorPanel
+            error={scanError}
+            url={scanUrl}
+            onRetry={handleRetryScan}
+            onBack={handleRecalibrate}
           />
         )}
 
