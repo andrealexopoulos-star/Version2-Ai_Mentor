@@ -12,6 +12,7 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 import OnboardingChecklist from '../components/advisor/OnboardingChecklist';
 import ColdStartFeed from '../components/ColdStartFeed';
+import TierNudge from '../components/TierNudge';
 // DailyBriefCard component replaced by inline brief matching approved mockup
 // ProactiveAlerts and PredictionsPanel removed — not in approved mockup
 import { fontFamily } from '../design-system/tokens';
@@ -700,6 +701,14 @@ const Advisor = () => {
                 ))}
               </div>
             </div>
+
+            {/* Sprint B #13 — per-tier capability nudge. Renders null for
+                pro+ tiers; small, dismissible, inline above the feed. */}
+            {watchtowerEvents.length > 0 && (
+              <div style={{ padding: 'var(--sp-3) var(--sp-6) 0' }}>
+                <TierNudge featureKey="advisor_depth" compact dataTestId="advisor-tier-nudge" />
+              </div>
+            )}
 
             {/* Signal rows from watchtower events */}
             <div className="flex flex-col">
