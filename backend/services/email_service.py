@@ -686,6 +686,61 @@ def tmpl_topup_failed(*, full_name: str, plan_name: str, amount: str,
     return subject, _layout(preheader=preheader, body_html=body_html), text
 
 
+# ────────────────────────── Template: E16 deletion scheduled ──────────────────
+#
+# Sprint C #22 Phase 3 (2026-04-22). Fires from DELETE /user/account once
+# the DB writes succeed. The email confirms:
+#   - the account is scheduled for permanent deletion
+#   - the exact date it will be purged (Phase 1 + 30d retention window)
+#   - a one-click cancel link (undo within the window)
+#   - a mailto reply if the user didn't initiate this
+#
+# Retention policy URL is linked so the user can see exactly what we
+# keep vs purge without having to log in (Phase 2).
+
+def tmpl_deletion_scheduled(*, full_name: str, hard_delete_after: str,
+                            undo_link: str,
+                            retention_policy_url: str) -> Tuple[str, str, str]:
+    """E16 — account scheduled for deletion. Sent once per delete request."""
+    subject = "Your BIQc account is scheduled for deletion"
+    raw_first = (full_name or "").split(" ")[0] if full_name else "there"
+    greet = _esc(raw_first)
+    hda_e = _esc(hard_delete_after)
+    undo_e = _esc(undo_link)
+    policy_e = _esc(retention_policy_url)
+    preheader = (
+        f"Your BIQc account will be permanently deleted on {hard_delete_after}. "
+        f"Didn't request this? One click to cancel."
+    )
+    body_html = f"""
+<h1 class="biqc-h1 biqc-ink" style="margin:0 0 12px;font-family:{FONT_DISPLAY};font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1.18;color:{INK_DISPLAY};">Account scheduled for deletion</h1>
+<p class="biqc-ink-sec" style="margin:0 0 16px;color:{INK_SEC};font-size:15px;">Hi {greet} &mdash; we&rsquo;ve received your request to delete your BIQc account. Your account is now disabled and will be <strong style="color:{INK};">permanently deleted on {hda_e}</strong>.</p>
+<table role="presentation" width="100%" style="margin:0 0 24px;">
+  <tr><td style="padding:16px 18px;background:{LAVA_WASH};border:1px solid {LAVA_RING};border-radius:14px;">
+    <div class="biqc-lava-text" style="font-family:{FONT_MONO};font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:{LAVA_DEEP};font-weight:700;">30-day retention window</div>
+    <div class="biqc-ink" style="margin-top:6px;font-family:{FONT_DISPLAY};font-size:20px;color:{INK_DISPLAY};font-weight:600;letter-spacing:-0.015em;">Hard delete on {hda_e}</div>
+    <div class="biqc-ink-sec" style="margin-top:6px;font-size:13px;color:{INK_SEC};">Until then your data is preserved and you can cancel the deletion with one click.</div>
+  </td></tr>
+</table>
+<p class="biqc-ink-sec" style="margin:0 0 14px;color:{INK_SEC};font-size:15px;">If this wasn&rsquo;t you &mdash; or you&rsquo;ve changed your mind &mdash; cancel it now:</p>
+<p style="margin:0 0 24px;text-align:center;">{_button('Cancel deletion', undo_link)}</p>
+<p class="biqc-ink-muted" style="margin:0 0 8px;font-size:13px;color:{INK_MUTED};">Or paste this link into your browser:</p>
+<p style="margin:0 0 18px;font-family:{FONT_MONO};font-size:12px;color:{INK_SEC};word-break:break-all;overflow-wrap:anywhere;background:{SURFACE_SUNK};padding:11px 13px;border-radius:10px;border:1px solid {BORDER};">{undo_e}</p>
+<div style="margin:16px 0 0;padding:14px 16px;background:{SURFACE_SUNK};border-radius:12px;border:1px solid {BORDER};font-size:13px;color:{INK_SEC};line-height:1.55;">
+  <strong style="color:{INK};">What&rsquo;s kept vs purged?</strong> Read the full <a href="{policy_e}" class="biqc-lava-text" style="color:{LAVA_DEEP};font-weight:600;text-decoration:underline;">retention policy</a> for the exact breakdown. TL;DR: everything we exported in your data download is also everything we purge.
+</div>
+<p class="biqc-ink-muted" style="margin:22px 0 0;font-size:13px;color:{INK_MUTED};line-height:1.55;">Questions? Reply to this email &mdash; it goes to a real person.</p>
+"""
+    text = (
+        f"Hi {raw_first} — we've received your request to delete your BIQc account.\n\n"
+        f"Your account is now disabled and will be PERMANENTLY DELETED on {hard_delete_after}.\n\n"
+        f"If this wasn't you, cancel the deletion here:\n\n{undo_link}\n\n"
+        f"Retention policy: {retention_policy_url}\n\n"
+        f"Questions? Reply to this email.\n\n— The BIQc team"
+    )
+    return subject, _layout(preheader=preheader, body_html=body_html), text
+
+
 # ────────────────────────── Template: E15 morning brief ───────────────────────
 
 def tmpl_morning_brief(*, full_name: str, greeting: str,
@@ -1102,6 +1157,45 @@ def send_morning_brief_email(*, to: str, full_name: str, greeting: str,
         top_actions=top_actions or [], overnight_signals=overnight_signals or [],
         advisor_url=advisor_url or f"{APP_URL}/advisor",
         unsubscribe_url=UNSUBSCRIBE_MAILTO,
+    )
+    return _send_via_resend(to=to, subject=subject, html=html_body, text=text,
+                            reply_to="support@biqc.ai")
+
+
+# ────────────────────────── Deletion scheduled (E16) ──────────────────────────
+
+def send_deletion_scheduled_email(*, to: str, full_name: str,
+                                  hard_delete_after: str,
+                                  undo_link: Optional[str] = None,
+                                  full_name_fallback: Optional[str] = None) -> Optional[str]:
+    """E16 — account scheduled for deletion confirmation.
+
+    Fired fire-and-forget from the DELETE /user/account handler after the
+    DB writes succeed. Must never block the HTTP response on Resend.
+
+    Parameters
+    ----------
+    to:                 the email address we just disabled. Required.
+    full_name:          display name for the greeting. Falls back to the
+                        empty-greeting "Hi there" path in the template.
+    hard_delete_after:  human-friendly deletion date string, e.g.
+                        "22 May 2026". Caller is responsible for
+                        formatting — the template echoes it verbatim.
+    undo_link:          one-click cancel URL. Defaults to the settings
+                        page where the user can hit "Cancel deletion"
+                        after signing back in. If a token-based route
+                        exists in future, the caller passes that instead.
+    full_name_fallback: deprecated alias for `full_name`; kept so callers
+                        migrating from a different shape don't error out.
+    """
+    resolved_name = full_name or full_name_fallback or ""
+    resolved_undo = undo_link or f"{APP_URL}/settings?tab=danger-zone"
+    retention_url = f"{APP_URL}/legal/retention"
+    subject, html_body, text = tmpl_deletion_scheduled(
+        full_name=resolved_name,
+        hard_delete_after=hard_delete_after,
+        undo_link=resolved_undo,
+        retention_policy_url=retention_url,
     )
     return _send_via_resend(to=to, subject=subject, html=html_body, text=text,
                             reply_to="support@biqc.ai")

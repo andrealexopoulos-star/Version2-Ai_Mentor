@@ -493,7 +493,59 @@ async def delete_account(
         except Exception as e:
             logger.warning(f"[delete-account] merge_integrations update failed: {e}")
 
-        hard_delete_after = (now + timedelta(days=_DELETE_RETENTION_DAYS)).isoformat()
+        hard_delete_after_dt = now + timedelta(days=_DELETE_RETENTION_DAYS)
+        hard_delete_after = hard_delete_after_dt.isoformat()
+
+        # Fire-and-forget deletion confirmation email (E16). Must never
+        # block the 200 response — Resend hiccups shouldn't leave the
+        # user thinking their delete failed. Any exception is logged and
+        # swallowed.
+        try:
+            import asyncio
+            import os
+            from services.email_service import send_deletion_scheduled_email
+
+            target_email = (user.get("email") or "").strip()
+            # Human-friendly date, e.g. "22 May 2026"
+            try:
+                human_date = hard_delete_after_dt.strftime("%-d %B %Y")
+            except ValueError:  # Windows fallback
+                human_date = hard_delete_after_dt.strftime("%d %B %Y").lstrip("0")
+
+            app_url = (os.environ.get("FRONTEND_URL")
+                       or os.environ.get("PUBLIC_FRONTEND_URL")
+                       or "https://biqc.ai").rstrip("/")
+            undo_link = f"{app_url}/settings?tab=danger-zone"
+
+            if target_email:
+                # Run in the default threadpool — Resend call is sync
+                # httpx. `asyncio.get_running_loop()` is safe inside a
+                # FastAPI handler. We don't await the future — fire-and-
+                # forget is the explicit contract.
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.run_in_executor(
+                        None,
+                        lambda: send_deletion_scheduled_email(
+                            to=target_email,
+                            full_name=(user.get("full_name") or ""),
+                            hard_delete_after=human_date,
+                            undo_link=undo_link,
+                        ),
+                    )
+                except RuntimeError:
+                    # No running loop (sync context in tests) — call
+                    # directly. Still "fire-and-forget" semantically
+                    # because caller discards the return value.
+                    send_deletion_scheduled_email(
+                        to=target_email,
+                        full_name=(user.get("full_name") or ""),
+                        hard_delete_after=human_date,
+                        undo_link=undo_link,
+                    )
+        except Exception as e:
+            logger.warning(f"[delete-account] email dispatch failed: {e}")
+
         return {
             "status": "account_scheduled_for_deletion",
             "deletion_requested_at": now.isoformat(),

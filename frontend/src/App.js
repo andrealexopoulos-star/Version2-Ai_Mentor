@@ -50,6 +50,7 @@ const SubscribePage = React.lazy(() => import(/* webpackChunkName: "marketing" *
 const EnterpriseTerms = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/EnterpriseTerms'));
 const LandingIntelligent = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/LandingIntelligent'));
 const BIQcLegalPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/BIQcLegalPage'));
+const RetentionPolicyPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/legal/RetentionPolicy'));
 const NotFoundPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/NotFoundPage'));
 
 // Trust sub-pages (named exports need wrapper)
@@ -354,6 +355,8 @@ function AppRoutes() {
         <Route path="/trust/security" element={<SiteSecurityPage />} />
         <Route path="/trust/centre" element={<SiteTrustCentrePage />} />
         <Route path="/trust/refund-policy" element={<SiteRefundPolicyPage />} />
+        {/* Sprint C #22 Phase 2 — plain-English retention policy, public, no auth. */}
+        <Route path="/legal/retention" element={<RetentionPolicyPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/knowledge-base" element={<KnowledgeBasePage />} />

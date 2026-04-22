@@ -1130,7 +1130,19 @@ const Settings = () => {
                       <div>
                         <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 500, color: 'var(--ink, #171717)' }}>Delete account</p>
                         <p style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-muted, #737373)', marginTop: 2 }}>
-                          Permanently deletes your account, all data, all integrations, and all history. This cannot be undone.
+                          Permanently deletes your account after a 30-day retention window. Until then you can cancel the deletion.
+                        </p>
+                        <p style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-muted, #737373)', marginTop: 4 }}>
+                          <a
+                            href="/legal/retention"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: 'var(--lava-deep, #C24D00)', textDecoration: 'underline', fontWeight: 500 }}
+                            data-testid="retention-policy-link"
+                          >
+                            Retention policy
+                          </a>
+                          <span style={{ color: 'var(--ink-muted, #737373)' }}> — what we keep, what we purge.</span>
                         </p>
                       </div>
                       {deleteConfirm ? (
