@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { isPrivilegedUser } from '../lib/privilegedUser';
+import { resolveTier, hasAccess } from '../lib/tierResolver';
 import { apiClient } from '../lib/api';
 import {
   ArrowRight, CheckCircle2, Lock, Globe, Users, TrendingUp,
@@ -1012,9 +1013,15 @@ const ForensicCalibration = () => {
 
   const scanTimerRef = useRef(null);
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
-  const paidTiers = ['pro', 'professional', 'business', 'enterprise', 'custom_build', 'super_admin'];
-  const userTier = (user?.subscription_tier || user?.trial_tier || 'free').toLowerCase();
-  const hasPaidAccess = isSuperAdmin || paidTiers.includes(userTier);
+  // 2026-04-23 P0: use canonical resolveTier() instead of a local
+  // subscription_tier||trial_tier fallback. The prior logic short-circuited
+  // on subscription_tier='starter' for users in a Pro trial promo (trial_tier=
+  // 'pro'), wrongly showing the "Pro plan required" lock during the very
+  // 14-day Pro preview. resolveTier() is the single source of truth: it
+  // returns 'pro' when trial_expires_at > now AND trial_tier='pro', regardless
+  // of the paid subscription_tier underneath.
+  const userTier = resolveTier(user);
+  const hasPaidAccess = isSuperAdmin || hasAccess(userTier, 'pro');
 
   useEffect(() => { ensurePulseKeyframes(); }, []);
 
