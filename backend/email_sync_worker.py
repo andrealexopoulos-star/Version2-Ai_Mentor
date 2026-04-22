@@ -87,86 +87,174 @@ async def get_all_connected_accounts() -> List[Dict[str, Any]]:
         return []
 
 
-async def fetch_outlook_emails(access_token: str, folder: str, lookback_days: int = 7) -> List[Dict]:
-    """Fetch recent emails from Outlook/Microsoft Graph API"""
+async def fetch_outlook_emails(account: Dict[str, Any], folder: str, lookback_days: int = 7) -> List[Dict]:
+    """Fetch Outlook emails. On 401, refresh the token once + retry.
+
+    2026-04-23 hotfix — prior signature was ``(access_token, folder, lookback)``
+    which gave the fetcher no way to refresh an expired token. 401s were logged
+    silently + returned [], producing ~380 Sentry events every 4 days for the
+    superadmin and silently starving the intelligence pipeline of email signals.
+    """
     import httpx
-    
-    try:
+
+    async def _do_fetch(token: str):
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
         filter_query = f"receivedDateTime ge {cutoff_date.isoformat()}"
-        
         url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder}/messages"
         params = {
             "$filter": filter_query,
             "$top": 100,
-            "$orderby": "receivedDateTime desc"
+            "$orderby": "receivedDateTime desc",
         }
-        
-        headers = {"Authorization": f"Bearer {access_token}"}
-        
+        headers = {"Authorization": f"Bearer {token}"}
         async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.get(url, headers=headers, params=params)
-            
-            if response.status_code == 200:
-                data = response.json()
-                return data.get("value", [])
-            else:
-                logger.error(f"Error fetching Outlook emails from {folder}: {response.status_code}")
+            r = await client.get(url, headers=headers, params=params)
+            return r.status_code, (r.json() if r.status_code == 200 else None)
+
+    try:
+        access_token = account.get("access_token")
+        if not access_token:
+            logger.error(f"[OUTLOOK] No access_token on account — skipping {folder}")
+            return []
+
+        status, data = await _do_fetch(access_token)
+        if status == 200:
+            return (data or {}).get("value", [])
+
+        # 401 = token expired or invalidated. Refresh once + retry.
+        if status == 401 and account.get("refresh_token") and account.get("user_id"):
+            user_id = account["user_id"]
+            refresh_token = account["refresh_token"]
+            logger.warning(
+                f"[OUTLOOK] 401 on {folder} for user {user_id[:8]}..., refreshing token"
+            )
+            try:
+                from routes.email import refresh_outlook_token_supabase
+                new_tokens = await refresh_outlook_token_supabase(user_id, refresh_token)
+                new_access = (new_tokens or {}).get("access_token")
+                if new_access:
+                    # Mutate the account dict so the next folder call in the
+                    # same sync cycle uses the fresh token without re-refresh.
+                    account["access_token"] = new_access
+                    retry_status, retry_data = await _do_fetch(new_access)
+                    if retry_status == 200:
+                        logger.info(f"[OUTLOOK] 401 recovered for {folder} after refresh")
+                        return (retry_data or {}).get("value", [])
+                    logger.error(
+                        f"[OUTLOOK] {folder} still {retry_status} after refresh — "
+                        f"user {user_id[:8]}... may need manual reconnect"
+                    )
+                    return []
+                logger.error(f"[OUTLOOK] Refresh returned no access_token for {user_id[:8]}...")
                 return []
-                
+            except Exception as refresh_err:
+                logger.error(
+                    f"[OUTLOOK] Refresh failed for {folder} (user {user_id[:8]}...): "
+                    f"{refresh_err} — account needs manual reconnect"
+                )
+                return []
+
+        logger.error(f"Error fetching Outlook emails from {folder}: {status}")
+        return []
+
     except Exception as e:
         logger.error(f"Exception fetching Outlook emails: {e}")
         return []
 
 
-async def fetch_gmail_emails(access_token: str, label: str, lookback_days: int = 7) -> List[Dict]:
-    """Fetch recent emails from Gmail API"""
+async def fetch_gmail_emails(account: Dict[str, Any], label: str, lookback_days: int = 7) -> List[Dict]:
+    """Fetch Gmail emails. On 401 list-call, refresh token once + retry.
+
+    2026-04-23 hotfix — same symmetry as the Outlook fetcher: prior signature
+    was ``(access_token, label, lookback)`` with no path to refresh. Now we
+    take the full account dict and self-refresh via
+    ``refresh_gmail_token_supabase`` on 401. Per-message 401 within a single
+    list call is NOT retried — Gmail tokens stay valid for the whole batch
+    once the list call succeeds.
+    """
     import httpx
-    
-    try:
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
-        # Gmail uses Unix timestamp for 'after' query
-        after_timestamp = int(cutoff_date.timestamp())
-        
-        # Map folder names to Gmail labels
-        label_map = {
-            "inbox": "INBOX",
-            "sentitems": "SENT"
-        }
-        gmail_label = label_map.get(label, "INBOX")
-        
-        # Get message IDs
-        list_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
-        params = {
-            "labelIds": gmail_label,
-            "q": f"after:{after_timestamp}",
-            "maxResults": 100
-        }
-        
-        headers = {"Authorization": f"Bearer {access_token}"}
-        
+
+    label_map = {"inbox": "INBOX", "sentitems": "SENT"}
+    gmail_label = label_map.get(label, "INBOX")
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    after_timestamp = int(cutoff_date.timestamp())
+    list_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+    list_params = {
+        "labelIds": gmail_label,
+        "q": f"after:{after_timestamp}",
+        "maxResults": 100,
+    }
+
+    async def _list(token: str):
         async with httpx.AsyncClient(timeout=30) as client:
-            list_response = await client.get(list_url, headers=headers, params=params)
-            
-            if list_response.status_code != 200:
-                logger.error(f"Error listing Gmail messages: {list_response.status_code}")
+            r = await client.get(
+                list_url,
+                headers={"Authorization": f"Bearer {token}"},
+                params=list_params,
+            )
+            return r.status_code, (r.json() if r.status_code == 200 else None)
+
+    try:
+        access_token = account.get("access_token")
+        if not access_token:
+            logger.error(f"[GMAIL] No access_token on account — skipping {label}")
+            return []
+
+        status, list_json = await _list(access_token)
+
+        # 401 → refresh + retry once
+        if status == 401 and account.get("refresh_token") and account.get("user_id"):
+            user_id = account["user_id"]
+            refresh_token = account["refresh_token"]
+            logger.warning(f"[GMAIL] 401 on {label} for user {user_id[:8]}..., refreshing token")
+            try:
+                from routes.email import refresh_gmail_token_supabase
+                new_tokens = await refresh_gmail_token_supabase(user_id, refresh_token)
+                new_access = (new_tokens or {}).get("access_token")
+                if new_access:
+                    account["access_token"] = new_access
+                    status, list_json = await _list(new_access)
+                    if status == 200:
+                        logger.info(f"[GMAIL] 401 recovered for {label} after refresh")
+                    else:
+                        logger.error(
+                            f"[GMAIL] {label} still {status} after refresh — "
+                            f"user {user_id[:8]}... may need manual reconnect"
+                        )
+                        return []
+                else:
+                    logger.error(f"[GMAIL] Refresh returned no access_token for {user_id[:8]}...")
+                    return []
+            except Exception as refresh_err:
+                logger.error(
+                    f"[GMAIL] Refresh failed for {label} (user {user_id[:8]}...): "
+                    f"{refresh_err} — account needs manual reconnect"
+                )
                 return []
-            
-            messages = list_response.json().get("messages", [])
-            if not messages:
-                return []
-            
-            # Fetch full message details (batch would be better for production)
-            full_messages = []
-            for msg in messages[:100]:  # Limit to 100
+
+        if status != 200:
+            logger.error(f"Error listing Gmail messages: {status}")
+            return []
+
+        messages = (list_json or {}).get("messages", [])
+        if not messages:
+            return []
+
+        # Fetch full message details using the (possibly refreshed) token.
+        token_for_fetch = account["access_token"]  # refreshed if we took that branch
+        full_messages = []
+        async with httpx.AsyncClient(timeout=30) as client:
+            for msg in messages[:100]:
                 msg_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{msg['id']}"
-                msg_response = await client.get(msg_url, headers=headers)
-                
+                msg_response = await client.get(
+                    msg_url,
+                    headers={"Authorization": f"Bearer {token_for_fetch}"},
+                )
                 if msg_response.status_code == 200:
                     full_messages.append(msg_response.json())
-            
-            return full_messages
-                
+
+        return full_messages
+
     except Exception as e:
         logger.error(f"Exception fetching Gmail emails: {e}")
         return []
@@ -274,15 +362,16 @@ async def sync_account_emails(account: Dict[str, Any]):
         
         synced_count = 0
         
-        # Sync inbox
+        # Sync inbox (fetchers take the whole account dict so they can
+        # self-refresh the token on 401; see 2026-04-23 hotfix note).
         if provider == "outlook":
-            inbox_emails = await fetch_outlook_emails(access_token, "inbox", LOOKBACK_DAYS)
+            inbox_emails = await fetch_outlook_emails(account, "inbox", LOOKBACK_DAYS)
         elif provider == "gmail":
-            inbox_emails = await fetch_gmail_emails(access_token, "inbox", LOOKBACK_DAYS)
+            inbox_emails = await fetch_gmail_emails(account, "inbox", LOOKBACK_DAYS)
         else:
             logger.error(f"Unknown provider: {provider}")
             return
-        
+
         for email in inbox_emails:
             email_doc = transform_email_to_storage(
                 email, user_id, account_id, provider, "inbox"
@@ -290,12 +379,13 @@ async def sync_account_emails(account: Dict[str, Any]):
             if email_doc:
                 await store_email_supabase(supabase_admin, email_doc)
                 synced_count += 1
-        
-        # Sync sent items
+
+        # Sync sent items — if inbox refreshed the token, `account` now holds
+        # the fresh access_token so this call re-uses it.
         if provider == "outlook":
-            sent_emails = await fetch_outlook_emails(access_token, "sentitems", LOOKBACK_DAYS)
+            sent_emails = await fetch_outlook_emails(account, "sentitems", LOOKBACK_DAYS)
         elif provider == "gmail":
-            sent_emails = await fetch_gmail_emails(access_token, "sentitems", LOOKBACK_DAYS)
+            sent_emails = await fetch_gmail_emails(account, "sentitems", LOOKBACK_DAYS)
         else:
             sent_emails = []
         
