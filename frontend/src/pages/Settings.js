@@ -490,6 +490,9 @@ const Settings = () => {
   const [disconnecting, setDisconnecting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  // Sprint C #22 — user must type the exact phrase before the "Yes, delete"
+  // button is enabled. Backend rejects any other phrase with 400.
+  const [deleteConfirmPhrase, setDeleteConfirmPhrase] = useState('');
   const [deleting, setDeleting] = useState(false);
 
   const syncFromCalibration = async () => {
@@ -656,13 +659,22 @@ const Settings = () => {
     finally { setExporting(false); }
   };
 
+  // Sprint C #22 — backend requires the exact phrase to guard against stray clicks.
+  const DELETE_CONFIRM_PHRASE = 'DELETE MY ACCOUNT';
+
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
-      await apiClient.delete('/user/account');
-      toast.success('Account scheduled for deletion');
+      // apiClient.delete takes config, not body, for the DELETE verb in axios;
+      // backend accepts the phrase in the request body via Pydantic.
+      await apiClient.delete('/user/account', { data: { confirm_phrase: DELETE_CONFIRM_PHRASE } });
+      toast.success('Account scheduled for deletion — you have 30 days to change your mind');
       setTimeout(() => { window.location.href = '/'; }, 2000);
-    } catch { toast.error('Failed to delete account'); setDeleting(false); }
+    } catch (err) {
+      console.error('[delete-account] failed:', err);
+      toast.error('Failed to delete account — try again');
+      setDeleting(false);
+    }
   };
 
   const fetchProfile = async () => {
@@ -1122,13 +1134,36 @@ const Settings = () => {
                         </p>
                       </div>
                       {deleteConfirm ? (
-                        <div className="flex items-center gap-2">
-                          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--danger, #DC2626)' }}>Are you sure?</span>
-                          <Button size="sm" disabled={deleting} onClick={handleDeleteAccount}
-                            style={{ fontFamily: 'var(--font-ui)', fontSize: 13, background: 'var(--danger, #DC2626)', color: 'var(--ink-inverse, #fff)', borderRadius: 'var(--r-md, 8px)', border: 'none' }}>
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--danger, #DC2626)' }}>
+                            Type <code style={{ fontFamily: 'var(--font-mono)', padding: '2px 6px', borderRadius: 4, background: 'var(--surface-sunken)' }}>DELETE MY ACCOUNT</code> to confirm:
+                          </span>
+                          <input
+                            type="text"
+                            value={deleteConfirmPhrase}
+                            onChange={(e) => setDeleteConfirmPhrase(e.target.value)}
+                            placeholder="DELETE MY ACCOUNT"
+                            aria-label="Type DELETE MY ACCOUNT to confirm"
+                            autoFocus
+                            style={{ fontFamily: 'var(--font-mono)', fontSize: 12, padding: '6px 10px', minWidth: 200, borderRadius: 'var(--r-md, 8px)', border: '1px solid var(--border)', background: 'var(--surface)' }}
+                          />
+                          <Button
+                            size="sm"
+                            disabled={deleting || deleteConfirmPhrase !== 'DELETE MY ACCOUNT'}
+                            onClick={handleDeleteAccount}
+                            style={{
+                              fontFamily: 'var(--font-ui)',
+                              fontSize: 13,
+                              background: deleteConfirmPhrase === 'DELETE MY ACCOUNT' ? 'var(--danger, #DC2626)' : 'var(--surface-sunken)',
+                              color: deleteConfirmPhrase === 'DELETE MY ACCOUNT' ? 'var(--ink-inverse, #fff)' : 'var(--ink-muted)',
+                              borderRadius: 'var(--r-md, 8px)',
+                              border: 'none',
+                              cursor: deleteConfirmPhrase === 'DELETE MY ACCOUNT' ? 'pointer' : 'not-allowed',
+                            }}
+                          >
                             {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Yes, delete'}
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => setDeleteConfirm(false)}
+                          <Button size="sm" variant="ghost" onClick={() => { setDeleteConfirm(false); setDeleteConfirmPhrase(''); }}
                             style={{ fontFamily: 'var(--font-ui)', fontSize: 13, borderRadius: 'var(--r-md, 8px)' }}>Cancel</Button>
                         </div>
                       ) : (

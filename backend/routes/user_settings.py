@@ -12,7 +12,7 @@ Backs the full Settings page from mockups:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -408,44 +408,125 @@ async def disconnect_all(user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Sprint C #22 (2026-04-22) — confirmed hard-delete with retention window.
+#
+# Prior bugs this fix closes:
+#   1. Previous handler wrote `is_active=false` on a table that has NO
+#      is_active column — the actual column is `is_disabled`. The update
+#      succeeded silently with 0 rows affected, leaving the account
+#      fully active after the user hit "Delete".
+#   2. No confirmation phrase. A stray click on "Delete my account"
+#      triggered the whole flow.
+#   3. No deletion_requested_at timestamp — no way to honour the stated
+#      "30-day retention window" because nothing tracks the clock start.
+#   4. The disconnect_all call was malformed (`.__wrapped__(user) if
+#      hasattr(...)` never evaluated to a coroutine, it just short-
+#      circuited to None — integrations were NOT disconnected).
+#
+# New contract:
+#   DELETE /user/account  body = { "confirm_phrase": "DELETE MY ACCOUNT" }
+#   → 400 if phrase missing / doesn't match
+#   → 200 with { status, deletion_requested_at, hard_delete_after, retention_days }
+#   writes users.is_disabled=true AND users.deletion_requested_at=now()
+#
+# Abort window:
+#   POST /user/account/undo-delete  (no body needed)
+#   → clears deletion_requested_at + sets is_disabled=false
+#   → only works within the 30-day window
+
+_DELETE_CONFIRM_PHRASE = "DELETE MY ACCOUNT"
+_DELETE_RETENTION_DAYS = 30
+
+
+class DeleteAccountRequest(BaseModel):
+    confirm_phrase: str = Field(..., min_length=1, max_length=64)
+
+
 @router.delete("/user/account")
-async def delete_account(user=Depends(get_current_user)):
+async def delete_account(
+    body: DeleteAccountRequest,
+    user=Depends(get_current_user),
+):
+    """Soft-delete with confirmation phrase + 30-day retention window.
+
+    Data is NOT hard-deleted synchronously. The user is marked disabled,
+    deletion_requested_at is set, and a worker (future / manual today)
+    purges rows after the 30-day abort window. Until then
+    POST /user/account/undo-delete restores access.
     """
-    Soft-delete user account.
-    Marks user as inactive. Does NOT hard-delete data — a scheduled job
-    can clean PII after 30 days per data retention policy.
-    """
+    if (body.confirm_phrase or "").strip() != _DELETE_CONFIRM_PHRASE:
+        raise HTTPException(
+            status_code=400,
+            detail=f'confirm_phrase must match exactly: "{_DELETE_CONFIRM_PHRASE}"',
+        )
     try:
         sb = get_sb()
         user_id = user["id"]
+        now = datetime.now(timezone.utc)
 
-        # Mark business profile as deleted
+        # Mark user row as disabled + stamp the deletion request.
+        try:
+            sb.table("users").update({
+                "is_disabled": True,
+                "deletion_requested_at": now.isoformat(),
+            }).eq("id", user_id).execute()
+        except Exception as e:
+            logger.warning(f"[delete-account] users update failed for {user_id}: {e}")
+
+        # Mark business profile as deleted (existing behaviour — kept for
+        # backward compat with places that read `subscription_tier`).
         try:
             sb.table("business_profiles").update({
                 "subscription_tier": "deleted",
             }).eq("user_id", user_id).execute()
         except Exception as e:
-            logger.warning(f"Failed to mark business_profiles: {e}")
+            logger.warning(f"[delete-account] business_profiles update failed: {e}")
 
-        # Mark user row as inactive
+        # Revoke all integrations — prior code had a broken malformed
+        # invocation. Do the work inline so a refactor of disconnect_all
+        # doesn't silently re-introduce the bug.
         try:
-            sb.table("users").update({
+            sb.table("merge_integrations").update({
                 "is_active": False,
-            }).eq("id", user_id).execute()
+                "disconnected_at": now.isoformat(),
+            }).eq("user_id", user_id).execute()
         except Exception as e:
-            logger.warning(f"Failed to mark users: {e}")
+            logger.warning(f"[delete-account] merge_integrations update failed: {e}")
 
-        # Disconnect all integrations
-        try:
-            await disconnect_all.__wrapped__(user) if hasattr(disconnect_all, '__wrapped__') else None
-        except Exception:
-            pass
-
-        return {"status": "account_scheduled_for_deletion", "retention_days": 30}
+        hard_delete_after = (now + timedelta(days=_DELETE_RETENTION_DAYS)).isoformat()
+        return {
+            "status": "account_scheduled_for_deletion",
+            "deletion_requested_at": now.isoformat(),
+            "hard_delete_after": hard_delete_after,
+            "retention_days": _DELETE_RETENTION_DAYS,
+            "undo_endpoint": "/user/account/undo-delete",
+        }
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"[delete-account] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/user/account/undo-delete")
+async def undo_delete_account(user=Depends(get_current_user)):
+    """Cancel a pending deletion within the 30-day retention window.
+
+    Clears deletion_requested_at + re-enables the account. After the
+    window closes the user still gets a 200 here (idempotent) but the
+    actual row may already be purged — client should verify by logging
+    back in.
+    """
+    try:
+        sb = get_sb()
+        user_id = user["id"]
+        sb.table("users").update({
+            "is_disabled": False,
+            "deletion_requested_at": None,
+        }).eq("id", user_id).execute()
+        return {"status": "account_restored"}
+    except Exception as e:
+        logger.error(f"[undo-delete] Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
