@@ -47,6 +47,55 @@ const fmtTs = (ts) => {
   } catch { return '—'; }
 };
 
+// Quota bar: green <50%, yellow 50-80%, red 80%+ (migration 125 / 2026-04-22).
+// Fed by the optional quota_total/quota_used/pct_used fields on each provider
+// row. When absent (e.g. a provider with no public usage API), we render "—"
+// so the column degrades gracefully rather than showing a misleading 0% bar.
+const QuotaBar = ({ pctUsed, quotaUsed, quotaTotal, lastCheckError }) => {
+  if (pctUsed === null || pctUsed === undefined) {
+    return (
+      <div className="flex flex-col gap-0.5">
+        <span className="text-[10px] text-[var(--ink-muted)]"
+              style={{ fontFamily: fontFamily.mono }}>—</span>
+        {lastCheckError && (
+          <span className="text-[9px] text-[#EF4444] truncate max-w-[120px]"
+                title={lastCheckError}
+                style={{ fontFamily: fontFamily.mono }}>
+            {String(lastCheckError).slice(0, 28)}
+          </span>
+        )}
+      </div>
+    );
+  }
+  const pct = Math.min(Math.max(Number(pctUsed), 0), 200);
+  const color = pct >= 80 ? '#EF4444' : pct >= 50 ? '#F59E0B' : '#10B981';
+  const displayPct = Number(pctUsed).toFixed(1);
+  const widthPct = Math.min(pct, 100); // cap visual bar at 100% even when over
+  return (
+    <div className="flex flex-col gap-1 min-w-[110px]">
+      <div className="flex items-center justify-between text-[10px]"
+           style={{ fontFamily: fontFamily.mono }}>
+        <span style={{ color }}>{displayPct}%</span>
+        {quotaUsed !== null && quotaUsed !== undefined &&
+          quotaTotal !== null && quotaTotal !== undefined && (
+          <span className="text-[var(--ink-muted)]">
+            {Number(quotaUsed).toLocaleString()}/{Number(quotaTotal).toLocaleString()}
+          </span>
+        )}
+      </div>
+      <div className="h-1.5 rounded-full overflow-hidden"
+           style={{ background: 'var(--biqc-border)' }}>
+        <div style={{
+          width: `${widthPct}%`,
+          height: '100%',
+          background: color,
+          transition: 'width 200ms ease',
+        }} />
+      </div>
+    </div>
+  );
+};
+
 const rowAccent = (row) => {
   const st = String(row.status || 'unknown');
   if (!row.key_configured) return { bg: '#EF444408', border: '#EF444425' };
@@ -164,7 +213,7 @@ const SuperAdminProviders = () => {
             <table className="w-full text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                  {['Provider', 'Env Var', 'Configured', 'Plan', 'Total Calls', 'Total Cost', 'Status', 'Last Error', 'Last Called'].map(h => (
+                  {['Provider', 'Env Var', 'Configured', 'Plan', 'Quota', 'Total Calls', 'Total Cost', 'Status', 'Last Error', 'Last Called'].map(h => (
                     <th key={h} className="px-3 py-2.5 text-left text-[var(--ink-muted)]"
                         style={{ fontFamily: fontFamily.mono, fontWeight: 500 }}>
                       {h}
@@ -219,6 +268,16 @@ const SuperAdminProviders = () => {
                         </div>
                       </td>
 
+                      {/* Quota (plan headroom from provider_quotas — migration 125) */}
+                      <td className="px-3 py-3">
+                        <QuotaBar
+                          pctUsed={p.pct_used}
+                          quotaUsed={p.quota_used}
+                          quotaTotal={p.quota_total}
+                          lastCheckError={p.quota_last_check_error}
+                        />
+                      </td>
+
                       {/* Total calls */}
                       <td className="px-3 py-3 text-right text-[var(--ink-display)]"
                           style={{ fontFamily: fontFamily.mono }}>
@@ -267,7 +326,7 @@ const SuperAdminProviders = () => {
 
                 {providers.length === 0 && !refreshing && (
                   <tr>
-                    <td colSpan={9} className="px-3 py-10 text-center text-[var(--ink-muted)] text-xs">
+                    <td colSpan={10} className="px-3 py-10 text-center text-[var(--ink-muted)] text-xs">
                       No provider rows yet. Migration 118 seeds these on deploy.
                     </td>
                   </tr>
