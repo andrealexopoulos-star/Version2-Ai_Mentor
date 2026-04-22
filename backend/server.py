@@ -256,6 +256,48 @@ async def shutdown_email_sync_worker_runtime():
             await task
 
 
+@app.on_event("startup")
+async def startup_intelligence_worker_runtime():
+    """Start the automatic intelligence worker.
+
+    Registers ``intelligence_automation_worker.intelligence_loop`` as a
+    background asyncio task inside the FastAPI process. The loop:
+      - polls ``intelligence_queue`` every 30s and dispatches queued jobs to
+        the SCHEDULE_DISPATCH map (proactive_scan, predictive_models,
+        narrative, calendar_intelligence) or the generic
+        ``run_automatic_intelligence`` fallback for keys like merge_emission,
+        metrics_compute, cognitive_refresh, watchtower_scan, morning_brief,
+      - drains Merge webhook events every 60s,
+      - triggers Merge data ingest every 15 min,
+      - runs the emission cycle (per-account MergeEmissionLayer) every 15 min,
+      - runs the daily scan (plus weekly synthesis on Monday) every 24h.
+
+    Bug #3 reference — 2026-04-23: migration 114 activated 22 intel_*
+    pg_cron schedules that fan rows into ``intelligence_queue``, but nothing
+    consumed them. The worker loop code already existed at
+    ``intelligence_automation_worker.intelligence_loop`` — it was just
+    never registered at startup. This registration closes that gap.
+    """
+    try:
+        import asyncio as _asyncio
+        from intelligence_automation_worker import intelligence_loop as _intel_loop
+        app.state.intelligence_task = _asyncio.create_task(_intel_loop())
+        logger.info("[Intelligence] Background intelligence_loop started (30s queue poll, 60s worker loop)")
+    except Exception as exc:
+        logger.warning("[Intelligence] Worker skipped during startup: %s", exc)
+        app.state.intelligence_task = None
+
+
+@app.on_event("shutdown")
+async def shutdown_intelligence_worker_runtime():
+    """Cancel the intelligence worker background task on shutdown."""
+    task = getattr(app.state, "intelligence_task", None)
+    if task and not task.done():
+        task.cancel()
+        with suppress(Exception):
+            await task
+
+
 # ═══ VOICE CHAT (REALTIME) — Direct OpenAI routing ═══
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 voice_router = APIRouter()
