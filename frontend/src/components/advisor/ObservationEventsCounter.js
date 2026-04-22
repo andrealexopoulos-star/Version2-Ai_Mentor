@@ -30,26 +30,29 @@ const ObservationEventsCounter = () => {
   const [windowKey, setWindowKey] = useState('daily');
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     (async () => {
       try {
-        const data = await apiClient.get('/intelligence/observation-stats');
-        if (!cancelled) {
-          setStats(data || { daily: 0, weekly: 0, monthly: 0, total: 0 });
-          setError(false);
-        }
-      } catch (_err) {
-        if (!cancelled) {
-          setStats({ daily: 0, weekly: 0, monthly: 0, total: 0 });
-          setError(true);
-        }
+        // apiClient is axios — response.data holds the JSON payload.
+        const res = await apiClient.get('/intelligence/observation-stats', {
+          signal: controller.signal,
+          timeout: 10000,
+        });
+        if (controller.signal.aborted) return;
+        const payload = (res && res.data) || { daily: 0, weekly: 0, monthly: 0, total: 0 };
+        setStats(payload);
+        setError(false);
+      } catch (err) {
+        // Swallow the expected AbortController "canceled" error on unmount.
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') return;
+        if (controller.signal.aborted) return;
+        setStats({ daily: 0, weekly: 0, monthly: 0, total: 0 });
+        setError(true);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, []);
 
   const activeWindow = WINDOWS.find((w) => w.key === windowKey) || WINDOWS[0];
@@ -69,8 +72,12 @@ const ObservationEventsCounter = () => {
       }}
     >
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        {/* Left: label + count + subtitle */}
-        <div>
+        {/* Left: label + count + subtitle (tab panel for D/W/M toggle) */}
+        <div
+          role="tabpanel"
+          id={`obs-panel-${windowKey}`}
+          aria-labelledby={`obs-tab-${windowKey}`}
+        >
           <div
             className="text-[10px] uppercase"
             style={{
@@ -142,7 +149,9 @@ const ObservationEventsCounter = () => {
               <button
                 key={w.key}
                 role="tab"
+                id={`obs-tab-${w.key}`}
                 aria-selected={active}
+                aria-controls={`obs-panel-${w.key}`}
                 onClick={() => setWindowKey(w.key)}
                 className="text-[10px] uppercase transition-all"
                 style={{
