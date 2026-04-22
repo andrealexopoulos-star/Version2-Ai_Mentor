@@ -318,93 +318,10 @@ const HomePage = () => {
     </section>
 
     {/* ══════════════════════════════════════════════════════════
-        CUSTOMER LOGO CAROUSEL — consent-confirmed 2026-04-21
-        Samsung, Phillips Healthcare, Twilio, Lending Tree,
-        Evo Homes Victoria, Blanca Melbourne
+        CUSTOMER LOGO CAROUSEL — REMOVED 2026-04-22 per Andreas directive.
+        Section looked visually off; logos can come back once we have a
+        polished treatment (and re-confirmed consent on the 4 brands).
     ══════════════════════════════════════════════════════════ */}
-    <section
-      aria-label="Customers"
-      style={{ background: 'var(--canvas-sage)', padding: '40px 0 48px', position: 'relative', overflow: 'hidden', fontFamily: 'var(--font-marketing-ui)' }}
-      data-testid="customer-logos"
-    >
-      <style>{`
-        @keyframes biqcLogoScroll {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
-        .biqc-logo-eyebrow {
-          font-family: var(--font-mono);
-          font-size: 10px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.14em;
-          color: var(--ink-muted);
-          text-align: center;
-          margin: 0 0 28px;
-        }
-        .biqc-logo-track-wrap {
-          position: relative;
-          overflow: hidden;
-          display: flex;
-          justify-content: center;
-          -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
-          mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
-        }
-        .biqc-logo-track {
-          display: flex;
-          align-items: center;
-          width: max-content;
-          animation: biqcLogoScroll 48s linear infinite;
-          will-change: transform;
-        }
-        .biqc-logo-track:hover { animation-play-state: paused; }
-        .biqc-logo-item {
-          flex-shrink: 0;
-          width: 180px;
-          height: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--ink-muted);
-          opacity: 0.6;
-          transition: opacity 0.25s, color 0.25s, transform 0.25s;
-        }
-        .biqc-logo-item:hover {
-          opacity: 1;
-          color: var(--ink-display);
-          transform: translateY(-1px);
-        }
-        .biqc-logo-item img {
-          height: 24px;
-          width: auto;
-          max-width: 140px;
-          object-fit: contain;
-          display: block;
-        }
-        .biqc-logo-text {
-          font-family: var(--font-marketing-display);
-          font-size: 20px;
-          font-weight: 700;
-          letter-spacing: -0.02em;
-          font-style: italic;
-          line-height: 1;
-          white-space: nowrap;
-        }
-      `}</style>
-      <p className="biqc-logo-eyebrow">Trusted by operators building smarter businesses</p>
-      <div className="biqc-logo-track-wrap">
-        <div className="biqc-logo-track">
-          {[0, 1].map((copy) => (
-            <React.Fragment key={copy}>
-              <div className="biqc-logo-item"><img src="/logos/samsung.svg" alt="Samsung" /></div>
-              <div className="biqc-logo-item"><img src="/logos/philips.svg" alt="Philips" /></div>
-              <div className="biqc-logo-item"><img src="/logos/lendingtree.svg" alt="LendingTree" /></div>
-              <div className="biqc-logo-item"><img src="/logos/evo-homes-victoria.png" alt="Evo Homes Victoria" /></div>
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-    </section>
 
     {/* ══════════════════════════════════════════════════════════
         WHAT YOU GET — pain-point framing
