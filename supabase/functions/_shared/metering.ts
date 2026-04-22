@@ -44,6 +44,27 @@ const USAGE_LEDGER_ENABLED = !["0", "false", "no", "off"].includes(
 const USD_TO_AUD = parseFloat(Deno.env.get("AUD_USD_RATE") || "1.52");
 const PRICING_VERSION = "v1";
 
+// ─── BIQc internal-system sentinel user ────────────────────────────────────
+// Canonical sentinel UUID for LLM calls triggered by service-role / cron paths
+// with no authenticated end-user (e.g. competitor-monitor batch, calibration-
+// business-dna invoked via service role with no body.user_id). The previous
+// behavior was either silently dropping the ledger row (empty userId → no-op)
+// or trying to insert the literal string "service-role-scan", which fails
+// usage_ledger's `user_id uuid NOT NULL REFERENCES public.users(id)` contract.
+//
+// Migration 126 inserts this row into public.users so the FK holds. Rows
+// written under this id are stamped with metadata.attribution="internal_system"
+// so reconciliation can split BIQc-internal cost from user-attributed cost.
+export const BIQC_INTERNAL_USER_ID = "00000000-0000-0000-0000-000000000001";
+
+// RFC-4122 UUID regex (versions 1-5). Used to guard recordUsage's user_id
+// against invalid values falling through from upstream callers.
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
+function isValidUuid(value: unknown): boolean {
+  return typeof value === "string" && UUID_RE.test(value);
+}
+
 // ─── Model pricing (AUD per 1M tokens) ────────────────────────────────────
 // MUST mirror backend/middleware/token_metering.py:MODEL_PRICING.
 // Keys are canonical model IDs as returned by provider APIs. Unknown model →
@@ -209,12 +230,16 @@ export interface RecordUsageParams {
  * a detached promise. Safe to `await` (the await resolves as soon as the
  * background write is scheduled) or to ignore entirely.
  *
- * Guards: missing user_id → return. 0+0 tokens → return. DB error → logged,
- * swallowed, no effect on caller.
+ * Guards:
+ *   - 0+0 tokens → return (no cost to track).
+ *   - missing or non-UUID userId → substitute BIQC_INTERNAL_USER_ID AND tag
+ *     metadata.attribution="internal_system" so reconciliation can separate
+ *     BIQc-internal cost from user-attributed cost. The insert is NOT
+ *     silently dropped — see Track B metering-attribution gap (2026-04-22).
+ *   - DB error → logged, swallowed, no effect on caller.
  */
 export async function recordUsage(params: RecordUsageParams): Promise<void> {
   if (!USAGE_LEDGER_ENABLED) return;
-  if (!params.userId) return;
 
   const ti = Math.max(0, params.inputTokens || 0);
   const to = Math.max(0, params.outputTokens || 0);
@@ -230,8 +255,23 @@ export async function recordUsage(params: RecordUsageParams): Promise<void> {
 
   const costMicros = computeCostAudMicros(model, ti, to, tc);
 
+  // userId sanitization: empty or non-UUID → sentinel + attribution tag.
+  const rawUserId = params.userId;
+  const userIsValid = isValidUuid(rawUserId);
+  const effectiveUserId = userIsValid ? (rawUserId as string) : BIQC_INTERNAL_USER_ID;
+  const metadata: Record<string, unknown> = {
+    fx_rate: USD_TO_AUD,
+    pricing_version: PRICING_VERSION,
+    source: "edge",
+  };
+  if (!userIsValid) {
+    metadata.attribution = "internal_system";
+    // Keep the original (possibly empty or placeholder) value for forensics.
+    metadata.original_user_id = typeof rawUserId === "string" ? rawUserId : null;
+  }
+
   const row = {
-    user_id: params.userId,
+    user_id: effectiveUserId,
     kind: "consume",
     tokens: tt,
     input_tokens: ti,
@@ -245,7 +285,7 @@ export async function recordUsage(params: RecordUsageParams): Promise<void> {
     cost_aud_micros: costMicros,
     cache_hit: params.cacheHit ?? null,
     tier_at_event: normalizeTier(params.tier),
-    metadata: { fx_rate: USD_TO_AUD, pricing_version: PRICING_VERSION, source: "edge" },
+    metadata,
     created_at: new Date().toISOString(),
   };
 

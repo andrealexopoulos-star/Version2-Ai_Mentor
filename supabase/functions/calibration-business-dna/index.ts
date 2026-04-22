@@ -17,7 +17,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
-import { recordUsage, recordUsageSonar } from "../_shared/metering.ts";
+import { BIQC_INTERNAL_USER_ID, recordUsage, recordUsageSonar } from "../_shared/metering.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -370,7 +370,11 @@ serve(async (req) => {
       if (bodyUserId && token === SUPABASE_SERVICE_ROLE_KEY) {
         user = { id: String(bodyUserId) };
       } else if (token === SUPABASE_SERVICE_ROLE_KEY) {
-        user = { id: "service-role-scan" };
+        // Service-role invocation with no body.user_id — attribute LLM cost
+        // to the BIQc internal sentinel so usage_ledger's uuid + FK contract
+        // holds. Previously this used the literal "service-role-scan" which
+        // failed the FK to public.users. See migration 126 + metering.ts.
+        user = { id: BIQC_INTERNAL_USER_ID };
       } else {
         return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
           status: 401,
