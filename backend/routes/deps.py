@@ -523,7 +523,13 @@ async def get_current_user(
                 sb = get_sb()
                 if sb:
                     try:
-                        user_row = sb.table("users").select("trial_expires_at,trial_tier,subscription_tier,subscription_status").eq("id", user.get("id")).maybe_single().execute()
+                        # P0 2026-04-23 billing-gate fix: include stripe_customer_id
+                        # so /api/auth/supabase/me can surface it to the frontend
+                        # for the hard gate at AuthCallback + ProtectedRoute.
+                        user_row = sb.table("users").select(
+                            "trial_expires_at,trial_tier,subscription_tier,subscription_status,"
+                            "stripe_customer_id,stripe_subscription_id,role,is_master_account"
+                        ).eq("id", user.get("id")).maybe_single().execute()
                         if user_row.data:
                             user = {**user, **user_row.data}
                     except Exception as trial_ctx_err:

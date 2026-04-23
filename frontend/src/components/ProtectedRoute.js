@@ -157,19 +157,26 @@ export default function ProtectedRoute({ children, adminOnly }) {
         const role = String(u.role || '').toLowerCase();
         const isMaster = u.is_master_account === true;
         const isSuper = SUPER_ADMIN_ROLES.includes(role) || isMaster;
-        const hasSub = status === 'active' || status === 'trialing';
+        // P0 2026-04-23: gate on stripe_customer_id — hard truth field.
+        // A null stripe_customer_id means the user never went through
+        // /complete-signup. status + tier alone can lie; the customer id
+        // cannot.
+        const hasStripeCustomer =
+          typeof u.stripe_customer_id === 'string' && u.stripe_customer_id.length > 0;
+        const hasSub = hasStripeCustomer && (status === 'active' || status === 'trialing');
         if (!cancelled) {
-          // Fail-open on master admin to never lock out the CEO. Fail-
-          // closed for everyone else so no user bypasses the card gate.
+          // Super-admin bypass only. Everyone else MUST have a Stripe
+          // customer AND an active/trialing sub. Andreas 2026-04-23.
           setSubscriptionAllowed(isSuper || hasSub);
           setSubscriptionChecked(true);
         }
       } catch (_e) {
-        // /auth/me failed — don't lock the user out of their own app
-        // because of a transient backend error. Let them pass; the
-        // backend gate on /calibration, /advisor APIs still applies.
+        // FAIL CLOSED. /auth/me errors have unknown billing state —
+        // routing to /complete-signup is safe (idempotent) and prevents
+        // the revenue bug where a transient error drops a card-less
+        // user into the app.
         if (!cancelled) {
-          setSubscriptionAllowed(true);
+          setSubscriptionAllowed(false);
           setSubscriptionChecked(true);
         }
       }

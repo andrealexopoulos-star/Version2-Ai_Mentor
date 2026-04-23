@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
 import { trackActivationStep } from '../lib/analytics';
 import { fontFamily } from '../design-system/tokens';
+import useForceLightTheme from '../hooks/useForceLightTheme';
 
 const STEPS = [
   { id: 'welcome', label: 'Welcome', icon: Zap },
@@ -40,6 +41,9 @@ const SIDEBAR_STEPS = [
 ];
 
 const OnboardingWizard = () => {
+  // P0 2026-04-23 (Andreas CTO): signup/onboarding/calibration path is ALWAYS
+  // light theme. Must own it explicitly so nothing upstream can leak dark.
+  useForceLightTheme();
   const navigate = useNavigate();
   const { user, markOnboardingComplete, deferOnboarding } = useSupabaseAuth();
   const [currentStep, setCurrentStep] = useState(0);
