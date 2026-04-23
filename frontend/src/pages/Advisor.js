@@ -752,7 +752,7 @@ const Advisor = () => {
                       return sev === filterKey || dom === filterKey || dom.includes(filterKey);
                     });
                 return visibleEvents.length > 0 ? visibleEvents.slice(0, 6).map((evt, i) => (
-                <div key={evt.id || i} className="grid cursor-pointer transition-colors" style={{ gridTemplateColumns: '44px 1fr auto', gap: 'var(--sp-4)', padding: 'var(--sp-5) var(--sp-6)', borderBottom: i < Math.min(watchtowerEvents.length, 6) - 1 ? '1px solid var(--border)' : 'none', alignItems: 'flex-start' }}
+                <div key={evt.id || i} className="grid transition-colors" style={{ gridTemplateColumns: '44px 1fr auto', gap: 'var(--sp-4)', padding: 'var(--sp-5) var(--sp-6)', borderBottom: i < Math.min(watchtowerEvents.length, 6) - 1 ? '1px solid var(--border)' : 'none', alignItems: 'flex-start' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-tint)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >

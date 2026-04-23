@@ -38,9 +38,10 @@ const inferDomain = (event) => {
 
 const normalizeSeverity = (value) => {
   const s = String(value || 'medium').toLowerCase();
-  if (['critical', 'high', 'medium'].includes(s)) return s;
+  if (['critical', 'high', 'medium', 'low'].includes(s)) return s;
   if (s === 'moderate') return 'medium';
-  if (s === 'low') return 'medium';
+  if (s === 'warn' || s === 'warning') return 'medium';
+  if (s === 'info' || s === 'informational') return 'low';
   return 'medium';
 };
 
@@ -72,9 +73,12 @@ const SEVERITY_COLORS = {
   critical: '#DC2626',
   high: '#D97706',
   medium: '#2563EB',
+  low: '#10B981',
 };
 
-const FILTER_TABS = ['All', 'Critical', 'High', 'Medium'];
+// Include Low so low-severity events aren't silently bucketed under
+// Medium (which previously hid them from the count).
+const FILTER_TABS = ['All', 'Critical', 'High', 'Medium', 'Low'];
 
 /* ── Shared sub-components ─────────────────────────────────────────── */
 
