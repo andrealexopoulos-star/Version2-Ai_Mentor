@@ -3000,6 +3000,23 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                             "updated_at": datetime.now(timezone.utc).isoformat(),
                         }, on_conflict="user_id,business_profile_id").execute()
                         logger.info(f"[enrichment/website] business_dna_enrichment persisted for user {user_id}")
+
+                        # Mark onboarding complete in strategic_console_state so the
+                        # ProtectedRoute "needs calibration" check stops bouncing the
+                        # user back to /onboarding-decision on Intelligence pages.
+                        # The URL-scan flow is a valid calibration path; without this
+                        # write only the 9-step wizard ever marks SCS complete.
+                        try:
+                            get_sb().table("strategic_console_state").upsert({
+                                "user_id": user_id,
+                                "status": "COMPLETE",
+                                "is_complete": True,
+                                "current_step": 9,
+                                "updated_at": datetime.now(timezone.utc).isoformat(),
+                            }, on_conflict="user_id").execute()
+                            logger.info(f"[enrichment/website] strategic_console_state marked COMPLETE for user {user_id}")
+                        except Exception as scs_err:
+                            logger.warning(f"[enrichment/website] strategic_console_state upsert failed (non-blocking): {scs_err}")
                     else:
                         logger.error(f"[enrichment/website] CRITICAL: Could not persist enrichment — no business_profile_id for user {user_id}")
             except Exception as bde_error:

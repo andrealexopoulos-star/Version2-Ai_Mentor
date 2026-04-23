@@ -472,6 +472,8 @@ function AppRoutes() {
         <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="boardroom"><RouteErrorBoundary><BoardRoomPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/warroom" element={<Navigate to="/war-room" replace />} />
         <Route path="/boardroom" element={<Navigate to="/board-room" replace />} />
+        <Route path="/email" element={<Navigate to="/email-inbox" replace />} />
+        <Route path="/ask-biqc" element={<Navigate to="/soundboard" replace />} />
         <Route path="/sop-generator" element={<ProtectedRoute><LaunchRoute access="foundation"><RouteErrorBoundary><SOPGenerator /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/decisions" element={<ProtectedRoute><LaunchRoute access="foundation"><RouteErrorBoundary><DecisionsPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/diagnosis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="diagnosis"><RouteErrorBoundary><Diagnosis /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
