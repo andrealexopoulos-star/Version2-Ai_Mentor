@@ -15,6 +15,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from supabase_client import init_supabase
 from intelligence_spine import emit_spine_event
+from core.response_sanitizer import (
+    scrub_response_for_external,
+    sanitize_enrichment_for_external,
+    ExternalState,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -733,7 +738,9 @@ def _cmo_empty_shell(user_id: str, company: str = "Your Business") -> Dict[str, 
         "geographic": {"established": [], "growth": []},
         "confidence": 0,
         "report_id": f"CMO-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{(user_id or 'anon')[:8]}",
-        "state": "calibrating",
+        # Contract v2: state uses the strict 5-value enum. PROCESSING is
+        # the correct value when calibration has not yet completed.
+        "state": ExternalState.PROCESSING.value,
         "state_message": "Complete calibration first — deep scan has not produced intelligence for this workspace yet.",
         "cmo_priority_actions": [],
         "industry_action_items": [],
@@ -1111,7 +1118,25 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     #    sentinels or meta-gap bullets, strip them before returning.
     response = _apply_render_time_filters(response)
 
-    return response
+    # 7) Contract v2 / Step 3c (2026-04-23): scrub internal keys at any depth
+    #    before returning. Strips ai_errors, sources.edge_tools, _http_status,
+    #    correlation, raw_overview, source:"semrush" sub-tags, auth-path
+    #    markers — anything that would leak supplier or internal identity.
+    #    Also annotate the top-level state from the sanitizer's derivation
+    #    so the frontend can render confidence-aware UI.
+    _sanitized_envelope = sanitize_enrichment_for_external(enrichment)
+    response["state"] = _sanitized_envelope["state"]
+    # If the response shape embedded seo_analysis / paid_media_analysis /
+    # swot directly from enrichment, replace those with the sanitizer's
+    # state-annotated versions so downstream rendering is contract-shaped.
+    _sanitized_enrich = _sanitized_envelope["enrichment"] or {}
+    for _key in ("seo_analysis", "paid_media_analysis", "swot",
+                 "seo_html_hygiene", "market_position", "market_trajectory",
+                 "social_media_analysis", "website_health"):
+        if _key in _sanitized_enrich:
+            response[_key] = _sanitized_enrich[_key]
+
+    return scrub_response_for_external(response)
 
 
 # ═══════════════════════════════════════════════════════════════

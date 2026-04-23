@@ -1,5 +1,10 @@
 """Intelligence routes — emission, snapshot, baseline. Extracted from server.py.
 Instrumented with Intelligence Spine event logging.
+
+Contract v2 / Step 3c: any `business_dna_enrichment.enrichment` object
+surfaced to the frontend is passed through `sanitize_enrichment_for_external`
+to strip supplier names, internal codes, HTTP errors, and auth-path
+markers. DB row stays intact for audit.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -9,6 +14,10 @@ import json as _json
 import logging
 from routes.deps import get_current_user, get_sb
 from intelligence_spine import emit_spine_event
+from core.response_sanitizer import (
+    sanitize_enrichment_for_external,
+    scrub_response_for_external,
+)
 
 logger = logging.getLogger("server")
 router = APIRouter()
@@ -132,6 +141,10 @@ async def snapshot_latest(current_user: dict = Depends(get_current_user)):
     # Market & Position can render real Digital Footprint / SEO / Social /
     # Content Authority scores instead of "Signal still calibrating...".
     # Wrapped so a read failure never breaks /snapshot/latest.
+    #
+    # Contract v2 / Step 3c: pass the enrichment through the sanitizer
+    # before embedding in the response. The raw DB row keeps its internal
+    # shape; the frontend gets only the contract-approved view.
     try:
         profile_row = sb.table("business_profiles") \
             .select("id") \
@@ -149,11 +162,14 @@ async def snapshot_latest(current_user: dict = Depends(get_current_user)):
             if df.get("score") is not None:
                 cognitive["digital_footprint"] = df
             if bde_row.get("enrichment"):
-                cognitive["business_dna_enrichment"] = bde_row["enrichment"]
+                _sanitized_envelope = sanitize_enrichment_for_external(bde_row["enrichment"])
+                cognitive["business_dna_enrichment"] = _sanitized_envelope["enrichment"]
+                cognitive["enrichment_state"] = _sanitized_envelope["state"]
     except Exception as e:
-        logger.warning(f"[/snapshot/latest] business_dna_enrichment read skipped: {e}")
+        logger.warning("[/snapshot/latest] business_dna_enrichment read skipped", exc_info=True)
 
-    return {"snapshot": snapshot, "cognitive": cognitive}
+    # Contract v2: final scrub of any remaining internal keys at any depth.
+    return scrub_response_for_external({"snapshot": snapshot, "cognitive": cognitive})
 
 
 @router.get("/snapshot/history")
