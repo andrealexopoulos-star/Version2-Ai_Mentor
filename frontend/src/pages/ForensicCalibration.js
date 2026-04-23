@@ -1001,7 +1001,7 @@ function ScanErrorPanel({ error, url, onRetry, onBack }) {
 const ForensicCalibration = () => {
   // P0 2026-04-23 (Andreas CTO): calibration path is always light theme.
   useForceLightTheme();
-  const { user } = useSupabaseAuth();
+  const { user, refreshCalibrationRoutingState } = useSupabaseAuth();
   const navigate = useNavigate();
 
   const [wizardStep, setWizardStep] = useState(1);       // 1=URL, 2=scanning, 3=results
@@ -1214,6 +1214,13 @@ const ForensicCalibration = () => {
     }
   }, [scanUrl, handleScan, handleRecalibrate]);
 
+  const handleViewReport = useCallback(async () => {
+    try {
+      await refreshCalibrationRoutingState?.();
+    } catch {}
+    navigate('/cmo-report');
+  }, [navigate, refreshCalibrationRoutingState]);
+
   /* ── Access gate ── */
   if (!hasPaidAccess) {
     return (
@@ -1269,7 +1276,7 @@ const ForensicCalibration = () => {
           <StepResults
             data={existingResult}
             onRecalibrate={handleRecalibrate}
-            onViewReport={() => navigate('/cmo-report')}
+            onViewReport={handleViewReport}
           />
         </div>
       </DashboardLayout>
@@ -1308,7 +1315,7 @@ const ForensicCalibration = () => {
           <StepResults
             data={enrichmentData || existingResult}
             onRecalibrate={handleRecalibrate}
-            onViewReport={() => navigate('/cmo-report')}
+            onViewReport={handleViewReport}
           />
         )}
       </div>
