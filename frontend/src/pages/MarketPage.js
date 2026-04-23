@@ -215,7 +215,7 @@ const MarketPage = () => {
   useEffect(() => {
     apiClient.get('/calibration/status').then(res => {
       if (res.data?.completed_at) setCalibrationDate(new Date(res.data.completed_at));
-      else if (res.data?.status === 'COMPLETE') setCalibrationDate(new Date(Date.now() - 86400000));
+      else if (['COMPLETE', 'COMPLETED'].includes(String(res.data?.status || '').toUpperCase())) setCalibrationDate(new Date(Date.now() - 86400000));
     }).catch(() => {});
   }, []);
 

@@ -351,7 +351,10 @@ export const useCalibrationState = () => {
       const res = await apiClient.get('/calibration/status');
       const d = res.data;
       setUserName(d.user_name || '');
-      if (d.status === 'COMPLETE') {
+      // P0 2026-04-23: accept both 'COMPLETE' and 'COMPLETED' — backend writes
+      // the latter from onboarding.py + calibration.py answer/brain paths.
+      const normalizedStatus = String(d.status || '').toUpperCase();
+      if (normalizedStatus === 'COMPLETE' || normalizedStatus === 'COMPLETED') {
         // Clear cache so /market page load fetches fresh COMPLETE status
         try { clearBootstrapCache(); } catch {}
         navigate('/market', { replace: true }); return;
