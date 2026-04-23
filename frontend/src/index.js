@@ -11,6 +11,11 @@ import "@/mobile.css";
 import "@/lib/sentry";
 import App from "@/App";
 
+// Build marker — baked in at build time so every commit produces a unique
+// bundle content-hash. Assigning to window is a side effect terser cannot
+// strip. Exposed as window.__BIQC_BUILD__ for deploy verification grep.
+window.__BIQC_BUILD__ = (process.env.REACT_APP_BUILD_ID || 'dev').slice(0, 12);
+
 if (process.env.NODE_ENV === "production") {
   // Prevent leaking internal implementation details in end-user browser consoles.
   /* eslint-disable no-console */
