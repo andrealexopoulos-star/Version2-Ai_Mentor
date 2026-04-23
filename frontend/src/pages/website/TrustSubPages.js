@@ -8,25 +8,39 @@ const HEADING = 'var(--font-display)';
 const BODY = 'var(--font-ui)';
 
 
+// Trust-page typography colors.
+// The page previously used dark-mode colors (#FFFFFF title, #EDF1F7 headings,
+// #8FA0B8 body) on a light canvas \u2014 making legal pages (Terms, Privacy, DPA,
+// Security, Refund) effectively unreadable. Switched to the light-mode
+// accessible palette. H1/H2/H3 at ink-display, body at ink-secondary, all
+// passing WCAG AA against the light canvas.
+const TEXT_DISPLAY = '#0A0A0A';     // primary heading (high-contrast)
+const TEXT_HEADING = '#171717';     // section headings
+const TEXT_BODY = '#374151';        // body prose (min 7:1 against white)
+const TEXT_META = '#6B7280';        // timestamp / meta (4.6:1)
+const LINK_MUTED = '#374151';
+
 const TrustPageShell = ({ title, lastUpdated, children }) => (
   <WebsiteLayout>
     <section className="py-24">
       <div className="max-w-3xl mx-auto px-6">
-        <Link to="/trust" className="inline-flex items-center gap-2 text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors mb-8" style={{ fontFamily: fontFamily.mono }}>
+        <Link to="/trust" className="inline-flex items-center gap-2 text-sm hover:text-[#E85D00] transition-colors mb-8" style={{ fontFamily: fontFamily.mono, color: LINK_MUTED }}>
           <ArrowLeft className="w-4 h-4" /> Back to Trust
         </Link>
-        <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ fontFamily: fontFamily.display, color: '#FFFFFF' }}>{title}</h1>
-        <p className="text-xs text-[#8FA0B8]/50 mb-10" style={{ fontFamily: fontFamily.mono }}>Last updated: {lastUpdated}</p>
+        <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ fontFamily: fontFamily.display, color: TEXT_DISPLAY }}>{title}</h1>
+        <p className="text-xs mb-10" style={{ fontFamily: fontFamily.mono, color: TEXT_META }}>Last updated: {lastUpdated}</p>
         <div className="prose-steel space-y-6">{children}</div>
       </div>
     </section>
     <style>{`
-      .prose-steel h2 { font-family: ${HEADING}; font-size: 1.25rem; font-weight: 700; color: #EDF1F7; margin-top: 2.5rem; margin-bottom: 0.75rem; }
-      .prose-steel h3 { font-family: ${HEADING}; font-size: 1rem; font-weight: 600; color: #EDF1F7; margin-top: 1.5rem; margin-bottom: 0.5rem; }
-      .prose-steel p { font-family: ${BODY}; font-size: 0.875rem; line-height: 1.7; color: #8FA0B8; }
+      .prose-steel h2 { font-family: ${HEADING}; font-size: 1.25rem; font-weight: 700; color: ${TEXT_HEADING}; margin-top: 2.5rem; margin-bottom: 0.75rem; }
+      .prose-steel h3 { font-family: ${HEADING}; font-size: 1rem; font-weight: 600; color: ${TEXT_HEADING}; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+      .prose-steel p { font-family: ${BODY}; font-size: 0.9375rem; line-height: 1.7; color: ${TEXT_BODY}; }
       .prose-steel ul { list-style: none; padding: 0; }
-      .prose-steel li { font-family: ${BODY}; font-size: 0.875rem; color: #8FA0B8; padding-left: 1.25rem; position: relative; margin-bottom: 0.5rem; line-height: 1.6; }
+      .prose-steel li { font-family: ${BODY}; font-size: 0.9375rem; color: ${TEXT_BODY}; padding-left: 1.25rem; position: relative; margin-bottom: 0.5rem; line-height: 1.6; }
       .prose-steel li::before { content: ''; position: absolute; left: 0; top: 0.6rem; width: 4px; height: 4px; border-radius: 50%; background: #E85D00; }
+      .prose-steel a { color: #E85D00; text-decoration: underline; }
+      .prose-steel strong { color: ${TEXT_HEADING}; }
     `}</style>
   </WebsiteLayout>
 );
