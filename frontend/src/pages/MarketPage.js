@@ -18,6 +18,7 @@ import {
   Globe, Star, Search as SearchIcon
 } from 'lucide-react';
 import { EmptyStateCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
+import SectionStateBanner, { isAvailable as isSectionAvailable } from '../components/SectionStateBanner';
 import LineageBadge from '../components/LineageBadge';
 
 
@@ -253,6 +254,10 @@ const MarketPage = () => {
   const execSummary = enr.executive_summary || '';
   const competitorSwot = enr.competitor_swot || [];
   const marketPosition = enr.market_position || '';
+  // Contract v2 / Step 3d: separate on-page HTML hygiene from SEMrush-derived
+  // organic search performance. Each renders under its own card with its own
+  // ExternalState. No more fabricated "SEO 80 STRONG" built from HTML hygiene.
+  const seoHtmlHygiene = enr.seo_html_hygiene || {};
   const seoAnalysis = enr.seo_analysis || {};
   const websiteHealth = enr.website_health || {};
   const socialAnalysis = enr.social_media_analysis || {};
@@ -878,34 +883,98 @@ const MarketPage = () => {
                   )}
                 </Panel>
 
-                {/* SEO Analysis */}
-                {seoAnalysis.score != null && (
-                  <Panel data-testid="saturation-seo">
-                    <div className="flex items-center gap-2 mb-3">
-                      <SearchIcon className="w-4 h-4" style={{ color: 'var(--positive)' }} />
-                      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>SEO Analysis</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: seoAnalysis.status === 'strong' ? 'var(--positive)' : 'var(--warning)', background: seoAnalysis.status === 'strong' ? 'var(--positive-wash)' : 'var(--warning-wash)', fontFamily: fontFamily.mono }}>{seoAnalysis.score}/100 — {seoAnalysis.status}</span>
+                {/* ─── On-Page SEO Hygiene (HTML heuristic — always derivable) ─── */}
+                {/* Contract v2 / Step 3f: split from the single "SEO Analysis"
+                    card. Hygiene = title, H1, canonical, meta, alt. Does not
+                    depend on any external supplier. */}
+                <Panel data-testid="saturation-seo-hygiene">
+                  <div className="flex items-center gap-2 mb-3">
+                    <SearchIcon className="w-4 h-4" style={{ color: 'var(--positive)' }} />
+                    <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>On-Page SEO Hygiene</h3>
+                    {isSectionAvailable(seoHtmlHygiene) && seoHtmlHygiene.score != null && (
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: seoHtmlHygiene.status === 'strong' ? 'var(--positive)' : 'var(--warning)', background: seoHtmlHygiene.status === 'strong' ? 'var(--positive-wash)' : 'var(--warning-wash)', fontFamily: fontFamily.mono }}>{seoHtmlHygiene.score}/100 — {seoHtmlHygiene.status}</span>
+                    )}
+                  </div>
+                  {!isSectionAvailable(seoHtmlHygiene) && (
+                    <SectionStateBanner section={seoHtmlHygiene} />
+                  )}
+                  {isSectionAvailable(seoHtmlHygiene) && seoHtmlHygiene.strengths?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--positive)', fontFamily: fontFamily.mono }}>Strengths</p>
+                      {seoHtmlHygiene.strengths.map((s, i) => <p key={i} className="text-[10px] flex items-start gap-1.5" style={{ color: 'var(--ink-secondary)' }}><CheckCircle2 className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--positive)' }} />{s}</p>)}
                     </div>
-                    {seoAnalysis.strengths?.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--positive)', fontFamily: fontFamily.mono }}>Strengths</p>
-                        {seoAnalysis.strengths.map((s, i) => <p key={i} className="text-[10px] flex items-start gap-1.5" style={{ color: 'var(--ink-secondary)' }}><CheckCircle2 className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--positive)' }} />{s}</p>)}
-                      </div>
+                  )}
+                  {isSectionAvailable(seoHtmlHygiene) && seoHtmlHygiene.gaps?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--warning)', fontFamily: fontFamily.mono }}>Gaps</p>
+                      {seoHtmlHygiene.gaps.map((g, i) => <p key={i} className="text-[10px] flex items-start gap-1.5" style={{ color: 'var(--ink-secondary)' }}><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} />{g}</p>)}
+                    </div>
+                  )}
+                  {isSectionAvailable(seoHtmlHygiene) && seoHtmlHygiene.priority_actions?.length > 0 && (
+                    <div>
+                      <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--lava)', fontFamily: fontFamily.mono }}>Priority Actions</p>
+                      {seoHtmlHygiene.priority_actions.map((a, i) => <p key={i} className="text-[10px] flex items-start gap-1.5" style={{ color: 'var(--ink-secondary)' }}><Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--lava)' }} />{a}</p>)}
+                    </div>
+                  )}
+                </Panel>
+
+                {/* ─── Organic Search Performance (SEMrush-derived only) ─── */}
+                {/* Contract v2 / Step 3d: distinct from hygiene. Shows real
+                    SEMrush rank, organic keyword count, traffic. When SEMrush
+                    data is unavailable the banner explains — no fabricated
+                    score. */}
+                <Panel data-testid="saturation-seo-performance">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className="w-4 h-4" style={{ color: 'var(--info)' }} />
+                    <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: fontFamily.display }}>Organic Search Performance</h3>
+                    {isSectionAvailable(seoAnalysis) && seoAnalysis.score != null && (
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: seoAnalysis.status === 'strong' ? 'var(--positive)' : 'var(--warning)', background: seoAnalysis.status === 'strong' ? 'var(--positive-wash)' : 'var(--warning-wash)', fontFamily: fontFamily.mono }}>{seoAnalysis.score}/100 — {seoAnalysis.status}</span>
                     )}
-                    {seoAnalysis.gaps?.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--warning)', fontFamily: fontFamily.mono }}>Gaps</p>
-                        {seoAnalysis.gaps.map((g, i) => <p key={i} className="text-[10px] flex items-start gap-1.5" style={{ color: 'var(--ink-secondary)' }}><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} />{g}</p>)}
+                  </div>
+                  {!isSectionAvailable(seoAnalysis) && (
+                    <SectionStateBanner section={seoAnalysis} />
+                  )}
+                  {isSectionAvailable(seoAnalysis) && (
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      {seoAnalysis.semrush_rank != null && (
+                        <div>
+                          <p className="text-[9px] uppercase mb-0.5" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Domain rank</p>
+                          <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)' }}>{seoAnalysis.semrush_rank.toLocaleString()}</p>
+                        </div>
+                      )}
+                      {seoAnalysis.organic_keywords != null && (
+                        <div>
+                          <p className="text-[9px] uppercase mb-0.5" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Organic keywords</p>
+                          <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)' }}>{seoAnalysis.organic_keywords.toLocaleString()}</p>
+                        </div>
+                      )}
+                      {seoAnalysis.organic_traffic != null && (
+                        <div>
+                          <p className="text-[9px] uppercase mb-0.5" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Monthly organic traffic</p>
+                          <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)' }}>~{seoAnalysis.organic_traffic.toLocaleString()}</p>
+                        </div>
+                      )}
+                      {seoAnalysis.featured_snippets != null && (
+                        <div>
+                          <p className="text-[9px] uppercase mb-0.5" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Featured snippets</p>
+                          <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)' }}>{seoAnalysis.featured_snippets}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {isSectionAvailable(seoAnalysis) && Array.isArray(seoAnalysis.top_organic_keywords) && seoAnalysis.top_organic_keywords.length > 0 && (
+                    <div>
+                      <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--info)', fontFamily: fontFamily.mono }}>Top organic keywords</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {seoAnalysis.top_organic_keywords.slice(0, 8).map((k, i) => (
+                          <span key={i} className="text-[10px] px-2 py-0.5 rounded" style={{ background: 'var(--surface-muted)', color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>
+                            {k.keyword || ''}{k.position != null ? ` · #${k.position}` : ''}
+                          </span>
+                        ))}
                       </div>
-                    )}
-                    {seoAnalysis.priority_actions?.length > 0 && (
-                      <div>
-                        <p className="text-[9px] uppercase mb-1" style={{ color: 'var(--lava)', fontFamily: fontFamily.mono }}>Priority Actions</p>
-                        {seoAnalysis.priority_actions.map((a, i) => <p key={i} className="text-[10px] flex items-start gap-1.5" style={{ color: 'var(--ink-secondary)' }}><Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--lava)' }} />{a}</p>)}
-                      </div>
-                    )}
-                  </Panel>
-                )}
+                    </div>
+                  )}
+                </Panel>
 
                 {/* Watchtower Positions */}
                 {watchtower?.positions && Object.keys(watchtower.positions).length > 0 && (
