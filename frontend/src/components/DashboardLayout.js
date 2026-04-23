@@ -23,7 +23,7 @@ import {
   Search, Key
 } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
-import { getRouteAccess } from '../lib/tierResolver';
+import { getRouteAccess, resolveTier } from '../lib/tierResolver';
 import { canAccess, requiredTier, TIERS } from '../config/tiers';
 import { isPrivilegedUser } from '../lib/privilegedUser';
 import { fontFamily, colors, shadow } from '../design-system/tokens';
@@ -648,7 +648,11 @@ const DashboardLayout = ({ children }) => {
           {visibleSections.map((section, idx) => {
             const isExpanded = expandedSections.has(section.id);
             const sectionActive = (section.path && isActive(section.path)) || section.items.some((item) => isActive(item.path));
-            const sectionLocked = section.path ? !canAccess(user?.subscription_tier || 'free', section.path, user?.email || '') : false;
+            // 2026-04-23 P0: use resolveTier() so a Pro-trial user (trial_tier='pro',
+            // subscription_tier='starter') is correctly treated as 'pro' for access
+            // checks. Raw user?.subscription_tier||'free' returned 'starter' and
+            // locked every Pro feature on the sidebar for trial users.
+            const sectionLocked = section.path ? !canAccess(resolveTier(user), section.path, user?.email || '') : false;
             const SectionIcon = section.icon;
             // Render group header when group changes (mockup: "— Today", "— Inbox", etc.)
             const prevGroup = idx > 0 ? visibleSections[idx - 1].group : null;
@@ -717,7 +721,8 @@ const DashboardLayout = ({ children }) => {
                     {section.items.map((item) => {
                       const active = isActive(item.path);
                       const showBadge = item.showBadge && notifications.total > 0;
-                      const userTier = user?.subscription_tier || 'free';
+                      // 2026-04-23 P0: resolveTier() handles trial properly (see section lock above).
+                      const userTier = resolveTier(user);
                       const locked = !canAccess(userTier, item.path, user?.email || '');
 
                       const handleNavClick = () => {

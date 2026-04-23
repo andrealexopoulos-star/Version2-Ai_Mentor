@@ -16,6 +16,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
+import { resolveTier } from '../lib/tierResolver';
 import { KpiThresholdTab } from '../components/business-dna/KpiThresholdTab';
 
 const businessTypes = [
@@ -37,8 +38,10 @@ const BusinessProfile = () => {
   const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const saveTimerRef = useRef(null);
 
-  // DEFENSIVE: Get user subscription tier with fallbacks
-  const userTier = user?.subscription_tier || 'free';
+  // 2026-04-23 P0: resolveTier() correctly returns 'pro' during active Pro trial.
+  // Raw user?.subscription_tier||'free' returns 'starter' for trial users and
+  // wrongly locks Pro features on Business Profile page.
+  const userTier = resolveTier(user);
   const isMasterAccount = user?.is_master_account === true || user?.features?.all_access === true;
   const isPaidUser = isMasterAccount || !['free', 'trial'].includes(userTier.toLowerCase());
   const isEnterprise = isMasterAccount || userTier.toLowerCase() === 'enterprise';
