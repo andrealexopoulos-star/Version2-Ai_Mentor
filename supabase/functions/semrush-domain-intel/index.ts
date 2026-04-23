@@ -97,6 +97,33 @@ serve(async (req) => {
     );
   }
 
+  // ─── Incident H / SEMRUSH P0 (2026-04-23): hard-fail supplier-key gap ───
+  // The CTO directive is explicit: supplier-key missing MUST NOT return
+  // ok:true with empty fields. That pattern creates "fabricated signal"
+  // (seo_score/status derived from nothing). Missing key = HARD FAILURE,
+  // surfaced upstream so the backend can mark the scan incomplete rather
+  // than persisting confident-but-empty analysis.
+  //
+  // Response shape on hard-fail:
+  //   HTTP 503
+  //   { ok:false, error:"SEMRUSH_API_KEY missing from edge runtime",
+  //     code:"SEMRUSH_API_KEY_MISSING", ai_errors:[...] }
+  // This keys into _edge_result_failed() on the backend → enrichment
+  // row will NOT persist a fabricated seo_analysis score.
+  if (!SEMRUSH_API_KEY) {
+    const msg = "SEMRUSH_API_KEY missing from edge runtime";
+    console.log("[semrush-domain-intel] hard-fail: " + msg);
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: msg,
+        code: "SEMRUSH_API_KEY_MISSING",
+        ai_errors: [msg],
+      }),
+      { status: 503, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   const aiErrors: string[] = [];
   const correlation = {
     run_id: req.headers.get("x-calibration-run-id") || null,
@@ -263,6 +290,31 @@ serve(async (req) => {
       source: "semrush",
     };
 
+    // ─── Incident H / SEMRUSH P0 Step 2: supplier-API total-failure guard ───
+    // Distinguish "SEMrush returned empty because domain has no SEO footprint"
+    // (valid soft result) from "every SEMrush request failed due to auth/rate
+    // limit/transient error" (silent failure class the CTO flagged).
+    //
+    // Rule: if EVERY semrushGet returned zero rows AND at least one aiErrors
+    // entry exists → hard-fail. We cannot return ok:true for a domain when
+    // the reason we saw no data is "we failed to actually query the data".
+    const totalRows = overviewRows.length + organicRows.length +
+                      adwordsRows.length + competitorRows.length;
+    if (totalRows === 0 && aiErrors.length > 0) {
+      const errSummary = aiErrors.slice(0, 4).join(" | ");
+      console.log("[semrush-domain-intel] hard-fail: all supplier calls failed — " + errSummary);
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: "SEMrush supplier API failed for every call",
+          code: "SEMRUSH_SUPPLIER_TOTAL_FAILURE",
+          ai_errors: aiErrors,
+          correlation,
+        }),
+        { status: 503, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+      );
+    }
+
     const response = {
       ok: true,
       domain,
@@ -281,17 +333,21 @@ serve(async (req) => {
       headers: corsHeaders(req),
     });
   } catch (err) {
+    // Incident H: exceptions are hard failures, not soft-ok. Surface as 5xx
+    // so _edge_result_failed() on the backend marks the call failed.
+    console.log("[semrush-domain-intel] hard-fail: exception — " + String(err).slice(0, 200));
     return new Response(
       JSON.stringify({
         ok: false,
         error: String(err).slice(0, 200),
+        code: "SEMRUSH_EXCEPTION",
         ai_errors: aiErrors,
         seo_analysis: null,
         paid_media_analysis: null,
         competitor_analysis: null,
         correlation,
       }),
-      { status: 200, headers: corsHeaders(req) },
+      { status: 500, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
     );
   }
 });
