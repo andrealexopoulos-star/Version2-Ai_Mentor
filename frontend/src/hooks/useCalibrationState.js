@@ -6,6 +6,11 @@ import { REVEAL_PHASES } from "../components/calibration/ExecutiveReveal";
 import { parseIdentitySignals } from "../components/calibration/ForensicIdentityCard";
 import { EVENTS, trackActivationStep, trackOnceForUser } from "../lib/analytics";
 
+// Build marker — identifies this module across cache layers. Survives
+// minification (string literal), so webpack content-hash reflects it.
+// The suffix changes whenever we need to force a fresh bundle.
+export const CALIBRATION_BUILD_MARKER = "biqc-cal-2026-04-23T10-35Z-502-recovery-v3";
+
 const extractFirstName = (raw) => {
   if (!raw) return '';
   if (raw.includes('@')) {
