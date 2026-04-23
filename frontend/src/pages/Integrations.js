@@ -450,15 +450,9 @@ export default function Integrations() {
     loadOutlookStatus();
     loadGmailStatus();
     loadMergeCatalog();
-    const retryTimer = setTimeout(() => {
-      loadMergeIntegrations();
-      loadOutlookStatus();
-      loadGmailStatus();
-      loadMergeCatalog();
-    }, 3000);
-    const resilienceTimer = setTimeout(() => {
-      loadMergeIntegrations();
-    }, 9000);
+    // Previously fired 3s + 9s "resilience" retries \u2014 8 API calls in
+    // 9 seconds per mount, burning quota and flooding logs. Initial load
+    // is enough; the page has a manual Retry button on its error state.
     // Handle deep-link from Revenue/Operations pages: ?category=crm
     const urlCategory = searchParams.get('category');
     if (urlCategory && CATEGORIES.some(c => c.id === urlCategory)) {
@@ -470,10 +464,7 @@ export default function Integrations() {
       }
       setSearchParams({});
     }
-    return () => {
-      clearTimeout(retryTimer);
-      clearTimeout(resilienceTimer);
-    };
+    return undefined;
   }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, loadMergeCatalog, user?.id, session?.access_token, authState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

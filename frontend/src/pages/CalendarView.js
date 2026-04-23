@@ -185,7 +185,9 @@ const CalendarView = () => {
     const now = new Date();
     const monday = new Date(now);
     monday.setDate(now.getDate() - now.getDay() + 1 + (offset * 7));
-    return Array.from({ length: 5 }, (_, i) => {
+    // Full Mon\u2013Sun week so weekend meetings render (previous length: 5
+    // dropped Sat/Sun silently even though the stats cards counted them).
+    return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
       return d;
@@ -518,7 +520,8 @@ const CalendarView = () => {
                 })}
 
                 {/* Hour Rows */}
-                {Array.from({ length: 11 }, (_, h) => h + 8).map(hour => (
+                {/* 7am\u20139pm (15 rows) so early + late meetings render on the grid. */}
+                {Array.from({ length: 15 }, (_, h) => h + 7).map(hour => (
                   <React.Fragment key={hour}>
                     {/* Hour label */}
                     <div style={{ borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)', height: 60, position: 'relative' }}>

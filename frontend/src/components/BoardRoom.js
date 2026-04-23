@@ -79,6 +79,7 @@ export function BoardRoomBody({
   embeddedShell = false,
   cognitive: snapshot,
   briefingLoading = false,
+  snapshotRefresh,
   conversationId = null,
   initialFocusArea = null,
   onConversationChange,
@@ -437,10 +438,21 @@ export function BoardRoomBody({
             </div>
           </div>
           <button
-            onClick={refreshConversations}
+            onClick={async () => {
+              // Refresh BOTH the conversation list AND the snapshot so the
+              // executive briefing + state pill update on the same click.
+              // Previously only refreshConversations ran, leaving the
+              // briefing stale on user-triggered refresh.
+              try {
+                await Promise.allSettled([
+                  refreshConversations?.(),
+                  typeof snapshotRefresh === 'function' ? snapshotRefresh() : Promise.resolve(),
+                ]);
+              } catch { /* each handler has its own error surface */ }
+            }}
             className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`}
             style={{ borderColor: 'var(--border)', color: colors.textSecondary }}
-            aria-label="Refresh boardroom conversation list"
+            aria-label="Refresh boardroom conversation list and briefing"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${convListLoading ? 'animate-spin' : ''}`} />
             Refresh

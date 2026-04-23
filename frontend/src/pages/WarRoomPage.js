@@ -530,17 +530,21 @@ export default function WarRoomPage() {
                 onRetry={snapshot.refresh}
               />
 
-              {selectedAlert ? (
-                !hasBlockingState && (
-                  <WarRoomConsoleBody
-                    embeddedShell
-                    {...snapshot}
-                    conversationId={conversationId}
-                    onConversationChange={setConversationId}
-                  />
-                )
-              ) : (
-                <ConsoleEmptyState />
+              {/* WarRoom always shows the console body when state is OK.
+                  Previously the body was hidden behind "Select an alert"
+                  even for users with zero alerts \u2014 turning WarRoom into a
+                  brochure. Now: always render the console body so the
+                  user can ASK something even before an alert lands.
+                  Only the true "no alerts + no selection" path keeps the
+                  empty state, and it sits alongside the body rather than
+                  replacing it. */}
+              {!hasBlockingState && (
+                <WarRoomConsoleBody
+                  embeddedShell
+                  {...snapshot}
+                  conversationId={conversationId}
+                  onConversationChange={setConversationId}
+                />
               )}
             </div>
           </div>

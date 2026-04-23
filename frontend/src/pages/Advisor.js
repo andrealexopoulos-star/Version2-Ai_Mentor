@@ -97,8 +97,13 @@ const Advisor = () => {
   const [emailStats, setEmailStats] = useState({ total: 0, highPriority: 0 });
 
   // Fetch real advisor data for KPIs and morning brief
+  // 2026-04-23: added 180s poll so KPI values (Open Signals, Pipeline at
+  // Risk, Cash Runway, Inbox Decisions) refresh without a reload. Less
+  // frequent than watchtower (120s) because snapshot regeneration is more
+  // expensive and changes slower.
   useEffect(() => {
     const controller = new AbortController();
+    let cancelled = false;
     const fetchAdvisorData = async () => {
       try {
         const [advisorRes, surfaceRes, snapshotRes] = await Promise.allSettled([
@@ -106,43 +111,56 @@ const Advisor = () => {
           apiClient.get('/advisor/executive-surface', { signal: controller.signal }),
           apiClient.get('/snapshot/latest', { signal: controller.signal }),
         ]);
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && !cancelled) {
           if (advisorRes.status === 'fulfilled') setAdvisorData(advisorRes.value.data);
           if (surfaceRes.status === 'fulfilled') setExecutiveSurface(surfaceRes.value.data);
           if (snapshotRes.status === 'fulfilled') setSnapshotData(snapshotRes.value.data);
         }
       } catch (err) {
-        if (!controller.signal.aborted) console.error('Advisor data fetch failed:', err);
+        if (!controller.signal.aborted && !cancelled) console.error('Advisor data fetch failed:', err);
       } finally {
-        if (!controller.signal.aborted) setAdvisorLoading(false);
+        if (!controller.signal.aborted && !cancelled) setAdvisorLoading(false);
       }
     };
     fetchAdvisorData();
-    return () => controller.abort();
+    const pollId = setInterval(fetchAdvisorData, 180_000);
+    return () => {
+      cancelled = true;
+      clearInterval(pollId);
+      controller.abort();
+    };
   }, []);
 
   // Fetch watchtower events (live signal feed)
   // Bug fix 2026-04-21: this fetch was missing — feed was always empty
   // even with Email/Xero/HubSpot connected.
+  // 2026-04-23: added 120s poll so users who leave Advisor open actually
+  // see new signals arrive without reloading the page. Re-uses the same
+  // cancel-on-unmount AbortController for every tick.
   useEffect(() => {
     const controller = new AbortController();
+    let cancelled = false;
     const fetchWatchtower = async () => {
       try {
         const res = await apiClient.get('/intelligence/watchtower', { signal: controller.signal, timeout: 12000 });
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && !cancelled) {
           setWatchtowerEvents(res?.data?.events || []);
         }
       } catch (err) {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && !cancelled) {
           console.error('Watchtower fetch failed:', err);
-          setWatchtowerEvents([]);
         }
       } finally {
-        if (!controller.signal.aborted) setLoadingWatchtower(false);
+        if (!controller.signal.aborted && !cancelled) setLoadingWatchtower(false);
       }
     };
     fetchWatchtower();
-    return () => controller.abort();
+    const pollId = setInterval(fetchWatchtower, 120_000);
+    return () => {
+      cancelled = true;
+      clearInterval(pollId);
+      controller.abort();
+    };
   }, []);
 
   // Fetch email stats for quick action cards
