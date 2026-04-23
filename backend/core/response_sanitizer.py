@@ -576,6 +576,11 @@ def sanitize_enrichment_for_external(
             # the outer top-level state will communicate availability.
         else:
             # Replace with the customer-safe skeleton.
+            # This is intentional per the v2 contract: fabricated scores
+            # (e.g. seo_analysis.score=80 when SEMrush failed) MUST NOT
+            # leak through. The blank skeleton IS the contract. Frontend
+            # consumers (CMO page) handle envelope detection themselves
+            # via defensive rendering.
             scrubbed[section_name] = _blank_section_for_state(section_name, state)
 
     # Ensure any sections that SHOULD exist but are missing entirely get the
