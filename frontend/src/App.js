@@ -80,7 +80,8 @@ const SoundboardPanel = React.lazy(() => import(/* webpackChunkName: "free" */ '
 // Onboarding
 const OnboardingWizard = React.lazy(() => import(/* webpackChunkName: "onboarding" */ './pages/OnboardingWizard'));
 const OnboardingDecision = React.lazy(() => import(/* webpackChunkName: "onboarding" */ './pages/OnboardingDecision'));
-const CalibrationAdvisor = React.lazy(() => import(/* webpackChunkName: "onboarding" */ './pages/CalibrationAdvisor'));
+// CalibrationAdvisor (legacy) deleted 2026-04-23. /calibration route still
+// redirects to /market/calibration (see Routes below) as a defensive measure.
 const ForensicCalibration = React.lazy(() => import(/* webpackChunkName: "onboarding" */ './pages/ForensicCalibration'));
 
 // Growth tier

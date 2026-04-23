@@ -1266,7 +1266,7 @@ const ForensicCalibration = () => {
           <StepResults
             data={existingResult}
             onRecalibrate={handleRecalibrate}
-            onViewReport={() => navigate('/market')}
+            onViewReport={() => navigate('/cmo-report')}
           />
         </div>
       </DashboardLayout>
@@ -1305,7 +1305,7 @@ const ForensicCalibration = () => {
           <StepResults
             data={enrichmentData || existingResult}
             onRecalibrate={handleRecalibrate}
-            onViewReport={() => navigate('/market')}
+            onViewReport={() => navigate('/cmo-report')}
           />
         )}
       </div>
