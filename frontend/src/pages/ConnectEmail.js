@@ -271,19 +271,22 @@ const ConnectEmail = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Delete from email_connections
+      // Delete only the row for the provider the user clicked disconnect on.
+      // Previous code omitted the `.eq('provider', provider)` filter, nuking
+      // BOTH Outlook + Gmail rows on a single disconnect click.
       const { error } = await supabase
         .from('email_connections')
         .delete()
-        .eq('user_id', session.user.id);
+        .eq('user_id', session.user.id)
+        .eq('provider', provider);
 
       if (error) {
         console.error('Disconnect error:', error);
         toast.error('Failed to disconnect');
       } else {
         toast.success(`${provider === 'outlook' ? 'Outlook' : 'Gmail'} disconnected`);
-        setOutlookStatus({ connected: false });
-        setGmailStatus({ connected: false });
+        if (provider === 'outlook') setOutlookStatus({ connected: false });
+        if (provider === 'gmail') setGmailStatus({ connected: false });
         // Refresh connection status
         checkEmailConnections();
       }

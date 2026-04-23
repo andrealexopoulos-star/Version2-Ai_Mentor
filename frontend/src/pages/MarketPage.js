@@ -246,29 +246,36 @@ const MarketPage = () => {
   const demandCapture = mi.probability_of_goal_achievement || null;
   const positionVerdict = mi.positioning_verdict || stateStatus || null;
 
-  // Enrichment data extraction
+  // Enrichment data extraction.
+  // When Contract v2 sanitizer blanks a failed section it returns
+  // {state, message, score:null, status:null} — a truthy OBJECT even for
+  // fields we expect to be arrays. Use type-safe coercion so the downstream
+  // `.length` / `.map` / string-render paths never crash on the envelope.
   const enr = enrichmentData?.enrichment || {};
-  const swot = enr.swot || {};
-  const cmoActions = enr.cmo_priority_actions || [];
-  const cmoBrief = enr.cmo_executive_brief || '';
-  const execSummary = enr.executive_summary || '';
-  const competitorSwot = enr.competitor_swot || [];
-  const marketPosition = enr.market_position || '';
+  const asArr = (v) => (Array.isArray(v) ? v : []);
+  const asStr = (v) => (typeof v === 'string' ? v : '');
+  const asObj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+  const swot = asObj(enr.swot);
+  const cmoActions = asArr(enr.cmo_priority_actions);
+  const cmoBrief = asStr(enr.cmo_executive_brief);
+  const execSummary = asStr(enr.executive_summary);
+  const competitorSwot = asArr(enr.competitor_swot);
+  const marketPosition = asStr(enr.market_position);
   // Contract v2 / Step 3d: separate on-page HTML hygiene from SEMrush-derived
   // organic search performance. Each renders under its own card with its own
   // ExternalState. No more fabricated "SEO 80 STRONG" built from HTML hygiene.
-  const seoHtmlHygiene = enr.seo_html_hygiene || {};
-  const seoAnalysis = enr.seo_analysis || {};
-  const websiteHealth = enr.website_health || {};
-  const socialAnalysis = enr.social_media_analysis || {};
-  const paidMedia = enr.paid_media_analysis || {};
-  const reviewAgg = enr.review_aggregation || {};
-  const trustSignals = enr.trust_signals || [];
-  const aeoStrategy = enr.aeo_strategy || [];
-  const industryActions = enr.industry_action_items || [];
-  const recommendedKeywords = enr.recommended_keywords || [];
-  const customerReviews = enr.customer_review_intelligence || {};
-  const staffReviews = enr.staff_review_intelligence || {};
+  const seoHtmlHygiene = asObj(enr.seo_html_hygiene);
+  const seoAnalysis = asObj(enr.seo_analysis);
+  const websiteHealth = asObj(enr.website_health);
+  const socialAnalysis = asObj(enr.social_media_analysis);
+  const paidMedia = asObj(enr.paid_media_analysis);
+  const reviewAgg = asObj(enr.review_aggregation);
+  const trustSignals = asArr(enr.trust_signals);
+  const aeoStrategy = asArr(enr.aeo_strategy);
+  const industryActions = asArr(enr.industry_action_items);
+  const recommendedKeywords = asArr(enr.recommended_keywords);
+  const customerReviews = asObj(enr.customer_review_intelligence);
+  const staffReviews = asObj(enr.staff_review_intelligence);
   const scanTimestamp = enrichmentData?.scanned_at;
   const nextUpdate = enrichmentData?.next_update_available;
   const hasEnrichment = enrichmentData?.has_data;

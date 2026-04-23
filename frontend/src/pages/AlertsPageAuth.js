@@ -85,9 +85,9 @@ const AlertItem = ({ alert, onAction }) => {
       {/* Action buttons — always visible */}
       {!isResolved && (
         <div className="px-5 pb-4 flex flex-wrap gap-2">
-          {alert.actions?.includes('email') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium transition-all hover:border-[var(--lava)] hover:text-[var(--lava)]" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink)', fontFamily: 'var(--font-ui)' }} data-testid={`alert-auto-email-${alert.id}`}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
-          {alert.actions?.includes('sms') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium transition-all hover:border-[var(--lava)] hover:text-[var(--lava)]" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink)', fontFamily: 'var(--font-ui)' }} data-testid={`alert-quick-sms-${alert.id}`}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-          {alert.actions?.includes('handoff') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium transition-all hover:border-[var(--lava)] hover:text-[var(--lava)]" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink)', fontFamily: 'var(--font-ui)' }} data-testid={`alert-hand-off-${alert.id}`}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+          {alert.actions?.includes('email') && <button onClick={() => handleAction('auto-email')} className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium transition-all hover:border-[var(--lava)] hover:text-[var(--lava)]" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink)', fontFamily: 'var(--font-ui)' }} data-testid={`alert-auto-email-${alert.id}`}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
+          {alert.actions?.includes('sms') && <button onClick={() => handleAction('quick-sms')} className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium transition-all hover:border-[var(--lava)] hover:text-[var(--lava)]" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink)', fontFamily: 'var(--font-ui)' }} data-testid={`alert-quick-sms-${alert.id}`}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
+          {alert.actions?.includes('handoff') && <button onClick={() => handleAction('hand-off')} className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium transition-all hover:border-[var(--lava)] hover:text-[var(--lava)]" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink)', fontFamily: 'var(--font-ui)' }} data-testid={`alert-hand-off-${alert.id}`}><Users className="w-3.5 h-3.5" />Hand Off</button>}
           <button onClick={() => handleAction('complete')} className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold transition-all hover:brightness-110" style={{ background: 'var(--lava, #E85D00)', color: 'white', border: '1px solid var(--lava, #E85D00)', borderRadius: 'var(--r-md, 8px)', fontFamily: 'var(--font-ui)' }} data-testid={`alert-complete-${alert.id}`}><CheckCircle2 className="w-3.5 h-3.5" />Resolve</button>
           <button onClick={() => handleAction('ignore')} className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium transition-all hover:text-[var(--ink)]" style={{ background: 'transparent', border: '1px solid transparent', borderRadius: 'var(--r-md, 8px)', color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }} data-testid={`alert-ignore-${alert.id}`}><XCircle className="w-3.5 h-3.5" />Ignore</button>
         </div>
@@ -211,7 +211,7 @@ const AlertsPageAuth = () => {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <div className="text-[11px] uppercase mb-2" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--lava)' }}>— Alert centre · Live</div>
-            <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: 'var(--ls-display, -0.035em)', lineHeight: 1.05 }}>{alerts.length || 5} things <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>need a decision</em>.</h1>
+            <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: 'var(--ls-display, -0.035em)', lineHeight: 1.05 }}>{loading ? '\u2014' : urgentCount} thing{urgentCount === 1 ? '' : 's'} <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>need a decision</em>.</h1>
             <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
               {loading || integrationLoading
                 ? 'Scanning connected data sources...'
@@ -301,8 +301,8 @@ const AlertsPageAuth = () => {
                 </p>
                 <p className="text-sm max-w-md mx-auto mb-1" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>
                   BIQc is actively monitoring {totalConnected} connected system{totalConnected !== 1 ? 's' : ''} in real time.
-                  {hasCRM && ' Your HubSpot pipeline, deals and contacts are being watched.'}
-                  {hasEmail && ' Your Outlook emails and calendar signals are being analysed.'}
+                  {hasCRM && ' Your CRM pipeline, deals and contacts are being watched.'}
+                  {hasEmail && ' Your email inbox and calendar signals are being analysed.'}
                 </p>
                 <p className="text-xs mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)' }}>
                   Alerts will appear here instantly when BIQc detects a risk, anomaly or action required.

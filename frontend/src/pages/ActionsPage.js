@@ -192,13 +192,14 @@ const ActionsPage = () => {
           <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>Every action started life as an alert, an email thread, a deal change, or a BIQc nudge. Drag a card forward when you've done it.</p>
         </div>
 
-        {/* Stats cards — matches mockup */}
+        {/* Stats cards — derived from resolution_queue rather than hardcoded
+            zeros. Stats were previously all "0" regardless of state. */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'To-Do', value: loading ? '\u2014' : rq.length },
-            { label: 'In Flight', value: loading ? '\u2014' : 0 },
-            { label: 'Done This Week', value: loading ? '\u2014' : 0 },
-            { label: 'Overdue', value: loading ? '\u2014' : rq.filter(i => i.severity === 'high').length },
+            { label: 'To-Do', value: loading ? '\u2014' : rq.filter(i => !i.status || i.status === 'pending' || i.status === 'to-do').length },
+            { label: 'In Flight', value: loading ? '\u2014' : rq.filter(i => i.status === 'in_progress' || i.status === 'in-flight' || i.status === 'active').length },
+            { label: 'Done This Week', value: loading ? '\u2014' : rq.filter(i => (i.status === 'done' || i.status === 'complete' || i.status === 'completed') && (i.completed_at ? (Date.now() - new Date(i.completed_at).getTime()) < 7 * 24 * 60 * 60 * 1000 : false)).length },
+            { label: 'Overdue', value: loading ? '\u2014' : rq.filter(i => i.overdue === true || (i.due_at && new Date(i.due_at).getTime() < Date.now() && i.status !== 'done' && i.status !== 'complete')).length },
           ].map(({ label, value }) => (
             <div key={label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', boxShadow: 'var(--elev-1)' }}>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--ink-display)', display: 'block', lineHeight: 1 }}>{value}</span>
@@ -307,10 +308,10 @@ const ActionsPage = () => {
                             <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>{item.title}</p>
                             {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{item.detail}</p>}
                             <div className="flex flex-wrap gap-2 mt-3">
-                              {(item.actions || []).includes('auto-email') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'rgba(37,99,235,0.08)', color: 'var(--info)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
-                              {(item.actions || []).includes('quick-sms') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'rgba(22,163,74,0.08)', color: 'var(--positive)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-                              {(item.actions || []).includes('hand-off') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'var(--lava-wash)', color: 'var(--lava)', border: '1px solid rgba(232,93,0,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
-                              <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'rgba(22,163,74,0.08)', color: 'var(--positive)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
+                              {(item.actions || []).includes('auto-email') && <button onClick={async () => { try { await apiClient.post('/intelligence/alerts/action', { alert_id: item.id || item.signal_key, action: 'auto-email' }); toast.success('Drafting auto-email\u2026'); } catch { toast.error('Could not queue email action'); } }} className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'rgba(37,99,235,0.08)', color: 'var(--info)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
+                              {(item.actions || []).includes('quick-sms') && <button onClick={async () => { try { await apiClient.post('/intelligence/alerts/action', { alert_id: item.id || item.signal_key, action: 'quick-sms' }); toast.success('SMS queued'); } catch { toast.error('Could not queue SMS'); } }} className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'rgba(22,163,74,0.08)', color: 'var(--positive)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
+                              {(item.actions || []).includes('hand-off') && <button onClick={() => setDelegateModalOpen(true)} className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'var(--lava-wash)', color: 'var(--lava)', border: '1px solid rgba(232,93,0,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+                              <button onClick={async () => { try { await apiClient.post('/intelligence/alerts/action', { alert_id: item.id || item.signal_key, action: 'complete' }); toast.success('Marked complete'); } catch { toast.error('Could not mark complete'); } }} className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'rgba(22,163,74,0.08)', color: 'var(--positive)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
                             </div>
                           </div>
                         </div>

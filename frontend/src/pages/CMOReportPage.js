@@ -292,8 +292,45 @@ function CMOReportPageInner() {
   const overall = mps.overall || 0;
   const gaugeOffset = gaugeVisible ? gaugeCirc - (gaugeCirc * overall / 100) : gaugeCirc;
 
-  const handleShare = () => toast.info('Share dialog coming soon');
-  const handleDownloadPDF = () => toast.info('PDF generation coming soon');
+  const handleShare = async () => {
+    try {
+      const url = typeof window !== 'undefined' ? window.location.href : '';
+      if (navigator?.share) {
+        await navigator.share({ title: 'BIQc CMO Report', text: 'BIQc CMO Intelligence Report', url });
+        return;
+      }
+      if (navigator?.clipboard && url) {
+        await navigator.clipboard.writeText(url);
+        toast.success('Report link copied to clipboard');
+        return;
+      }
+      toast.info('Copy the URL from the address bar to share');
+    } catch {
+      // user cancelled share sheet \u2014 silent
+    }
+  };
+  const handleDownloadPDF = async () => {
+    try {
+      toast.info('Preparing PDF\u2026');
+      const res = await apiClient.post('/reports/cmo-report/pdf', {}, { responseType: 'blob', timeout: 45000 });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `biqc-cmo-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 404 || status === 501) {
+        toast.info('PDF export is not available on this plan yet.');
+      } else {
+        toast.error('Could not generate PDF. Please try again.');
+      }
+    }
+  };
 
   return (
     <DashboardLayout>

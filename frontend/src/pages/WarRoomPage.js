@@ -1,10 +1,12 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Shield, TrendingDown, Users, BarChart3, FileWarning } from 'lucide-react';
+import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
 import { WarRoomConsoleBody } from '../components/WarRoomConsole';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useWatchtowerRealtime } from '../hooks/useWatchtowerRealtime';
+import { apiClient } from '../lib/api';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 // Design tokens now referenced via CSS custom properties
 
@@ -241,7 +243,7 @@ function ConsoleEmptyState() {
 
 export default function WarRoomPage() {
   const snapshot = useSnapshot();
-  const { alerts: watchtowerEvents, loading: alertsLoading } = useWatchtowerRealtime();
+  const { alerts: watchtowerEvents, loading: alertsLoading, acknowledge: acknowledgeAlert } = useWatchtowerRealtime();
   const { conversationId, setConversationId } = useWarRoomUrlState();
   const [selectedAlertId, setSelectedAlertId] = useState(null);
   const [activeFilter, setActiveFilter] = useState('All');
@@ -484,6 +486,20 @@ export default function WarRoomPage() {
                 </span>
                 {selectedAlert && (
                   <button
+                    onClick={async () => {
+                      try {
+                        if (typeof acknowledgeAlert === 'function') {
+                          await acknowledgeAlert(selectedAlert.id);
+                        }
+                        await apiClient.post('/intelligence/alerts/action', {
+                          alert_id: selectedAlert.id,
+                          action: 'escalate',
+                        }).catch(() => {});
+                        toast.success('Escalation logged');
+                      } catch (err) {
+                        toast.error('Could not escalate \u2014 please retry');
+                      }
+                    }}
                     style={{
                       padding: '6px 16px',
                       borderRadius: '8px',
@@ -497,6 +513,7 @@ export default function WarRoomPage() {
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = '#991B1B'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--danger)'; }}
+                    data-testid="war-room-escalate"
                   >
                     Escalate
                   </button>

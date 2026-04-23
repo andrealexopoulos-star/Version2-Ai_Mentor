@@ -2376,14 +2376,27 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             # ═════════════════════════════════════════════════════════════════
             async def _cached_edge(fn_name, payload_dict):
                 hit = await get_edge_result(fn_name, scan_domain)
-                if isinstance(hit, dict):
+                # Only honor cached result if it is a successful dict. Pre-fix
+                # deploys cached 401/5xx payloads; the stale cache then kept
+                # serving 401 for up to EDGE_TTL (1h) even after the auth
+                # handshake was repaired. Failed cached payloads trigger a
+                # live retry, which also lets a subsequent success overwrite
+                # the poisoned entry (via set_edge_result below).
+                if isinstance(hit, dict) and not _edge_result_failed(hit):
                     return hit
                 if hit is not None:
-                    logger.warning(
-                        "[enrichment/website] ignoring non-dict cached edge payload for %s (%s)",
-                        fn_name,
-                        type(hit).__name__,
-                    )
+                    if isinstance(hit, dict):
+                        logger.info(
+                            "[enrichment/website] skipping cached FAILED edge result for %s (status=%s); retrying live",
+                            fn_name,
+                            hit.get("_http_status") or hit.get("status"),
+                        )
+                    else:
+                        logger.warning(
+                            "[enrichment/website] ignoring non-dict cached edge payload for %s (%s)",
+                            fn_name,
+                            type(hit).__name__,
+                        )
                 result = await _call_edge_function(
                     fn_name,
                     payload_dict,
