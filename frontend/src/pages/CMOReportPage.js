@@ -539,7 +539,11 @@ function CMOReportPageInner() {
 
         {/* ═══════════════════════════════════════════════════
             6. REVIEW INTELLIGENCE
+            Only render when review data is actually available. Previously
+            rendered zeroed rating + 0-width sentiment bars + "0 reviews"
+            as if neutral data existed, misleading the reader.
             ═══════════════════════════════════════════════════ */}
+        {(reviews.count > 0 || reviews.rating > 0 || arr(data.review_themes).length > 0 || arr(data.review_excerpts).length > 0) ? (
         <div style={{ marginBottom: 32 }}>
           <SectionHead icon={<Star size={18} />} iconBg="var(--warning-wash)" iconColor="var(--warning)" title="Review Intelligence" />
 
@@ -552,7 +556,7 @@ function CMOReportPageInner() {
             }}>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 56, lineHeight: 1, color: V.inkDisplay, letterSpacing: 'var(--ls-display)' }}>{reviews.rating || '\u2014'}</span>
               <div style={{ display: 'flex', gap: 2, margin: '8px 0 4px', color: 'var(--warning)', fontSize: 18 }}>
-                {[1,2,3,4,5].map(s => <span key={s}>{s <= Math.round(reviews.rating) ? '\u2605' : '\u2606'}</span>)}
+                {[1,2,3,4,5].map(s => <span key={s}>{s <= Math.round(reviews.rating || 0) ? '\u2605' : '\u2606'}</span>)}
               </div>
               <span style={{ fontSize: 12, color: V.inkMuted }}>Based on {reviews.count || 0} reviews</span>
             </div>
@@ -619,6 +623,14 @@ function CMOReportPageInner() {
             </div>
           )}
         </div>
+        ) : (
+          <div style={{ marginBottom: 32 }}>
+            <SectionHead icon={<Star size={18} />} iconBg="var(--warning-wash)" iconColor="var(--warning)" title="Review Intelligence" />
+            <div style={{ background: V.surface, border: `1px solid ${V.border}`, borderRadius: 'var(--r-lg)', padding: 40, textAlign: 'center' }}>
+              <p style={{ color: V.inkMuted, fontSize: 14 }}>Insufficient review signal to assess customer sentiment yet. Re-run the scan once public reviews become available or connect a review-aggregation integration.</p>
+            </div>
+          </div>
+        )}
 
         {/* ═══════════════════════════════════════════════════
             7. STRATEGIC ROADMAP

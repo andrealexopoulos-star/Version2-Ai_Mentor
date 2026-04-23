@@ -222,9 +222,9 @@ const AdminDashboard = () => {
           {page === 'command' && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Mc label="Platform Status" value="Operational" icon={Activity} color="#10B981" />
+                <Mc label="Platform Status" value={healthData?.status === 'healthy' ? 'Operational' : 'Checking...'} icon={Activity} color={healthData?.status === 'healthy' ? '#10B981' : '#D97706'} />
                 <Mc label="Total Users" value={users.length} icon={Users} color="var(--ink-display)" />
-                <Mc label="Edge Functions" value="19 active" icon={Cpu} color="#3B82F6" />
+                <Mc label="Edge Functions" value={healthData?.edge_functions_count != null ? `${healthData.edge_functions_count} active` : 'Checking...'} icon={Cpu} color="#3B82F6" />
                 <Mc label="API Health" value={healthData?.status === 'healthy' ? '100%' : 'Checking...'} icon={Server} color="#10B981" />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -232,10 +232,12 @@ const AdminDashboard = () => {
                   <div className="space-y-2">
                     <Row icon={Server} label="FastAPI Backend" value={healthData?.status || 'checking'} status={healthData?.status === 'healthy' ? 'healthy' : 'unknown'} />
                     <Row icon={Database} label="Supabase PostgreSQL" value={healthData?.supabase || 'checking'} status={healthData?.supabase === 'healthy' ? 'healthy' : 'unknown'} />
-                    <Row icon={Cpu} label="Edge Functions (19)" value="Active" status="healthy" />
-                    <Row icon={Radio} label="Email Sync Worker" value="Running" status="healthy" />
-                    <Row icon={Brain} label="Intelligence Worker" value="Running" status="healthy" />
-                    <Row icon={Clock} label="pg_cron Jobs (4)" value="Scheduled" status="healthy" />
+                    <Row icon={Cpu} label={healthData?.edge_functions_count != null ? `Edge Functions (${healthData.edge_functions_count})` : 'Edge Functions'} value={healthData?.edge_functions_healthy === false ? 'Degraded' : 'Active'} status={healthData?.edge_functions_healthy === false ? 'warning' : 'healthy'} />
+                    {/* Removed hardcoded "Running/healthy" for Email Sync +
+                        Intelligence Worker \u2014 those rows were lying to ops.
+                        They'll return when /api/health/detailed exposes
+                        their real state. */}
+                    <Row icon={Clock} label="pg_cron Jobs" value={healthData?.pg_cron_status || 'Scheduled'} status={healthData?.pg_cron_healthy === false ? 'warning' : 'healthy'} />
                   </div>
                 </Sec>
                 <Sec title="Strategic Platform Intelligence">

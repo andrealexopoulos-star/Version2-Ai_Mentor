@@ -159,19 +159,25 @@ const EmailInbox = () => {
       setInboxLoadError(null);
       let latest = null;
       let fetchErrMsg = null;
+      let existingMessage = null;
       try {
         const existing = await apiClient.get('/email/priority-inbox');
         setPriorityContract(existing?.data || null);
+        existingMessage = existing?.data?.message || null;
         latest = normalizePriorityPayload(existing.data, { from_cache: false });
       } catch (error) {
         console.error('Priority inbox existing fetch failed:', error?.response?.data || error.message);
         fetchErrMsg = error?.response?.data?.detail || error?.message || 'Unable to load priority inbox.';
       }
 
-      if (!latest) {
+      // If GET returned a structured "no emails yet" message, don't fire an
+      // analyze POST \u2014 that would just duplicate the message and return 200
+      // with no useful output. Surface the server's message instead.
+      if (!latest && !existingMessage) {
         try {
           const analyzed = await apiClient.post('/email/analyze-priority');
           setPriorityContract(analyzed?.data || null);
+          existingMessage = analyzed?.data?.message || existingMessage;
           latest = normalizePriorityPayload(analyzed.data, { from_cache: false, analyzed_at: new Date().toISOString() });
         } catch (error) {
           console.error('Priority inbox analysis failed:', error?.response?.data || error.message);
@@ -739,18 +745,22 @@ const EmailInbox = () => {
 
             {/* ── PANEL 1: FOLDERS ── */}
             <div className="inbox-folders" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 16, overflowY: 'auto' }}>
-              {/* Mailbox */}
+              {/* Mailbox — folder IDs match backend storage (sentitems,
+                  deleteditems, junkemail follow Microsoft Graph naming).
+                  Previously used plain 'sent' / 'drafts' / 'archive' as
+                  IDs which didn't match any cached folder, so clicking
+                  Sent/Drafts/Archive returned empty message lists. */}
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', marginBottom: 8 }}>Mailbox</div>
-              {['inbox', 'sent', 'drafts', 'archive'].map(f => (
+              {[{ id: 'inbox', label: 'Inbox' }, { id: 'sentitems', label: 'Sent' }, { id: 'drafts', label: 'Drafts' }, { id: 'archive', label: 'Archive' }].map(f => (
                 <div
-                  key={f}
-                  onClick={() => setSelectedFolder(f)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 'var(--r-sm, 4px)', color: selectedFolder === f ? 'var(--lava)' : 'var(--ink-secondary)', background: selectedFolder === f ? 'var(--lava-wash, rgba(232,93,0,0.08))' : 'transparent', fontWeight: selectedFolder === f ? 500 : 400, fontSize: 13, cursor: 'pointer', marginBottom: 2, fontFamily: 'var(--font-ui)', transition: 'all 150ms ease' }}
+                  key={f.id}
+                  onClick={() => setSelectedFolder(f.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 'var(--r-sm, 4px)', color: selectedFolder === f.id ? 'var(--lava)' : 'var(--ink-secondary)', background: selectedFolder === f.id ? 'var(--lava-wash, rgba(232,93,0,0.08))' : 'transparent', fontWeight: selectedFolder === f.id ? 500 : 400, fontSize: 13, cursor: 'pointer', marginBottom: 2, fontFamily: 'var(--font-ui)', transition: 'all 150ms ease' }}
                 >
                   <Mail className="w-4 h-4" />
-                  <span style={{ flex: 1 }}>{f.charAt(0).toUpperCase() + f.slice(1)}</span>
-                  {f === 'inbox' && priorityAnalysis && (
-                    <span style={{ padding: '1px 7px', borderRadius: 100, fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, background: selectedFolder === f ? 'var(--lava)' : 'var(--surface-2)', color: selectedFolder === f ? 'white' : 'var(--ink-secondary)' }}>
+                  <span style={{ flex: 1 }}>{f.label}</span>
+                  {f.id === 'inbox' && priorityAnalysis && (
+                    <span style={{ padding: '1px 7px', borderRadius: 100, fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, background: selectedFolder === f.id ? 'var(--lava)' : 'var(--surface-2)', color: selectedFolder === f.id ? 'white' : 'var(--ink-secondary)' }}>
                       {allPriorityEmails.length}
                     </span>
                   )}
@@ -781,7 +791,7 @@ const EmailInbox = () => {
               {folders.length > 0 && (
                 <>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', marginTop: 16, marginBottom: 8 }}>Labels</div>
-                  {folders.filter(f => !['inbox','sent','drafts','archive'].includes(f.name?.toLowerCase())).slice(0, 8).map(f => (
+                  {folders.filter(f => !['inbox','sent','sentitems','drafts','archive','deleteditems','junkemail'].includes(f.name?.toLowerCase())).slice(0, 8).map(f => (
                     <div
                       key={f.id || f.name}
                       onClick={() => setSelectedFolder(f.name || f.id)}

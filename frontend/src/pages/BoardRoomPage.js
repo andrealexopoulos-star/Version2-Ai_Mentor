@@ -89,6 +89,7 @@ export default function BoardRoomPage() {
                 embeddedShell
                 cognitive={cognitive}
                 briefingLoading={loading}
+                snapshotRefresh={refresh}
                 conversationId={conversationId}
                 initialFocusArea={focusArea}
                 onConversationChange={setConversationId}

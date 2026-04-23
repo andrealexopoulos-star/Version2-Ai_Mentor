@@ -165,6 +165,14 @@ const AlertsPageAuth = () => {
       return;
     }
     fetchAlerts();
+    // 2026-04-23: add 60s refresh so alerts arrive without a full reload.
+    // Keeps using the existing fetchAlerts path — no architecture change,
+    // no new endpoint. Cleared on unmount or auth-state change.
+    const pollId = setInterval(() => {
+      fetchAlerts();
+    }, 60_000);
+    return () => clearInterval(pollId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.access_token, authState]);
 
 
@@ -183,7 +191,13 @@ const AlertsPageAuth = () => {
   const sevWeight = { critical: 4, high: 3, moderate: 2, medium: 2, info: 1, low: 1 };
 
   const filtered = alerts
-    .filter(a => filter === 'all' || a.severity === filter || (filter === 'resolved' && (a.severity === 'info' || a.severity === 'low')))
+    // Watching = moderate + medium (both map to the same visual tier).
+    // Resolved uses info + low as proxy until the server exposes a proper
+    // resolved state. Filter now correctly covers both.
+    .filter(a => filter === 'all'
+      || a.severity === filter
+      || (filter === 'moderate' && (a.severity === 'moderate' || a.severity === 'medium'))
+      || (filter === 'resolved' && (a.severity === 'info' || a.severity === 'low')))
     .filter(a => isInRange(a.created_at))
     .filter(a => {
       if (!searchQuery.trim()) return true;

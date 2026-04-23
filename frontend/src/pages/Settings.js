@@ -546,6 +546,22 @@ const Settings = () => {
     } finally { setSyncing(false); }
   };
 
+  // Resync account fields when the user becomes available (user is null on
+  // first render — useState initializer above captures that null, leaving
+  // the Full name / Company inputs empty for the user's entire session).
+  useEffect(() => {
+    if (!user) return;
+    setAccountData({
+      name: user?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
+      email: user?.email || '',
+      company: user?.company_name || '',
+    });
+    try {
+      const stashedTz = window.localStorage?.getItem('biqc.account.timezone');
+      if (stashedTz) setTimezone(stashedTz);
+    } catch {}
+  }, [user?.id, user?.full_name, user?.company_name, user?.email]);
+
   useEffect(() => {
     fetchProfile();
     fetchCalibrationStatus();
@@ -583,20 +599,25 @@ const Settings = () => {
     finally { setNotifLoading(false); }
   };
 
-  const saveNotifications = async (updated) => {
+  const saveNotifications = async (updated, previous) => {
     setNotifSaving(true);
     try {
       await apiClient.put('/settings/notifications', updated);
       setNotifications(updated);
       toast.success('Notification preferences saved');
-    } catch { toast.error('Failed to save notifications'); }
+    } catch {
+      // Revert optimistic toggle so UI state stays honest.
+      if (previous) setNotifications(previous);
+      toast.error('Failed to save notifications');
+    }
     finally { setNotifSaving(false); }
   };
 
   const toggleNotification = (key) => {
+    const previous = notifications;
     const updated = { ...notifications, [key]: !notifications[key] };
     setNotifications(updated);
-    saveNotifications(updated);
+    saveNotifications(updated, previous);
   };
 
   // Fetch signal thresholds from API
@@ -610,10 +631,14 @@ const Settings = () => {
     finally { setThreshLoading(false); }
   };
 
-  const saveThresholds = async () => {
+  const saveThresholds = async (payload) => {
     setThreshSaving(true);
     try {
-      await apiClient.put('/settings/thresholds', thresholds);
+      // Accept an explicit payload so callers that just setState don't have
+      // to wait for React to flush before PUTting (previous bug: reset
+      // defaults raced and PUT the pre-reset values).
+      const body = payload || thresholds;
+      await apiClient.put('/settings/thresholds', body);
       toast.success('Signal thresholds saved');
     } catch { toast.error('Failed to save thresholds'); }
     finally { setThreshSaving(false); }
@@ -628,7 +653,7 @@ const Settings = () => {
       threshold_invoice_aging_pct: 15,
     };
     setThresholds(defaults);
-    saveThresholds();
+    saveThresholds(defaults);
   };
 
   // Danger zone handlers
