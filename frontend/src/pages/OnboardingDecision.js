@@ -1,19 +1,12 @@
-import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
+import useForceLightTheme from '../hooks/useForceLightTheme';
 
 const OnboardingDecision = () => {
+  // P0 2026-04-23 (Andreas CTO): signup/onboarding/calibration path MUST be
+  // light theme. Was previously forcing dark — direct regression.
+  useForceLightTheme();
   const navigate = useNavigate();
-
-  /* Activate dark token palette while this page is mounted */
-  useEffect(() => {
-    const prev = document.documentElement.getAttribute('data-theme');
-    document.documentElement.setAttribute('data-theme', 'dark');
-    return () => {
-      if (prev) document.documentElement.setAttribute('data-theme', prev);
-      else document.documentElement.removeAttribute('data-theme');
-    };
-  }, []);
 
   const handleConnectInbox = () => {
     sessionStorage.removeItem('onboarding_deferred');

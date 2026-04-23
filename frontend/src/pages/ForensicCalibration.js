@@ -5,6 +5,7 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { isPrivilegedUser } from '../lib/privilegedUser';
 import { resolveTier, hasAccess } from '../lib/tierResolver';
 import { apiClient } from '../lib/api';
+import useForceLightTheme from '../hooks/useForceLightTheme';
 import {
   ArrowRight, CheckCircle2, Lock, Globe, Users, TrendingUp,
   MapPin, Star, Monitor, Home, BarChart3, RefreshCw, FileText,
@@ -998,6 +999,8 @@ function ScanErrorPanel({ error, url, onRetry, onBack }) {
 /*  Main Page Component                            */
 /* ────────────────────────────────────────────── */
 const ForensicCalibration = () => {
+  // P0 2026-04-23 (Andreas CTO): calibration path is always light theme.
+  useForceLightTheme();
   const { user } = useSupabaseAuth();
   const navigate = useNavigate();
 

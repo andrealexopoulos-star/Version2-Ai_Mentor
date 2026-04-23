@@ -38,32 +38,47 @@ const AuthCallbackSupabase = () => {
         Authorization: `Bearer ${session.access_token}`,
       };
 
-      // 2026-04-20 OAuth-bypass fix: before any in-app routing, verify the
-      // user actually has a Stripe subscription. OAuth signup (Continue
-      // with Google/Microsoft) never went through the trial flow, so users
-      // landed on /advisor with zero payment collected. Check /auth/me
-      // and redirect to /complete-signup for card capture when the
-      // subscription isn't active/trialing. Superadmins are exempt so
-      // internal testing isn't blocked.
+      // ─── P0 2026-04-23 billing hard-gate (Andreas CTO directive) ─────
+      // Revenue risk: Gmail OAuth user reached /onboarding-decision with
+      // subscription_status=null AND stripe_customer_id=null. The previous
+      // gate (subscription_status only) + fail-OPEN on /auth/me errors let
+      // card-less users into the app.
+      //
+      // New contract:
+      //   - Hard truth field: stripe_customer_id. If null, user has
+      //     definitively never been through /complete-signup.
+      //   - Fail CLOSED on any /auth/me error (non-2xx, exception, timeout).
+      //     /complete-signup is idempotent — safe to route there. Never
+      //     let a transient error drop a user into the app card-less.
+      //   - Only super_admin / superadmin / is_master_account bypasses.
       try {
         const backendUrl = getBackendUrl();
         const meRes = await fetch(`${backendUrl}/api/auth/supabase/me`, { headers });
-        if (meRes.ok) {
-          const meData = await meRes.json();
-          const u = meData?.user || {};
+        if (!meRes.ok) {
+          navigate('/complete-signup', { replace: true });
+          return;
+        }
+        const meData = await meRes.json();
+        const u = meData?.user || {};
+        const role = String(u.role || '').toLowerCase();
+        const isSuperadmin =
+          role === 'superadmin' || role === 'super_admin' || u.is_master_account === true;
+        if (!isSuperadmin) {
+          const hasStripeCustomer =
+            typeof u.stripe_customer_id === 'string' && u.stripe_customer_id.length > 0;
           const status = String(u.subscription_status || '').toLowerCase();
-          const role = String(u.role || '').toLowerCase();
-          const isSuperadmin = role === 'superadmin' || role === 'super_admin' || u.is_master_account === true;
           const hasTrialOrPaid = status === 'active' || status === 'trialing';
-          if (!hasTrialOrPaid && !isSuperadmin) {
+          if (!hasStripeCustomer || !hasTrialOrPaid) {
             navigate('/complete-signup', { replace: true });
             return;
           }
         }
       } catch (_e) {
-        // Fall through to the normal routing — don't block users behind a
-        // flaky /auth/me call. ProtectedRoute will still enforce the gate
-        // on subsequent navigations.
+        // FAIL CLOSED. Do not let a transient /auth/me error bypass the
+        // billing gate. /complete-signup is idempotent and routes back
+        // in if the user already has a sub.
+        navigate('/complete-signup', { replace: true });
+        return;
       }
 
       try {
