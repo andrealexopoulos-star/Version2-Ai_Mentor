@@ -14,6 +14,7 @@ import re
 import json
 import logging
 import os
+from enum import Enum
 from html import unescape
 from urllib.parse import urlparse, urljoin
 
@@ -253,7 +254,34 @@ def _normalize_edge_result(function_name: str, http_status: int, data: Any) -> D
     return payload
 
 
-async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_header: str = "") -> Dict[str, Any]:
+class EdgeCallMode(Enum):
+    """Incident H (2026-04-23) — explicit auth intent for edge-function calls.
+
+    BACKEND_ORCHESTRATED:
+      Backend is the caller on behalf of an already-authenticated user
+      (the backend has validated the user via get_current_user_from_request
+      upstream). Always uses service_role for outbound auth. REQUIRES
+      `user_id` or `tenant_id` to be present in the payload; a missing
+      identifier raises ValueError at contract time.
+
+    USER_PROXIED:
+      Backend acts as a transparent proxy for a user-initiated call.
+      Forwards the inbound user JWT so edge-side ownership / RLS checks
+      apply. Falls back to service_role only if no inbound header exists
+      (preserves pre-Incident-H behaviour for any future caller).
+    """
+
+    BACKEND_ORCHESTRATED = "backend_orchestrated"
+    USER_PROXIED = "user_proxied"
+
+
+async def _call_edge_function(
+    function_name: str,
+    payload: Dict[str, Any],
+    *,
+    mode: EdgeCallMode = EdgeCallMode.USER_PROXIED,
+    auth_header: str = "",
+) -> Dict[str, Any]:
     supabase_url = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
     service_role = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or "").strip()
     if not supabase_url or not service_role:
@@ -264,7 +292,18 @@ async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_
             "_http_status": 503,
         }
     endpoint = f"{supabase_url}/functions/v1/{function_name}"
-    outbound_auth = auth_header.strip() if auth_header else f"Bearer {service_role}"
+
+    # Incident H contract enforcement — explicit auth mode chooses outbound auth.
+    if mode is EdgeCallMode.BACKEND_ORCHESTRATED:
+        if not (payload.get("user_id") or payload.get("tenant_id")):
+            raise ValueError(
+                f"_call_edge_function({function_name}): BACKEND_ORCHESTRATED mode "
+                "requires user_id or tenant_id in payload"
+            )
+        outbound_auth = f"Bearer {service_role}"
+    else:
+        outbound_auth = auth_header.strip() if auth_header else f"Bearer {service_role}"
+
     headers = {
         "Authorization": outbound_auth,
         "apikey": service_role,
@@ -2014,7 +2053,9 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
     url = payload.url.strip()
     if not url.startswith("http"):
         url = f"https://{url}"
-    inbound_auth = request.headers.get("authorization") or ""
+    # Incident H: the 7 enrichment edge calls below use EdgeCallMode.BACKEND_ORCHESTRATED
+    # (service_role + backend-derived user_id). We deliberately do NOT forward the inbound
+    # user JWT — the backend's get_current_user_from_request above is the single trust gate.
 
     if payload.action == "scan":
         try:
@@ -2309,8 +2350,22 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if enrichment["social_handles"].get("twitter") and not enrichment["social_handles"].get("x"):
                 enrichment["social_handles"]["x"] = enrichment["social_handles"]["twitter"]
 
-            # Edge intelligence orchestration: check cache, then fire uncached tools in parallel.
-            async def _cached_edge(fn_name, payload_dict, auth):
+            # ═════════════════════════════════════════════════════════════════
+            # Incident H (2026-04-23) — backend-orchestrated edge fanout.
+            # All 7 enrichment edge calls MUST use EdgeCallMode.BACKEND_ORCHESTRATED
+            # with user_id explicitly in the payload. See CTO directive Sections
+            # 4-6: backend is the single trust authority. Do NOT forward the
+            # user JWT here — the 7×401 failure vector for fresh signups was
+            # caused by edge-side revalidation of user JWTs. User identity has
+            # already been validated upstream at line ~2058
+            # (get_current_user_from_request(request)), and user_id is derived
+            # from that validated JWT, never from body input.
+            #
+            # Contract (enforced in _call_edge_function):
+            #   payload MUST include user_id (or tenant_id for market-signal-scorer).
+            #   Missing identifier → ValueError at call time, not silent failure.
+            # ═════════════════════════════════════════════════════════════════
+            async def _cached_edge(fn_name, payload_dict):
                 hit = await get_edge_result(fn_name, scan_domain)
                 if isinstance(hit, dict):
                     return hit
@@ -2320,27 +2375,33 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         fn_name,
                         type(hit).__name__,
                     )
-                result = await _call_edge_function(fn_name, payload_dict, auth_header=auth)
+                result = await _call_edge_function(
+                    fn_name,
+                    payload_dict,
+                    mode=EdgeCallMode.BACKEND_ORCHESTRATED,
+                )
                 if isinstance(result, dict) and not _edge_result_failed(result):
                     asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
                 return result
 
             deep_recon, social_enrichment, competitor_monitor, market_analysis, market_scorer, browse_ai_reviews, semrush_intel = await asyncio.gather(
-                _cached_edge("deep-web-recon", {"user_id": user_id, "website": url}, inbound_auth),
-                _cached_edge("social-enrichment", {"website_url": url}, inbound_auth),
-                _cached_edge("competitor-monitor", {"user_id": user_id}, inbound_auth),
+                _cached_edge("deep-web-recon", {"user_id": user_id, "website": url}),
+                _cached_edge("social-enrichment", {"user_id": user_id, "website_url": url}),
+                _cached_edge("competitor-monitor", {"user_id": user_id}),
                 _cached_edge("market-analysis-ai", {
+                    "user_id": user_id,
                     "product_or_service": enrichment.get("main_products_services", ""),
                     "region": "Australia",
                     "specific_question": f"Analyse the competitive positioning and market opportunity for {enrichment.get('business_name', '')} in the {enrichment.get('industry', '')} sector",
-                }, inbound_auth),
-                _cached_edge("market-signal-scorer", {"tenant_id": user_id}, inbound_auth),
+                }),
+                _cached_edge("market-signal-scorer", {"tenant_id": user_id, "user_id": user_id}),
                 _cached_edge("browse-ai-reviews", {
+                    "user_id": user_id,
                     "business_name": enrichment.get("business_name", ""),
                     "domain": domain,
                     "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
-                }, inbound_auth),
-                _cached_edge("semrush-domain-intel", {"domain": domain, "database": "us"}, inbound_auth),
+                }),
+                _cached_edge("semrush-domain-intel", {"user_id": user_id, "domain": domain, "database": "us"}),
                 return_exceptions=True,
             )
             if isinstance(deep_recon, Exception): deep_recon = {"error": str(deep_recon)}
