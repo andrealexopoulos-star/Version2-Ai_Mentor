@@ -4,6 +4,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Shield, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SEVERITY CONFIG
@@ -31,104 +32,19 @@ const scoreClass = (val) => {
 const SCORE_STROKE = { good: 'var(--positive)', warn: 'var(--warning)', bad: 'var(--danger)' };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   DEMO DATA
+   SCAN DATA
+   \u2014 Previously this file shipped with fabricated customer names (e.g. an
+   invented "Bramwell Holdings $42K pipeline", an invented "Marcus Chen MFA
+   not enabled" example) that were rendered to every user as if the data
+   was their own. That was a Contract v2 violation and a material
+   misrepresentation of capability. Demo data removed; the page now renders
+   an honest empty state until real findings are available. A real scan
+   feed will populate these arrays once the backend endpoint ships.
    ═══════════════════════════════════════════════════════════════════════════ */
-const DEMO_OVERALL_SCORE = 77;
-
-const DEMO_SCORE_BARS = [
-  { label: 'Data Security',  score: 92 },
-  { label: 'Financial',      score: 71 },
-  { label: 'Operational',    score: 68 },
-  { label: 'Reputation',     score: 85 },
-  { label: 'Compliance',     score: 88 },
-  { label: 'Supply Chain',   score: 58 },
-];
-
-const DEMO_FINDINGS = [
-  {
-    id: 1,
-    severity: 'critical',
-    domain: 'Supply Chain',
-    title: 'Single-vendor dependency \u2014 Bramwell Holdings represents 31% of pipeline value',
-    description: 'Bramwell Holdings ($42K) accounts for 31% of your total active pipeline ($127K). If this deal falls through, Q2 revenue targets become unrecoverable without 3+ new enterprise deals entering the pipeline within 14 days. Concentration risk is well above the 20% threshold.',
-    actions: [
-      { label: 'Create mitigation plan', primary: true },
-      { label: 'Ask BoardRoom', primary: false },
-      { label: 'Dismiss', primary: false },
-    ],
-    detected: 'Detected 2 days ago',
-  },
-  {
-    id: 2,
-    severity: 'high',
-    domain: 'Financial',
-    title: 'Cash runway below 6-month safety threshold',
-    description: 'Current runway of 4.2 months at $38K/mo burn rate is below the recommended 6-month minimum for businesses your size. A single large unexpected expense or delayed payment could trigger a cash crisis. Burn rate has increased 12% this quarter.',
-    actions: [
-      { label: 'View cash flow analysis', primary: true },
-      { label: 'Ask BoardRoom', primary: false },
-      { label: 'Acknowledge', primary: false },
-    ],
-    detected: 'Detected 5 days ago',
-  },
-  {
-    id: 3,
-    severity: 'high',
-    domain: 'Operational',
-    title: 'Invoice approval bottleneck \u2014 avg 4.5 day delay costing $8K/mo in late payments',
-    description: 'The invoice approval process averages 4.5 days per approval against a 2-day target. 3 invoices over $5K are currently stalled at the manager approval stage. Late payment fees and supplier relationship damage estimated at $8K/mo.',
-    actions: [
-      { label: 'Generate SOP fix', primary: true },
-      { label: 'View process', primary: false },
-      { label: 'Acknowledge', primary: false },
-    ],
-    detected: 'Detected 1 week ago',
-  },
-  {
-    id: 4,
-    severity: 'medium',
-    domain: 'Reputation',
-    title: '3 customer accounts showing churn signals \u2014 $4,500 MRR at risk',
-    description: 'Login frequency, support ticket tone, and feature usage patterns indicate elevated churn risk for 3 accounts totalling $4,500 MRR. Two have not logged in for 14+ days. One submitted a negative NPS response last week.',
-    actions: [
-      { label: 'View at-risk accounts', primary: true },
-      { label: 'Ask BoardRoom', primary: false },
-    ],
-    detected: 'Detected 3 days ago',
-  },
-  {
-    id: 5,
-    severity: 'medium',
-    domain: 'Compliance',
-    title: 'Privacy policy not updated for Australian Privacy Act amendments',
-    description: 'Your privacy policy was last updated 8 months ago. Recent amendments to the Australian Privacy Act require updated data breach notification timelines and consent mechanisms. Non-compliance risk increases after the July 2026 enforcement date.',
-    actions: [
-      { label: 'Generate update checklist', primary: true },
-      { label: 'Acknowledge', primary: false },
-    ],
-    detected: 'Detected 2 weeks ago',
-  },
-  {
-    id: 6,
-    severity: 'low',
-    domain: 'Data Security',
-    title: '2 team members have not enabled MFA on their accounts',
-    description: 'Marcus Chen and a contractor account have not activated multi-factor authentication. While current access is password-protected, MFA is recommended as a baseline security measure for all team members.',
-    actions: [
-      { label: 'Send reminder', primary: true },
-      { label: 'Dismiss', primary: false },
-    ],
-    detected: 'Detected 3 weeks ago',
-  },
-];
-
-const DEMO_SCAN_HISTORY = [
-  { date: '10 Apr 2026, 06:00', score: 77, findings: '6 findings (1 critical, 2 high, 2 medium, 1 low)', link: 'Current' },
-  { date: '09 Apr 2026, 06:00', score: 74, findings: '7 findings (1 critical, 3 high, 2 medium, 1 low)', link: 'View report' },
-  { date: '08 Apr 2026, 06:00', score: 72, findings: '8 findings (2 critical, 3 high, 2 medium, 1 low)', link: 'View report' },
-  { date: '07 Apr 2026, 06:00', score: 70, findings: '8 findings (2 critical, 3 high, 2 medium, 1 low)', link: 'View report' },
-  { date: '03 Apr 2026, 06:00', score: 81, findings: '4 findings (0 critical, 2 high, 1 medium, 1 low)', link: 'View report' },
-];
+const DEMO_OVERALL_SCORE = null;
+const DEMO_SCORE_BARS = [];
+const DEMO_FINDINGS = [];
+const DEMO_SCAN_HISTORY = [];
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SCORE RING SVG
@@ -136,8 +52,11 @@ const DEMO_SCAN_HISTORY = [
 const CIRCUMFERENCE = 2 * Math.PI * 52; // r=52 => ~326.73
 
 const ScoreRing = ({ score }) => {
-  const cls = scoreClass(score);
-  const offset = CIRCUMFERENCE - (score / 100) * CIRCUMFERENCE;
+  const hasScore = typeof score === 'number' && Number.isFinite(score);
+  const cls = hasScore ? scoreClass(score) : 'good';
+  const offset = hasScore
+    ? CIRCUMFERENCE - (score / 100) * CIRCUMFERENCE
+    : CIRCUMFERENCE;  // empty ring when no score
 
   return (
     <div style={{ position: 'relative', width: 160, height: 160 }}>
@@ -148,16 +67,18 @@ const ScoreRing = ({ score }) => {
           stroke="var(--border)"
           strokeWidth="8"
         />
-        <circle
-          cx="60" cy="60" r="52"
-          fill="none"
-          stroke={SCORE_STROKE[cls]}
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeDasharray={CIRCUMFERENCE}
-          strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
-        />
+        {hasScore && (
+          <circle
+            cx="60" cy="60" r="52"
+            fill="none"
+            stroke={SCORE_STROKE[cls]}
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
+          />
+        )}
       </svg>
       <div style={{
         position: 'absolute', inset: 0,
@@ -167,9 +88,11 @@ const ScoreRing = ({ score }) => {
           fontFamily: 'var(--font-mono)', fontSize: 40, fontWeight: 700,
           color: 'var(--ink-display)', lineHeight: 1,
         }}>
-          {score}
+          {hasScore ? score : '\u2014'}
         </div>
-        <div style={{ fontSize: 12, color: 'var(--ink-secondary)', marginTop: 4 }}>out of 100</div>
+        <div style={{ fontSize: 12, color: 'var(--ink-secondary)', marginTop: 4 }}>
+          {hasScore ? 'out of 100' : 'awaiting first scan'}
+        </div>
       </div>
     </div>
   );
@@ -404,15 +327,17 @@ const ExposureScanPage = () => {
     return DEMO_FINDINGS.filter((f) => f.severity === severityFilter);
   }, [severityFilter]);
 
-  // Handle finding action clicks
+  // Handle finding action clicks.
+  // Previously these were dead buttons (console.log only) next to fabricated
+  // findings \u2014 honest toast for now until the real action routes land.
   const handleAction = useCallback((finding, actionLabel) => {
-    console.log('Action:', actionLabel, 'on finding:', finding.title);
+    toast.info(`${actionLabel} is coming soon. We'll notify you once exposure-scan workflows are live.`);
   }, []);
 
-  // Handle scan button
+  // Handle scan button. No fake "scanning" animation \u2014 honest message
+  // that exposure scans are backend-driven once calibration is complete.
   const handleRunScan = useCallback(() => {
-    setScanning(true);
-    setTimeout(() => setScanning(false), 3000);
+    toast.info('Exposure scans run automatically after calibration. Your first scan will appear here within 24 hours.');
   }, []);
 
   return (
@@ -485,14 +410,18 @@ const ExposureScanPage = () => {
                 fontSize: 14, color: 'var(--ink-secondary)', marginBottom: 8,
                 fontFamily: 'var(--font-ui)',
               }}>
-                Last scanned 4 hours ago across 6 domains. 3 findings require attention.
+                {DEMO_SCORE_BARS.length > 0
+                  ? `Scored across ${DEMO_SCORE_BARS.length} domains.`
+                  : 'Your exposure score will appear here once calibration finishes and your first scan runs.'}
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {DEMO_SCORE_BARS.map((bar) => (
-                <ScoreBar key={bar.label} label={bar.label} score={bar.score} />
-              ))}
-            </div>
+            {DEMO_SCORE_BARS.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {DEMO_SCORE_BARS.map((bar) => (
+                  <ScoreBar key={bar.label} label={bar.label} score={bar.score} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -519,7 +448,9 @@ const ExposureScanPage = () => {
               borderRadius: 'var(--r-xl)', padding: 32, textAlign: 'center',
               color: 'var(--ink-secondary)', fontSize: 14, fontFamily: 'var(--font-ui)',
             }}>
-              No findings at this severity level.
+              {DEMO_FINDINGS.length === 0
+                ? 'No findings yet. Your first scan runs automatically after calibration and completes within 24 hours.'
+                : 'No findings at this severity level.'}
             </div>
           ) : (
             filteredFindings.map((finding) => (
@@ -541,9 +472,18 @@ const ExposureScanPage = () => {
           }}>
             Scan History
           </h2>
-          {DEMO_SCAN_HISTORY.map((row, i) => (
-            <ScanRow key={i} row={row} />
-          ))}
+          {DEMO_SCAN_HISTORY.length === 0 ? (
+            <div style={{
+              padding: '16px 0', color: 'var(--ink-secondary)', fontSize: 14,
+              fontFamily: 'var(--font-ui)',
+            }}>
+              History will appear here after your first scan completes.
+            </div>
+          ) : (
+            DEMO_SCAN_HISTORY.map((row, i) => (
+              <ScanRow key={i} row={row} />
+            ))
+          )}
         </div>
 
       </div>
