@@ -266,7 +266,12 @@ const PublicRoute = ({ children }) => {
   if (!user && !session && recentLoginTs && Date.now() - recentLoginTs < 20000) return <LoadingScreen />;
   const isAuthenticated = user || session;
   if (inTrialSignup && location.pathname === '/register-supabase') return children;
-  if (isAuthenticated && authState === AUTH_STATE.NEEDS_CALIBRATION) return <Navigate to="/calibration" replace />;
+  // 2026-04-23: route NEEDS_CALIBRATION users through /onboarding-decision first
+  // so new signups see the welcome cards + 3 onboarding-path picker before
+  // landing on calibration. Returning users mid-calibration see the same page
+  // and can click "Start calibration" to resume (one extra click, vs the welcome
+  // flow being skipped entirely for brand-new users).
+  if (isAuthenticated && authState === AUTH_STATE.NEEDS_CALIBRATION) return <Navigate to="/onboarding-decision" replace />;
   if (isAuthenticated) return <Navigate to="/advisor" replace />;
   return children;
 };

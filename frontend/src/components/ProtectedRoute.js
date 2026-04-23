@@ -236,7 +236,10 @@ export default function ProtectedRoute({ children, adminOnly }) {
     if (allowedPaths.some(p => location.pathname.startsWith(p))) {
       return children;
     }
-    return <Navigate to="/calibration" replace />;
+    // 2026-04-23: send NEEDS_CALIBRATION users to the /onboarding-decision
+    // welcome page instead of jumping straight to /calibration — see App.js:269
+    // rationale.
+    return <Navigate to="/onboarding-decision" replace />;
   }
 
   // READY or has session → enforce gates
