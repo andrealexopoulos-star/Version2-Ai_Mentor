@@ -440,14 +440,26 @@ const MarketPage = () => {
                 <RefreshCw className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
               </button>
               {canRecalibrate && (
-                <button
-                  onClick={() => setShowRecalibrateModal(true)}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-                  style={{ background: 'var(--info-wash)', color: 'var(--info)', border: '1px solid var(--info)' }}
-                  data-testid="recalibrate-btn"
-                >
-                  <RefreshCw className="w-3 h-3" /> Recalibrate
-                </button>
+                <>
+                  <button
+                    onClick={() => navigate('/market/calibration')}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
+                    style={{ background: 'var(--lava-wash)', color: 'var(--lava)', border: '1px solid var(--lava)' }}
+                    data-testid="rescan-btn"
+                    title="Re-run the live scan on your current website"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Re-scan
+                  </button>
+                  <button
+                    onClick={() => setShowRecalibrateModal(true)}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
+                    style={{ background: 'var(--info-wash)', color: 'var(--info)', border: '1px solid var(--info)' }}
+                    data-testid="recalibrate-btn"
+                    title="Request a deep recalibration consultation with our team"
+                  >
+                    Recalibrate
+                  </button>
+                </>
               )}
             </div>
           </div>

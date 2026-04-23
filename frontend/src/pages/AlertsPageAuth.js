@@ -105,6 +105,7 @@ const AlertItem = ({ alert, onAction }) => {
 const AlertsPageAuth = () => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('severity'); // severity | date
@@ -121,13 +122,24 @@ const AlertsPageAuth = () => {
 
   const fetchAlerts = async () => {
     setLoading(true);
+    setFetchError(null);
     try {
-      const res = await apiClient.get('/intelligence/watchtower', { timeout: 10000 });
-      let events = res.data?.events || [];
+      let fetchedEventsCount = 0;
+      let anyEndpointSucceeded = false;
+      let events = [];
+      try {
+        const res = await apiClient.get('/intelligence/watchtower', { timeout: 10000 });
+        anyEndpointSucceeded = true;
+        events = res.data?.events || [];
+        fetchedEventsCount = events.length;
+      } catch (wtErr) {
+        console.warn('[alerts] /intelligence/watchtower failed:', wtErr?.message);
+      }
 
-      if (!events.length) {
+      if (!fetchedEventsCount) {
         try {
           const fallback = await apiClient.get('/notifications/alerts', { timeout: 10000 });
+          anyEndpointSucceeded = true;
           events = (fallback.data?.notifications || []).map((n, i) => ({
             id: n.id || i + 1,
             severity: n.severity || 'moderate',
@@ -137,7 +149,8 @@ const AlertsPageAuth = () => {
             created_at: n.timestamp || new Date().toISOString(),
             source: n.source || 'notifications',
           }));
-        } catch {
+        } catch (nfErr) {
+          console.warn('[alerts] /notifications/alerts fallback failed:', nfErr?.message);
           events = [];
         }
       }
@@ -154,8 +167,14 @@ const AlertsPageAuth = () => {
           actions: e.severity === 'critical' || e.severity === 'high' ? ['email', 'handoff'] : ['handoff'],
         }));
         setAlerts(mapped);
+      } else if (!anyEndpointSucceeded) {
+        // Both endpoints failed \u2014 surface a banner so the user can retry
+        // instead of seeing a blank page with no explanation (zero-401 rule).
+        setFetchError('Alert service temporarily unavailable.');
       }
-    } catch {} finally { setLoading(false); }
+    } catch (err) {
+      setFetchError(err?.message || 'Alert service temporarily unavailable.');
+    } finally { setLoading(false); }
   };
 
   useEffect(() => {
@@ -240,6 +259,13 @@ const AlertsPageAuth = () => {
             </p>
           </div>
         </div>
+
+        {fetchError && (
+          <div role="alert" className="px-4 py-3 text-sm flex items-center justify-between gap-3" style={{ background: 'var(--warning-wash)', border: '1px solid var(--warning)', borderRadius: 'var(--r-lg, 12px)', color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }} data-testid="alerts-fetch-error">
+            <span>Alert service temporarily unavailable \u2014 retrying automatically.</span>
+            <button onClick={fetchAlerts} className="text-[12px] px-3 py-1 rounded-full" style={{ background: 'var(--warning)', color: 'white', fontFamily: 'var(--font-mono)' }} data-testid="alerts-retry-btn">Retry now</button>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[

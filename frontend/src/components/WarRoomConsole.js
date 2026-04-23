@@ -329,15 +329,22 @@ export function WarRoomConsoleBody({
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: 'var(--canvas-app)', fontFamily: fontFamily.display }} aria-label="War room shell">
       <div className="flex flex-1 min-h-0">
-        <BoardroomConversationList
-          mode="war_room"
-          conversations={conversations}
-          activeConvId={currentConvId}
-          onSelect={handleSelectConversation}
-          onNewSession={handleNewSession}
-          collapsed={sidebarCollapsed}
-          onToggle={setSidebarCollapsed}
-        />
+        {/* Hide the embedded conversation sidebar when this console body is
+            rendered inside WarRoomPage's shell \u2014 that page has its own
+            alert sidebar on the left, and rendering both resulted in two
+            parallel sidebars (a regression). When the body renders
+            stand-alone (embeddedShell=false), keep the sidebar. */}
+        {!embeddedShell && (
+          <BoardroomConversationList
+            mode="war_room"
+            conversations={conversations}
+            activeConvId={currentConvId}
+            onSelect={handleSelectConversation}
+            onNewSession={handleNewSession}
+            collapsed={sidebarCollapsed}
+            onToggle={setSidebarCollapsed}
+          />
+        )}
 
         <div className="flex-1 flex flex-col min-w-0">
           <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
