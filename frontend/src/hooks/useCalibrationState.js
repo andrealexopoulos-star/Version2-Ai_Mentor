@@ -473,6 +473,8 @@ export const useCalibrationState = () => {
       // HTTP connection around the 60s mark during real scans, returning
       // 502 to the browser. Backend-side the scan completed + DB row
       // persisted; the frontend just never got the response back.
+      // [cache-bust-2026-04-23T10:15Z v2 — forces Docker buildkit to invalidate
+      //  the cached frontend layer so the 502-recovery code lands in prod.]
       //
       // Fallback: on ANY error from /enrichment/website (502, 504,
       // timeout, network), poll /enrichment/latest for up to 30s. If a
