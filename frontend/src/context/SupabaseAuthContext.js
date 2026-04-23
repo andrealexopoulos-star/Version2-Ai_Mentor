@@ -553,7 +553,12 @@ export const SupabaseAuthProvider = ({ children }) => {
             const contentType = calRes.headers.get('content-type') || '';
             if (calRes.ok && contentType.includes('application/json')) {
               const cal = await calRes.json();
-              return cal.status === 'COMPLETE';
+              // P0 2026-04-23: backend writes 'COMPLETED' from onboarding.py +
+              // calibration.py answer/brain paths; frontend legacy check was
+              // `=== 'COMPLETE'`. Mismatch routed completed users back to
+              // calibration (CMO Report loop). Accept both casings.
+              const normalized = String(cal.status || '').toUpperCase();
+              return normalized === 'COMPLETE' || normalized === 'COMPLETED';
             } else if (calRes.ok && !contentType.includes('application/json')) {
               console.warn(`[CALIBRATION ROUTING] Got HTML instead of JSON (content-type: ${contentType})`);
               return false;
@@ -569,7 +574,8 @@ export const SupabaseAuthProvider = ({ children }) => {
               }, 5000);
               if (retryRes.ok) {
                 const retryCal = await retryRes.json();
-                return retryCal.status === 'COMPLETE';
+                const normalized = String(retryCal.status || '').toUpperCase();
+                return normalized === 'COMPLETE' || normalized === 'COMPLETED';
               }
               return false; // fail-closed
             } else {

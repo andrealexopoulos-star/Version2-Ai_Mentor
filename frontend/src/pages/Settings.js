@@ -551,7 +551,7 @@ const Settings = () => {
   const fetchCalibrationStatus = async () => {
     try {
       const res = await apiClient.get('/calibration/status');
-      setCalibrationStatus(res.data?.status === 'COMPLETE' ? 'complete' : 'incomplete');
+      setCalibrationStatus(['COMPLETE', 'COMPLETED'].includes(String(res.data?.status || '').toUpperCase()) ? 'complete' : 'incomplete');
       // console.log('[Settings] Calibration status from DB:', res.data?.status);
     } catch (e) {
       console.error('[Settings] Failed to fetch calibration status:', e);
