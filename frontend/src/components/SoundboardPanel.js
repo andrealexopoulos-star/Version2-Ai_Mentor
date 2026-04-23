@@ -1156,7 +1156,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               >
                 B
               </div>
-              <p style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 8, fontFamily: fontFamily.display }}>Ask BIQc anything</p>
+              <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)', marginBottom: 8, fontFamily: fontFamily.display }}>Ask BIQc anything</p>
               <p style={{ fontSize: 13, color: 'var(--ink-muted, #737373)', textAlign: 'center', maxWidth: 340, fontFamily: fontFamily.body, marginBottom: 28 }}>
                 Ask about your pipeline, cash flow, risks, or what needs attention this week.
               </p>

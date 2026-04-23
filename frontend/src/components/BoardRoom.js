@@ -705,8 +705,11 @@ export function BoardRoomBody({
           <div className="flex items-end gap-2">
             <button
               className={`p-2 rounded-lg border ${focusRingClass}`}
-              style={{ borderColor: 'var(--border)', color: colors.textMuted }}
-              aria-label="Attach file"
+              style={{ borderColor: 'var(--border)', color: colors.textMuted, opacity: 0.45, cursor: 'not-allowed' }}
+              aria-label="Attach file (coming soon)"
+              title="File attachments coming soon \u2014 BoardRoom currently reads from connected integrations only."
+              disabled
+              onClick={(e) => e.preventDefault()}
               data-testid="boardroom-attach-btn"
             >
               <Paperclip className="w-4 h-4" />

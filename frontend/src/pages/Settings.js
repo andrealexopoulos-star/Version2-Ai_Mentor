@@ -463,10 +463,14 @@ const Settings = () => {
   const [calibrationStatus, setCalibrationStatus] = useState(null);
   const [resettingCalibration, setResettingCalibration] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  // Auth context stores these under full_name / company_name. The initial
+  // `useState` runs BEFORE `user` has populated on first render, so we also
+  // resync from `user` via useEffect below whenever it changes — otherwise
+  // the fields stay empty even for users who supplied them at signup.
   const [accountData, setAccountData] = useState({
-    name: user?.name || '',
+    name: user?.full_name || user?.user_metadata?.full_name || '',
     email: user?.email || '',
-    company: user?.company || '',
+    company: user?.company_name || '',
   });
   const [timezone, setTimezone] = useState('Australia/Sydney');
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -709,7 +713,33 @@ const Settings = () => {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
+      // Persist business-profile fields.
       await apiClient.put('/business-profile', profile);
+      // Persist Account-tab edits (Full name, Company, Timezone). Previously
+      // these were silently dropped because Save only shipped `profile` and
+      // accountData / timezone were unbound. RLS-guarded direct Supabase
+      // update mirrors the belt-and-suspenders pattern used in
+      // useCalibrationState.autoSave so the request never relies on a
+      // backend route not yet shipped for account edits.
+      if (session?.user?.id) {
+        try {
+          // `users` table has full_name + company_name but no timezone column.
+          // Persist timezone locally so it survives session + is available as
+          // the default on next visit (no schema change; zero architecture
+          // impact per forensic sprint rules).
+          try { window.localStorage.setItem('biqc.account.timezone', timezone); } catch {}
+          await supabase
+            .from('users')
+            .update({
+              full_name: accountData.name,
+              company_name: accountData.company,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', session.user.id);
+        } catch (accErr) {
+          console.warn('[settings] account update failed (non-blocking):', accErr);
+        }
+      }
       toast.success('Settings saved successfully!');
     } catch (error) {
       toast.error('Failed to save settings');

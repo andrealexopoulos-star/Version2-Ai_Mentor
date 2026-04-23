@@ -68,6 +68,7 @@ const CalendarView = () => {
   };
   useEffect(() => {
     const init = async () => {
+      let hasConnection = false;
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user?.id) {
@@ -79,9 +80,17 @@ const CalendarView = () => {
           const providers = (connections || []).map((row) => row.provider);
           if (providers.includes('outlook')) setCalendarProvider('outlook');
           else if (providers.includes('gmail')) setCalendarProvider('gmail');
+          hasConnection = providers.length > 0;
         }
       } catch {}
-      syncCalendar(true);
+      // Zero-401 rule: don't fire a sync (which backend returns 400 for) when
+      // user has no email connection. Show the empty-state banner immediately
+      // and surface "Connect email" instead of silently 400-flooding Sentry.
+      if (hasConnection) {
+        syncCalendar(true);
+      } else {
+        setLoading(false);
+      }
     };
     init();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
