@@ -1,6 +1,7 @@
 import ast
 import asyncio
 import os
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict
 import types
@@ -12,16 +13,23 @@ CALIBRATION_SOURCE = REPO_ROOT / "backend" / "routes" / "calibration.py"
 
 def _load_edge_helpers():
     tree = ast.parse(CALIBRATION_SOURCE.read_text(encoding="utf-8"))
-    wanted = {"_edge_result_failed", "_normalize_edge_result", "_call_edge_function"}
+    wanted_funcs = {"_edge_result_failed", "_normalize_edge_result", "_call_edge_function"}
+    # Incident H (2026-04-23): EdgeCallMode must be in scope when _call_edge_function
+    # is compiled — its signature default references EdgeCallMode.USER_PROXIED.
+    wanted_classes = {"EdgeCallMode"}
     selected = [
         node
         for node in tree.body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in wanted
+        if (
+            (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in wanted_funcs)
+            or (isinstance(node, ast.ClassDef) and node.name in wanted_classes)
+        )
     ]
     module = ast.Module(body=selected, type_ignores=[])
     namespace = {
         "Any": Any,
         "Dict": Dict,
+        "Enum": Enum,
         "os": os,
         "asyncio": asyncio,
         "httpx": types.SimpleNamespace(TimeoutException=TimeoutError),
