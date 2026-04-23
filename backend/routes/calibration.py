@@ -2657,30 +2657,55 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 edge_meta if 'edge_meta' in locals() else {"market_analysis_failed": True, "market_scorer_failed": True},
             )
 
-            seo_analysis = _build_seo_analysis(raw_html, page_text, page_title, meta_description)
+            # ─── Contract v2 / Step 3d (2026-04-23): SEO field separation ───
+            # Previously `_build_seo_analysis()` (HTML hygiene heuristic from
+            # title/H1/canonical/alt tags) wrote into `enrichment.seo_analysis`.
+            # When SEMrush failed, the hygiene score surfaced to the UI as if
+            # it were organic-search-performance data (outlook user saw 80/STRONG
+            # on a scan where SEMrush returned null).
+            #
+            # New shape (per BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2):
+            #   enrichment.seo_html_hygiene  ← HTML hygiene heuristic (always derivable)
+            #   enrichment.seo_analysis      ← SEMrush organic-search performance ONLY
+            #                                  (null/empty until SEMrush succeeds;
+            #                                  no fallback-to-hygiene score)
+            # Frontend renders TWO cards with clear labels. Neither blends into
+            # a single fabricated SEO score.
+            seo_html_hygiene = _build_seo_analysis(raw_html, page_text, page_title, meta_description)
             paid_media_analysis = _build_paid_media_analysis(combined_text)
             social_media_analysis = _build_social_media_analysis(enrichment.get("social_handles") or {}, combined_text)
-            swot = _build_swot(enrichment, seo_analysis, social_media_analysis, paid_media_analysis)
+            # SWOT / priority-action synthesis still reads hygiene as ONE signal
+            # among many — it's legitimate input, just not a standalone SEO score.
+            swot = _build_swot(enrichment, seo_html_hygiene, social_media_analysis, paid_media_analysis)
             competitor_swot = _build_competitor_swot(
                 enrichment.get("competitors") or [],
                 enrichment.get("target_market") or "",
                 enrichment.get("unique_value_proposition") or "",
                 enrichment=enrichment,
             )
-            cmo_priority_actions = _build_cmo_priority_actions(swot, seo_analysis, paid_media_analysis, social_media_analysis)
+            cmo_priority_actions = _build_cmo_priority_actions(swot, seo_html_hygiene, paid_media_analysis, social_media_analysis)
 
             # Deterministic baseline to guarantee rich CMO output even if AI returns sparse payloads.
-            if not isinstance(enrichment.get("seo_analysis"), dict) or not enrichment.get("seo_analysis"):
-                enrichment["seo_analysis"] = seo_analysis
+            # IMPORTANT: `seo_html_hygiene` is a separate field — it is always derivable from
+            # the scraped HTML and never depends on a supplier. `seo_analysis` below stays
+            # empty until SEMrush fills it in the merge block.
+            if not isinstance(enrichment.get("seo_html_hygiene"), dict) or not enrichment.get("seo_html_hygiene"):
+                enrichment["seo_html_hygiene"] = seo_html_hygiene
+            # Do NOT populate seo_analysis from hygiene. It is left empty here on
+            # purpose; the SEMrush merge block below is the only writer.
+            enrichment.setdefault("seo_analysis", {})
             if not isinstance(enrichment.get("paid_media_analysis"), dict) or not enrichment.get("paid_media_analysis"):
                 enrichment["paid_media_analysis"] = paid_media_analysis
             if not isinstance(enrichment.get("social_media_analysis"), dict) or not enrichment.get("social_media_analysis"):
                 enrichment["social_media_analysis"] = social_media_analysis
             if not isinstance(enrichment.get("website_health"), dict) or not enrichment.get("website_health"):
+                # website_health is legitimately derived from HTML hygiene + trust signals
+                # + social footprint. This is NOT organic SEO performance; it is on-page
+                # site-health scoring. Named accordingly.
                 enrichment["website_health"] = {
-                    "score": round((seo_analysis.get("score", 0) * 0.5) + (15 * min(1, len(enrichment.get("trust_signals") or []))) + (10 * min(1, len(enrichment.get("social_handles") or {})))),
-                    "status": "strong" if seo_analysis.get("score", 0) >= 75 else "moderate" if seo_analysis.get("score", 0) >= 45 else "weak",
-                    "summary": "Website condition assessed from technical SEO, trust signals, and social footprint.",
+                    "score": round((seo_html_hygiene.get("score", 0) * 0.5) + (15 * min(1, len(enrichment.get("trust_signals") or []))) + (10 * min(1, len(enrichment.get("social_handles") or {})))),
+                    "status": "strong" if seo_html_hygiene.get("score", 0) >= 75 else "moderate" if seo_html_hygiene.get("score", 0) >= 45 else "weak",
+                    "summary": "Website condition assessed from on-page hygiene, trust signals, and social footprint.",
                 }
             if not isinstance(enrichment.get("swot"), dict) or not enrichment.get("swot"):
                 enrichment["swot"] = swot
@@ -2696,30 +2721,37 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 )
 
             if isinstance(semrush_intel, dict) and semrush_intel.get("ok"):
+                # Contract v2 / Step 3d: seo_analysis is SEMrush-derived only.
+                # No fallback to HTML-hygiene score. Hygiene lives in
+                # `seo_html_hygiene` separately.
                 sr_seo = semrush_intel.get("seo_analysis") or {}
                 if sr_seo.get("organic_keywords"):
                     enrichment["seo_analysis"] = {
-                        **enrichment.get("seo_analysis", {}),
                         "semrush_rank": sr_seo.get("semrush_rank"),
                         "organic_keywords": sr_seo.get("organic_keywords"),
                         "organic_traffic": sr_seo.get("organic_traffic"),
                         "organic_cost_usd": sr_seo.get("organic_cost_usd"),
                         "featured_snippets": sr_seo.get("featured_snippets"),
                         "top_organic_keywords": sr_seo.get("top_organic_keywords", [])[:10],
-                        "score": sr_seo.get("score") or enrichment.get("seo_analysis", {}).get("score"),
-                        "status": sr_seo.get("status") or enrichment.get("seo_analysis", {}).get("status"),
+                        # Only SEMrush-derived scores. Null when SEMrush has null.
+                        "score": sr_seo.get("score"),
+                        "status": sr_seo.get("status"),
                         "source": "semrush",
                     }
                 sr_paid = semrush_intel.get("paid_media_analysis") or {}
                 if sr_paid.get("adwords_keywords") is not None:
+                    # paid_media_analysis is now also SEMrush-derived only when SEMrush ran.
+                    # The deterministic baseline from _build_paid_media_analysis() stays as the
+                    # fallback only when SEMrush did NOT run (outer `if semrush_intel.ok` guard),
+                    # keeping prior behavior for the no-supplier case without fabricating an
+                    # SEMrush-style score.
                     enrichment["paid_media_analysis"] = {
-                        **enrichment.get("paid_media_analysis", {}),
                         "adwords_keywords": sr_paid.get("adwords_keywords"),
                         "adwords_traffic": sr_paid.get("adwords_traffic"),
                         "adwords_cost_usd": sr_paid.get("adwords_cost_usd"),
                         "top_paid_keywords": sr_paid.get("top_paid_keywords", [])[:10],
-                        "maturity": sr_paid.get("maturity") or enrichment.get("paid_media_analysis", {}).get("maturity"),
-                        "assessment": sr_paid.get("assessment") or enrichment.get("paid_media_analysis", {}).get("assessment"),
+                        "maturity": sr_paid.get("maturity"),
+                        "assessment": sr_paid.get("assessment"),
                         "source": "semrush",
                     }
                 sr_comp = semrush_intel.get("competitor_analysis") or {}
