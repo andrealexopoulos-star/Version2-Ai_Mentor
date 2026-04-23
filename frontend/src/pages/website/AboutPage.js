@@ -331,7 +331,7 @@ export default function AboutPage() {
               <MissionCard
                 icon={<Users size={22} strokeWidth={2} />}
                 title="Built for SMBs"
-                description="Enterprise-grade intelligence, sized for businesses that don't have a data team. Starting from $0."
+                description="Enterprise-grade intelligence, sized for businesses that don't have a data team. 14-day free trial on every paid plan."
                 stagger="0.1s"
               />
               <MissionCard
@@ -431,7 +431,7 @@ export default function AboutPage() {
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
               <Link
-                to="/register"
+                to="/register-supabase"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
