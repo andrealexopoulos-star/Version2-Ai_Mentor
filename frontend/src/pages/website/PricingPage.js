@@ -53,7 +53,7 @@ const PLANS = [
     desc: 'Everything in Growth, plus enterprise-grade intelligence tools.',
     includesLabel: 'Everything in Growth, plus',
     features: [
-      'War Room (multi-model AI: GPT + Claude + Gemini)',
+      'War Room (multi-model AI)',
       'Risk Intelligence',
       'Compliance Centre',
       'Analysis Suite',
@@ -81,7 +81,7 @@ const PLANS = [
     desc: 'Everything in Pro, plus premium AI models and team access.',
     includesLabel: 'Everything in Pro, plus',
     features: [
-      'Access to frontier models from OpenAI, Anthropic, and Google',
+      'Access to frontier reasoning models',
       '15M input + 6M output tokens/month',
       'Advanced risk & compliance modules',
       'Priority model routing',
@@ -116,15 +116,20 @@ const PLANS = [
   },
 ];
 
-/* ─── COMPARISON TABLE DATA ─── */
+/* ─── COMPARISON TABLE DATA ─────────────────────────────────────────
+   Previously this table had a phantom "Free" column (no free plan
+   exists; comment at top of file notes removal 2026-04-19) and was
+   missing the Business tier entirely. Rebuilt as 4 real tiers:
+   Growth / Pro / Business / Enterprise.
+   Row shape is [feature, growth, pro, business, enterprise]. */
 const COMPARE_GROUPS = [
   {
     label: 'AI & Intelligence',
     rows: [
       ['AI Business Advisor', true, true, true, true],
       ['Ask BIQc AI Chat', true, true, true, true],
-      ['Board Room (single-model AI)', false, true, true, true],
-      ['War Room (multi-model AI)', false, false, true, true],
+      ['Board Room (single-model AI)', true, true, true, true],
+      ['War Room (multi-model AI)', false, true, true, true],
       ['Custom AI model training', false, false, false, true],
     ],
   },
@@ -134,17 +139,17 @@ const COMPARE_GROUPS = [
       ['Market Intelligence Brief', true, true, true, true],
       ['Competitive Benchmark', true, true, true, true],
       ['Business Profile & DNA', true, true, true, true],
-      ['Intelligence Baseline', false, false, true, true],
-      ['Intel Centre', false, false, true, true],
+      ['Intelligence Baseline', false, true, true, true],
+      ['Intel Centre', false, true, true, true],
     ],
   },
   {
     label: 'Revenue & Finance',
     rows: [
-      ['Revenue Analytics', false, true, true, true],
-      ['Billing Management', false, true, true, true],
-      ['Forensic Audit', false, true, true, true],
-      ['Exposure Scan', false, true, true, true],
+      ['Revenue Analytics', true, true, true, true],
+      ['Billing Management', true, true, true, true],
+      ['Forensic Audit', true, true, true, true],
+      ['Exposure Scan', true, true, true, true],
     ],
   },
   {
@@ -153,47 +158,47 @@ const COMPARE_GROUPS = [
       ['Actions & Alerts', true, true, true, true],
       ['Email Inbox & Calendar', true, true, true, true],
       ['Data Health Monitor', true, true, true, true],
-      ['Operations Centre', false, true, true, true],
-      ['SOP Generator', false, true, true, true],
-      ['Decision Tracker', false, true, true, true],
-      ['Operator Dashboard', false, false, true, true],
-      ['Ops Advisory', false, false, true, true],
+      ['Operations Centre', true, true, true, true],
+      ['SOP Generator', true, true, true, true],
+      ['Decision Tracker', true, true, true, true],
+      ['Operator Dashboard', false, true, true, true],
+      ['Ops Advisory', false, true, true, true],
     ],
   },
   {
     label: 'Marketing',
     rows: [
-      ['Marketing Intelligence', false, true, true, true],
-      ['Marketing Automation', false, true, true, true],
-      ['Market Analysis', false, false, true, true],
+      ['Marketing Intelligence', true, true, true, true],
+      ['Marketing Automation', true, true, true, true],
+      ['Market Analysis', false, true, true, true],
     ],
   },
   {
     label: 'Risk & Compliance',
     rows: [
-      ['Risk Intelligence', false, false, true, true],
-      ['Compliance Centre', false, false, true, true],
-      ['Watchtower', false, false, true, true],
-      ['Audit Log', false, false, true, true],
+      ['Risk Intelligence', false, true, true, true],
+      ['Compliance Centre', false, true, true, true],
+      ['Watchtower', false, true, true, true],
+      ['Audit Log', false, true, true, true],
     ],
   },
   {
     label: 'Reporting & Data',
     rows: [
-      ['Reports Library', false, true, true, true],
-      ['Analysis Suite', false, false, true, true],
-      ['Data Centre', false, false, true, true],
-      ['Document Library', false, false, true, true],
+      ['Reports Library', true, true, true, true],
+      ['Analysis Suite', false, true, true, true],
+      ['Data Centre', false, true, true, true],
+      ['Document Library', false, true, true, true],
     ],
   },
   {
     label: 'Integrations & Support',
     rows: [
-      ['Integrations', 'Up to 2', 'Up to 5', 'Unlimited', 'Unlimited + custom'],
+      ['Integrations', 'Up to 5', 'Unlimited', 'Up to 15', 'Unlimited + custom'],
       ['SSO & advanced security', false, false, false, true],
       ['SLA guarantees', false, false, false, true],
       ['Dedicated success manager', false, false, false, true],
-      ['Multi-seat team access', false, false, false, true],
+      ['Multi-seat team access', false, false, true, true],
       ['Priority support', false, false, false, true],
     ],
   },
@@ -207,19 +212,19 @@ const FAQS = [
   },
   {
     q: 'Can I cancel my subscription at any time?',
-    a: "Yes, absolutely. There are no lock-in contracts. You can cancel or downgrade your plan at any time from your account settings. If you cancel, you'll retain access to your current plan until the end of your billing period, then automatically move to the Free plan.",
+    a: "Yes. There are no lock-in contracts. You can cancel or downgrade at any time from Settings \u2192 Billing. On cancellation you keep access to your current plan until the end of the billing period; after that billing stops and your account becomes read-only. Your data is retained for 30 days in case you want to reactivate, then purged. There is no free tier to fall back to.",
   },
   {
     q: 'Where is my data stored and is it secure?',
-    a: 'All data is hosted in Australia on enterprise-grade infrastructure. We use end-to-end encryption for data in transit and at rest, and follow SOC 2 security practices. Your data is never shared with third parties or used to train AI models. You own your data, always.',
+    a: 'All data is hosted in Australian data centres on enterprise-grade infrastructure. We use end-to-end encryption for data in transit and at rest. Your data is never shared with third parties or used to train AI models. You own your data, always.',
   },
   {
     q: 'Which integrations are supported?',
-    a: 'BIQc integrates with Xero, MYOB, HubSpot, Salesforce, Outlook, Gmail, ServiceM8, Tradify, and Deputy out of the box. Enterprise customers can request custom integrations via our Merge.dev-powered integration layer. New integrations are added regularly based on customer feedback.',
+    a: 'BIQc connects to the major Australian accounting, CRM, email, calendar, and workforce platforms out of the box. Enterprise customers can request additional custom connectors. New integrations are added based on customer demand \u2014 see the full list on our integrations page.',
   },
   {
     q: 'What security certifications do you have?',
-    a: 'BIQc follows SOC 2 Type II security practices and complies with the Australian Privacy Act 1988. All data is encrypted using AES-256 at rest and TLS 1.3 in transit. We conduct regular penetration testing and security audits. Enterprise plans include additional security features like SSO, IP whitelisting, and dedicated security reviews.',
+    a: 'BIQc operates security controls designed to align with SOC 2 Type II; formal certification is in progress. We comply with the Australian Privacy Act 1988. Data is encrypted using AES-256 at rest and TLS 1.3 in transit. Enterprise plans include additional security features such as SSO, IP allow-listing, and bespoke security reviews.',
   },
 ];
 
@@ -363,9 +368,9 @@ const PricingPage = () => {
                 <thead style={{ position: 'sticky', top: 64, zIndex: 10 }}>
                   <tr style={{ background: '#FAFAFA' }}>
                     <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, minWidth: 140, background: '#FAFAFA' }}>Feature</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Free</th>
                     <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Growth</th>
                     <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Pro</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Business</th>
                     <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)', fontFamily: fontFamily.body, background: '#FAFAFA' }}>Enterprise</th>
                   </tr>
                 </thead>
