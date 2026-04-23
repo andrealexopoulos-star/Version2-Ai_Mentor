@@ -2770,6 +2770,37 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     existing = enrichment.get("competitors") or []
                     merged = list(dict.fromkeys(existing + sr_comp_names))
                     enrichment["competitors"] = merged[:10]
+
+                # ─── Contract v2 / Step 3e (2026-04-23) ──────────────────────
+                # Business-Plan-unlocked SEMrush fields. Populated only when
+                # the supplier returns real data; never fabricated.
+                #
+                # paid_competitor_analysis — who else is bidding on the same
+                # paid-search space. Completes the competitive picture
+                # (previously only organic competitors were surfaced).
+                sr_paid_comp = semrush_intel.get("paid_competitor_analysis") or {}
+                if sr_paid_comp.get("paid_competitors"):
+                    enrichment["paid_competitor_analysis"] = {
+                        "paid_competitors": sr_paid_comp.get("paid_competitors", [])[:10],
+                        "paid_competitor_count": sr_paid_comp.get("paid_competitor_count") or 0,
+                    }
+
+                # backlink_profile — domain authority + link footprint.
+                # Requires SEMrush Backlinks API add-on; when not in the
+                # plan, the edge function returns null and we leave the
+                # field absent (contract says empty ≠ success but we also
+                # don't fabricate). Sanitizer will mark as DATA_UNAVAILABLE.
+                sr_backlinks = semrush_intel.get("backlink_profile")
+                if isinstance(sr_backlinks, dict) and sr_backlinks.get("total_backlinks") is not None:
+                    enrichment["backlink_profile"] = {
+                        "total_backlinks": sr_backlinks.get("total_backlinks"),
+                        "referring_domains": sr_backlinks.get("referring_domains"),
+                        "referring_urls": sr_backlinks.get("referring_urls"),
+                        "referring_ips": sr_backlinks.get("referring_ips"),
+                        "referring_ip_class_c": sr_backlinks.get("referring_ip_class_c"),
+                        "authority_score": sr_backlinks.get("authority_score"),
+                    }
+
                 enrichment["semrush_data"] = semrush_intel
 
             seo_current = enrichment.get("seo_analysis") or {}

@@ -93,6 +93,8 @@ SECTION_UNCERTAINTY_MESSAGE: Mapping[str, str] = {
     "competitor_analysis": "Competitive landscape could not be reliably determined",
     "competitors": "Competitive landscape could not be reliably determined",
     "competitor_swot": "Competitive landscape could not be reliably determined",
+    "paid_competitor_analysis": "Paid competitor landscape unavailable for this scan",
+    "backlink_profile": "Domain authority + backlink data unavailable for this scan",
     "social_media_analysis": "Social media footprint data unavailable for this scan",
     "swot": "Insufficient market signal to assess strategic position",
     "market_position": "Market positioning data unavailable for this scan",
@@ -312,18 +314,6 @@ def _scrub_internal_keys(obj: Any) -> Any:
     return obj
 
 
-def scrub_response_for_external(response: Any) -> Any:
-    """Public helper for routes that build a custom response shape
-    (e.g. /intelligence/cmo-report) and need to strip internal keys at
-    any nesting depth before returning. Does NOT apply section-state
-    annotation logic (that's what sanitize_enrichment_for_external is for).
-
-    Use this when the endpoint's response shape differs from the raw
-    enrichment object but still embeds sub-objects from enrichment.
-    """
-    return _scrub_internal_keys(response)
-
-
 # ─── Per-section state derivation ─────────────────────────────────────────
 #
 # Each enrichment section has its own success criteria. A section's
@@ -351,6 +341,15 @@ SECTION_CRITERIA: Dict[str, Dict[str, Any]] = {
     "competitor_analysis": {
         "required": ("organic_competitors",),
         "edge_tools": ("semrush_domain_intel", "competitor_monitor"),
+    },
+    # Contract v2 / Step 3e: Business-Plan expansion sections.
+    "paid_competitor_analysis": {
+        "required": ("paid_competitors",),
+        "edge_tools": ("semrush_domain_intel",),
+    },
+    "backlink_profile": {
+        "required": ("referring_domains", "total_backlinks"),
+        "edge_tools": ("semrush_domain_intel",),
     },
     "competitors": {
         "required": ("__self__",),  # the field itself is a list
@@ -645,6 +644,5 @@ __all__ = [
     "sanitize_error_for_external",
     "sanitize_edge_passthrough",
     "sanitize_enrichment_for_external",
-    "scrub_response_for_external",
     "assert_no_banned_tokens",
 ]
