@@ -187,7 +187,7 @@ const IntegrationsPage = () => {
           </h1>
           <p className="text-base sm:text-lg leading-relaxed mx-auto"
             style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)', maxWidth: 560 }}>
-            BIQc integrates with your existing tools via Merge.dev &mdash; no custom setup required. One connection, every signal.
+            BIQc connects to your existing tools through a unified integration layer &mdash; no custom setup required. One connection, every signal.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-8 mt-8">
             <span className="text-[15px] font-semibold" style={{ color: 'var(--ink-display)' }}>40+ integrations</span>
@@ -241,17 +241,17 @@ const IntegrationsPage = () => {
             <div className="lg:col-span-3">
               <h3 className="text-2xl sm:text-[32px] font-bold leading-snug mb-3"
                 style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-display)' }}>
-                Powered by Merge.dev
+                One unified integration layer
               </h3>
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
-                BIQc partners with Merge.dev &mdash; the unified API for B2B integrations &mdash; so you never wait for a custom connector. Add a system, sync starts in under 60 seconds, and BIQc picks up signals on the next cycle. One OAuth handshake connects your entire stack.
+                BIQc uses a unified integration layer so you never wait for a custom connector. Add a system, sync starts in under 60 seconds, and BIQc picks up signals on the next cycle. One OAuth handshake connects your entire stack.
               </p>
             </div>
             <div className="lg:col-span-2 flex flex-row lg:flex-col gap-6 sm:gap-8">
               {[
                 { num: '40+', label: 'Connectors live' },
                 { num: '60s', label: 'Average sync handshake' },
-                { num: '99.97%', label: 'Sync uptime, last 90 days' },
+                { num: 'OAuth', label: 'Secure per-connector' },
               ].map((stat) => (
                 <div key={stat.label}>
                   <div className="text-[40px] font-bold leading-none"
