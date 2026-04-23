@@ -1,0 +1,64 @@
+name: Delete Supabase Edge Function (manual)
+
+# Manual one-shot to delete a named edge function from the Supabase runtime.
+# Only runs via workflow_dispatch (never on push). Built for Incident H
+# debug-edge-secrets cleanup but reusable for any future one-shot function
+# that needs explicit teardown.
+
+on:
+  workflow_dispatch:
+    inputs:
+      function_name:
+        description: "Edge function slug to delete (e.g. debug-edge-secrets)"
+        required: true
+        type: string
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Validate function name (allow only explicit safe list)
+        env:
+          FN_NAME: ${{ github.event.inputs.function_name }}
+        run: |
+          set -euo pipefail
+          # Refuse to delete anything that isn't a known one-shot debug function.
+          # Keeps this workflow a genuine scalpel, not a footgun.
+          case "$FN_NAME" in
+            debug-edge-secrets|debug-edge-secrets-temp)
+              echo "Proceeding with delete of $FN_NAME"
+              ;;
+            *)
+              echo "Refusing to delete '$FN_NAME' — only explicit debug-* one-shots allowed."
+              echo "Extend this workflow's allow-list if a new one-shot needs teardown."
+              exit 1
+              ;;
+          esac
+
+      - name: Setup Supabase CLI
+        run: |
+          set -euo pipefail
+          VERSION="v2.84.2"
+          ARCHIVE="supabase_linux_amd64.tar.gz"
+          curl -fL "https://github.com/supabase/cli/releases/download/${VERSION}/${ARCHIVE}" -o /tmp/supabase.tar.gz
+          tar -xzf /tmp/supabase.tar.gz -C /tmp
+          sudo mv /tmp/supabase /usr/local/bin/supabase || mv /tmp/supabase /usr/local/bin/supabase
+          supabase --version
+
+      - name: Delete function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF != '' && secrets.SUPABASE_PROJECT_REF || 'vwwandhoydemcybltoxz' }}
+          FN_NAME: ${{ github.event.inputs.function_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ] || [ -z "${SUPABASE_PROJECT_REF:-}" ]; then
+            echo "Missing SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF secrets."
+            exit 1
+          fi
+          echo "Deleting edge function: $FN_NAME"
+          supabase functions delete "$FN_NAME" --project-ref "$SUPABASE_PROJECT_REF"
+          echo "Delete complete."
