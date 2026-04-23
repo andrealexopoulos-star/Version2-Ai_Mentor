@@ -25,6 +25,7 @@ from scan_cache import (
 )
 from core.llm_router import llm_trinity_chat
 from core.helpers import serper_search, scrape_url_text
+from core.response_sanitizer import sanitize_enrichment_for_external
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, logger, cognitive_core, check_rate_limit,
@@ -2128,10 +2129,18 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 except Exception as cache_persist_err:
                     logger.error("[enrichment/website] cache HIT persistence failed: %s", cache_persist_err)
 
+                # Contract v2 / Step 3b (2026-04-23): sanitize cached enrichment
+                # before it leaves the backend. The cached object lives in
+                # Redis with its full internal shape (ai_errors, sources.edge_tools,
+                # HTTP codes, correlation ids). Frontend gets only the
+                # contract-shaped view: external state + customer-safe
+                # intelligence language, no supplier names, no internal codes.
+                _sanitized = sanitize_enrichment_for_external(cached)
                 return {
                     "status": "draft",
+                    "state": _sanitized["state"],
                     "url": url,
-                    "enrichment": cached,
+                    "enrichment": _sanitized["enrichment"],
                     "cached": True,
                     "message": "Cached scan result returned.",
                 }
@@ -2967,10 +2976,17 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
 
             asyncio.create_task(set_domain_scan(scan_domain, enrichment))
 
+            # Contract v2 / Step 3b: sanitize the fresh-scan enrichment before
+            # returning. Raw enrichment (with ai_errors, sources.edge_tools,
+            # _http_status, correlation) remains intact inside
+            # business_dna_enrichment for audit — only the response body is
+            # transformed to the contract shape.
+            _sanitized = sanitize_enrichment_for_external(enrichment)
             return {
                 "status": "draft",
+                "state": _sanitized["state"],
                 "url": url,
-                "enrichment": enrichment,
+                "enrichment": _sanitized["enrichment"],
                 "message": "Deep scan completed. Review and continue to calibration summary.",
             }
         except Exception as e:
@@ -3009,10 +3025,16 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "analysis_gaps": ["Deep scan partially unavailable on this run; showing baseline extraction."],
                 "sources": {"errors": [{"stage": "scan", "error": str(e)[:140]}]},
             }
+            # Contract v2 / Step 3b: sanitize the fallback enrichment too.
+            # The fallback path is triggered by an exception during the scan
+            # block — so ai_errors / failure shape is especially likely to
+            # be present. Sanitize before returning to avoid leaking.
+            _sanitized = sanitize_enrichment_for_external(fallback_enrichment)
             return {
                 "status": "draft",
+                "state": _sanitized["state"],
                 "url": url,
-                "enrichment": fallback_enrichment,
+                "enrichment": _sanitized["enrichment"],
                 "message": "Deep scan partially unavailable; baseline website extraction returned.",
             }
 

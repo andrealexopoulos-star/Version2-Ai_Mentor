@@ -291,7 +291,11 @@ _INTERNAL_KEYS: Tuple[str, ...] = (
     "_field_provenance",
     "_sources",
     "_identity_signals",
-    "raw_overview",  # SEMrush raw CSV row — leaks supplier shape
+    "raw_overview",      # SEMrush raw CSV row — leaks supplier shape
+    "source",            # sub-section provenance (e.g. "semrush", "perplexity") — supplier names
+    "source_fn",         # internal edge-function slug per field
+    "data_sources",      # internal list of edge-tool names
+    "deep_scan_sources", # nested internal provenance
 )
 
 
