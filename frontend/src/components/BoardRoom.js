@@ -254,7 +254,14 @@ export function BoardRoomBody({
         onConversationChange?.(conv.id);
         await refreshConversations();
       } catch (e) {
+        // Previously set diagError + returned, leaving activeDiagnosis
+        // truthy \u2014 user saw "Back to boardroom" button but no body,
+        // stuck in a dead state. Also reset activeDiagnosis + streaming
+        // card so the UI doesn't stay in a half-open state.
         setDiagError(e.message || 'Unable to create conversation');
+        setActiveDiagnosis(null);
+        onFocusAreaChange?.(null);
+        setStreamingCardVisible(false);
         return;
       }
     }
@@ -265,8 +272,12 @@ export function BoardRoomBody({
         content: `Run diagnosis for ${area.label}`,
         focus_area: area.id,
       });
-    } catch (_error) {
-      // Non-blocking; keep streaming flow alive.
+    } catch (persistErr) {
+      // Persisting the user turn failed; surface a console warning so
+      // ops can catch recurring DB failures instead of silently losing
+      // history. Streaming path continues so the user still gets an
+      // answer, but the thread will be lighter on next reload.
+      console.warn('[boardroom] user message persist failed:', persistErr);
     }
 
     let completeEvent = null;
@@ -315,8 +326,8 @@ export function BoardRoomBody({
           source_response: completeEvent,
           degraded: Boolean(completeEvent.degraded),
         });
-      } catch (_error) {
-        // Best-effort persistence.
+      } catch (persistErr) {
+        console.warn('[boardroom] advisor message persist failed:', persistErr);
       }
       await refreshConversations();
     }
