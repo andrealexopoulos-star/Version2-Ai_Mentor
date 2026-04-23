@@ -7,6 +7,8 @@ import os
 import requests
 import time
 
+import pytest
+
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 
 
@@ -24,45 +26,64 @@ def _get_with_retry(url, max_attempts=3, timeout=45):
     raise last_exc
 
 
+def _prod_state():
+    """Single prod /api/health probe used at module import.
+
+    Returns one of:
+      "healthy"   — 200 + status:"healthy". Gate stays strict.
+      "down"      — 5xx, timeout, connection refused. Fail-OPEN on the
+                    entire gate class so the remediation deploy can land.
+      "degraded"  — anything else. Fail-OPEN; log loudly.
+    """
+    try:
+        response = requests.get(f"{BASE_URL}/api/health", timeout=20)
+    except Exception:
+        return "down"
+    if response.status_code == 200:
+        try:
+            data = response.json()
+            if data.get("status") == "healthy":
+                return "healthy"
+        except Exception:
+            pass
+        return "degraded"
+    if response.status_code in (502, 503, 504):
+        return "down"
+    return "degraded"
+
+
+# 2026-04-23 P0 outage remediation (Andreas CTO):
+# The class below contains 5 smoke tests that each probe prod endpoints.
+# When prod is DOWN (5xx / unreachable), all 5 fail — blocking the exact
+# deploy that would FIX prod. Chicken-and-egg. Previous hotfix (#374)
+# patched only test_backend_health; the 4 others still blocked.
+#
+# Fix: single module-level prod-state probe + pytestmark.skipif skips
+# ALL tests in this module when prod != "healthy". This is the one
+# scenario where a pre-deploy gate SHOULD be non-strict — you don't
+# want the gate refusing to ship the remediation.
+#
+# Post-deploy verification (edge runtime smoke, migration parity,
+# calibration runtime smoke, frontend custom-domain binding) runs AFTER
+# the new image is live and MUST stay strict. Nothing in those steps
+# is relaxed by this file.
+_PROD_STATE = _prod_state()
+_SKIP_REASON = (
+    f"[deploy-gate] pre-deploy smoke fail-OPEN — prod state = '{_PROD_STATE}'. "
+    "The new deploy IS the remediation. Post-deploy verification remains strict."
+)
+pytestmark = pytest.mark.skipif(
+    _PROD_STATE != "healthy",
+    reason=_SKIP_REASON,
+)
+
+
 class TestDeployGateSmoke:
     def test_backend_health(self):
-        # 2026-04-23 gate-rewrite (Andreas P0): pre-deploy smoke must not
-        # refuse to ship when prod is DOWN — that's exactly when a deploy
-        # is needed. Interpret status codes:
-        #   200 healthy             → pass (normal case)
-        #   502 / 503 / 504         → Azure container is unreachable. That
-        #                             means the current image is broken or
-        #                             the app is cold-starting. A new deploy
-        #                             is the remediation. Fail-OPEN here
-        #                             so the new image can land.
-        #   any 4xx                 → application is up but misconfigured.
-        #                             Still fail-OPEN — deploying a fix is
-        #                             the remediation path.
-        #   Connection refused      → same class as 503 — fail-OPEN.
-        # The tests that MUST stay strict are the post-deploy verification
-        # steps further along in the workflow (edge smoke, migration parity,
-        # calibration runtime). Those run AFTER the new image is live.
-        try:
-            response = _get_with_retry(f"{BASE_URL}/api/health")
-        except Exception as exc:
-            print(f"[deploy-gate] pre-deploy /api/health unreachable ({exc}); "
-                  f"fail-OPEN to allow remediation deploy to proceed.")
-            return
-
-        if response.status_code == 200:
-            data = response.json()
-            assert data.get("status") == "healthy"
-            return
-
-        if response.status_code in (502, 503, 504):
-            print(f"[deploy-gate] pre-deploy /api/health returned {response.status_code} "
-                  f"(Azure container unreachable). Fail-OPEN — the new deploy IS the fix.")
-            return
-
-        # Anything else (401, 418, 500 with body, etc.) is suspicious but
-        # still shouldn't block a deploy. Log loudly, pass.
-        print(f"[deploy-gate] pre-deploy /api/health unexpected status "
-              f"{response.status_code}. Logging + fail-OPEN.")
+        response = _get_with_retry(f"{BASE_URL}/api/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert data.get("status") == "healthy"
 
     def test_api_root(self):
         response = _get_with_retry(f"{BASE_URL}/api/")
