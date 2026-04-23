@@ -362,6 +362,10 @@ const EmailInbox = () => {
       const response = await apiClient.post(`/email/suggest-reply/${emailId}`);
       setReplySuggestions(response.data);
     } catch (error) {
+      // Clear the transient UI so the reading pane doesn't get stuck
+      // highlighted with no modal content on failure.
+      setSelectedEmail(null);
+      setReplySuggestions(null);
       toast.error('Failed to generate reply suggestions');
     } finally {
       setLoadingReplies(false);

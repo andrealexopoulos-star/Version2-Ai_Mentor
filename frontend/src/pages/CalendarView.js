@@ -236,6 +236,22 @@ const CalendarView = () => {
 
   const createDraftEvent = async () => {
     if (!advisorDraft) return;
+    // Inline validation before we burn a Graph API call on invalid data.
+    // Previously the backend would reject and the toast was a cryptic
+    // "Failed to create follow-up". Honest validation + clear errors.
+    const title = (advisorDraft.title || '').trim();
+    if (!title) {
+      toast.error('Please enter a title for the follow-up event.');
+      return;
+    }
+    if (advisorDraft.startAt && advisorDraft.endAt) {
+      const s = new Date(advisorDraft.startAt);
+      const e = new Date(advisorDraft.endAt);
+      if (!Number.isNaN(s.getTime()) && !Number.isNaN(e.getTime()) && e <= s) {
+        toast.error('End time must be after start time.');
+        return;
+      }
+    }
     setDraftSaving(true);
     try {
       const response = await apiClient.post('/outlook/calendar/create', {

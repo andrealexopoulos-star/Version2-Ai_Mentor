@@ -185,23 +185,33 @@ const Advisor = () => {
   }, []);
 
   // Fetch activity timeline from notifications/alerts
+  // 2026-04-23: poll every 60s so the timeline stays fresh. Also coerce
+  // the response to an ARRAY before .slice \u2014 previously `|| res.data`
+  // could coerce an object into the slice target, silently mis-rendering.
   useEffect(() => {
     const controller = new AbortController();
+    let cancelled = false;
     const fetchActivity = async () => {
       try {
         const res = await apiClient.get('/notifications/alerts', { signal: controller.signal });
-        if (!controller.signal.aborted) {
-          const items = (res.data?.notifications || res.data || []).slice(0, 6);
+        if (!controller.signal.aborted && !cancelled) {
+          const raw = res.data?.notifications ?? (Array.isArray(res.data) ? res.data : []);
+          const items = (Array.isArray(raw) ? raw : []).slice(0, 6);
           setActivityItems(items);
         }
       } catch {
-        if (!controller.signal.aborted) setActivityItems([]);
+        if (!controller.signal.aborted && !cancelled) setActivityItems([]);
       } finally {
-        if (!controller.signal.aborted) setActivityLoading(false);
+        if (!controller.signal.aborted && !cancelled) setActivityLoading(false);
       }
     };
     fetchActivity();
-    return () => controller.abort();
+    const pollId = setInterval(fetchActivity, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(pollId);
+      controller.abort();
+    };
   }, []);
 
   // Detect intelligence thresholds using existing data
@@ -664,11 +674,17 @@ const Advisor = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {(() => {
             const pipeline = advisorData?.revenue_summary?.pipeline;
+            const pipelineNum = pipeline != null ? Number(pipeline) : null;
             const runway = snapshotData?.cognitive?.capital?.runway;
             const highPriorityThreads = executiveSurface?.snapshot?.high_priority_threads;
+            // Open signals: real number (not literal string '0'). Pipeline:
+            // guard against NaN when backend returns "2M" / non-numeric
+            // strings so we don't render $NaN. Each card prefers real data
+            // OR a useful "connect X" hint rather than "Generating..."
+            // forever when the endpoint is just empty.
             const kpis = [
-              { label: 'Open signals', value: watchtowerEvents.length || '0', hasData: true, color: 'var(--lava)', showDot: true },
-              { label: 'Pipeline at risk', value: pipeline != null ? `$${Number(pipeline).toLocaleString()}` : null, hasData: pipeline != null, color: 'var(--danger)', showDot: false, noDataHint: 'Connect CRM to see pipeline' },
+              { label: 'Open signals', value: String(watchtowerEvents.length || 0), hasData: watchtowerEvents.length > 0, color: 'var(--lava)', showDot: watchtowerEvents.length > 0, noDataHint: 'No active signals yet' },
+              { label: 'Pipeline at risk', value: pipelineNum != null && Number.isFinite(pipelineNum) ? `$${pipelineNum.toLocaleString()}` : null, hasData: pipelineNum != null && Number.isFinite(pipelineNum), color: 'var(--danger)', showDot: false, noDataHint: 'Connect CRM to see pipeline' },
               { label: 'Cash runway', value: runway != null ? String(runway) : null, valueSuffix: runway != null ? 'mo' : '', hasData: runway != null, color: 'var(--positive)', showDot: false, noDataHint: 'Connect accounting to see runway' },
               { label: 'Inbox decisions', value: highPriorityThreads != null ? String(highPriorityThreads) : emailStats.highPriority > 0 ? String(emailStats.highPriority) : null, hasData: highPriorityThreads != null || emailStats.highPriority > 0, color: 'var(--positive)', showDot: false, noDataHint: 'Connect inbox to see priorities' },
             ];
