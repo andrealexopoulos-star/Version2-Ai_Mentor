@@ -478,6 +478,82 @@ export const SupabaseAuthProvider = ({ children }) => {
     lastBootstrapUserId.current = null;
   }, [session]);
 
+  // Force-refresh auth routing state after calibration completes so the user
+  // can leave CMO report without a full page reload.
+  const refreshCalibrationRoutingState = useCallback(async () => {
+    try {
+      const activeSession = session || (await supabase.auth.getSession()).data.session;
+      const userId = activeSession?.user?.id || null;
+      const accessToken = activeSession?.access_token || '';
+      if (!userId || !accessToken) return false;
+
+      const calRes = await fetchWithTimeout(`${getBackendUrl()}/api/calibration/status`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json',
+        }
+      }, 5000);
+
+      let calibrationComplete = false;
+      if (calRes.ok) {
+        const contentType = calRes.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const cal = await calRes.json();
+          const normalized = String(cal.status || '').toUpperCase();
+          calibrationComplete = normalized === 'COMPLETE' || normalized === 'COMPLETED';
+        }
+      }
+
+      if (!calibrationComplete) {
+        lastBootstrapUserId.current = userId;
+        setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+        try {
+          sessionStorage.setItem(`biqc_auth_bootstrap_${userId}`, JSON.stringify({
+            state: AUTH_STATE.NEEDS_CALIBRATION,
+            onboarding: onboardingStatus || null,
+            ts: Date.now(),
+          }));
+        } catch {}
+        return false;
+      }
+
+      let obStatus = { completed: true };
+      try {
+        const obRes = await fetchWithTimeout(`${getBackendUrl()}/api/onboarding/status`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          }
+        }, 5000);
+        if (obRes.ok) {
+          const obData = await obRes.json();
+          obStatus = {
+            completed: obData.completed === true,
+            currentStep: obData.current_step || 0,
+            businessStage: obData.business_stage || null,
+          };
+        }
+      } catch {
+        // Fail-open: keep READY with a safe onboarding default.
+      }
+
+      setOnboardingStatus(obStatus);
+      setAuthState(AUTH_STATE.READY);
+      lastBootstrapUserId.current = userId;
+      try {
+        sessionStorage.setItem(`biqc_auth_bootstrap_${userId}`, JSON.stringify({
+          state: AUTH_STATE.READY,
+          onboarding: obStatus,
+          ts: Date.now(),
+        }));
+      } catch {}
+      return true;
+    } catch {
+      return false;
+    }
+  }, [onboardingStatus, session]);
+
   // Track which user ID we've already bootstrapped for.
   // Prevents re-running calibration check on token refresh (same user, new token).
   const lastBootstrapUserId = useRef(null);
@@ -674,6 +750,7 @@ export const SupabaseAuthProvider = ({ children }) => {
     markOnboardingComplete,
     deferOnboarding,
     clearBootstrapCache,
+    refreshCalibrationRoutingState,
     signUp,
     signIn,
     signInWithOAuth,
