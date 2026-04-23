@@ -467,24 +467,58 @@ export const useCalibrationState = () => {
       let deepReconData = null;
       let competitorMonitorData = null;
 
-      // Deep backend enrichment (Trinity + web search + ABN + competitor scan + all edge functions)
+      // Deep backend enrichment (Trinity + web search + ABN + competitor scan + all edge functions).
+      //
+      // P0 2026-04-23 (Andreas): Azure App Service proxy was killing the
+      // HTTP connection around the 60s mark during real scans, returning
+      // 502 to the browser. Backend-side the scan completed + DB row
+      // persisted; the frontend just never got the response back.
+      //
+      // Fallback: on ANY error from /enrichment/website (502, 504,
+      // timeout, network), poll /enrichment/latest for up to 30s. If a
+      // fresh enrichment row exists (scanned within the last 3 min by this
+      // user), use it as the deepEnrichment payload. Keeps the UX flow
+      // alive even when the scan endpoint can't sustain the connection.
       try {
         const deepRes = await apiClient.post('/enrichment/website', { url, action: 'scan' }, { timeout: 120000 });
         if (deepRes?.data?.status === 'draft' && deepRes?.data?.enrichment) {
           deepEnrichment = deepRes.data.enrichment;
-          // Keep trust signals but do not surface social handles in calibration output.
-          if (deepEnrichment.trust_signals) {
-            socialEnrichment = { trust_signals: deepEnrichment.trust_signals || [] };
-          }
-          if (deepEnrichment.deep_recon_summary || deepEnrichment.deep_recon_signals) {
-            deepReconData = { executive_summary: deepEnrichment.deep_recon_summary, signals: deepEnrichment.deep_recon_signals || [], sources: deepEnrichment.sources?.edge_tools?.deep_web_recon ? ['deep-web-recon'] : [] };
-          }
-          if (deepEnrichment.competitor_monitor_summary) {
-            competitorMonitorData = { ok: true, signals: deepEnrichment.competitor_monitor_summary };
-          }
         }
-      } catch {
-        // non-fatal; continue with edge extraction
+      } catch (_deepScanErr) {
+        // Scan endpoint failed (often Azure proxy 502 after ~60s even
+        // though backend wrote the row). Poll /enrichment/latest for the
+        // persisted result.
+        console.warn('[calibration] /enrichment/website failed; polling /enrichment/latest', _deepScanErr?.message);
+        const pollStart = Date.now();
+        while (Date.now() - pollStart < 30000) {
+          try {
+            const latestRes = await apiClient.get('/enrichment/latest', { timeout: 15000 });
+            const latest = latestRes?.data || {};
+            const scannedAt = latest.scanned_at ? new Date(latest.scanned_at).getTime() : 0;
+            const freshMs = Date.now() - scannedAt;
+            if (latest.has_data && latest.enrichment && freshMs < 180000) {
+              deepEnrichment = latest.enrichment;
+              console.warn('[calibration] recovered enrichment from /latest (age ms:', freshMs, ')');
+              break;
+            }
+          } catch (_pollErr) {
+            // keep polling
+          }
+          await new Promise(r => setTimeout(r, 3000));
+        }
+      }
+
+      if (deepEnrichment) {
+        // Keep trust signals but do not surface social handles in calibration output.
+        if (deepEnrichment.trust_signals) {
+          socialEnrichment = { trust_signals: deepEnrichment.trust_signals || [] };
+        }
+        if (deepEnrichment.deep_recon_summary || deepEnrichment.deep_recon_signals) {
+          deepReconData = { executive_summary: deepEnrichment.deep_recon_summary, signals: deepEnrichment.deep_recon_signals || [], sources: deepEnrichment.sources?.edge_tools?.deep_web_recon ? ['deep-web-recon'] : [] };
+        }
+        if (deepEnrichment.competitor_monitor_summary) {
+          competitorMonitorData = { ok: true, signals: deepEnrichment.competitor_monitor_summary };
+        }
       }
 
       // Fail-open: if business-dna fails but deep enrichment succeeded,
