@@ -136,23 +136,56 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ ok: false, error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
-
+    // ───────────────────────────────────────────────────────────────
+    // Incident H (2026-04-23) — backend-orchestrated auth contract.
+    //
+    // Old model (REMOVED): secondary supabase.auth.getUser(token) that
+    // broke under service_role callers and on fresh-user JWTs. That
+    // second validation was the observable 7×401 failure vector for
+    // brand-new signups during calibration.
+    //
+    // New model: verifyAuth (line 119) is the single auth gate. It
+    // already accepts service_role AND user-JWT paths. Downstream
+    // user identity is derived from:
+    //   - body.user_id when the caller is service_role (backend
+    //     orchestration). The backend passes this explicitly and it
+    //     is mandatory under EdgeCallMode.BACKEND_ORCHESTRATED.
+    //   - auth.userId when the caller is a user JWT (direct invoke).
+    //
+    // Security invariant preserved: user_id used for DB reads is
+    // derived from a validated auth subject, never from unvalidated
+    // request body input. For service_role callers the backend is the
+    // trust authority (has already validated the user via
+    // get_current_user_from_request before the edge call).
+    // ───────────────────────────────────────────────────────────────
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
-
     const body = await req.json();
+
+    let userId: string = "";
+    if (auth.isServiceRole) {
+      userId = `${body.user_id || ""}`.trim();
+      if (!userId) {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: "service_role caller must provide body.user_id",
+            code: "BACKEND_ORCHESTRATION_CONTRACT_VIOLATION",
+          }),
+          { status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+        );
+      }
+    } else {
+      userId = `${auth.userId || ""}`.trim();
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+        );
+      }
+    }
+    // Stable shape preserved: downstream code uses `user.id`.
+    const user = { id: userId };
+
     const product_or_service = body.product_or_service || "";
     const region = body.region || "Australia";
     const specific_question = body.specific_question || "";
