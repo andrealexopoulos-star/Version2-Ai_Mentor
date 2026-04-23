@@ -312,6 +312,18 @@ def _scrub_internal_keys(obj: Any) -> Any:
     return obj
 
 
+def scrub_response_for_external(response: Any) -> Any:
+    """Public helper for routes that build a custom response shape
+    (e.g. /intelligence/cmo-report) and need to strip internal keys at
+    any nesting depth before returning. Does NOT apply section-state
+    annotation logic (that's what sanitize_enrichment_for_external is for).
+
+    Use this when the endpoint's response shape differs from the raw
+    enrichment object but still embeds sub-objects from enrichment.
+    """
+    return _scrub_internal_keys(response)
+
+
 # ─── Per-section state derivation ─────────────────────────────────────────
 #
 # Each enrichment section has its own success criteria. A section's
@@ -633,5 +645,6 @@ __all__ = [
     "sanitize_error_for_external",
     "sanitize_edge_passthrough",
     "sanitize_enrichment_for_external",
+    "scrub_response_for_external",
     "assert_no_banned_tokens",
 ]

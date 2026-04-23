@@ -15,6 +15,11 @@ router = APIRouter()
 # Auth dependency
 from routes.auth import get_current_user
 
+# Contract v2 / Step 3c: sanitize enrichment before PDF generation so
+# customer-facing reports never embed supplier names, internal codes, or
+# fabricated confident-but-empty scores.
+from core.response_sanitizer import sanitize_enrichment_for_external
+
 
 # ── Unicode safety for fpdf2's latin-1 Helvetica ────────────────────────────
 # 2026-04-21 demo bug: o3-generated enrichment contains curly quotes,
@@ -505,9 +510,15 @@ async def generate_market_position_pdf(current_user: dict = Depends(get_current_
     if not bde.data or not bde.data.get('enrichment'):
         raise HTTPException(status_code=404, detail='No enrichment data. Complete calibration first.')
 
-    enrichment = bde.data['enrichment']
-    business_name = enrichment.get('business_name', 'Your Business')
-    scan_date = enrichment.get('digital_footprint', {}).get('computed_at', bde.data.get('created_at', ''))
+    # Contract v2 / Step 3c (2026-04-23): sanitize enrichment before feeding
+    # it into the PDF builder. PDFs are customer-facing artefacts — the same
+    # contract applies as to any frontend response. raw_enrichment stays in
+    # the DB for audit; the PDF gets the contract-shaped view.
+    raw_enrichment = bde.data['enrichment']
+    _sanitized_envelope = sanitize_enrichment_for_external(raw_enrichment)
+    enrichment = _sanitized_envelope['enrichment'] or {}
+    business_name = raw_enrichment.get('business_name', 'Your Business')  # name is not sensitive
+    scan_date = raw_enrichment.get('digital_footprint', {}).get('computed_at', bde.data.get('created_at', ''))
     if scan_date and isinstance(scan_date, str):
         try:
             scan_date = datetime.fromisoformat(scan_date.replace('Z', '+00:00')).strftime('%d %B %Y')
@@ -570,9 +581,12 @@ async def generate_benchmark_pdf(current_user: dict = Depends(get_current_user))
     if not bde.data or not bde.data.get('enrichment'):
         raise HTTPException(status_code=404, detail='No enrichment data. Complete calibration first.')
 
-    enrichment = bde.data['enrichment']
-    business_name = enrichment.get('business_name', 'Your Business')
-    scan_date = enrichment.get('digital_footprint', {}).get('computed_at', bde.data.get('created_at', ''))
+    # Contract v2 / Step 3c: sanitize enrichment before PDF building.
+    raw_enrichment = bde.data['enrichment']
+    _sanitized_envelope = sanitize_enrichment_for_external(raw_enrichment)
+    enrichment = _sanitized_envelope['enrichment'] or {}
+    business_name = raw_enrichment.get('business_name', 'Your Business')
+    scan_date = raw_enrichment.get('digital_footprint', {}).get('computed_at', bde.data.get('created_at', ''))
     if scan_date and isinstance(scan_date, str):
         try:
             scan_date = datetime.fromisoformat(scan_date.replace('Z', '+00:00')).strftime('%d %B %Y')
