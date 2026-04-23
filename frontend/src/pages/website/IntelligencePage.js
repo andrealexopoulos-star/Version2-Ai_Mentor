@@ -21,8 +21,8 @@ const AI_STEPS = [
   {
     num: 2,
     title: 'Analyse',
-    desc: 'Three AI models process every signal in parallel, cross-checking each other for accuracy.',
-    badges: ['OpenAI', 'Anthropic', 'Google'],
+    desc: 'Three frontier reasoning models process every signal in parallel, cross-checking each other for accuracy.',
+    badges: ['Reasoning model A', 'Reasoning model B', 'Reasoning model C'],
   },
   {
     num: 3,
@@ -74,7 +74,7 @@ const COMPARISON = [
     price: '$199',
     tagline: 'Deep analysis powered by the Trinity \u2014 three AI models working in parallel for maximum accuracy and speed.',
     features: [
-      'Multi-model AI (GPT + Claude + Gemini)',
+      'Multi-model AI Trinity (three frontier reasoning models)',
       'Deep cross-system analysis',
       'Real-time conversational chat',
       'Streaming crisis diagnosis',
@@ -87,7 +87,7 @@ const COMPARISON = [
 
 /* ── Pipeline ── */
 const PIPELINE = [
-  { num: 1, icon: '\uD83D\uDD0C', title: 'Connect', desc: 'Securely link your business tools. Xero, HubSpot, Outlook, Gmail, and more flow in automatically.' },
+  { num: 1, icon: '\uD83D\uDD0C', title: 'Connect', desc: 'Securely link your business tools. Your accounting, CRM, email, and calendar flow in automatically.' },
   { num: 2, icon: '\uD83D\uDD2C', title: 'Analyse', desc: 'Multi-model AI processes every data point, cross-referencing across systems for context and accuracy.' },
   { num: 3, icon: '\uD83D\uDCA1', title: 'Detect', desc: 'Anomalies, risks, and opportunities are surfaced automatically. No manual searching required.' },
   { num: 4, icon: '\uD83C\uDFAF', title: 'Act', desc: 'Receive prioritised recommendations with clear next steps. Every insight is tied to a specific action.' },
@@ -109,7 +109,7 @@ export default function IntelligencePage() {
           </h1>
           <p className="text-lg max-w-[560px] mx-auto leading-relaxed mb-8"
             style={{ color: 'var(--ink-secondary)' }}>
-            BIQc uses multi-model AI &mdash; GPT, Claude, and Gemini &mdash; to understand your business context, detect what matters, and tell you what to do next.
+            BIQc uses multi-model AI that cross-checks its own reasoning to understand your business context, detect what matters, and tell you what to do next.
           </p>
           <Link to="/platform"
             className="inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold text-white transition-all hover:brightness-110"

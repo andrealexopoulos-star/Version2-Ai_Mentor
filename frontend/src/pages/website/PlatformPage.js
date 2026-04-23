@@ -53,10 +53,11 @@ const MockBadge = ({ color, label }) => (
 // ─── SLIDE MOCKUPS ───────────────────────────────────────────────────────────
 
 const DashboardMock = () => (
-  <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden', fontSize: 11, fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)' }}>
-    <div style={{ padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
-      <div style={{ color: 'var(--ink-display)', fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)' }}>Good afternoon, Andre.</div>
-      <div style={{ color: '#64748B', fontSize: 10, marginTop: 2 }}>Last intelligence update: 12 minutes ago</div>
+  <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden', fontSize: 11, fontFamily: 'var(--font-marketing-ui, "Geist", sans-serif)' }} aria-label="Sample BIQc dashboard view">
+    <div style={{ padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}`, position: 'relative' }}>
+      <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'rgba(100,116,139,0.12)', color: '#64748B', fontFamily: 'var(--font-mono)' }}>SAMPLE</span>
+      <div style={{ color: 'var(--ink-display)', fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-marketing-display, "Geist", sans-serif)' }}>Good afternoon.</div>
+      <div style={{ color: '#64748B', fontSize: 10, marginTop: 2 }}>Illustrative view \u2014 your live dashboard uses your own data.</div>
     </div>
     <div style={{ display: 'flex', gap: 6, padding: '10px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
       {[['Business Health', '74%', G], ['Cash Risk', 'Moderate', Y], ['Revenue', 'Stable', G], ['SLA Breaches', '2', R], ['Compliance', '96%', G]].map(([l, v, c]) => (
