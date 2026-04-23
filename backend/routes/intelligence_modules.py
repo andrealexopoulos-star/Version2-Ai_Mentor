@@ -1126,15 +1126,39 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     #    so the frontend can render confidence-aware UI.
     _sanitized_envelope = sanitize_enrichment_for_external(enrichment)
     response["state"] = _sanitized_envelope["state"]
-    # If the response shape embedded seo_analysis / paid_media_analysis /
-    # swot directly from enrichment, replace those with the sanitizer's
-    # state-annotated versions so downstream rendering is contract-shaped.
+    # 2026-04-23 P0 (Andreas CTO): the CMO route has ALREADY shaped
+    # `swot`, `market_position`, etc. into the frontend contract
+    # (numeric dials + 4 named string lists). We must NOT overwrite those
+    # with the sanitizer output, because when the sanitizer flips state to
+    # INSUFFICIENT_SIGNAL / DEGRADED / DATA_UNAVAILABLE, downstream
+    # destructuring (`swot.strengths.length`, `market_position.overall`)
+    # crashes on undefined.
+    #
+    # Instead: only adopt the sanitizer's version when it is DATA_AVAILABLE
+    # (i.e. the supplier succeeded and data is intact). Otherwise keep the
+    # already-shaped CMO response and expose state as a sibling key so the
+    # frontend can render uncertainty badges without losing structure.
     _sanitized_enrich = _sanitized_envelope["enrichment"] or {}
     for _key in ("seo_analysis", "paid_media_analysis", "swot",
                  "seo_html_hygiene", "market_position", "market_trajectory",
                  "social_media_analysis", "website_health"):
-        if _key in _sanitized_enrich:
-            response[_key] = _sanitized_enrich[_key]
+        sanitized_val = _sanitized_enrich.get(_key)
+        # Adopt the sanitizer output when it preserves a dict with real data.
+        # The new sanitizer (PR 2026-04-23) preserves populated data and
+        # annotates state. The only time we'd lose data is when the section
+        # was genuinely empty and the sanitizer returned the blank skeleton.
+        if isinstance(sanitized_val, dict):
+            has_real_data = any(
+                k not in {"state", "message", "score", "status"}
+                for k in sanitized_val.keys()
+            )
+            if has_real_data:
+                response[_key] = sanitized_val
+            else:
+                # Sanitizer returned empty skeleton. Keep the CMO-shaped
+                # response (if any) and annotate state on a sibling key.
+                response[f"{_key}_state"] = sanitized_val.get("state")
+                response[f"{_key}_message"] = sanitized_val.get("message")
 
     return scrub_response_for_external(response)
 

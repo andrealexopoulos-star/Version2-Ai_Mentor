@@ -78,10 +78,18 @@ const AccessDenied = () => (
   </div>
 );
 
-// Paths exempt from the onboarding gate
+// Paths exempt from the onboarding gate.
+// 2026-04-23 P0 (Andreas CTO): added /market/calibration + /cmo-report —
+// a READY user with onboardingStatus.completed=false (came back mid-wizard,
+// clicked Recalibrate, or hit "View Report") was silently redirected to
+// /onboarding. Also added /connect-email, /soundboard, /advisor — these
+// are destinations from OnboardingDecision cards and the wizard's
+// "Skip for now" button; without them the cards silently dead-end.
 const ONBOARDING_EXEMPT_PATHS = [
   '/onboarding', '/onboarding-decision', '/profile-import',
-  '/calibration', '/settings', '/business-profile'
+  '/calibration', '/market/calibration', '/cmo-report',
+  '/settings', '/business-profile',
+  '/connect-email', '/soundboard', '/advisor',
 ];
 
 /**
@@ -239,7 +247,17 @@ export default function ProtectedRoute({ children, adminOnly }) {
     // an infinite redirect loop: /market/calibration → (not allowed) → Navigate
     // to /calibration → (route redirects) → /market/calibration → forever.
     // Reproduced with andre.alexopoulos@outlook.com fresh signup 2026-04-22 22:53 UTC.
-    const allowedPaths = ['/calibration', '/market/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import', '/admin', '/support-admin', '/observability', '/admin/prompt-lab', '/complete-signup'];
+    // 2026-04-23 P0 sprint: also allow /connect-email, /soundboard, /advisor,
+    // /cmo-report while in NEEDS_CALIBRATION so OnboardingDecision's three
+    // cards ("Just connect my inbox", "Calibrate me properly", "Walk me
+    // through it" / "Skip and explore the demo") do not bounce back.
+    const allowedPaths = [
+      '/calibration', '/market/calibration', '/settings',
+      '/onboarding', '/onboarding-decision', '/profile-import',
+      '/admin', '/support-admin', '/observability', '/admin/prompt-lab',
+      '/complete-signup',
+      '/connect-email', '/soundboard', '/advisor', '/cmo-report',
+    ];
     if (allowedPaths.some(p => location.pathname.startsWith(p))) {
       return children;
     }

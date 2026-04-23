@@ -20,7 +20,7 @@ import {
   Radar, HelpCircle, LayoutDashboard, AlertTriangle, Link2,
   ClipboardList, MessageSquare, Lock, Eye, FlaskConical,
   BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox, CreditCard,
-  Search, Key
+  Search, Key, RefreshCw
 } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
 import { getRouteAccess, resolveTier } from '../lib/tierResolver';
@@ -321,7 +321,13 @@ const DashboardLayout = ({ children }) => {
       { id: 'priority-inbox', label: 'Email', path: '/email-inbox', icon: Inbox, items: [], group: 'inbox' },
       { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [], group: 'inbox' },
       // — Intelligence
-      { id: 'market', label: 'Market & position', path: '/market', icon: Radar, items: [], group: 'intelligence' },
+      // P0 2026-04-23 (Andreas): add Recalibrate sub-item so users can
+      // re-run the scan without hunting through dropdowns; add /cmo-report
+      // as its own sidebar entry so Pro-trial users can reach it directly.
+      { id: 'market', label: 'Market & position', path: '/market', icon: Radar, items: [
+        { icon: RefreshCw, label: 'Recalibrate', path: '/market/calibration' },
+      ], group: 'intelligence' },
+      { id: 'cmo-report', label: 'CMO Report', path: '/cmo-report', icon: ClipboardList, items: [], group: 'intelligence' },
       { id: 'business-dna', label: 'Business DNA', path: '/business-profile', icon: BarChart3, items: [], group: 'intelligence' },
       { id: 'benchmark', label: 'Benchmark', path: '/competitive-benchmark', icon: Target, items: [], group: 'intelligence' },
       { id: 'boardroom', label: 'BoardRoom', path: '/board-room', icon: Target, items: [], group: 'intelligence' },

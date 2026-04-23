@@ -10,7 +10,7 @@
  *
  * Data sourced from GET /api/intelligence/cmo-report.
  */
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Loader2, TrendingUp, Shield, Globe, Star, MapPin, Target,
   AlertTriangle, Lightbulb, ChevronRight, Share2, Download,
@@ -20,6 +20,42 @@ import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
+
+// P0 2026-04-23 (Andreas): inline error boundary so a null-deref in any
+// child section never takes the whole page down. Shows calibrating card
+// instead of a blank screen.
+class CMOErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, err: null }; }
+  static getDerivedStateFromError(err) { return { hasError: true, err }; }
+  componentDidCatch(err, info) {
+    try { console.error('[CMOReport] render error:', err, info); } catch {}
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <DashboardLayout>
+          <div style={{ padding: 32, maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', marginBottom: 12 }}>
+              Your report is still calibrating
+            </h2>
+            <p style={{ color: 'var(--ink-secondary)', lineHeight: 1.5, marginBottom: 24 }}>
+              We are still gathering market intelligence for your business. Sections will populate as signals are confirmed — this usually completes within a few minutes of your first scan.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '10px 20px', borderRadius: 'var(--r-md)',
+                background: 'var(--lava)', color: '#fff', border: 'none',
+                cursor: 'pointer', fontWeight: 600,
+              }}
+            >Refresh</button>
+          </div>
+        </DashboardLayout>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    Design tokens (CSS var fallbacks)
@@ -162,7 +198,7 @@ const ReviewExcerpt = ({ quote, stars, source, author }) => (
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    Main Page
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-export default function CMOReportPage() {
+function CMOReportPageInner() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -197,17 +233,59 @@ export default function CMOReportPage() {
     return <DashboardLayout><div style={{ padding: 32, maxWidth: 1100, margin: '0 auto' }}><PageSkeleton cards={4} lines={6} /></div></DashboardLayout>;
   }
 
-  /* ── Fallback data when API is unavailable ── */
+  /* ── Fallback data when API is unavailable or shape is state-envelope ──
+   * P0 2026-04-23 (Andreas): Contract-v2 sanitizer may return
+   * `{state, message, score: null, status: null}` envelopes for sections
+   * where the edge tool failed. Previously that made `swot.strengths`
+   * undefined → `.length` crash → blank page. Detect envelopes and coerce
+   * back to the shapes this page renders. One empty section never takes
+   * the whole page down.
+   */
+  const isStateEnvelope = (v) => (
+    v && typeof v === 'object' && !Array.isArray(v) &&
+    'state' in v &&
+    !('overall' in v) && !('strengths' in v) && !('rating' in v) &&
+    !('quick_wins' in v) && !('established' in v) && !('positive' in v)
+  );
+  const pick = (v, fallback) => (isStateEnvelope(v) || v == null) ? fallback : v;
+  const arr = (v) => Array.isArray(v) ? v : [];
+
   const data = report || {};
-  const mps = data.market_position || { overall: 0, brand: 0, digital: 0, sentiment: 0, competitive: 0 };
-  const competitors = data.competitors || [];
-  const positionDots = data.position_dots || [];
-  const swot = data.swot || { strengths: [], weaknesses: [], opportunities: [], threats: [] };
-  const reviews = data.reviews || { rating: 0, count: 0, positive_pct: 0, neutral_pct: 0, negative_pct: 0 };
-  const reviewThemes = data.review_themes || { positive: [], negative: [] };
-  const reviewExcerpts = data.review_excerpts || [];
-  const roadmap = data.roadmap || { quick_wins: [], priorities: [], strategic: [] };
-  const geo = data.geographic || { established: [], growth: [] };
+  const mps = pick(data.market_position,
+    { overall: 0, brand: 0, digital: 0, sentiment: 0, competitive: 0 });
+  const competitors = arr(data.competitors);
+  const positionDots = arr(data.position_dots);
+  const rawSwot = pick(data.swot,
+    { strengths: [], weaknesses: [], opportunities: [], threats: [] });
+  const swot = {
+    strengths:     arr(rawSwot.strengths),
+    weaknesses:    arr(rawSwot.weaknesses),
+    opportunities: arr(rawSwot.opportunities),
+    threats:       arr(rawSwot.threats),
+  };
+  const reviews = pick(data.reviews,
+    { rating: 0, count: 0, positive_pct: 0, neutral_pct: 0, negative_pct: 0 });
+  const rawThemes = pick(data.review_themes, { positive: [], negative: [] });
+  const reviewThemes = {
+    positive: arr(rawThemes.positive),
+    negative: arr(rawThemes.negative),
+  };
+  const reviewExcerpts = arr(data.review_excerpts);
+  const rawRoadmap = pick(data.roadmap, { quick_wins: [], priorities: [], strategic: [] });
+  const roadmap = {
+    quick_wins: arr(rawRoadmap.quick_wins),
+    priorities: arr(rawRoadmap.priorities),
+    strategic:  arr(rawRoadmap.strategic),
+  };
+  const rawGeo = pick(data.geographic, { established: [], growth: [] });
+  const geo = {
+    established: arr(rawGeo.established),
+    growth:      arr(rawGeo.growth),
+  };
+  // Show a "still calibrating" banner at the top when overall state
+  // indicates the report is not fully built yet — nicer than 8 empty panels.
+  const _topState = String(data.state || '').toUpperCase();
+  const isCalibrating = ['PROCESSING', 'DATA_UNAVAILABLE', 'DEGRADED', 'INSUFFICIENT_SIGNAL'].includes(_topState);
 
   // Gauge math: circumference of r=70 circle = 2*PI*70 ~= 440
   const gaugeCirc = 440;
@@ -669,5 +747,15 @@ function FloatingPDFButton({ onClick }) {
       <Download size={24} />
       <span style={{ position: 'absolute', bottom: -20, fontSize: 9, fontWeight: 700, letterSpacing: 'var(--ls-caps)', color: V.inkMuted }}>PDF</span>
     </button>
+  );
+}
+
+// P0 2026-04-23 (Andreas): wrap the whole page in an error boundary so no
+// single null-deref can blank-page the route.
+export default function CMOReportPage() {
+  return (
+    <CMOErrorBoundary>
+      <CMOReportPageInner />
+    </CMOErrorBoundary>
   );
 }

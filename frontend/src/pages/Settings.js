@@ -1,6 +1,6 @@
 import { InlineLoading } from '../components/LoadingSystems';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -447,9 +447,18 @@ const SettingsBillingContent = ({ navigate, user }) => {
 const Settings = () => {
   const { user } = useSupabaseAuth();
   const navigate = useNavigate();
+  // P0 2026-04-23 (Andreas): /billing route redirects here with ?tab=billing
+  // but this was hardcoded to 'account'. Read the query param so deep-links
+  // land on the right tab.
+  const [searchParams] = useSearchParams();
+  const _initialTab = (() => {
+    const t = String(searchParams.get('tab') || '').toLowerCase();
+    const valid = ['account', 'billing', 'notifications', 'data', 'integrations', 'calibration'];
+    return valid.includes(t) ? t : 'account';
+  })();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('account');
+  const [activeTab, setActiveTab] = useState(_initialTab);
   const [profile, setProfile] = useState({});
   const [calibrationStatus, setCalibrationStatus] = useState(null);
   const [resettingCalibration, setResettingCalibration] = useState(false);
