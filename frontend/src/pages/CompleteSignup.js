@@ -231,11 +231,15 @@ const CompleteSignup = () => {
       }
 
       // Success → the backend already updated users.subscription_status to
-      // 'trialing' and sent E2 (welcome) if appropriate. Send them in.
+      // 'trialing' and sent E2 (welcome) if appropriate. Send them to the
+      // onboarding-decision page so they pick their path (connect inbox /
+      // calibrate / guided session) before they land in the platform; without
+      // this, fresh users skip onboarding entirely and hit empty dashboards +
+      // /onboarding-decision bounces on every Intelligence page.
       setTrialStep('done');
       setTrialFailureMessage('');
       toast.success(`Trial started. Free until ${trialSummary.endStr}.`);
-      navigate('/advisor');
+      navigate('/onboarding-decision');
     } finally {
       setLoading(false);
     }
