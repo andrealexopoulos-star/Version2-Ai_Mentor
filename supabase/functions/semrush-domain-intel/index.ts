@@ -148,55 +148,106 @@ serve(async (req) => {
       );
     }
 
-    const [overviewRows, organicRows, adwordsRows, competitorRows] =
-      await Promise.all([
-        semrushGet(
-          {
-            type: "domain_rank",
-            domain,
-            database,
-            export_columns: "Dn,Rk,Or,Ot,Oc,Ad,At,Ac,FKn,FPn",
-          },
-          aiErrors,
-          "domain_rank",
-        ),
-        semrushGet(
-          {
-            type: "domain_organic",
-            domain,
-            database,
-            display_limit: "20",
-            export_columns: "Ph,Po,Nq,Cp,Ur,Tr,Tc,Co,Kd",
-            display_sort: "tr_desc",
-          },
-          aiErrors,
-          "domain_organic",
-        ),
-        semrushGet(
-          {
-            type: "domain_adwords",
-            domain,
-            database,
-            display_limit: "20",
-            export_columns: "Ph,Po,Nq,Cp,Ur,Tr,Tc,Co",
-            display_sort: "tr_desc",
-          },
-          aiErrors,
-          "domain_adwords",
-        ),
-        semrushGet(
-          {
-            type: "domain_organic_organic",
-            domain,
-            database,
-            display_limit: "10",
-            export_columns: "Dn,Cr,Np,Or,Ot,Oc,Ad",
-            display_sort: "np_desc",
-          },
-          aiErrors,
-          "domain_organic_organic",
-        ),
-      ]);
+    // ─── SEMrush endpoints ──────────────────────────────────────────────
+    //
+    // Current 4 (baseline, all plans that allow competitor research):
+    //   1. domain_rank              — organic+paid overview (rank, kw counts, traffic, cost)
+    //   2. domain_organic           — top organic keywords with KD/CPC/volume
+    //   3. domain_adwords           — top paid keywords
+    //   4. domain_organic_organic   — organic competitors
+    //
+    // Business-Plan expansion (2026-04-23, contract v2 / Step 3e):
+    //   5. domain_adwords_adwords   — paid competitors (completes the
+    //                                 competitive picture — currently BIQc
+    //                                 only sees organic competitors)
+    //   6. backlinks_overview       — domain-level backlink profile summary
+    //                                 (total backlinks, referring domains,
+    //                                  referring IPs). Requires Backlinks
+    //                                  API add-on; may 403 on plans without
+    //                                  it — handled gracefully via aiErrors.
+    //
+    // If a Business-Plan-only endpoint returns no rows because of plan
+    // restrictions, the existing "all rows empty + aiErrors populated"
+    // guard still hard-fails the whole call. If organic/paid data arrives
+    // but the plan-gated endpoints return empty, we surface the real data
+    // and leave the new fields null — correct partial-success behavior
+    // under the no-fabrication contract.
+    const [overviewRows, organicRows, adwordsRows, competitorRows,
+           paidCompetitorRows, backlinksRows] = await Promise.all([
+      semrushGet(
+        {
+          type: "domain_rank",
+          domain,
+          database,
+          export_columns: "Dn,Rk,Or,Ot,Oc,Ad,At,Ac,FKn,FPn",
+        },
+        aiErrors,
+        "domain_rank",
+      ),
+      semrushGet(
+        {
+          type: "domain_organic",
+          domain,
+          database,
+          display_limit: "20",
+          export_columns: "Ph,Po,Nq,Cp,Ur,Tr,Tc,Co,Kd",
+          display_sort: "tr_desc",
+        },
+        aiErrors,
+        "domain_organic",
+      ),
+      semrushGet(
+        {
+          type: "domain_adwords",
+          domain,
+          database,
+          display_limit: "20",
+          export_columns: "Ph,Po,Nq,Cp,Ur,Tr,Tc,Co",
+          display_sort: "tr_desc",
+        },
+        aiErrors,
+        "domain_adwords",
+      ),
+      semrushGet(
+        {
+          type: "domain_organic_organic",
+          domain,
+          database,
+          display_limit: "10",
+          export_columns: "Dn,Cr,Np,Or,Ot,Oc,Ad",
+          display_sort: "np_desc",
+        },
+        aiErrors,
+        "domain_organic_organic",
+      ),
+      // ─── NEW ENDPOINT #5 — Paid competitors (domain_adwords_adwords) ───
+      semrushGet(
+        {
+          type: "domain_adwords_adwords",
+          domain,
+          database,
+          display_limit: "10",
+          export_columns: "Dn,Np,Ad,At,Ac",
+          display_sort: "np_desc",
+        },
+        aiErrors,
+        "domain_adwords_adwords",
+      ),
+      // ─── NEW ENDPOINT #6 — Backlinks overview (backlinks_overview) ─────
+      // Separate SEMrush API (api.semrush.com/analytics/v1/). Requires
+      // the Backlinks API subscription. On plans without it, SEMrush
+      // returns ERROR 132 / ERROR 401 — caught by our standard hard-fail.
+      semrushGet(
+        {
+          type: "backlinks_overview",
+          target: domain,
+          target_type: "root_domain",
+          export_columns: "total,domains_num,urls_num,ips_num,ipclassc_num,score",
+        },
+        aiErrors,
+        "backlinks_overview",
+      ),
+    ]);
 
     const ov = overviewRows[0] || {};
     const toNum = (v: string | undefined) => {
@@ -290,6 +341,34 @@ serve(async (req) => {
       source: "semrush",
     };
 
+    // ─── NEW: Paid competitor analysis (Business Plan expansion) ──────────
+    const paidCompetitorAnalysis = {
+      paid_competitors: paidCompetitorRows.slice(0, 10).map((r) => ({
+        domain: r["Dn"] || r["Domain"],
+        total_keywords: toNum(r["Np"]),
+        adwords_keywords: toNum(r["Ad"] || r["Adwords Keywords"]),
+        adwords_traffic: toNum(r["At"] || r["Adwords Traffic"]),
+        adwords_cost: toNum(r["Ac"] || r["Adwords Cost"]),
+      })),
+      paid_competitor_count: paidCompetitorRows.length,
+      source: "semrush",
+    };
+
+    // ─── NEW: Backlink profile (Business Plan / Backlinks API) ────────────
+    // Only populated when Backlinks API add-on is active on the SEMrush
+    // subscription. If not available, backlinksRows will be empty (aiErrors
+    // carries the 132/401 message) — surfaced as null, not fabricated.
+    const bl = backlinksRows[0] || {};
+    const backlinkProfile = backlinksRows.length > 0 ? {
+      total_backlinks: toNum(bl["total"]),
+      referring_domains: toNum(bl["domains_num"]),
+      referring_urls: toNum(bl["urls_num"]),
+      referring_ips: toNum(bl["ips_num"]),
+      referring_ip_class_c: toNum(bl["ipclassc_num"]),
+      authority_score: toNum(bl["score"]),
+      source: "semrush",
+    } : null;
+
     // ─── Incident H / SEMRUSH P0 Step 2: supplier-API total-failure guard ───
     // Distinguish "SEMrush returned empty because domain has no SEO footprint"
     // (valid soft result) from "every SEMrush request failed due to auth/rate
@@ -298,10 +377,12 @@ serve(async (req) => {
     // Rule: if EVERY semrushGet returned zero rows AND at least one aiErrors
     // entry exists → hard-fail. We cannot return ok:true for a domain when
     // the reason we saw no data is "we failed to actually query the data".
+    // Updated 2026-04-23 (Step 3e) to include the 2 new Business-Plan endpoints.
     const totalRows = overviewRows.length + organicRows.length +
-                      adwordsRows.length + competitorRows.length;
+                      adwordsRows.length + competitorRows.length +
+                      paidCompetitorRows.length + backlinksRows.length;
     if (totalRows === 0 && aiErrors.length > 0) {
-      const errSummary = aiErrors.slice(0, 4).join(" | ");
+      const errSummary = aiErrors.slice(0, 6).join(" | ");
       console.log("[semrush-domain-intel] hard-fail: all supplier calls failed — " + errSummary);
       return new Response(
         JSON.stringify({
@@ -322,6 +403,9 @@ serve(async (req) => {
       seo_analysis: seoAnalysis,
       paid_media_analysis: paidMediaAnalysis,
       competitor_analysis: competitorAnalysis,
+      // Business-Plan expansion fields (contract v2 / Step 3e):
+      paid_competitor_analysis: paidCompetitorAnalysis,
+      backlink_profile: backlinkProfile,
       raw_overview: ov,
       ai_errors: aiErrors,
       correlation,
