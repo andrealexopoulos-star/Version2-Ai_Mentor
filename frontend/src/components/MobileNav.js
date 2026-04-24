@@ -70,7 +70,6 @@ const MobileNav = () => {
                   { label: 'Revenue', icon: TrendingUp, path: '/revenue' },
                   { label: 'Operations', icon: Activity, path: '/operations' },
                   { label: 'Marketing Intelligence', icon: BarChart3, path: '/marketing-intelligence' },
-                  { label: 'Boardroom', icon: MessageSquare, path: '/board-room' },
                 ]
               : [],
           },
