@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["--cwd", "frontend", "start"],
+      "port": 3000
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "uvicorn",
+      "runtimeArgs": ["server:app", "--reload", "--host", "0.0.0.0", "--port", "8001", "--app-dir", "backend"],
+      "port": 8001
+    },
+    {
+      "name": "supabase-functions",
+      "runtimeExecutable": "supabase",
+      "runtimeArgs": ["functions", "serve"],
+      "port": 54321
+    },
+    {
+      "name": "mockup-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "9900", "--directory", "/tmp"],
+      "port": 9900
+    }
+  ]
+}

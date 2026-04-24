@@ -330,8 +330,6 @@ const DashboardLayout = ({ children }) => {
       { id: 'cmo-report', label: 'CMO Report', path: '/cmo-report', icon: ClipboardList, items: [], group: 'intelligence' },
       { id: 'business-dna', label: 'Business DNA', path: '/business-profile', icon: BarChart3, items: [], group: 'intelligence' },
       { id: 'benchmark', label: 'Benchmark', path: '/competitive-benchmark', icon: Target, items: [], group: 'intelligence' },
-      { id: 'boardroom', label: 'BoardRoom', path: '/board-room', icon: Target, items: [], group: 'intelligence' },
-      { id: 'warroom', label: 'WarRoom', path: '/war-room', icon: Shield, items: [], group: 'intelligence' },
       // — System
       { id: 'data-health', label: 'Data health', path: '/data-health', icon: Activity, items: [], group: 'system' },
       { id: 'integrations', label: 'Integrations', path: '/integrations', icon: Link2, items: [], group: 'system' },
