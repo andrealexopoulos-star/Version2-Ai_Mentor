@@ -13,8 +13,6 @@ import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { getBackendUrl } from '../config/urls';
 import { toast } from 'sonner';
 import { useMergeLink } from '@mergeapi/react-merge-link';
-import { resolveTier } from '../lib/tierResolver';
-import { isPrivilegedUser } from '../lib/privilegedUser';
 
 // ── Deterministic local connector badge (no external DNS dependency) ───────
 const Logo = ({ domain, name, size = 36 }) => {
@@ -682,11 +680,6 @@ export default function Integrations() {
     gmailStatus.connected ? 1 : 0,
     outlookStatus.connected ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);
-  const isMasterAccount = user?.is_master_account === true || ['superadmin', 'super_admin', 'admin'].includes((user?.role || '').toLowerCase()) || isPrivilegedUser(user);
-  const effectiveTier = resolveTier(user);
-  const hasPaidLaunchAccess = isMasterAccount || effectiveTier !== 'free';
-  const launchIntegrationLimit = hasPaidLaunchAccess ? 5 : 1;
-  const freeTierLimitReached = connectedCount >= launchIntegrationLimit;
   if (pageLoading && !integrationTruthReady && !pageError) {
     return (
       <DashboardLayout>
@@ -727,7 +720,10 @@ export default function Integrations() {
                   Connect your <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>tools</em>.
                 </h1>
                 <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
-                  BIQc reads from the tools you already use. Every connection unlocks new signals. All third-party integrations go through Merge.dev — one auth, one dashboard.
+                  BIQc securely connects to the tools you already use. Each connection unlocks stronger business signals while your plan controls how deeply BIQc analyses and acts on the data.
+                </p>
+                <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
+                  Connect this source now. Your plan controls how deeply BIQc analyses and acts on this data.
                 </p>
               </div>
               <button
@@ -808,7 +804,6 @@ export default function Integrations() {
           {filtered.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
               {filtered.map((integration, i) => (
-                // Free tier can connect one email provider only; paid tiers can connect all supported providers.
                 <IntCard
                   key={integration.id}
                   integration={integration}
@@ -819,12 +814,6 @@ export default function Integrations() {
                   openingMerge={openingMerge === integration.id}
                   onConnect={handleConnect}
                   onDisconnect={handleDisconnect}
-                  canConnectMore={
-                    (
-                      hasPaidLaunchAccess
-                      || ['gmail', 'outlook', 'gcal', 'outlook_cal'].includes(integration.type)
-                    ) && (!freeTierLimitReached || isConnected(integration))
-                  }
                   isStale={isMergeStale(integration)}
                   truthState={truthStateForIntegration(integration)}
                   truthReason={truthReasonForIntegration(integration)}
@@ -859,7 +848,7 @@ export default function Integrations() {
 }
 
 // ── Integration card ──────────────────────────────────────────────────────────
-function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, comingSoon, isStale = false, canConnectMore = true, truthState = 'unverified', truthReason = '' }) {
+function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, comingSoon, isStale = false, truthState = 'unverified', truthReason = '' }) {
   const statusTone = connected
     ? { text: 'var(--positive)', bg: 'var(--positive-wash)' }
     : comingSoon
@@ -870,7 +859,7 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
     ? 'Notify me'
     : connected
       ? (isStale ? 'Re-link' : 'Disconnect')
-      : (!canConnectMore ? 'Free limit reached' : 'Connect');
+      : 'Connect';
 
   return (
     <div
@@ -894,7 +883,7 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
         <div className="min-w-0">
           <p className="text-[15px] font-semibold truncate leading-tight" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>{integration.name}</p>
           <p className="text-[10px] uppercase mt-0.5" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }}>
-            {integration.type === 'outlook' || integration.type === 'gmail' || integration.type === 'gcal' || integration.type === 'outlook_cal' ? 'Direct OAuth' : integration.type === 'coming_soon' ? 'Coming soon' : 'Via Merge.dev'}
+            {integration.type === 'outlook' || integration.type === 'gmail' || integration.type === 'gcal' || integration.type === 'outlook_cal' ? 'Direct OAuth' : integration.type === 'coming_soon' ? 'Coming soon' : 'Secure connection'}
           </p>
         </div>
       </div>
@@ -966,12 +955,12 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
                 onConnect(integration);
               }
             }}
-            disabled={disconnecting || openingMerge || (!connected && !comingSoon && !canConnectMore)}
+            disabled={disconnecting || openingMerge}
             className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold"
             style={{
               background: 'var(--surface-2)',
               border: '1px solid var(--border)',
-              color: (!connected && !comingSoon && !canConnectMore) ? 'var(--ink-muted)' : 'var(--ink-display)',
+              color: 'var(--ink-display)',
             }}
             data-testid={
               connected
@@ -990,7 +979,7 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
             ) : (
               <Plug className="w-3 h-3" />
             )}
-            {disconnecting || (openingMerge && !isStale) ? 'Working...' : (connected ? 'Disconnect' : (comingSoon ? 'Notify me' : (!canConnectMore ? 'Free limit reached' : 'Connect')))}
+            {disconnecting || (openingMerge && !isStale) ? 'Working...' : (connected ? 'Disconnect' : (comingSoon ? 'Notify me' : 'Connect'))}
           </button>
         </div>
       </div>

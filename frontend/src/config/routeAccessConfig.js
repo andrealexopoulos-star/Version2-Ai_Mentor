@@ -29,7 +29,7 @@ const ROUTE_ACCESS_MAP = {
   '/advisor':               { minTier: 'starter', launchType: 'free' },
   '/market':                { minTier: 'starter', launchType: 'free' },
   '/business-profile':      { minTier: 'starter', launchType: 'free' },
-  '/integrations':          { minTier: 'starter', launchType: 'free' },
+  '/integrations':          { minTier: 'free', launchType: 'free' },
   '/connect-email':         { minTier: 'starter', launchType: 'free' },
   '/data-health':           { minTier: 'starter', launchType: 'free' },
   '/competitive-benchmark': { minTier: 'starter', launchType: 'free' },
