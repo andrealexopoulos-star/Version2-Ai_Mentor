@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, CheckCircle2, LogOut, RefreshCw, Loader2, Zap,
@@ -475,7 +475,7 @@ export default function Integrations() {
     if (err) { toast.error(`Connection error: ${err}`); setSearchParams({}); }
   }, [searchParams, setSearchParams, loadOutlookStatus, loadGmailStatus]);
 
-  const openMergeLink = useCallback(async (integrationId, categories, integrationName = null) => {
+  const openMergeLink = useCallback(async (integrationId, categories, integrationSlug = null) => {
     setOpeningMerge(integrationId);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -484,9 +484,9 @@ export default function Integrations() {
         setOpeningMerge(null);
         return;
       }
-      // Pass integration name to pre-select in Merge modal (bypasses category picker)
+      // Provider-specific launch: pass Merge integration slug when available.
       const body = { categories };
-      if (integrationName) body.integration = integrationName;
+      if (integrationSlug) body.integration = integrationSlug;
 
       const res = await fetch(`${getBackendUrl()}/api/integrations/merge/link-token`, {
         method: 'POST',
@@ -517,6 +517,49 @@ export default function Integrations() {
     }
   }, []);
 
+  const mergeCatalogLookup = useMemo(() => {
+    const lookup = new Map();
+    for (const row of mergeCatalog) {
+      const slug = String(row?.id || '').trim().toLowerCase();
+      if (!slug) continue;
+      const name = String(row?.name || '').trim();
+      const categories = Array.isArray(row?.categories) ? row.categories : [];
+      const candidateKeys = new Set([
+        normalizeIntegrationKey(slug),
+        normalizeIntegrationKey(name),
+      ]);
+      for (const key of candidateKeys) {
+        if (key && !lookup.has(key)) {
+          lookup.set(key, { slug, categories });
+        }
+      }
+    }
+    return lookup;
+  }, [mergeCatalog]);
+
+  const resolveMergeProvider = useCallback((integration) => {
+    if (!integration) return null;
+    if (integration.type === 'merge_catalog') {
+      const slug = String(integration.id || '').trim().toLowerCase();
+      if (!slug) return null;
+      const categories = Array.isArray(integration.mergeCategories) ? integration.mergeCategories : [];
+      return { slug, categories };
+    }
+    if (integration.type !== 'merge' && integration.type !== 'merge_storage') return null;
+
+    const candidateKeys = [
+      normalizeIntegrationKey(integration.id),
+      normalizeIntegrationKey(integration.name),
+      ...(INTEGRATION_PROVIDER_ALIASES[integration.id] || []).map(normalizeIntegrationKey),
+    ].filter(Boolean);
+
+    for (const key of candidateKeys) {
+      const match = mergeCatalogLookup.get(key);
+      if (match?.slug) return match;
+    }
+    return null;
+  }, [mergeCatalogLookup]);
+
   const handleConnect = useCallback(async (integration) => {
     if (integration.type === 'outlook' || integration.type === 'gmail') {
       const { data: { session } } = await supabase.auth.getSession();
@@ -542,19 +585,36 @@ export default function Integrations() {
       return;
     }
     if (integration.type === 'merge') {
-      const cats = MERGE_CATEGORY_MAP[integration.category] || ['crm'];
-      await openMergeLink(integration.id, cats, integration.name);
-      return;
-    }
-    if (integration.type === 'merge_catalog') {
+      if (!integration.mergeLaunchAvailable || !integration.mergeSlug) {
+        toast.info(`${integration.name} is not currently available to connect in this environment.`);
+        return;
+      }
       const cats = Array.isArray(integration.mergeCategories) && integration.mergeCategories.length
         ? integration.mergeCategories
         : (MERGE_CATEGORY_MAP[integration.category] || ['crm']);
-      await openMergeLink(integration.id, cats, integration.name);
+      await openMergeLink(integration.id, cats, integration.mergeSlug);
+      return;
+    }
+    if (integration.type === 'merge_catalog') {
+      if (!integration.mergeLaunchAvailable || !integration.mergeSlug) {
+        toast.info(`${integration.name} is not currently available to connect in this environment.`);
+        return;
+      }
+      const cats = Array.isArray(integration.mergeCategories) && integration.mergeCategories.length
+        ? integration.mergeCategories
+        : (MERGE_CATEGORY_MAP[integration.category] || ['crm']);
+      await openMergeLink(integration.id, cats, integration.mergeSlug);
       return;
     }
     if (integration.type === 'merge_storage') {
-      await openMergeLink(integration.id, ['file_storage'], integration.name);
+      if (!integration.mergeLaunchAvailable || !integration.mergeSlug) {
+        toast.info(`${integration.name} is not currently available to connect in this environment.`);
+        return;
+      }
+      const cats = Array.isArray(integration.mergeCategories) && integration.mergeCategories.length
+        ? integration.mergeCategories
+        : ['file_storage'];
+      await openMergeLink(integration.id, cats, integration.mergeSlug);
       return;
     }
   }, [openMergeLink]);
@@ -666,7 +726,27 @@ export default function Integrations() {
     })
     .filter((item) => item.id && !curatedIds.has(item.id));
   const connectorPool = [...EMAIL_CALENDAR, ...ALL_INTEGRATIONS, ...MARKETING_PLATFORMS, ...mergeSearchCatalog];
-  const filtered = connectorPool.filter((integration) => {
+  const enrichedConnectorPool = connectorPool.map((integration) => {
+    if (integration.type !== 'merge' && integration.type !== 'merge_storage' && integration.type !== 'merge_catalog') {
+      return integration;
+    }
+    const resolved = resolveMergeProvider(integration);
+    if (!resolved?.slug) {
+      return {
+        ...integration,
+        mergeSlug: null,
+        mergeLaunchAvailable: false,
+        mergeCategories: Array.isArray(integration.mergeCategories) ? integration.mergeCategories : [],
+      };
+    }
+    return {
+      ...integration,
+      mergeSlug: resolved.slug,
+      mergeLaunchAvailable: true,
+      mergeCategories: Array.isArray(resolved.categories) ? resolved.categories : [],
+    };
+  });
+  const filtered = enrichedConnectorPool.filter((integration) => {
     const connected = isConnected(integration);
     if (selectedTab === 'connected' && !connected) return false;
     if (selectedTab === 'available' && connected) return false;
@@ -849,6 +929,10 @@ export default function Integrations() {
 
 // ── Integration card ──────────────────────────────────────────────────────────
 function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, comingSoon, isStale = false, truthState = 'unverified', truthReason = '' }) {
+  const unavailableProvider = !connected
+    && !comingSoon
+    && (integration.type === 'merge' || integration.type === 'merge_storage' || integration.type === 'merge_catalog')
+    && !integration.mergeLaunchAvailable;
   const statusTone = connected
     ? { text: 'var(--positive)', bg: 'var(--positive-wash)' }
     : comingSoon
@@ -859,7 +943,7 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
     ? 'Notify me'
     : connected
       ? (isStale ? 'Re-link' : 'Disconnect')
-      : 'Connect';
+      : (unavailableProvider ? 'Unavailable' : 'Connect');
 
   return (
     <div
@@ -955,12 +1039,12 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
                 onConnect(integration);
               }
             }}
-            disabled={disconnecting || openingMerge}
+            disabled={disconnecting || openingMerge || unavailableProvider}
             className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold"
             style={{
               background: 'var(--surface-2)',
               border: '1px solid var(--border)',
-              color: 'var(--ink-display)',
+              color: unavailableProvider ? 'var(--ink-muted)' : 'var(--ink-display)',
             }}
             data-testid={
               connected
@@ -979,7 +1063,7 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
             ) : (
               <Plug className="w-3 h-3" />
             )}
-            {disconnecting || (openingMerge && !isStale) ? 'Working...' : (connected ? 'Disconnect' : (comingSoon ? 'Notify me' : 'Connect'))}
+            {disconnecting || (openingMerge && !isStale) ? 'Working...' : (connected ? 'Disconnect' : (comingSoon ? 'Notify me' : (unavailableProvider ? 'Unavailable' : 'Connect')))}
           </button>
         </div>
       </div>

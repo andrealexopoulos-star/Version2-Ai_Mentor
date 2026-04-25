@@ -644,14 +644,19 @@ async def create_merge_link_token(
         async with httpx.AsyncClient() as client:
             requested_categories = payload.categories if payload and payload.categories else None
             categories = requested_categories or ["accounting", "crm", "hris", "ats"]
-            # Build Merge API body — categories only (no integration field, Merge handles selection in modal)
+            requested_integration = str(payload.integration).strip() if payload and payload.integration else ""
+            # Build Merge API body — categories with optional provider preselection slug.
             merge_body = {
                 "end_user_origin_id": account_id,
                 "end_user_organization_name": MERGE_PARTNER_ORG_NAME,
                 "end_user_email_address": user_email,
                 "categories": categories
             }
-            logger.info(f"🔗 Creating Merge link token — categories: {categories}")
+            if requested_integration:
+                merge_body["integration"] = requested_integration
+                logger.info(f"🔗 Creating Merge link token — categories: {categories}, integration: {requested_integration}")
+            else:
+                logger.info(f"🔗 Creating Merge link token — categories: {categories}")
 
             response = await client.post(
                 "https://api.merge.dev/api/integrations/create-link-token",
