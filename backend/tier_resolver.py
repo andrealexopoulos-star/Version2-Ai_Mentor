@@ -71,7 +71,7 @@ ROUTE_ACCESS = {
     '/advisor': 'starter',
     '/market': 'starter',
     '/business-profile': 'starter',
-    '/integrations': 'starter',
+    '/integrations': 'free',
     '/connect-email': 'starter',
     '/data-health': 'starter',
     '/competitive-benchmark': 'starter',
