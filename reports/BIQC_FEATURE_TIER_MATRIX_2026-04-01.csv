@@ -1,7 +1,7 @@
 module,route_or_surface,current_access_class,min_tier,launch_type,usage_limit,quota_threshold,overage_pricing,primary_supplier_dependency,status,notes
 BIQc Overview,/advisor,starter,starter,free,n/a,n/a,n/a,Supabase+OpenAI,active,Primary command center
 Soundboard,/soundboard,starter,starter,free,mode usage policy,Supabase prod thresholds: MAU warn 40k hard 50k; DB warn 1GiB hard 2GiB; storage warn 8GiB hard 10GiB,Supabase paid overages apply by plan for MAU/egress/storage,OpenAI/Anthropic/Perplexity,active,Flagship advisor surface
-Integrations,/integrations,starter,starter,free,1-connector baseline in free,Merge connector volume constrained by supplier tier,Merge overage and connector-tier pricing per linked account,Merge,active,Connector-depth upgrades driven by capability gaps
+Integrations,/integrations,starter,free,free,1-connector baseline in free,Merge connector volume constrained by supplier tier,Merge overage and connector-tier pricing per linked account,Merge,active,Connector-depth upgrades driven by capability gaps
 Email Inbox,/email-inbox,starter,starter,free,n/a,OAuth provider rate limits,Provider API quota overages per vendor terms,Microsoft/Google,active,Token freshness critical
 Calendar,/calendar,starter,starter,free,n/a,OAuth provider rate limits,Provider API quota overages per vendor terms,Microsoft/Google,active,Sync lag monitored
 Competitive Benchmark,/competitive-benchmark,starter,starter,free,n/a,Search credits and API quotas,Vendor request overages billed per request by plan,SEMrush+Serper,active,Requires supplier spend guardrails
