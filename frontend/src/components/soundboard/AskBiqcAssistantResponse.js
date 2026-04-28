@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Database, Download, Lightbulb, Target, Zap, TrendingUp } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { fontFamily } from '../../design-system/tokens';
@@ -7,147 +7,147 @@ import { normalizeMessageContent } from '../../lib/soundboardPolicy';
 import { normalizeAskBiqcConfidencePercent } from '../../lib/soundboardRuntime';
 import AskBiqcMessageActions from './AskBiqcMessageActions';
 
-function Chip({ children, style = {}, testId }) {
-  return (
-    <span
-      className="text-[9px] px-1.5 py-0.5 rounded"
-      style={{ fontFamily: fontFamily.mono, ...style }}
-      data-testid={testId}
-    >
-      {children}
-    </span>
-  );
-}
-
-/**
- * Parse Insight / Decision / Action / Impact sections out of the raw markdown.
- * Supports multiple heading styles so upstream copy stays natural:
- *   - "## Insight", "### Insight"
- *   - "**Insight:**" or "**Insight**"
- *   - "Insight:" on its own line
- * Aliases ("Recommended Action", "Business Impact", "Key Insight", "Recommendation",
- * "Next Step") are mapped to the canonical four slots. Content keeps its markdown
- * so lists and emphasis still render.
- */
-function parseStructuredSections(text) {
-  if (!text || typeof text !== 'string') return null;
-
-  const lines = text.split('\n');
-  const sections = {};
-  let current = null;
-  let prefaceLines = [];
-
-  const mapHeading = (raw) => {
-    const key = raw.toLowerCase();
-    if (/insight|finding|observation/.test(key)) return 'insight';
-    if (/decision|recommendation|recommend/.test(key)) return 'decision';
-    if (/action|next\s*step|do\s*next/.test(key)) return 'action';
-    if (/impact|outcome|result|consequence/.test(key)) return 'impact';
-    return null;
-  };
-
-  const headingRegex = /^\s*(?:#{1,4}\s*)?(?:\*\*)?\s*(Insight|Key Insight|Finding|Observation|Decision|Recommendation|Recommended(?:\s+Decision)?|Action|Recommended Action|Next Step|Do Next|Impact|Business Impact|Outcome|Result|Consequence)s?\s*(?:\*\*)?\s*:?\s*(.*)$/i;
-
-  lines.forEach((raw) => {
-    const trimmed = raw.trim();
-    const m = trimmed.match(headingRegex);
-    if (m) {
-      const mapped = mapHeading(m[1]);
-      if (mapped) {
-        current = mapped;
-        if (!sections[current]) sections[current] = [];
-        if (m[2]) sections[current].push(m[2].trim());
-        return;
-      }
-    }
-    if (current) {
-      sections[current].push(raw);
-    } else {
-      prefaceLines.push(raw);
-    }
-  });
-
-  const canonicalKeys = ['insight', 'decision', 'action', 'impact'];
-  const filled = canonicalKeys.filter((k) => (sections[k] || []).join('').trim().length > 0);
-
-  // Require at least 2 of 4 slots populated before switching to structured rendering —
-  // keeps short or conversational replies from being forced into a panel.
-  if (filled.length < 2) return null;
-
-  const out = {};
-  canonicalKeys.forEach((k) => {
-    const joined = (sections[k] || []).join('\n').replace(/^\s*\n+/, '').trimEnd();
-    out[k] = joined;
-  });
-  out.__preface = prefaceLines.join('\n').trim();
-  return out;
-}
-
-const SECTION_META = {
-  insight: {
-    label: 'Insight',
-    Icon: Lightbulb,
-    accent: 'var(--lava)',
-    wash: 'var(--lava-wash)',
-    ring: 'var(--lava-ring)',
-  },
-  decision: {
-    label: 'Decision',
-    Icon: Target,
-    accent: 'var(--info)',
-    wash: 'var(--info-wash)',
-    ring: 'rgba(37,99,235,0.25)',
-  },
-  action: {
-    label: 'Action',
-    Icon: Zap,
-    accent: 'var(--positive)',
-    wash: 'var(--positive-wash)',
-    ring: 'rgba(22,163,74,0.25)',
-  },
-  impact: {
-    label: 'Impact',
-    Icon: TrendingUp,
-    accent: 'var(--warning)',
-    wash: 'var(--warning-wash)',
-    ring: 'rgba(217,119,6,0.25)',
-  },
+const SECTION_TITLES = {
+  executive: 'Executive answer',
+  meaning: 'Commercial meaning',
+  nextMove: 'Recommended next move',
 };
 
-function StructuredSection({ kind, body, compact }) {
-  const meta = SECTION_META[kind];
-  if (!meta || !body) return null;
-  const { Icon } = meta;
+function formatFreshnessLabel(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return 'Freshness unknown';
+  const isoDateLike = /^\d{4}-\d{2}-\d{2}/.test(raw);
+  if (isoDateLike) {
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      return `Updated ${parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+    }
+  }
+  if (/^\d+\s*[mhds]$/i.test(raw)) return `Updated ${raw.toLowerCase()} ago`;
+  return `Updated ${raw}`;
+}
+
+function splitExecutiveSections(rawText) {
+  const text = String(rawText || '').trim();
+  if (!text) {
+    return {
+      executive: '',
+      meaning: '',
+      nextMove: '',
+    };
+  }
+
+  const lines = text.split('\n');
+  const map = {};
+  let current = 'executive';
+
+  const headingPattern = /^\s*(?:#{1,4}\s*)?(?:\*\*)?\s*(insight|key insight|finding|observation|decision|recommendation|recommended decision|action|recommended action|next step|do next|impact|business impact|outcome|result|consequence)\s*(?:\*\*)?\s*:?\s*$/i;
+  const inlinePattern = /^\s*(?:#{1,4}\s*)?(?:\*\*)?\s*(insight|key insight|finding|observation|decision|recommendation|recommended decision|action|recommended action|next step|do next|impact|business impact|outcome|result|consequence)\s*(?:\*\*)?\s*:\s*(.*)$/i;
+
+  const pickBucket = (heading) => {
+    const key = heading.toLowerCase();
+    if (/decision|recommendation|action|next step|do next/.test(key)) return 'nextMove';
+    if (/impact|outcome|result|consequence/.test(key)) return 'meaning';
+    return 'executive';
+  };
+
+  lines.forEach((line) => {
+    const inline = line.match(inlinePattern);
+    if (inline) {
+      current = pickBucket(inline[1]);
+      map[current] = [...(map[current] || []), inline[2]].filter(Boolean);
+      return;
+    }
+    const heading = line.match(headingPattern);
+    if (heading) {
+      current = pickBucket(heading[1]);
+      return;
+    }
+    map[current] = [...(map[current] || []), line];
+  });
+
+  const executive = (map.executive || []).join('\n').trim();
+  const meaning = (map.meaning || []).join('\n').trim();
+  const nextMove = (map.nextMove || []).join('\n').trim();
+  return { executive, meaning, nextMove };
+}
+
+function ExecutiveSection({ title, body }) {
+  if (!body) return null;
   return (
-    <section
-      className={`rounded-xl ${compact ? 'p-2.5' : 'p-3'}`}
-      style={{
-        background: meta.wash,
-        border: `1px solid ${meta.ring}`,
-      }}
-      data-testid={`ask-biqc-structured-${kind}`}
-    >
-      <div className="flex items-center gap-2 mb-1.5">
-        <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: meta.accent }} />
-        <span
-          className="text-[10px] uppercase tracking-wider font-semibold"
-          style={{ color: meta.accent, fontFamily: fontFamily.mono, letterSpacing: '0.08em' }}
-        >
-          {meta.label}
-        </span>
-      </div>
+    <section className="grid gap-1.5">
+      <p
+        className="text-[12px] font-semibold uppercase tracking-[0.06em]"
+        style={{ color: 'var(--ink-muted, #737373)', fontFamily: fontFamily.body }}
+      >
+        {title}
+      </p>
       <div
-        className="markdown-body"
-        style={{
-          color: 'var(--ink)',
-          fontFamily: fontFamily.body,
-          lineHeight: 1.55,
-          fontSize: compact ? '12px' : '13px',
-        }}
+        className="markdown-body text-[14px]"
+        style={{ color: 'var(--ink, #171717)', lineHeight: 1.65, fontFamily: fontFamily.body }}
       >
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
       </div>
     </section>
+  );
+}
+
+function EvidenceList({ citations, evidenceSources }) {
+  const hasCitations = Array.isArray(citations) && citations.length > 0;
+  const hasSources = Array.isArray(evidenceSources) && evidenceSources.length > 0;
+  if (!hasCitations && !hasSources) {
+    return (
+      <p className="text-[13px]" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}>
+        No source citations are available for this response.
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid gap-2">
+      {hasCitations && (
+        <div className="grid gap-1.5">
+          {citations.slice(0, 5).map((citation, index) => (
+            <div
+              key={`citation-${index}`}
+              className="rounded-lg px-3 py-2"
+              style={{
+                background: 'var(--surface-sunken, #F5F5F5)',
+                border: '1px solid var(--border, rgba(10,10,10,0.08))',
+              }}
+            >
+              <p className="text-[12px] font-semibold" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}>
+                {citation.ref || `Source ${index + 1}`} · {citation.source || 'Connected source'}
+              </p>
+              {citation.summary && (
+                <p className="text-[13px] mt-1" style={{ color: 'var(--ink, #171717)', fontFamily: fontFamily.body }}>
+                  {citation.summary}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {hasSources && (
+        <div className="flex flex-wrap gap-2">
+          {evidenceSources.slice(0, 6).map((source, index) => (
+            <span
+              key={`${source?.source || 'source'}-${index}`}
+              className="px-2.5 py-1 rounded-full text-[12px]"
+              style={{
+                background: 'rgba(148,163,184,0.14)',
+                color: 'var(--ink-secondary, #525252)',
+                border: '1px solid rgba(148,163,184,0.28)',
+                fontFamily: fontFamily.body,
+              }}
+            >
+              {source.source}
+              {source.freshness ? ` · ${source.freshness}` : ''}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -159,25 +159,30 @@ export default function AskBiqcAssistantResponse({
   onRegenerate,
   onSuggestedAction,
   actionTestIdPrefix = 'ask-biqc-response-action',
-  metadataTestId = 'ask-biqc-response-metadata-row',
-  evidenceTestId = 'ask-biqc-evidence-row',
 }) {
-  const [showDetails, setShowDetails] = useState(false);
+  const [showEvidence, setShowEvidence] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const safeMessage = message && typeof message === 'object' ? message : {};
   const role = safeMessage.role;
 
-  const confidencePercent = normalizeAskBiqcConfidencePercent(safeMessage.confidence_score);
   const contentText = normalizeMessageContent(message.content ?? message.text);
-  const structured = useMemo(() => parseStructuredSections(contentText), [contentText]);
+  const confidencePercent = normalizeAskBiqcConfidencePercent(safeMessage.confidence_score);
   const evidenceSources = (safeMessage.evidence_pack?.sources || []).filter(
     (source) => String(source?.source || '').trim().toLowerCase() !== 'unknown'
   );
-  const directSources = (safeMessage.sources || []).filter(
-    (source) => String(source || '').trim().toLowerCase() !== 'unknown'
-  );
-  const retrievalContract = safeMessage.retrieval_contract || {};
-  const forensicReport = safeMessage.forensic_report || {};
-  const generationContract = safeMessage.generation_contract || {};
+  const dataSourcesCount = typeof safeMessage.data_sources_count === 'number'
+    ? safeMessage.data_sources_count
+    : evidenceSources.length;
+  const freshnessLabel = formatFreshnessLabel(safeMessage.data_freshness);
+  const retrievalContract = useMemo(() => safeMessage.retrieval_contract || {}, [safeMessage.retrieval_contract]);
+  const forensicReport = useMemo(() => safeMessage.forensic_report || {}, [safeMessage.forensic_report]);
+  const generationContract = useMemo(() => safeMessage.generation_contract || {}, [safeMessage.generation_contract]);
+
+  const sections = useMemo(() => splitExecutiveSections(contentText), [contentText]);
+  const suggestedActions = Array.isArray(safeMessage.suggested_actions) ? safeMessage.suggested_actions.slice(0, 3) : [];
+  const primaryAction = suggestedActions[0] || null;
+  const secondaryActions = suggestedActions.slice(1, 3);
+
   const exportRequestedByPrompt = /\b(export|download|file|pdf|docx|csv|ppt|powerpoint)\b/i.test(contentText);
   const canInlineExport = Boolean(
     contentText.trim()
@@ -187,72 +192,163 @@ export default function AskBiqcAssistantResponse({
       || exportRequestedByPrompt
     )
   );
-  const hasAdvancedDetails = Boolean(
-    evidenceSources.length > 0
-    || safeMessage.coverage_window
-    || safeMessage.boardroom_trace?.phases?.length
-    || safeMessage.boardroom_status === 'fallback_error'
-    || (forensicReport.mode_active && retrievalContract.answer_grade)
-    || (Array.isArray(forensicReport.contradictions) && forensicReport.contradictions.length > 0)
-    || directSources.length > 0
-    || confidencePercent != null
-    || typeof safeMessage.data_sources_count === 'number'
-    || safeMessage.data_freshness
-    || retrievalContract.retrieval_mode
-    || retrievalContract.answer_grade
-    || retrievalContract.history_truncated
-    || Number(retrievalContract.crm_pages_fetched || 0) > 0
-    || Number(retrievalContract.accounting_pages_fetched || 0) > 0
-    || retrievalContract.materialization_attempted
-    || generationContract.requested
-    || safeMessage.advisory_slots?.kpi_note
-    || (typeof safeMessage.response_version === 'number' && safeMessage.response_version > 1)
-    || (Array.isArray(forensicReport.citations) && forensicReport.citations.length > 0)
-  );
+
+  const advancedRows = useMemo(() => {
+    const rows = [];
+    if (retrievalContract.retrieval_mode) rows.push(`Retrieval mode: ${retrievalContract.retrieval_mode}`);
+    if (retrievalContract.canonical_retrieval_mode) rows.push(`Canonical retrieval mode: ${retrievalContract.canonical_retrieval_mode}`);
+    if (retrievalContract.answer_grade) rows.push(`Answer grade: ${retrievalContract.answer_grade}`);
+    if (retrievalContract.history_truncated) rows.push('History truncated: true');
+    if (Number(retrievalContract.crm_pages_fetched || 0) > 0 || Number(retrievalContract.accounting_pages_fetched || 0) > 0) {
+      rows.push(`Pages fetched CRM:${Number(retrievalContract.crm_pages_fetched || 0)} ACC:${Number(retrievalContract.accounting_pages_fetched || 0)}`);
+    }
+    if (retrievalContract.materialization_attempted) rows.push(`Signal heal count: +${Number(retrievalContract.signals_emitted_on_demand || 0)}`);
+    if (retrievalContract.quality_eval?.latency_slo_ms_target) rows.push(`SLO target: ${Number(retrievalContract.quality_eval.latency_slo_ms_target)}ms`);
+    if (retrievalContract.quality_eval?.latency_slo_breached) rows.push('SLO breached: true');
+    if (generationContract.requested) rows.push(`Generation contract: ${generationContract.artifact_type || 'analysis'}`);
+    if (generationContract.requested && generationContract.tier_allowed === false) {
+      rows.push(`Export tier: ${generationContract.required_tier || 'starter'}+`);
+    }
+    if (safeMessage.boardroom_status === 'fallback_error') rows.push('Boardroom degraded mode');
+    if (safeMessage.boardroom_trace?.phases?.length) rows.push('Boardroom orchestration phases available');
+    if (forensicReport.mode_active && retrievalContract.answer_grade && retrievalContract.answer_grade !== 'FULL') {
+      rows.push(`Forensic report limited: ${retrievalContract.answer_grade}`);
+    }
+    return rows;
+  }, [forensicReport.mode_active, generationContract, retrievalContract, safeMessage.boardroom_status, safeMessage.boardroom_trace?.phases?.length]);
+
   if (role !== 'assistant') return null;
 
   return (
-    <>
-      {message.agent_name && (
-        <p
-          className="text-[10px] font-medium mb-1"
-          style={{ color: 'var(--info)', fontFamily: fontFamily.mono }}
+    <div
+      className={`grid ${compact ? 'gap-2.5' : 'gap-3'} rounded-2xl`}
+      data-testid="ask-biqc-executive-card"
+      style={{
+        padding: compact ? '12px' : '16px',
+        background: 'var(--surface, #FFFFFF)',
+        border: '1px solid var(--border, rgba(10,10,10,0.08))',
+      }}
+    >
+      <ExecutiveSection title={SECTION_TITLES.executive} body={sections.executive || contentText} />
+      <ExecutiveSection title={SECTION_TITLES.meaning} body={sections.meaning} />
+      <ExecutiveSection title={SECTION_TITLES.nextMove} body={sections.nextMove} />
+
+      {primaryAction && (
+        <button
+          type="button"
+          onClick={() => onSuggestedAction?.(primaryAction.prompt || primaryAction.label)}
+          className={`${compact ? 'px-3 py-2 text-[13px]' : 'px-3.5 py-2 text-[14px]'} rounded-xl text-left`}
+          style={{
+            background: 'var(--lava-wash, rgba(232,93,0,0.12))',
+            border: '1px solid var(--lava-ring, rgba(232,93,0,0.32))',
+            color: 'var(--lava, #E85D00)',
+            fontFamily: fontFamily.body,
+            fontWeight: 600,
+          }}
+          data-testid={`${actionTestIdPrefix}-primary-suggested`}
         >
-          {message.agent_name}
-        </p>
-      )}
-      {message.type === 'integration_prompt' && (
-        <Database
-          className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5"
-          style={{ color: 'var(--warning)' }}
-        />
+          {primaryAction.label || primaryAction.prompt}
+        </button>
       )}
 
-      {/* Structured intelligence panel (Insight / Decision / Action / Impact).
-          Falls back to plain markdown if the response is conversational. */}
-      {structured ? (
-        <div className="flex flex-col gap-2" data-testid="ask-biqc-structured-panel">
-          {structured.__preface && (
-            <div
-              className="markdown-body"
-              style={{ color: 'var(--ink-secondary)', lineHeight: 1.5, fontSize: '12px' }}
-            >
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{structured.__preface}</ReactMarkdown>
+      <div
+        className="flex flex-wrap items-center gap-2.5"
+        style={{
+          padding: compact ? '8px 10px' : '9px 12px',
+          background: 'var(--surface-sunken, #F5F5F5)',
+          border: '1px solid var(--border, rgba(10,10,10,0.08))',
+          borderRadius: 12,
+        }}
+      >
+        <span className="text-[12px]" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}>
+          {confidencePercent != null ? `Confidence ${confidencePercent.toFixed(0)}%` : 'Confidence unknown'}
+        </span>
+        <span className="text-[12px]" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}>
+          {dataSourcesCount} source{dataSourcesCount === 1 ? '' : 's'}
+        </span>
+        <span className="text-[12px]" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}>
+          {freshnessLabel}
+        </span>
+        <button
+          type="button"
+          onClick={() => setShowEvidence((value) => !value)}
+          className="text-[12px] underline underline-offset-2"
+          style={{ color: 'var(--lava, #E85D00)', fontFamily: fontFamily.body }}
+          data-testid={`${actionTestIdPrefix}-view-evidence`}
+        >
+          {showEvidence ? 'Hide evidence' : 'View evidence'}
+        </button>
+      </div>
+
+      {showEvidence && (
+        <div
+          className="grid gap-2 rounded-xl"
+          style={{
+            padding: compact ? '10px' : '12px',
+            background: 'var(--surface, #FFFFFF)',
+            border: '1px solid var(--border, rgba(10,10,10,0.08))',
+          }}
+          data-testid="ask-biqc-evidence-panel"
+        >
+          <EvidenceList citations={forensicReport.citations || []} evidenceSources={evidenceSources} />
+
+          {safeMessage.coverage_window?.missing_periods?.length > 0 && (
+            <p className="text-[12px]" style={{ color: 'var(--warning, #D97706)', fontFamily: fontFamily.body }}>
+              Data gap detected: {safeMessage.coverage_window.missing_periods[0]}
+            </p>
+          )}
+
+          {advancedRows.length > 0 && (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced((value) => !value)}
+                className="text-[12px] underline underline-offset-2"
+                style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}
+                data-testid={`${actionTestIdPrefix}-advanced-toggle`}
+              >
+                {showAdvanced ? 'Hide advanced details' : 'Show advanced details'}
+              </button>
+              {showAdvanced && (
+                <div
+                  className="mt-2 rounded-lg px-3 py-2 grid gap-1"
+                  style={{
+                    background: 'var(--surface-sunken, #F5F5F5)',
+                    border: '1px solid var(--border, rgba(10,10,10,0.08))',
+                  }}
+                  data-testid="ask-biqc-advanced-details"
+                >
+                  {advancedRows.map((row) => (
+                    <p key={row} className="text-[12px]" style={{ color: 'var(--ink-secondary, #525252)', fontFamily: fontFamily.body }}>
+                      {row}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-          <StructuredSection kind="insight" body={structured.insight} compact={compact} />
-          <StructuredSection kind="decision" body={structured.decision} compact={compact} />
-          <StructuredSection kind="action" body={structured.action} compact={compact} />
-          <StructuredSection kind="impact" body={structured.impact} compact={compact} />
         </div>
-      ) : (
-        <div
-          className="markdown-body"
-          style={{ lineHeight: 1.7, color: 'var(--ink)', fontFamily: fontFamily.body }}
-        >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {contentText || ''}
-          </ReactMarkdown>
+      )}
+
+      {secondaryActions.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {secondaryActions.map((action, index) => (
+            <button
+              key={`${action.action || action.label || 'action'}-${index}`}
+              type="button"
+              onClick={() => onSuggestedAction?.(action.prompt || action.label)}
+              className="px-3 py-1.5 rounded-full text-[12px]"
+              style={{
+                background: 'rgba(148,163,184,0.12)',
+                border: '1px solid rgba(148,163,184,0.25)',
+                color: 'var(--ink-secondary, #525252)',
+                fontFamily: fontFamily.body,
+              }}
+              data-testid={`${actionTestIdPrefix}-secondary-suggested-${index}`}
+            >
+              {action.label || action.prompt}
+            </button>
+          ))}
         </div>
       )}
 
@@ -262,12 +358,11 @@ export default function AskBiqcAssistantResponse({
         onCopy={onCopy}
         onUseInComposer={onUseInComposer}
         onRegenerate={onRegenerate}
-        testIdPrefix={actionTestIdPrefix}
-      />
-      {canInlineExport && (
-        <button
-          type="button"
-          onClick={() => {
+        extraActions={canInlineExport ? [{
+          key: 'export-inline',
+          label: 'Export response',
+          variant: 'neutral',
+          onClick: () => {
             try {
               const filenameHint = String(generationContract.artifact_type || 'ask_biqc_export')
                 .replace(/[^a-z0-9_-]+/gi, '_')
@@ -284,491 +379,32 @@ export default function AskBiqcAssistantResponse({
             } catch {
               // no-op: preserve chat flow if browser blocks downloads
             }
-          }}
-          className={`${compact ? 'mt-2 px-2.5 py-1 text-[10px]' : 'mt-2 px-3 py-1.5 text-xs'} rounded-lg font-medium transition-all hover:brightness-110 flex items-center gap-1.5`}
-          style={{
-            background: 'var(--lava-wash)',
-            border: '1px solid var(--lava-ring)',
-            color: 'var(--lava)',
-            fontFamily: fontFamily.mono,
-          }}
-          data-testid={`${actionTestIdPrefix}-export-inline`}
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Export this response</span>
-        </button>
-      )}
-      {hasAdvancedDetails && (
-        <button
-          type="button"
-          className="mt-2 text-[10px] underline-offset-2 hover:underline"
-          style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}
-          onClick={() => setShowDetails((value) => !value)}
-        >
-          {showDetails ? 'Hide details' : 'Show details'}
-        </button>
-      )}
-
-      {message.suggested_actions?.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {message.suggested_actions.map((action, index) => (
-            <button
-              key={`${action.action || action.label || 'action'}-${index}`}
-              type="button"
-              onClick={() => onSuggestedAction?.(action.prompt || action.label)}
-              className={`${compact ? 'px-2.5 py-1 text-[10px]' : 'px-3 py-1.5 text-xs'} rounded-lg font-medium transition-all hover:brightness-110 flex items-center gap-1.5`}
-              style={{
-                background: 'var(--lava-wash)',
-                border: '1px solid var(--lava-ring)',
-                color: 'var(--lava)',
-                fontFamily: fontFamily.mono,
-              }}
-              data-testid={`${actionTestIdPrefix}-suggested-${index}`}
-            >
-              <span>→</span>
-              <span>{action.label || action.prompt}</span>
-            </button>
-          ))}
-        </div>
-      )}
-      {showDetails
-        && (
-          (retrievalContract.answer_grade && retrievalContract.answer_grade !== 'FULL')
-          || Boolean(forensicReport.degraded_reason)
-          || message.guardrail_status === 'LIMITED_DATA'
-        )
-        && onSuggestedAction && (
-          <div className="mt-2">
-            <button
-              type="button"
-              onClick={() => onSuggestedAction('Rerun this request with a deeper historical window, include pagination/backfill status per connector, and provide a report with explicit data gaps.')}
-              className={`${compact ? 'px-2.5 py-1 text-[10px]' : 'px-3 py-1.5 text-xs'} rounded-lg font-medium transition-all hover:brightness-110`}
-              style={{
-                background: 'var(--info-wash)',
-                border: '1px solid rgba(37,99,235,0.25)',
-                color: 'var(--info)',
-                fontFamily: fontFamily.mono,
-              }}
-              data-testid={`${actionTestIdPrefix}-rerun-deeper-window`}
-            >
-              Rerun with deeper window
-            </button>
-          </div>
-        )}
-
-      {message.intent?.domain && message.intent.domain !== 'general' && (
-        <div className="mt-2">
-          <Chip style={{ background: 'var(--surface-sunken)', color: 'var(--ink-secondary)' }}>
-            {message.intent.domain.toUpperCase()} · {message.model_used || 'AI'}
-          </Chip>
-        </div>
-      )}
-
-      {showDetails && evidenceSources.length > 0 && (
-        <div className={`mt-2 flex flex-wrap ${compact ? 'gap-1' : 'gap-1.5'}`} data-testid={evidenceTestId}>
-          {evidenceSources.slice(0, 5).map((source) => (
-            <Chip
-              key={source.id || source.source}
-              style={{ background: 'rgba(139,92,246,0.12)', color: 'rgb(124, 58, 237)', border: '1px solid rgba(139,92,246,0.25)' }}
-            >
-              {source.source} {source.freshness ? `(${source.freshness})` : ''}
-            </Chip>
-          ))}
-        </div>
-      )}
-
-      {showDetails && message.coverage_window && (
-        <div
-          className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
-          style={{
-            background: 'var(--surface-sunken)',
-            border: '1px solid var(--border)',
-          }}
-        >
-          <p
-            className={`${compact ? 'text-[9px] uppercase tracking-wider mb-1' : 'text-[10px] mb-1'}`}
-            style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}
-          >
-            Coverage window
-          </p>
-          <p className="text-[10px]" style={{ color: 'var(--ink)', fontFamily: fontFamily.mono }}>
-            {(message.coverage_window.coverage_start || 'n/a')} {compact ? '→' : '->'} {(message.coverage_window.coverage_end || 'n/a')}
-          </p>
-          <p className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>
-            last sync: {message.coverage_window.last_sync_at || 'n/a'} · {compact ? 'confidence impact' : 'impact'}: {message.coverage_window.confidence_impact || 'unknown'}
-          </p>
-          {Array.isArray(message.coverage_window.missing_periods) && message.coverage_window.missing_periods.length > 0 && (
-            <p className="text-[10px]" style={{ color: 'var(--warning)', fontFamily: fontFamily.mono }}>
-              gap: {message.coverage_window.missing_periods[0]}
-            </p>
-          )}
-        </div>
-      )}
-      {showDetails && (retrievalContract.searched_windows || retrievalContract.coverage_gaps || retrievalContract.sources_used) && (
-        <div
-          className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
-          style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}
-          data-testid="ask-biqc-retrieval-windows"
-        >
-          <p
-            className={`${compact ? 'text-[9px]' : 'text-[10px]'} mb-1`}
-            style={{ color: 'var(--positive)', fontFamily: fontFamily.mono }}
-          >
-            Retrieval windows
-          </p>
-          <div className="grid gap-1">
-            {(() => {
-              const windows = retrievalContract.searched_windows || {};
-              const blocks = [
-                ['overall', windows.overall],
-                ['crm', windows.crm],
-                ['accounting', windows.accounting],
-                ['email', windows.email],
-                ['calendar', windows.calendar],
-                ['custom', windows.custom],
-              ];
-              return blocks.map(([label, block]) => {
-                if (!block || (!block.start && !block.end)) return null;
-                return (
-                  <div key={`window-${label}`} className="text-[10px]" style={{ color: 'var(--ink)', fontFamily: fontFamily.mono }}>
-                    {label}: {(block.start || 'n/a')} {compact ? '→' : '->'} {(block.end || 'n/a')}
-                  </div>
-                );
-              });
-            })()}
-          </div>
-          {Array.isArray(retrievalContract.coverage_gaps) && retrievalContract.coverage_gaps.length > 0 && (
-            <p className="text-[10px] mt-1" style={{ color: 'var(--warning)', fontFamily: fontFamily.mono }}>
-              gaps: {retrievalContract.coverage_gaps[0]}
-            </p>
-          )}
-          {Array.isArray(retrievalContract.sources_used) && retrievalContract.sources_used.length > 0 && (
-            <p className="text-[10px] mt-1" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>
-              sources used: {retrievalContract.sources_used.slice(0, 6).join(', ')}
-            </p>
-          )}
-        </div>
-      )}
-      {showDetails && retrievalContract.semantic_signal_layer && (
-        <div
-          className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
-          style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}
-          data-testid="ask-biqc-semantic-signal-layer"
-        >
-          <p
-            className={`${compact ? 'text-[9px]' : 'text-[10px]'} mb-1`}
-            style={{ color: 'var(--positive)', fontFamily: fontFamily.mono }}
-          >
-            Live business signals
-          </p>
-          <p className="text-[10px]" style={{ color: 'var(--ink)', fontFamily: fontFamily.mono }}>
-            signals {Number(retrievalContract.semantic_signal_layer.signals_materialized || 0)} · {retrievalContract.semantic_signal_layer.freshness_state || 'unknown'}
-          </p>
-          <p className="text-[10px]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>
-            refresh {Number(retrievalContract.semantic_signal_layer?.background_refresh?.refresh_interval_minutes || 0)}m · escalation +{Number(retrievalContract.semantic_signal_layer?.on_demand_escalation?.signals_emitted || 0)}
-          </p>
-        </div>
-      )}
-
-      {showDetails && message.boardroom_trace?.phases?.length > 0 && (
-        <div
-          className={compact ? 'flex gap-1 mt-2 flex-wrap' : 'mt-2 rounded-lg p-2'}
-          style={compact ? undefined : { border: '1px solid var(--border)', background: 'var(--surface-sunken)' }}
-        >
-          {!compact && (
-            <p className="text-[10px] mb-1" style={{ color: 'var(--info)', fontFamily: fontFamily.mono }}>
-              Boardroom orchestration
-            </p>
-          )}
-          <div className="flex flex-wrap gap-1">
-            {message.boardroom_trace.phases.slice(0, compact ? 4 : 6).map((phase, index) => (
-              <Chip
-                key={`${phase.phase}-${phase.role || index}`}
-                style={{
-                  background: 'var(--info-wash)',
-                  color: 'var(--info)',
-                  border: '1px solid rgba(37,99,235,0.2)',
-                }}
-              >
-                {phase.phase}{phase.role ? `:${phase.role}` : ''} {phase.status || 'ok'}
-              </Chip>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {showDetails && message.boardroom_status === 'fallback_error' && (
-        <div className="mt-2">
-          <Chip style={{ background: 'var(--warning-wash)', color: 'var(--warning)', border: '1px solid rgba(217,119,6,0.25)' }}>
-            Boardroom degraded mode
-          </Chip>
-        </div>
-      )}
-      {showDetails && forensicReport.mode_active && retrievalContract.answer_grade && retrievalContract.answer_grade !== 'FULL' && (
-        <div className="mt-2" data-testid="ask-biqc-forensic-banner">
-          <Chip style={{ background: 'var(--warning-wash)', color: 'var(--warning)', border: '1px solid rgba(217,119,6,0.25)' }}>
-            Forensic report limited: {retrievalContract.answer_grade}
-          </Chip>
-        </div>
-      )}
-      {showDetails && (forensicReport.mode_active || retrievalContract.report_grade_request || retrievalContract.answer_grade) && (
-        <div
-          className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
-          style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}
-          data-testid="ask-biqc-forensic-contradictions"
-        >
-          <p
-            className={`${compact ? 'text-[9px]' : 'text-[10px]'} mb-1`}
-            style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}
-          >
-            Contradictions
-          </p>
-          <div className="grid gap-1">
-            <div className="grid grid-cols-[110px_1fr] gap-2 text-[9px]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>
-              <span>Role</span>
-              <span>Conflict</span>
-            </div>
-            {(Array.isArray(forensicReport.contradictions) ? forensicReport.contradictions : []).slice(0, 4).map((item, index) => (
-              <div key={`forensic-contradiction-${index}`} className="grid grid-cols-[110px_1fr] gap-2 text-[10px]" style={{ color: 'var(--ink)' }}>
-                <span style={{ fontFamily: fontFamily.mono }}>{item.role || 'source'}</span>
-                <span>{item.contradiction || 'n/a'}</span>
-              </div>
-            ))}
-            {(!Array.isArray(forensicReport.contradictions) || forensicReport.contradictions.length === 0) && (
-              <div className="grid grid-cols-[110px_1fr] gap-2 text-[10px]" style={{ color: 'var(--ink)' }}>
-                <span style={{ fontFamily: fontFamily.mono }}>system</span>
-                <span>No explicit contradictions detected in this turn.</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {showDetails && directSources.length > 0 && compact && (
-        <div className="flex gap-1 mt-2 flex-wrap">
-          {directSources.map((source, index) => (
-            <Chip key={`${source}-${index}`} style={{ background: 'var(--positive-wash)', color: 'var(--positive)', border: '1px solid rgba(22,163,74,0.25)' }}>
-              {source}
-            </Chip>
-          ))}
-        </div>
-      )}
-
-      {showDetails && (
-        <div className="mt-2 flex flex-wrap gap-1.5" data-testid={metadataTestId}>
-        {confidencePercent != null && (
-          <Chip
-            style={{ background: 'var(--positive-wash)', color: 'var(--positive)', border: '1px solid rgba(22,163,74,0.25)' }}
-            testId={`${metadataTestId}-confidence`}
-          >
-            Confidence {confidencePercent.toFixed(0)}%
-          </Chip>
-        )}
-        {typeof message.data_sources_count === 'number' && (
-          <Chip
-            style={{ background: 'var(--info-wash)', color: 'var(--info)', border: '1px solid rgba(37,99,235,0.25)' }}
-            testId={`${metadataTestId}-sources`}
-          >
-            {message.data_sources_count} sources
-          </Chip>
-        )}
-        {message.data_freshness && (
-          <Chip
-            style={{ background: 'var(--warning-wash)', color: 'var(--warning)', border: '1px solid rgba(217,119,6,0.25)' }}
-            testId={`${metadataTestId}-freshness`}
-          >
-            Last updated {message.data_freshness}
-          </Chip>
-        )}
-        {retrievalContract.retrieval_mode && (
-          <Chip
-            style={{ background: 'rgba(99,102,241,0.12)', color: 'rgb(79, 70, 229)', border: '1px solid rgba(99,102,241,0.25)' }}
-            testId={`${metadataTestId}-retrieval-mode`}
-          >
-            analysis mode {retrievalContract.retrieval_mode}
-          </Chip>
-        )}
-        {retrievalContract.canonical_retrieval_mode && (
-          <Chip
-            style={{ background: 'rgba(45,212,191,0.12)', color: 'rgb(13, 148, 136)', border: '1px solid rgba(45,212,191,0.25)' }}
-            testId={`${metadataTestId}-canonical-retrieval-mode`}
-          >
-            canonical {retrievalContract.canonical_retrieval_mode}
-          </Chip>
-        )}
-        {retrievalContract.answer_grade && (
-          <Chip
-            style={{ background: 'rgba(236,72,153,0.12)', color: 'rgb(190, 24, 93)', border: '1px solid rgba(236,72,153,0.25)' }}
-            testId={`${metadataTestId}-answer-grade`}
-          >
-            grade {retrievalContract.answer_grade}
-          </Chip>
-        )}
-        {retrievalContract.history_truncated && (
-          <Chip
-            style={{ background: 'var(--warning-wash)', color: 'var(--warning)', border: '1px solid rgba(217,119,6,0.25)' }}
-            testId={`${metadataTestId}-history-truncated`}
-          >
-            history truncated
-          </Chip>
-        )}
-        {(Number(retrievalContract.crm_pages_fetched || 0) > 0 || Number(retrievalContract.accounting_pages_fetched || 0) > 0) && (
-          <Chip
-            style={{ background: 'rgba(56,189,248,0.12)', color: 'rgb(2, 132, 199)', border: '1px solid rgba(56,189,248,0.25)' }}
-            testId={`${metadataTestId}-pages-fetched`}
-          >
-            pages crm:{Number(retrievalContract.crm_pages_fetched || 0)} acc:{Number(retrievalContract.accounting_pages_fetched || 0)}
-          </Chip>
-        )}
-        {(() => {
-          const blocks = [
-            { key: 'email', label: 'email', block: retrievalContract.email_retrieval, testSuffix: 'email-depth' },
-            { key: 'cal', label: 'calendar', block: retrievalContract.calendar_retrieval, testSuffix: 'calendar-depth' },
-            { key: 'custom', label: 'custom', block: retrievalContract.custom_retrieval, testSuffix: 'custom-depth' },
-          ];
-          return blocks.map(({ key, label, block, testSuffix }) => {
-            if (!block || typeof block !== 'object') return null;
-            const pages = Number(block.pages_fetched || 0);
-            const rows = Number(block.rows_loaded || 0);
-            const hasWindow = Boolean(block.window_start && block.window_end);
-            if (pages <= 0 && rows <= 0 && !block.truncated && !hasWindow) return null;
-            const tail = [
-              pages > 0 ? `p${pages}` : null,
-              rows > 0 ? `r${rows}` : null,
-              block.total_rows != null && Number(block.total_rows) > rows ? `tot${Number(block.total_rows)}` : null,
-              block.truncated ? 'trunc' : null,
-            ].filter(Boolean).join(' ');
-            const win = hasWindow
-              ? `${String(block.window_start).slice(0, 10)}->${String(block.window_end).slice(0, 10)}`
-              : '';
-            const text = [label, tail, win].filter(Boolean).join(' ');
-            return (
-              <Chip
-                key={`depth-${key}`}
-                style={{ background: 'rgba(45,212,191,0.12)', color: 'rgb(13, 148, 136)', border: '1px solid rgba(45,212,191,0.25)' }}
-                testId={`${metadataTestId}-${testSuffix}`}
-              >
-                {text}
-              </Chip>
-            );
-          });
-        })()}
-        {retrievalContract.materialization_attempted && (
-          <Chip
-            style={{ background: 'var(--positive-wash)', color: 'var(--positive)', border: '1px solid rgba(22,163,74,0.25)' }}
-            testId={`${metadataTestId}-materialization`}
-          >
-            signal heal +{Number(retrievalContract.signals_emitted_on_demand || 0)}
-          </Chip>
-        )}
-        {retrievalContract.quality_eval?.latency_slo_ms_target && (
-          <Chip
-            style={{ background: 'var(--info-wash)', color: 'var(--info)', border: '1px solid rgba(37,99,235,0.25)' }}
-            testId={`${metadataTestId}-latency-slo`}
-          >
-            slo {Number(retrievalContract.quality_eval.latency_slo_ms_target)}ms
-          </Chip>
-        )}
-        {retrievalContract.quality_eval?.latency_slo_breached && (
-          <Chip
-            style={{ background: 'var(--danger-wash)', color: 'var(--danger)', border: '1px solid rgba(220,38,38,0.25)' }}
-            testId={`${metadataTestId}-latency-slo-breached`}
-          >
-            slo breached
-          </Chip>
-        )}
-        {retrievalContract.pricing_packaging?.required_tier && (
-          <Chip
-            style={{ background: 'var(--warning-wash)', color: 'var(--warning)', border: '1px solid rgba(217,119,6,0.25)' }}
-            testId={`${metadataTestId}-pricing-required-tier`}
-          >
-            package {retrievalContract.pricing_packaging.required_tier}+
-          </Chip>
-        )}
-        {generationContract.requested && (
-          <Chip
-            style={{ background: 'var(--lava-wash)', color: 'var(--lava)', border: '1px solid var(--lava-ring)' }}
-            testId={`${metadataTestId}-generation-artifact`}
-          >
-            artifact {generationContract.artifact_type || 'analysis'}
-          </Chip>
-        )}
-        {generationContract.requested && generationContract.tier_allowed === false && (
-          <Chip
-            style={{ background: 'var(--danger-wash)', color: 'var(--danger)', border: '1px solid rgba(220,38,38,0.25)' }}
-            testId={`${metadataTestId}-generation-tier-gated`}
-          >
-            export tier {generationContract.required_tier || 'starter'}+
-          </Chip>
-        )}
-        {message.advisory_slots?.kpi_note && (
-          <Chip
-            style={{ background: 'rgba(139,92,246,0.12)', color: 'rgb(124, 58, 237)', border: '1px solid rgba(139,92,246,0.25)' }}
-            testId={`${metadataTestId}-kpi`}
-          >
-            KPI note
-          </Chip>
-        )}
-        {typeof message.response_version === 'number' && message.response_version > 1 && (
-          <Chip
-            style={{ background: 'var(--surface-sunken)', color: 'var(--ink-secondary)', border: '1px solid var(--border)' }}
-            testId={`${metadataTestId}-version`}
-          >
-            v{message.response_version}
-          </Chip>
-        )}
-        </div>
-      )}
-      {showDetails && Array.isArray(forensicReport.citations) && forensicReport.citations.length > 0 && (
-        <div className="mt-2 grid gap-1.5" data-testid="ask-biqc-forensic-citations">
-          {forensicReport.citations.slice(0, compact ? 3 : 5).map((citation, index) => (
-            <div
-              key={`forensic-citation-${index}`}
-              className="rounded px-2 py-1.5"
-              style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}
-            >
-              <p className="text-[10px]" style={{ color: 'var(--info)', fontFamily: fontFamily.mono }}>
-                {citation.ref || `S${index + 1}`} · {citation.source || 'source'} {citation.source_id ? `(${citation.source_id})` : ''}
-              </p>
-              {citation.summary && (
-                <p className="text-[10px]" style={{ color: 'var(--ink)', fontFamily: fontFamily.body }}>
-                  {citation.summary}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+          },
+        }] : []}
+        testIdPrefix={actionTestIdPrefix}
+      />
 
       {message.file && (
         <a
           href={message.file.download_url}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center gap-2 mt-2 px-3 py-2 rounded-lg ${compact ? '' : 'hover:brightness-110 transition-all'}`}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg w-fit"
           style={{
-            background: 'var(--lava-wash)',
-            border: '1px solid var(--lava-ring)',
+            background: 'rgba(148,163,184,0.12)',
+            border: '1px solid rgba(148,163,184,0.25)',
             textDecoration: 'none',
+            color: 'var(--ink-secondary, #525252)',
+            fontFamily: fontFamily.body,
           }}
+          data-testid={`${actionTestIdPrefix}-file-download`}
         >
-          <Download className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--lava)' }} />
-          <div className="flex-1 min-w-0">
-            <p
-              className={`${compact ? 'text-[11px]' : 'text-xs'} font-semibold truncate`}
-              style={{ color: 'var(--lava)', fontFamily: fontFamily.mono }}
-            >
-              {message.file.name}
-            </p>
-            <p
-              className="text-[9px]"
-              style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}
-            >
-              {message.file.type} · {Math.round((message.file.size || 0) / 1024)}KB
-            </p>
-          </div>
+          <Download className="w-3.5 h-3.5" />
+          <span className="text-[12px]">
+            Download file: {message.file.name}
+          </span>
         </a>
       )}
-    </>
+    </div>
   );
 }

@@ -10,8 +10,6 @@ import { toast } from 'sonner';
 import { getSoundboardPolicy, SOUND_BOARD_MODES } from '../lib/soundboardPolicy';
 import { deriveSoundboardRequestScope } from '../lib/soundboardQueryRouting';
 import { getBackendUrl } from '../config/urls';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import {
   appendAskBiqcDelta,
   buildAskBiqcComposedMessage,
@@ -30,7 +28,7 @@ import {
   runAskBiqcTurn,
 } from '../lib/soundboardRuntime';
 import VoiceChat from './VoiceChat';
-import AskBiqcMessageActions from './soundboard/AskBiqcMessageActions';
+import AskBiqcAssistantResponse from './soundboard/AskBiqcAssistantResponse';
 import DashboardLayout from './DashboardLayout';
 
 
@@ -504,8 +502,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       if (convs.length === 0) {
         setMessages([{
           role: 'assistant',
-          text: "Hey — I'm your BIQc business advisor. Ask a concrete business question and I'll respond with what BIQc can verify from your current context.\n\nIf any source is missing or stale, I'll call that out clearly and guide the next step.\n\nWhat's on your mind?",
-          content: "Hey — I'm your BIQc business advisor. Ask a concrete business question and I'll respond with what BIQc can verify from your current context.\n\nIf any source is missing or stale, I'll call that out clearly and guide the next step.\n\nWhat's on your mind?",
+          text: "Ask a question that should change a decision.\n\nI'll answer with what your connected business systems can verify. If a source is missing or stale, I'll tell you and show the next move.",
+          content: "Ask a question that should change a decision.\n\nI'll answer with what your connected business systems can verify. If a source is missing or stale, I'll tell you and show the next move.",
         }]);
       }
     }).catch(() => {});
@@ -799,11 +797,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
   const assistantBody = (msg, idx) => {
     const isLatestAssistant = idx === messages.length - 1 && loading;
-    const content = String(msg.content || msg.text || '');
     const dataRequirements = Array.isArray(msg.data_requirements) ? msg.data_requirements : [];
-    const coveragePct = Number.isFinite(Number(msg.data_coverage_pct))
-      ? Number(msg.data_coverage_pct)
-      : (Number.isFinite(Number(msg.coverage_pct)) ? Number(msg.coverage_pct) : null);
     const originalMessage = messages
       .slice(0, idx)
       .filter((message) => message.role === 'user')
@@ -831,24 +825,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           </div>
           <span style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', fontWeight: 500, fontFamily: fontFamily.body }}>
             BIQc
-            {msg.agent_name && msg.agent_name !== 'BIQc' && (
-              <span style={{ color: 'var(--ink-subtle, #A3A3A3)' }}> {'\u00B7'} {msg.agent_name}</span>
-            )}
           </span>
-          {coveragePct !== null && coveragePct < 50 && (
-            <span
-              style={{
-                fontSize: 10,
-                color: 'var(--ink-subtle, #A3A3A3)',
-                padding: '1px 8px',
-                borderRadius: 20,
-                border: '1px solid rgba(10,10,10,0.1)',
-                marginLeft: 4,
-              }}
-            >
-              {coveragePct}% context — answers sharpen as you add more
-            </span>
-          )}
           {isLatestAssistant && (
             <span style={{ fontSize: 12, color: '#E85D00', marginLeft: 4 }}>
               <span style={{ animation: 'pulse 1s infinite' }}>●</span>
@@ -856,31 +833,36 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           )}
         </div>
 
-        <div className="markdown-body" style={{ lineHeight: 1.75, color: 'var(--ink-display, #0A0A0A)', fontSize: 14, fontFamily: fontFamily.body }}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {content}
-          </ReactMarkdown>
-        </div>
-
-        {/* Message metadata: model, sources, response time */}
-        {!isLatestAssistant && (msg.model_used || msg.data_sources_count || msg.agent_name) && (
-          <div style={{
-            marginTop: 10,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontFamily: fontFamily.mono,
-            fontSize: 10,
-            color: 'var(--ink-subtle, #A3A3A3)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}>
-            {msg.model_used && <span>{msg.model_used}</span>}
-            {msg.data_sources_count != null && <span>{'\u00B7'} {msg.data_sources_count} source{msg.data_sources_count !== 1 ? 's' : ''}</span>}
-            {msg.confidence_score != null && <span>{'\u00B7'} {Math.round(msg.confidence_score * 100)}% confidence</span>}
-            {msg.data_freshness && <span>{'\u00B7'} {msg.data_freshness}</span>}
-          </div>
-        )}
+        <AskBiqcAssistantResponse
+          message={msg}
+          compact
+          onCopy={() => handleCopyAssistantMessage(msg)}
+          onUseInComposer={() => {
+            setInput(getAskBiqcMessageText(msg));
+            setTimeout(() => inputRef.current?.focus(), 0);
+          }}
+          onRegenerate={() => {
+            const previousUserPrompt = findPreviousAskBiqcUserPrompt(messages, idx);
+            if (!previousUserPrompt) return;
+            const cleanMessage = appendUserMessage(previousUserPrompt);
+            if (!cleanMessage) return;
+            executeMessage(
+              cleanMessage,
+              cleanMessage,
+              {
+                trace_root_id: msg.trace_root_id || `trace-${Date.now()}`,
+                response_version: Number(msg.response_version || 1) + 1,
+              },
+            );
+          }}
+          onSuggestedAction={(prompt) => {
+            if (!prompt) return;
+            const cleanMessage = appendUserMessage(prompt);
+            if (!cleanMessage) return;
+            executeMessage(cleanMessage, prompt);
+          }}
+          actionTestIdPrefix="ask-biqc-panel-message-action"
+        />
 
         {!isLatestAssistant && dataRequirements.length > 0 && (
           <InlineDataRequirements
@@ -891,28 +873,6 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           />
         )}
 
-        {!isLatestAssistant && (
-          <AskBiqcMessageActions
-            role="assistant"
-            compact
-            onCopy={() => handleCopyAssistantMessage(msg)}
-            onRegenerate={() => {
-              const previousUserPrompt = findPreviousAskBiqcUserPrompt(messages, idx);
-              if (!previousUserPrompt) return;
-              const cleanMessage = appendUserMessage(previousUserPrompt);
-              if (!cleanMessage) return;
-              executeMessage(
-                cleanMessage,
-                cleanMessage,
-                {
-                  trace_root_id: msg.trace_root_id || `trace-${Date.now()}`,
-                  response_version: Number(msg.response_version || 1) + 1,
-                },
-              );
-            }}
-            testIdPrefix="ask-biqc-panel-message-action"
-          />
-        )}
       </div>
     );
   };
@@ -1156,30 +1116,33 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               >
                 B
               </div>
-              <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)', marginBottom: 8, fontFamily: fontFamily.display }}>Ask BIQc anything</p>
-              <p style={{ fontSize: 13, color: 'var(--ink-muted, #737373)', textAlign: 'center', maxWidth: 340, fontFamily: fontFamily.body, marginBottom: 28 }}>
-                Ask about your pipeline, cash flow, risks, or what needs attention this week.
+              <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)', marginBottom: 8, fontFamily: fontFamily.display, textAlign: 'center' }}>
+                Ask a question that should change a decision.
               </p>
-              {/* Suggested prompts grid */}
+              <p style={{ fontSize: 14, color: 'var(--ink-muted, #737373)', textAlign: 'center', maxWidth: 620, fontFamily: fontFamily.body, marginBottom: 24, lineHeight: 1.6 }}>
+                I'll answer with what your connected business systems can verify. If a source is missing or stale, I'll tell you - and show you what to do next.
+              </p>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: 8,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gap: 10,
                 width: '100%',
-                maxWidth: 480,
+                maxWidth: 840,
               }}>
                 {[
-                  { text: "What's happening in my pipeline?", icon: '📊' },
-                  { text: "Show me this week's priorities", icon: '🎯' },
-                  { text: "How's my cash position?", icon: '💰' },
-                  { text: 'Draft a follow-up email', icon: '✉️' },
+                  'What changed in cash this month — and is it a problem?',
+                  'Which customers are quietly slipping away?',
+                  'Where is my margin actually leaking?',
+                  'Is my pipeline strong enough to hit the quarter?',
+                  'Which deal in the next 30 days is most at risk?',
+                  'What should I do this week that nothing else can tell me?',
                 ].map((prompt) => (
                   <button
-                    key={prompt.text}
+                    key={prompt}
                     onClick={() => {
-                      setInput(prompt.text);
+                      setInput(prompt);
                       setTimeout(() => {
-                        const syntheticInput = prompt.text;
+                        const syntheticInput = prompt;
                         setInput('');
                         const cleanMessage = appendUserMessage(syntheticInput);
                         if (cleanMessage) executeMessage(cleanMessage);
@@ -1197,37 +1160,28 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                     }}
                     style={{
                       textAlign: 'left',
-                      padding: '12px 14px',
-                      background: 'rgba(10,10,10,0.04)',
+                      padding: '14px 16px',
+                      background: 'rgba(10,10,10,0.03)',
                       border: '1px solid rgba(10,10,10,0.08)',
-                      borderRadius: 10,
+                      borderRadius: 12,
                       cursor: 'pointer',
                       transition: 'all 180ms ease',
                       display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      fontSize: 13,
+                      alignItems: 'flex-start',
+                      gap: 0,
+                      fontSize: 14,
+                      lineHeight: 1.45,
                       color: 'var(--ink-secondary, #525252)',
                       fontFamily: fontFamily.body,
                     }}
                   >
-                    <span style={{
-                      width: 28,
-                      height: 28,
-                      background: 'rgba(10,10,10,0.06)',
-                      borderRadius: 6,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      fontSize: 14,
-                    }}>
-                      {prompt.icon}
-                    </span>
-                    {prompt.text}
+                    {prompt}
                   </button>
                 ))}
               </div>
+              <p style={{ fontSize: 13, color: 'var(--ink-muted, #737373)', textAlign: 'center', maxWidth: 720, fontFamily: fontFamily.body, marginTop: 18, lineHeight: 1.5 }}>
+                BIQc reads only your connected business systems. Missing integrations may limit answer depth.
+              </p>
             </div>
           )}
 
