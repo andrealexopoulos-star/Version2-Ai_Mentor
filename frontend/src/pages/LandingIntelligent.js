@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Check, Clock, DollarSign, Users, Menu, X } from 'lucide-react';
+import BookDemoModal from '../components/BookDemoModal';
 
 /* ═══ TYPEWRITER HOOK ═══ */
 const useTypewriter = (phrases, speed = 75, pause = 2200, deleteSpeed = 40) => {
@@ -337,6 +338,7 @@ const ComparisonSection = () => {
 const LandingIntelligent = () => {
   const nav = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [bookDemoOpen, setBookDemoOpen] = useState(false);
   const typewritten = useTypewriter(['Instant, secure intelligence','Real-time threat detection','AI-powered clarity','Strategic foresight'], 70, 2400, 38);
 
   // ── SCROLL UNLOCK: force scroll ON whenever landing page mounts ──
@@ -396,6 +398,15 @@ const LandingIntelligent = () => {
 
         <div className="flex items-center gap-2">
           <button onClick={() => nav('/login-supabase')} className="hidden sm:flex text-sm font-medium text-slate-600 px-4 py-2 rounded-full border hover:bg-white transition-all" style={{ fontFamily: 'var(--font-display)', borderColor: 'rgba(180,195,215,0.5)' }} data-testid="nav-login">Log in</button>
+          <button
+            type="button"
+            onClick={() => setBookDemoOpen(true)}
+            className="hidden sm:flex text-xs sm:text-sm font-semibold text-slate-700 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5"
+            style={{ fontFamily: 'var(--font-display)', background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(15,23,32,0.14)' }}
+            data-testid="nav-book-demo"
+          >
+            Book a Demo
+          </button>
           <button onClick={() => nav('/register-supabase')} className="text-xs sm:text-sm font-semibold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-display)', background: 'var(--biqc-bg)', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
           {/* Mobile hamburger */}
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg ml-0.5 transition-all" style={{ background: mobileMenuOpen ? '#0F1720' : 'transparent', border: '1px solid rgba(180,195,215,0.5)' }}>
@@ -413,6 +424,13 @@ const LandingIntelligent = () => {
             ))}
             <div className="h-px bg-slate-200 my-2" />
             <button onClick={() => { nav('/login-supabase'); setMobileMenuOpen(false); }} className="text-left text-sm font-medium text-slate-600 px-4 py-3 rounded-xl hover:bg-white transition-all" style={{ fontFamily: 'var(--font-ui)' }}>Log in</button>
+            <button
+              onClick={() => { setBookDemoOpen(true); setMobileMenuOpen(false); }}
+              className="text-sm font-semibold text-slate-700 px-4 py-3 rounded-xl text-center border"
+              style={{ fontFamily: 'var(--font-display)', borderColor: 'rgba(180,195,215,0.5)', background: 'rgba(255,255,255,0.85)' }}
+            >
+              Book a Demo
+            </button>
             <button onClick={() => { nav('/register-supabase'); setMobileMenuOpen(false); }} className="text-sm font-semibold text-white px-4 py-3 rounded-xl text-center" style={{ fontFamily: 'var(--font-display)', background: '#E85D00' }}>Get started →</button>
           </div>
         </div>
@@ -450,6 +468,15 @@ const LandingIntelligent = () => {
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Not a chatbot.</span>
           <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-display)', background: 'var(--biqc-bg)', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
             <Shield className="w-4 h-4" strokeWidth={1.5} /> Start Your 14-Day Trial
+          </button>
+          <button
+            type="button"
+            onClick={() => setBookDemoOpen(true)}
+            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all"
+            style={{ fontFamily: 'var(--font-display)', background: '#FFFFFF', color: '#0F1720', border: '1px solid rgba(15,23,32,0.14)' }}
+            data-testid="hero-cta-book-demo"
+          >
+            Book a Demo
           </button>
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Not a dashboard.</span>
         </div>
@@ -622,6 +649,17 @@ const LandingIntelligent = () => {
               </div>
             ))}
           </div>
+          <p className="mt-4 text-center text-sm" style={{ fontFamily: 'var(--font-ui)', color: '#475569' }}>
+            or{' '}
+            <button
+              type="button"
+              onClick={() => setBookDemoOpen(true)}
+              style={{ background: 'none', border: 'none', color: '#E85D00', cursor: 'pointer', textDecoration: 'underline', padding: 0, font: 'inherit' }}
+              data-testid="pricing-book-demo-link"
+            >
+              Book a Demo
+            </button>
+          </p>
         </div>
       </section>
 
@@ -678,6 +716,11 @@ const LandingIntelligent = () => {
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
         @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
       `}</style>
+      <BookDemoModal
+        isOpen={bookDemoOpen}
+        onClose={() => setBookDemoOpen(false)}
+        leadSource="demo_marketing"
+      />
     </div>
   );
 };

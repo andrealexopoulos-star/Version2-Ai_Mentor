@@ -10,6 +10,7 @@ import { fontFamily } from '../design-system/tokens';
 import BiqcLogoCard from '../components/BiqcLogoCard';
 import PlanPicker, { PLAN_OPTIONS } from '../components/PlanPicker';
 import StripeCardField from '../components/StripeCardField';
+import BookDemoModal from '../components/BookDemoModal';
 import { hasStripeKey } from '../lib/stripeJs';
 import useForceLightTheme from '../hooks/useForceLightTheme';
 
@@ -49,6 +50,7 @@ const CompleteSignup = () => {
   const [trialFailureMessage, setTrialFailureMessage] = useState('');
   const [trialStep, setTrialStep] = useState('idle'); // idle | intent | confirm | subscribe | done
   const [loading, setLoading] = useState(false);
+  const [bookDemoOpen, setBookDemoOpen] = useState(false);
   const cardRef = useRef(null);
   const stripeConfigured = hasStripeKey();
 
@@ -284,6 +286,30 @@ const CompleteSignup = () => {
               <PlanPicker value={selectedPlan} onChange={setSelectedPlan} disabled={loading || trialStep !== 'idle'} />
             </div>
 
+            <div style={{ marginBottom: 14, textAlign: 'center' }}>
+              <p style={{ fontFamily: UI, color: '#525252', fontSize: 13.5, marginBottom: 6 }}>
+                Still unsure?
+              </p>
+              <button
+                type="button"
+                onClick={() => setBookDemoOpen(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#E85D00',
+                  fontFamily: UI,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: 0,
+                }}
+                data-testid="complete-signup-book-demo"
+              >
+                Book a 15-min call
+              </button>
+            </div>
+
             {stripeConfigured ? (
               <StripeCardField
                 ref={cardRef}
@@ -354,6 +380,11 @@ const CompleteSignup = () => {
           </p>
         </div>
       </div>
+      <BookDemoModal
+        isOpen={bookDemoOpen}
+        onClose={() => setBookDemoOpen(false)}
+        leadSource="signup_dropoff"
+      />
     </div>
   );
 };
