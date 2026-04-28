@@ -5,6 +5,7 @@ import { fontFamily } from '../../design-system/tokens';
 import BiqcLogoCard from '../BiqcLogoCard';
 import BookDemoModal from '../BookDemoModal';
 
+
 const NAV_LINKS = [
   { label: 'Platform', path: '/platform' },
   { label: 'Intelligence', path: '/intelligence' },
