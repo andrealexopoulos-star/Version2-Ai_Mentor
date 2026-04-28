@@ -582,6 +582,9 @@ api_router.include_router(user_settings_router)
 from routes.marketing_ads import router as marketing_ads_router
 api_router.include_router(marketing_ads_router)
 
+from routes.hubspot import router as hubspot_router
+api_router.include_router(hubspot_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)

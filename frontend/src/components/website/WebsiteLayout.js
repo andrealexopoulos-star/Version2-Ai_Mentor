@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 import BiqcLogoCard from '../BiqcLogoCard';
+import BookDemoModal from '../BookDemoModal';
 
 const NAV_LINKS = [
   { label: 'Platform', path: '/platform' },
@@ -17,6 +18,7 @@ const NAV_LINKS = [
 const WebsiteNav = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [bookDemoOpen, setBookDemoOpen] = useState(false);
 
   return (
     <nav className="sticky top-0 left-0 right-0 z-50" style={{ background: 'var(--canvas-app, #FAFAFA)', backdropFilter: 'blur(24px) saturate(1.5)', borderBottom: '1px solid var(--border, rgba(10,10,10,0.08))', height: '64px' }} data-testid="website-nav">
@@ -46,6 +48,15 @@ const WebsiteNav = () => {
         {/* CTA + Mobile Toggle */}
         <div className="flex items-center gap-3">
           <Link to="/login-supabase" className="hidden md:block px-4 py-2 rounded-lg text-sm text-[var(--ink-secondary)] hover:text-[var(--ink-display)] transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="nav-login">Log in</Link>
+          <button
+            type="button"
+            onClick={() => setBookDemoOpen(true)}
+            className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:brightness-110"
+            style={{ color: 'var(--ink-display, #0A0A0A)', border: '1px solid rgba(10,10,10,0.12)', background: 'rgba(255,255,255,0.75)', fontFamily: fontFamily.body }}
+            data-testid="nav-book-demo"
+          >
+            Book a Demo
+          </button>
           <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--ink-inverse)] transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }} data-testid="nav-get-started">
             Start Trial
           </Link>
@@ -70,10 +81,26 @@ const WebsiteNav = () => {
           ))}
           <div className="pt-4 space-y-2">
             <Link to="/login-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[var(--ink-secondary)] border border-white/10">Log in</Link>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileOpen(false);
+                setBookDemoOpen(true);
+              }}
+              className="block w-full px-4 py-3 rounded-lg text-sm text-center font-semibold"
+              style={{ color: 'var(--ink-display, #0A0A0A)', border: '1px solid rgba(10,10,10,0.12)', background: 'rgba(255,255,255,0.8)' }}
+            >
+              Book a Demo
+            </button>
             <Link to="/register-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[var(--ink-inverse)] font-semibold" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)' }}>Start Trial</Link>
           </div>
         </div>
       )}
+      <BookDemoModal
+        isOpen={bookDemoOpen}
+        onClose={() => setBookDemoOpen(false)}
+        leadSource="demo_marketing"
+      />
     </nav>
   );
 };

@@ -10,6 +10,7 @@ import WebsiteLayout from '../components/website/WebsiteLayout';
 import usePageMeta from '../hooks/usePageMeta';
 import { Check, ChevronDown, Plus, ArrowRight } from 'lucide-react';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import BookDemoModal from '../components/BookDemoModal';
 
 /* ────────────────────────────────────────────
    Plan card data (mirrors mockup exactly)
@@ -258,6 +259,7 @@ export default function Pricing() {
   const { user } = useSupabaseAuth();
   const [compareOpen, setCompareOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
+  const [bookDemoOpen, setBookDemoOpen] = useState(false);
 
   const ctaHref = (plan) => {
     if (plan.id === 'enterprise') return '/contact?source=pricing';
@@ -332,6 +334,17 @@ export default function Pricing() {
               </div>
             ))}
           </div>
+          <p className="mt-4 text-center text-sm" style={{ color: 'var(--ink-secondary)' }}>
+            or{' '}
+            <button
+              type="button"
+              onClick={() => setBookDemoOpen(true)}
+              style={{ background: 'none', border: 'none', color: 'var(--lava)', textDecoration: 'underline', cursor: 'pointer', padding: 0, font: 'inherit' }}
+              data-testid="pricing-or-book-demo"
+            >
+              Book a Demo
+            </button>
+          </p>
         </div>
       </section>
 
@@ -455,6 +468,11 @@ export default function Pricing() {
           </Link>
         </div>
       </section>
+      <BookDemoModal
+        isOpen={bookDemoOpen}
+        onClose={() => setBookDemoOpen(false)}
+        leadSource="demo_marketing"
+      />
     </WebsiteLayout>
   );
 }
