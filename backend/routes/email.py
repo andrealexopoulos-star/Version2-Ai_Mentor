@@ -5,6 +5,7 @@ Extracted from server.py. Includes token helpers and all email-related routes.
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
+from email.message import EmailMessage
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone, timedelta
 import os
@@ -13,6 +14,7 @@ import asyncio
 import logging
 import re
 import uuid
+import base64
 import urllib.parse
 from urllib.parse import quote
 from dateutil import parser as dateutil_parser
@@ -255,6 +257,155 @@ class ReclassifyPriorityEmailRequest(BaseModel):
     email_id: str
     provider: str
     priority_level: str
+
+
+class SendEmailRequest(BaseModel):
+    account_id: Optional[str] = None
+    provider: Optional[str] = None
+    to: str
+    subject: str
+    body: str
+    thread_id: Optional[str] = None
+    in_reply_to: Optional[str] = None
+    provider_message_id: Optional[str] = None
+
+
+EMAIL_RECIPIENT_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+MAX_EMAIL_BODY_CHARS = 20000
+
+
+def _email_send_error(status_code: int, code: str) -> HTTPException:
+    return HTTPException(status_code=status_code, detail={"code": code})
+
+
+def _recipient_domain(address: str) -> str:
+    value = (address or "").strip().lower()
+    if "@" not in value:
+        return "unknown"
+    return value.split("@", 1)[1]
+
+
+def _normalise_send_provider(provider: Optional[str]) -> Optional[str]:
+    value = (provider or "").strip().lower()
+    if value in {"google", "gmail"}:
+        return "gmail"
+    if value in {"microsoft", "azure", "outlook"}:
+        return "outlook"
+    return value or None
+
+
+async def _resolve_send_account(user_id: str, provider: Optional[str]) -> Optional[Dict[str, Any]]:
+    normalised_provider = _normalise_send_provider(provider)
+    if normalised_provider and normalised_provider not in {"gmail", "outlook"}:
+        return None
+
+    query = (
+        get_sb()
+        .table("email_connections")
+        .select("id, provider, connected, connected_email, connected_at")
+        .eq("user_id", user_id)
+        .eq("connected", True)
+        .order("connected_at", desc=True)
+    )
+
+    try:
+        response = query.execute()
+    except Exception:
+        return None
+
+    rows = response.data or []
+    if not rows:
+        return None
+
+    supported_rows = [
+        {**row, "provider": row_provider}
+        for row in rows
+        if (row_provider := _normalise_send_provider(row.get("provider"))) in {"gmail", "outlook"}
+    ]
+    if not supported_rows:
+        return None
+    if normalised_provider:
+        for row in supported_rows:
+            if row["provider"] == normalised_provider:
+                return row
+        return None
+    if len(supported_rows) == 1:
+        return supported_rows[0]
+    return None
+
+
+def _map_provider_send_failure(status_code: int, response_text: str = "") -> HTTPException:
+    body = (response_text or "").lower()
+    if status_code in {401, 403}:
+        return _email_send_error(401, "EMAIL_REAUTH_REQUIRED")
+    if status_code in {400, 422} and ("recipient" in body or "emailaddress" in body or "invalid" in body):
+        return _email_send_error(400, "EMAIL_INVALID_RECIPIENT")
+    if status_code >= 500:
+        return _email_send_error(503, "EMAIL_PROVIDER_UNAVAILABLE")
+    return _email_send_error(502, "EMAIL_SEND_FAILED")
+
+
+async def _send_via_gmail_api(
+    access_token: str,
+    to_email: str,
+    subject: str,
+    body: str,
+    *,
+    thread_id: Optional[str] = None,
+    in_reply_to: Optional[str] = None,
+) -> httpx.Response:
+    message = EmailMessage()
+    message["To"] = to_email
+    message["Subject"] = subject
+    if in_reply_to:
+        message["In-Reply-To"] = in_reply_to
+        message["References"] = in_reply_to
+    message.set_content(body)
+
+    raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8").rstrip("=")
+    payload: Dict[str, Any] = {"raw": raw_message}
+    if thread_id:
+        payload["threadId"] = thread_id
+
+    async with httpx.AsyncClient(timeout=20) as client:
+        return await client.post(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+
+
+async def _send_via_outlook_graph(access_token: str, to_email: str, subject: str, body: str) -> httpx.Response:
+    payload = {
+        "message": {
+            "subject": subject,
+            "body": {
+                "contentType": "Text",
+                "content": body,
+            },
+            "toRecipients": [
+                {
+                    "emailAddress": {
+                        "address": to_email,
+                    }
+                }
+            ],
+        },
+        "saveToSentItems": True,
+    }
+
+    async with httpx.AsyncClient(timeout=20) as client:
+        return await client.post(
+            "https://graph.microsoft.com/v1.0/me/sendMail",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
 
 
 def _heuristic_priority(email: Dict[str, Any]) -> Dict[str, Any]:
@@ -662,7 +813,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     logger.info(f"📧 Outlook OAuth redirect_uri: {redirect_uri}")
     
     # URL encode parameters to prevent malformed URLs
-    scope = "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
+    scope = "offline_access User.Read Mail.Read Mail.ReadBasic Mail.Send Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
     encoded_redirect = quote(redirect_uri, safe='')
     encoded_scope = quote(scope, safe='')
     
@@ -718,12 +869,13 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     redirect_uri = f"{callback_base_url}/api/auth/gmail/callback"
     logger.info(f"📧 Gmail OAuth redirect_uri: {redirect_uri}")
     
-    # Gmail scopes - readonly access only
+    # Gmail scopes - readonly ingestion plus user-click send.
     scopes = [
         "openid",
         "email",
         "profile",
-        "https://www.googleapis.com/auth/gmail.readonly"
+        "https://www.googleapis.com/auth/gmail.readonly",
+        "https://www.googleapis.com/auth/gmail.send",
     ]
     scope = " ".join(scopes)
     encoded_redirect = quote(redirect_uri, safe='')
@@ -893,7 +1045,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
                     "access_token": access_token,
                     "refresh_token": stored_refresh_token,
                     "token_expiry": expires_at,
-                    "scopes": "https://www.googleapis.com/auth/gmail.readonly",
+                    "scopes": "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send",
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 },
                 on_conflict="user_id"
@@ -1113,7 +1265,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         "code": code,
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
-        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Mail.Send Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
     }
     
     logger.info("Outlook callback: exchanging code for tokens")
@@ -1750,7 +1902,7 @@ async def refresh_outlook_token_supabase(user_id: str, refresh_token: str) -> Di
         "client_secret": AZURE_CLIENT_SECRET,
         "refresh_token": refresh_token,
         "grant_type": "refresh_token",
-        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Mail.Send Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
     }
     
     logger.info(f"🔄 Refreshing Outlook token for user {user_id}")
@@ -2781,6 +2933,184 @@ async def get_email_messages(
         "count": len(rows),
         "messages": rows,
     }
+
+
+@router.post("/email/send")
+async def send_email(payload: SendEmailRequest, current_user: dict = Depends(get_current_user)):
+    """User-click send through the user's connected Gmail or Outlook account."""
+    user_id = current_user["id"]
+    provider = _normalise_send_provider(payload.provider)
+    account_id = (payload.account_id or "").strip() or None
+    to_email = (payload.to or "").strip().lower()
+    subject = (payload.subject or "").strip()
+    body = (payload.body or "").strip()
+    thread_id = (payload.thread_id or "").strip() or None
+    in_reply_to = (payload.in_reply_to or "").strip() or None
+    provider_message_id = (payload.provider_message_id or "").strip() or None
+
+    if account_id:
+        # Phase 1 token helpers are user/provider-level, not account-row-level.
+        # Reject rather than risk sending from the wrong mailbox.
+        raise _email_send_error(400, "EMAIL_SEND_FAILED")
+    if provider and provider not in {"gmail", "outlook"}:
+        raise _email_send_error(503, "EMAIL_PROVIDER_UNAVAILABLE")
+    if not to_email or not EMAIL_RECIPIENT_RE.match(to_email):
+        raise _email_send_error(400, "EMAIL_INVALID_RECIPIENT")
+    if not subject:
+        raise _email_send_error(400, "EMAIL_SEND_FAILED")
+    if not body:
+        raise _email_send_error(400, "EMAIL_SEND_FAILED")
+    if len(body) > MAX_EMAIL_BODY_CHARS:
+        raise _email_send_error(400, "EMAIL_SEND_FAILED")
+
+    account = await _resolve_send_account(user_id, provider)
+    if not account:
+        raise _email_send_error(400, "EMAIL_NOT_CONNECTED")
+
+    resolved_provider = account["provider"]
+    recipient_domain = _recipient_domain(to_email)
+    logger.info(
+        "email_send_attempt user_id=%s provider=%s recipient_domain=%s",
+        user_id,
+        resolved_provider,
+        recipient_domain,
+    )
+
+    try:
+        if resolved_provider == "gmail":
+            tokens = await get_gmail_tokens(user_id)
+            if not tokens or not tokens.get("access_token"):
+                raise _email_send_error(401, "EMAIL_REAUTH_REQUIRED")
+
+            access_token = tokens["access_token"]
+            response = await _send_via_gmail_api(
+                access_token,
+                to_email,
+                subject,
+                body,
+                thread_id=thread_id,
+                in_reply_to=in_reply_to,
+            )
+
+            if response.status_code == 401 and tokens.get("refresh_token"):
+                try:
+                    refreshed = await refresh_gmail_token_supabase(user_id, tokens["refresh_token"])
+                    access_token = refreshed.get("access_token") or access_token
+                except Exception:
+                    raise _email_send_error(401, "EMAIL_REAUTH_REQUIRED")
+                response = await _send_via_gmail_api(
+                    access_token,
+                    to_email,
+                    subject,
+                    body,
+                    thread_id=thread_id,
+                    in_reply_to=in_reply_to,
+                )
+
+            if response.status_code in {200, 201}:
+                try:
+                    response_payload = response.json() or {}
+                except Exception:
+                    response_payload = {}
+                message_id = str(response_payload.get("id") or "")
+                if not message_id:
+                    raise _email_send_error(502, "EMAIL_SEND_FAILED")
+                response_thread_id = str(response_payload.get("threadId") or thread_id or "")
+                result: Dict[str, Any] = {
+                    "status": "sent",
+                    "provider": "gmail",
+                    "message_id": message_id,
+                }
+                if response_thread_id:
+                    result["thread_id"] = response_thread_id
+                logger.info(
+                    "email_send_result user_id=%s provider=gmail recipient_domain=%s success=true",
+                    user_id,
+                    recipient_domain,
+                )
+                return result
+
+            raise _map_provider_send_failure(response.status_code, response.text[:500])
+
+        if resolved_provider == "outlook":
+            if thread_id or in_reply_to or provider_message_id:
+                # Graph reply support needs a confirmed Graph message-id mapping.
+                # Phase 1 sends new Outlook messages only.
+                raise _email_send_error(400, "EMAIL_SEND_FAILED")
+
+            tokens = await get_outlook_tokens(user_id)
+            if not tokens or not tokens.get("access_token"):
+                raise _email_send_error(401, "EMAIL_REAUTH_REQUIRED")
+
+            access_token = tokens["access_token"]
+            refresh_token = tokens.get("refresh_token")
+            expires_at = _safe_parse_dt(tokens.get("expires_at"))
+
+            if expires_at and expires_at <= datetime.now(timezone.utc) + timedelta(minutes=1):
+                if not refresh_token:
+                    raise _email_send_error(401, "EMAIL_REAUTH_REQUIRED")
+                try:
+                    refreshed = await refresh_outlook_token_supabase(user_id, refresh_token)
+                    access_token = refreshed.get("access_token") or access_token
+                except Exception:
+                    raise _email_send_error(401, "EMAIL_REAUTH_REQUIRED")
+
+            response = await _send_via_outlook_graph(access_token, to_email, subject, body)
+
+            if response.status_code == 401 and refresh_token:
+                try:
+                    refreshed = await refresh_outlook_token_supabase(user_id, refresh_token)
+                    access_token = refreshed.get("access_token") or access_token
+                except Exception:
+                    raise _email_send_error(401, "EMAIL_REAUTH_REQUIRED")
+                response = await _send_via_outlook_graph(access_token, to_email, subject, body)
+
+            if response.status_code in {200, 202}:
+                provider_request_id = response.headers.get("request-id") or response.headers.get("client-request-id")
+                result: Dict[str, Any] = {
+                    "status": "sent",
+                    "provider": "outlook",
+                    "send_trace_id": f"outlook-trace-{uuid.uuid4().hex}",
+                }
+                if provider_request_id:
+                    result["provider_request_id"] = provider_request_id
+                logger.info(
+                    "email_send_result user_id=%s provider=outlook recipient_domain=%s success=true",
+                    user_id,
+                    recipient_domain,
+                )
+                return result
+
+            raise _map_provider_send_failure(response.status_code, response.text[:500])
+
+        raise _email_send_error(503, "EMAIL_PROVIDER_UNAVAILABLE")
+
+    except HTTPException as exc:
+        code = exc.detail.get("code") if isinstance(exc.detail, dict) else "EMAIL_SEND_FAILED"
+        logger.warning(
+            "email_send_result user_id=%s provider=%s recipient_domain=%s success=false code=%s",
+            user_id,
+            resolved_provider,
+            recipient_domain,
+            code,
+        )
+        raise exc
+    except httpx.RequestError:
+        logger.warning(
+            "email_send_result user_id=%s provider=%s recipient_domain=%s success=false code=EMAIL_PROVIDER_UNAVAILABLE",
+            user_id,
+            resolved_provider,
+            recipient_domain,
+        )
+        raise _email_send_error(503, "EMAIL_PROVIDER_UNAVAILABLE")
+    except Exception:
+        logger.exception(
+            "email_send_result user_id=%s provider=%s recipient_domain=%s success=false code=EMAIL_SEND_FAILED",
+            user_id,
+            resolved_provider,
+            recipient_domain,
+        )
+        raise _email_send_error(502, "EMAIL_SEND_FAILED")
 
 
 @router.post("/email/send-recommended-reply")
