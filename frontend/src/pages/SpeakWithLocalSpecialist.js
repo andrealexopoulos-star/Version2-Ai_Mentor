@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Send, Mail, Clock, Calendar, ArrowRight } from 'lucide-react';
 
@@ -114,6 +114,17 @@ export default function SpeakWithLocalSpecialist() {
     ? 'CAPTCHA is unavailable right now. Please refresh and try again.'
     : (!captchaToken ? 'Complete CAPTCHA to enable submit.' : '');
 
+  // Keep handlers stable so RecaptchaGate does not re-initialize on every render.
+  const handleCaptchaTokenChange = useCallback((token) => {
+    setCaptchaToken(token || '');
+  }, []);
+
+  const handleCaptchaStatusChange = useCallback(({ status }) => {
+    const nextStatus = status || '';
+    setCaptchaStatus((prev) => (prev === nextStatus ? prev : nextStatus));
+    setCaptchaUnavailable(nextStatus === 'error');
+  }, []);
+
   return (
     <WebsiteLayout>
       <section className="py-20 md:py-24 text-center px-6" style={{ background: 'var(--canvas-sage, #F2F4EC)' }}>
@@ -228,11 +239,8 @@ export default function SpeakWithLocalSpecialist() {
 
                   <div>
                     <RecaptchaGate
-                      onTokenChange={(token) => setCaptchaToken(token || '')}
-                      onStatusChange={({ status }) => {
-                        setCaptchaStatus(status || '');
-                        setCaptchaUnavailable(status === 'error');
-                      }}
+                      onTokenChange={handleCaptchaTokenChange}
+                      onStatusChange={handleCaptchaStatusChange}
                       action="book_demo"
                       testId="specialist-recaptcha"
                     />
