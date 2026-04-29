@@ -78,11 +78,12 @@ def _submit_to_hubspot(payload: dict) -> None:
     raise last_error or RuntimeError("HubSpot submission failed")
 
 
-async def _notify_support_inbox(request: HubspotLeadRequest, composed_message: str) -> None:
+async def _notify_support_inbox(request: HubspotLeadRequest, composed_message: str) -> bool:
     from core.config import BIQC_ADMIN_NOTIFICATION_EMAIL, RESEND_API_KEY, RESEND_FROM_EMAIL
 
     if not RESEND_API_KEY or not RESEND_FROM_EMAIL:
-        raise RuntimeError("Support email is not configured")
+        logger.warning("[hubspot submit lead] support inbox email not configured")
+        return False
 
     support_body = "\n".join([
         "New Speak with a Local Specialist submission.",
@@ -117,11 +118,12 @@ async def _notify_support_inbox(request: HubspotLeadRequest, composed_message: s
                     },
                 )
             if 200 <= response.status_code < 300:
-                return
+                return True
             last_error = RuntimeError(f"Resend status {response.status_code}: {(response.text or '')[:240]}")
         except Exception as exc:
             last_error = exc
-    raise last_error or RuntimeError("Support inbox notification failed")
+    logger.warning(f"[hubspot submit lead] support inbox notify failed: {last_error or 'unknown error'}")
+    return False
 
 
 @router.post("/hubspot/submit-lead")
