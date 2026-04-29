@@ -45,6 +45,7 @@ const AILearningGuarantee = React.lazy(() => import(/* webpackChunkName: "market
 const BlogPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/BlogPage'));
 const BlogArticlePage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/BlogArticlePage'));
 const ContactPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/ContactPage'));
+const SpeakWithLocalSpecialist = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/SpeakWithLocalSpecialist'));
 const Pricing = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/Pricing'));
 const SubscribePage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/SubscribePage'));
 const EnterpriseTerms = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/EnterpriseTerms'));
@@ -365,6 +366,7 @@ function AppRoutes() {
         <Route path="/legal/retention" element={<RetentionPolicyPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/speak-with-local-specialist" element={<SpeakWithLocalSpecialist />} />
         <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogArticlePage />} />
