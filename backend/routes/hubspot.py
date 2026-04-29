@@ -4,6 +4,7 @@ from typing import Optional
 import json
 import urllib.request
 import urllib.error
+import httpx
 
 from routes.auth import verify_recaptcha_token
 from routes.deps import logger
@@ -77,6 +78,54 @@ def _submit_to_hubspot(payload: dict) -> None:
     raise last_error or RuntimeError("HubSpot submission failed")
 
 
+async def _notify_support_inbox(request: HubspotLeadRequest, composed_message: str) -> bool:
+    from core.config import BIQC_ADMIN_NOTIFICATION_EMAIL, RESEND_API_KEY, RESEND_FROM_EMAIL
+
+    if not RESEND_API_KEY or not RESEND_FROM_EMAIL:
+        logger.warning("[hubspot submit lead] support inbox email not configured")
+        return False
+
+    support_body = "\n".join([
+        "New Speak with a Local Specialist submission.",
+        "",
+        f"First name: {request.firstname.strip()}",
+        f"Last name: {request.lastname.strip()}",
+        f"Email: {request.email.strip()}",
+        f"Phone: {(request.phone or '').strip() or '(not provided)'}",
+        f"Company: {(request.company or '').strip() or '(not provided)'}",
+        "",
+        "Composed message sent to HubSpot:",
+        composed_message,
+    ])
+
+    payload = {
+        "from": RESEND_FROM_EMAIL,
+        "to": [BIQC_ADMIN_NOTIFICATION_EMAIL or "support@biqc.ai"],
+        "subject": "New specialist contact request",
+        "text": support_body,
+    }
+
+    last_error = None
+    for _ in range(2):
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.post(
+                    "https://api.resend.com/emails",
+                    json=payload,
+                    headers={
+                        "Authorization": f"Bearer {RESEND_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                )
+            if 200 <= response.status_code < 300:
+                return True
+            last_error = RuntimeError(f"Resend status {response.status_code}: {(response.text or '')[:240]}")
+        except Exception as exc:
+            last_error = exc
+    logger.warning(f"[hubspot submit lead] support inbox notify failed: {last_error or 'unknown error'}")
+    return False
+
+
 @router.post("/hubspot/submit-lead")
 async def submit_hubspot_lead(request: HubspotLeadRequest):
     if not _required(request.firstname):
@@ -132,6 +181,7 @@ async def submit_hubspot_lead(request: HubspotLeadRequest):
     }
 
     try:
+        await _notify_support_inbox(request, composed_message)
         _submit_to_hubspot(hubspot_payload)
         return {"success": True, "message": SUCCESS_MESSAGE}
     except Exception as exc:

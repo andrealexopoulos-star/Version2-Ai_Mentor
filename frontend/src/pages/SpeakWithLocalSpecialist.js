@@ -32,6 +32,7 @@ export default function SpeakWithLocalSpecialist() {
   });
   const [captchaToken, setCaptchaToken] = useState('');
   const [captchaUnavailable, setCaptchaUnavailable] = useState(false);
+  const [captchaStatus, setCaptchaStatus] = useState('initializing');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [feedback, setFeedback] = useState('');
@@ -108,6 +109,10 @@ export default function SpeakWithLocalSpecialist() {
       setSubmitting(false);
     }
   };
+
+  const captchaHint = captchaUnavailable
+    ? 'CAPTCHA is unavailable right now. Please refresh and try again.'
+    : (!captchaToken ? 'Complete CAPTCHA to enable submit.' : '');
 
   return (
     <WebsiteLayout>
@@ -224,10 +229,27 @@ export default function SpeakWithLocalSpecialist() {
                   <div>
                     <RecaptchaGate
                       onTokenChange={(token) => setCaptchaToken(token || '')}
-                      onStatusChange={({ status }) => setCaptchaUnavailable(status === 'error')}
+                      onStatusChange={({ status }) => {
+                        setCaptchaStatus(status || '');
+                        setCaptchaUnavailable(status === 'error');
+                      }}
                       action="book_demo"
                       testId="specialist-recaptcha"
                     />
+                    {captchaHint && (
+                      <p
+                        className="text-xs mt-2"
+                        style={{ color: captchaUnavailable ? '#B91C1C' : '#525252', fontFamily: UI }}
+                        data-testid="specialist-captcha-hint"
+                      >
+                        {captchaHint}
+                      </p>
+                    )}
+                    {captchaStatus === 'initializing' && !captchaToken && !captchaUnavailable && (
+                      <p className="text-xs mt-2" style={{ color: '#525252', fontFamily: UI }}>
+                        Preparing CAPTCHA...
+                      </p>
+                    )}
                   </div>
 
                   <button type="submit" disabled={!canSubmit || submitting}
