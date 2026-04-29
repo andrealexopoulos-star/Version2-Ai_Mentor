@@ -10,7 +10,6 @@ import { fontFamily } from '../design-system/tokens';
 import BiqcLogoCard from '../components/BiqcLogoCard';
 import PlanPicker, { PLAN_OPTIONS } from '../components/PlanPicker';
 import StripeCardField from '../components/StripeCardField';
-import BookDemoModal from '../components/BookDemoModal';
 import { hasStripeKey } from '../lib/stripeJs';
 import useForceLightTheme from '../hooks/useForceLightTheme';
 
@@ -50,7 +49,6 @@ const CompleteSignup = () => {
   const [trialFailureMessage, setTrialFailureMessage] = useState('');
   const [trialStep, setTrialStep] = useState('idle'); // idle | intent | confirm | subscribe | done
   const [loading, setLoading] = useState(false);
-  const [bookDemoOpen, setBookDemoOpen] = useState(false);
   const cardRef = useRef(null);
   const stripeConfigured = hasStripeKey();
 
@@ -292,7 +290,7 @@ const CompleteSignup = () => {
               </p>
               <button
                 type="button"
-                onClick={() => setBookDemoOpen(true)}
+                onClick={() => navigate('/speak-with-local-specialist')}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -306,7 +304,7 @@ const CompleteSignup = () => {
                 }}
                 data-testid="complete-signup-book-demo"
               >
-                Book a 15-min call
+                Speak with a Local Specialist
               </button>
             </div>
 
@@ -380,11 +378,6 @@ const CompleteSignup = () => {
           </p>
         </div>
       </div>
-      <BookDemoModal
-        isOpen={bookDemoOpen}
-        onClose={() => setBookDemoOpen(false)}
-        leadSource="signup_dropoff"
-      />
     </div>
   );
 };

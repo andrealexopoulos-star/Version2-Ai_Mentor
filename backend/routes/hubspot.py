@@ -20,7 +20,7 @@ ALLOWED_URGENCY = {
     "Schedule a time",
 }
 
-ALLOWED_LEAD_SOURCES = {"demo_marketing", "signup_dropoff"}
+ALLOWED_LEAD_SOURCES = {"demo_marketing", "signup_dropoff", "specialist_contact"}
 
 
 class HubspotLeadRequest(BaseModel):
@@ -28,6 +28,7 @@ class HubspotLeadRequest(BaseModel):
     lastname: str
     email: EmailStr
     phone: Optional[str] = ""
+    company: Optional[str] = ""
     message: str
     urgency: str
     preferred_time: Optional[str] = ""
@@ -39,7 +40,7 @@ def _required(value: Optional[str]) -> bool:
     return bool(str(value or "").strip())
 
 
-def _compose_message(message: str, urgency: str, preferred_time: str, lead_source: str) -> str:
+def _compose_message(message: str, urgency: str, preferred_time: str, lead_source: str, company: str) -> str:
     parts = [
         str(message or "").strip(),
         "",
@@ -48,6 +49,8 @@ def _compose_message(message: str, urgency: str, preferred_time: str, lead_sourc
     ]
     if str(urgency).strip() == "Schedule a time":
         parts.append(f"Preferred time: {str(preferred_time or '').strip()}")
+    if _required(company):
+        parts.append(f"Company: {str(company or '').strip()}")
     return "\n".join([line for line in parts if line is not None])
 
 
@@ -115,6 +118,7 @@ async def submit_hubspot_lead(request: HubspotLeadRequest):
         request.urgency,
         request.preferred_time or "",
         lead_source,
+        request.company or "",
     )
 
     hubspot_payload = {
