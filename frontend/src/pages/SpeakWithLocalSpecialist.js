@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Send, Mail, Clock, Calendar, ArrowRight } from 'lucide-react';
 
@@ -33,9 +33,12 @@ export default function SpeakWithLocalSpecialist() {
   const [captchaToken, setCaptchaToken] = useState('');
   const [captchaUnavailable, setCaptchaUnavailable] = useState(false);
   const [captchaStatus, setCaptchaStatus] = useState('initializing');
+  const [captchaRetryNonce, setCaptchaRetryNonce] = useState(0);
+  const [captchaRetryCount, setCaptchaRetryCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const captchaRetryTimerRef = useRef(null);
 
   const requiresPreferredTime = form.urgency === 'Schedule a time';
 
@@ -122,7 +125,41 @@ export default function SpeakWithLocalSpecialist() {
   const handleCaptchaStatusChange = useCallback(({ status }) => {
     const nextStatus = status || '';
     setCaptchaStatus((prev) => (prev === nextStatus ? prev : nextStatus));
-    setCaptchaUnavailable(nextStatus === 'error');
+    if (nextStatus === 'ready') {
+      setCaptchaUnavailable(false);
+      setCaptchaRetryCount(0);
+      return;
+    }
+
+    if (nextStatus === 'error') {
+      setCaptchaUnavailable(true);
+      setCaptchaToken('');
+      if (captchaRetryTimerRef.current) {
+        clearTimeout(captchaRetryTimerRef.current);
+        captchaRetryTimerRef.current = null;
+      }
+      setCaptchaRetryCount((count) => {
+        if (count >= 2) return count;
+        captchaRetryTimerRef.current = setTimeout(() => {
+          setCaptchaUnavailable(false);
+          setCaptchaStatus('initializing');
+          setCaptchaRetryNonce((nonce) => nonce + 1);
+        }, 1200);
+        return count + 1;
+      });
+      return;
+    }
+
+    if (nextStatus === 'initializing') {
+      setCaptchaUnavailable(false);
+    }
+  }, []);
+
+  useEffect(() => () => {
+    if (captchaRetryTimerRef.current) {
+      clearTimeout(captchaRetryTimerRef.current);
+      captchaRetryTimerRef.current = null;
+    }
   }, []);
 
   return (
@@ -239,6 +276,7 @@ export default function SpeakWithLocalSpecialist() {
 
                   <div>
                     <RecaptchaGate
+                      key={`specialist-recaptcha-${captchaRetryNonce}`}
                       onTokenChange={handleCaptchaTokenChange}
                       onStatusChange={handleCaptchaStatusChange}
                       action="book_demo"
@@ -257,6 +295,30 @@ export default function SpeakWithLocalSpecialist() {
                       <p className="text-xs mt-2" style={{ color: '#525252', fontFamily: UI }}>
                         Preparing CAPTCHA...
                       </p>
+                    )}
+                    {captchaUnavailable && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCaptchaUnavailable(false);
+                          setCaptchaStatus('initializing');
+                          setCaptchaRetryNonce((nonce) => nonce + 1);
+                        }}
+                        style={{
+                          marginTop: 8,
+                          background: 'none',
+                          border: 'none',
+                          color: '#E85D00',
+                          textDecoration: 'underline',
+                          cursor: 'pointer',
+                          fontFamily: UI,
+                          fontSize: 12,
+                          padding: 0,
+                        }}
+                        data-testid="specialist-captcha-retry"
+                      >
+                        Retry CAPTCHA
+                      </button>
                     )}
                   </div>
 
