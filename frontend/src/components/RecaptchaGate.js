@@ -280,12 +280,16 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
           }
         }
 
+        // Force-visible mode should always prioritize a visible v2 widget.
+        // This avoids landing in a "token-only v3" path when operators expect
+        // users to see and complete a checkbox challenge.
+        if (forceVisible) {
+          await tryModeWithProviderFallback(MODE_V2, PROVIDER_STANDARD);
+          return;
+        }
+
         // Auto provider/mode: try standard first, then enterprise.
         if (configuredMode === MODE_V2) {
-          if (forceVisible) {
-            await tryModeWithProviderFallback(MODE_V2, PROVIDER_STANDARD);
-            return;
-          }
           // Resilience: many production incidents are caused by a v3 site key
           // being paired with MODE_V2. Try v3 first, then gracefully fall back.
           try {
