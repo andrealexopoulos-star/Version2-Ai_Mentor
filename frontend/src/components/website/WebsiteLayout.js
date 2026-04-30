@@ -46,20 +46,17 @@ const WebsiteNav = () => {
 
         {/* CTA + Mobile Toggle */}
         <div className="flex items-center gap-3">
-          <Link to="/login-supabase" className="hidden md:block px-4 py-2 rounded-lg text-sm text-[var(--ink-secondary)] hover:text-[var(--ink-display)] transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="nav-login">Log in</Link>
+          <Link to="/login-supabase" className="hidden md:block px-4 py-2 rounded-lg text-sm text-[var(--ink-secondary)] hover:text-[var(--ink-display)] transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="nav-login">Login</Link>
           <Link
             to="/speak-with-local-specialist"
             className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:brightness-110 text-center"
             style={{ color: 'var(--ink-display, #0A0A0A)', border: '1px solid rgba(10,10,10,0.12)', background: 'rgba(255,255,255,0.75)', fontFamily: fontFamily.body }}
             data-testid="nav-book-demo"
           >
-            Speak with a Local Specialist
+            Talk to a Local Specialist
           </Link>
-          <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--ink-inverse)] transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }} data-testid="nav-get-started">
-            Start Trial
-          </Link>
-          {/* Mobile: Log In text + hamburger */}
-          <Link to="/login-supabase" className="md:hidden text-xs text-[var(--ink-secondary)] hover:text-[var(--ink-display)]" style={{ fontFamily: fontFamily.body }} data-testid="nav-mobile-login">Log in</Link>
+          {/* Mobile: Login text + hamburger */}
+          <Link to="/login-supabase" className="md:hidden text-xs text-[var(--ink-secondary)] hover:text-[var(--ink-display)]" style={{ fontFamily: fontFamily.body }} data-testid="nav-mobile-login">Login</Link>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden p-2 text-[var(--ink-secondary)]"
@@ -78,16 +75,15 @@ const WebsiteNav = () => {
             <Link key={link.label} to={link.path} onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-[var(--ink-secondary)] hover:text-[var(--ink-display)] hover:bg-black/5 transition-all" style={{ fontFamily: fontFamily.body }}>{link.label}</Link>
           ))}
           <div className="pt-4 space-y-2">
-            <Link to="/login-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[var(--ink-secondary)] border border-white/10">Log in</Link>
+            <Link to="/login-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[var(--ink-secondary)] border border-white/10">Login</Link>
             <Link
               to="/speak-with-local-specialist"
               onClick={() => setMobileOpen(false)}
               className="block w-full px-4 py-3 rounded-lg text-sm text-center font-semibold"
               style={{ color: 'var(--ink-display, #0A0A0A)', border: '1px solid rgba(10,10,10,0.12)', background: 'rgba(255,255,255,0.8)' }}
             >
-              Speak with a Local Specialist
+              Talk to a Local Specialist
             </Link>
-            <Link to="/register-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[var(--ink-inverse)] font-semibold" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)' }}>Start Trial</Link>
           </div>
         </div>
       )}
