@@ -1,0 +1,4 @@
+-- Remote migration history reconciliation placeholder.
+-- This version exists in the remote Supabase migration history but was absent from this repository.
+-- Added so Supabase CLI can compare local and remote migration history safely.
+-- No-op: this file intentionally performs no DDL or DML.
