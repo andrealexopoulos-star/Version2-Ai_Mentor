@@ -59,6 +59,7 @@ async def emit_consume(
     sb,
     *,
     user_id: str,
+    account_id: Optional[str] = None,
     model: str,
     input_tokens: int,
     output_tokens: int,
@@ -102,6 +103,7 @@ async def emit_consume(
     row = {
         # id omitted — DB DEFAULT gen_random_uuid()
         "user_id":              user_id,
+        "account_id":           account_id,
         "kind":                 "consume",         # C1
         "tokens":               tt,                # C2
         "input_tokens":         ti,

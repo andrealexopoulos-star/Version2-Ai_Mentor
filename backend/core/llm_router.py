@@ -211,12 +211,34 @@ async def _record_usage(
         logger.debug("[LLM Router] sb unavailable, skipping usage emit: %s", exc)
         return
 
+    account_id = None
+    try:
+        row = (
+            sb.table("users")
+            .select("account_id")
+            .eq("id", user_id)
+            .maybe_single()
+            .execute()
+        )
+        account_id = (row.data or {}).get("account_id") if row is not None else None
+    except Exception as exc:
+        logger.debug("[LLM Router] account scope lookup failed for %s: %s", str(user_id)[:8], exc)
+
     # 1) Legacy metering (SOT during PR1, sync)
     legacy_ok = False
     metering_fn = _get_metering()
     if metering_fn is not None:
         try:
-            metering_fn(sb, user_id, model, input_tokens, output_tokens, feature=feature, tier=tier)
+            metering_fn(
+                sb,
+                user_id,
+                model,
+                input_tokens,
+                output_tokens,
+                feature=feature,
+                tier=tier,
+                account_id=account_id,
+            )
             legacy_ok = True
         except Exception as exc:
             logger.debug("[LLM Router] legacy metering failed (non-fatal): %s", exc)
@@ -227,6 +249,7 @@ async def _record_usage(
         await emit_consume(
             sb,
             user_id=user_id,
+            account_id=account_id,
             model=model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
