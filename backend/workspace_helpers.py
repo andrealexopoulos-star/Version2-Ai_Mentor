@@ -42,7 +42,20 @@ async def get_or_create_user_account(supabase_client: Client, user_id: str, user
         except Exception:
             pass
 
-        # Final fallback: use user_id as workspace ID
+        # Deterministic fallback: persist a workspace keyed by user_id so
+        # billing/account scope does not depend on an in-memory synthetic id.
+        try:
+            supabase_client.table('accounts').upsert({
+                "id": user_id,
+                "name": workspace_name,
+                "owner_id": user_id,
+            }).execute()
+            supabase_client.table('users').update({'account_id': user_id}).eq('id', user_id).execute()
+            account_result = supabase_client.table('accounts').select('*').eq('id', user_id).single().execute()
+            if account_result.data:
+                return account_result.data
+        except Exception:
+            pass
         return _synthetic_account(user_id, user_email, company_name)
 
     except Exception:

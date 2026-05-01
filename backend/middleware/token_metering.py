@@ -10,10 +10,20 @@ regardless of the calling user's RLS context.
 from __future__ import annotations
 
 import logging
+from calendar import monthrange
 from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException
+
+from config.entitlement_constants import (
+    BUSINESS_TOKENS,
+    HARD_STOP_THRESHOLD,
+    PRO_TOKENS,
+    STARTER_TOKENS,
+    URGENT_WARNING_THRESHOLD,
+    WARNING_THRESHOLD,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,27 +35,31 @@ TIER_TOKEN_LIMITS: dict[str, dict[str, int]] = {
         "output_allocated":  75_000,
     },
     "starter": {
-        "input_allocated":  2_000_000,
-        "output_allocated": 1_000_000,
+        # Growth/Starter contract total = 1M tokens/month.
+        "input_allocated":  666_667,
+        "output_allocated": 333_333,
     },
     "pro": {
-        "input_allocated":  5_000_000,
-        "output_allocated": 2_000_000,
+        # Pro contract total = 5M tokens/month.
+        "input_allocated":  3_333_333,
+        "output_allocated": 1_666_667,
     },
     "business": {
-        "input_allocated":  15_000_000,
-        "output_allocated":  6_000_000,
+        # Business contract total = 20M tokens/month.
+        "input_allocated":  13_333_333,
+        "output_allocated":  6_666_667,
     },
     "enterprise": {
-        "input_allocated":  30_000_000,
-        "output_allocated": 15_000_000,
+        # Contract tier defaults mirror Business unless overridden.
+        "input_allocated":  13_333_333,
+        "output_allocated":  6_666_667,
     },
     # Contracted sales tier — defaults mirror enterprise. Per-customer
     # overrides should be applied via separate entitlement records if/when
     # a contract justifies it (Step 8 / P1-3 — unified with PLANS + tiers.js).
     "custom_build": {
-        "input_allocated":  30_000_000,
-        "output_allocated": 15_000_000,
+        "input_allocated":  13_333_333,
+        "output_allocated":  6_666_667,
     },
     "super_admin": {
         "input_allocated":  -1,
@@ -191,9 +205,149 @@ def _normalize_tier(tier: str | None) -> str:
     return t if t in TIER_TOKEN_LIMITS else "free"
 
 
+def _resolve_account_id(sb, user_id: str) -> Optional[str]:
+    try:
+        row = (
+            sb.table("users")
+            .select("account_id")
+            .eq("id", user_id)
+            .maybe_single()
+            .execute()
+        )
+        return (row.data or {}).get("account_id") if row is not None else None
+    except Exception:
+        return None
+
+
+def _tier_limits(tier: str) -> dict[str, int]:
+    normalized = _normalize_tier(tier)
+    if normalized == "starter":
+        return {"input_allocated": 666_667, "output_allocated": STARTER_TOKENS - 666_667}
+    if normalized == "pro":
+        return {"input_allocated": 3_333_333, "output_allocated": PRO_TOKENS - 3_333_333}
+    if normalized in {"business", "enterprise", "custom_build"}:
+        return {"input_allocated": 13_333_333, "output_allocated": BUSINESS_TOKENS - 13_333_333}
+    return TIER_TOKEN_LIMITS.get(normalized, TIER_TOKEN_LIMITS["free"])
+
+
+def _get_or_create_allocation_user_scope(
+    sb,
+    *,
+    user_id: str,
+    tier: str,
+    period_start_iso: str,
+    period_end_iso: str,
+):
+    result = (
+        sb.table("token_allocations")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("period_start", period_start_iso)
+        .maybe_single()
+        .execute()
+    )
+    if result.data:
+        row = result.data
+        limits = _tier_limits(tier)
+        if row.get("tier") != tier:
+            sb.table("token_allocations").update({
+                "tier": tier,
+                "input_allocated": limits["input_allocated"],
+                "output_allocated": limits["output_allocated"],
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }).eq("id", row["id"]).execute()
+            row["tier"] = tier
+            row["input_allocated"] = limits["input_allocated"]
+            row["output_allocated"] = limits["output_allocated"]
+        return row
+
+    limits = _tier_limits(tier)
+    insert_row = {
+        "user_id": user_id,
+        "tier": tier,
+        "period_start": period_start_iso,
+        "period_end": period_end_iso,
+        "input_allocated": limits["input_allocated"],
+        "output_allocated": limits["output_allocated"],
+        "input_used": 0,
+        "output_used": 0,
+        "overage_input": 0,
+        "overage_output": 0,
+    }
+    insert_result = (
+        sb.table("token_allocations")
+        .upsert(insert_row, on_conflict="user_id,period_start")
+        .execute()
+    )
+    if insert_result.data:
+        return insert_result.data[0] if isinstance(insert_result.data, list) else insert_result.data
+    return insert_row
+
+
+def _get_or_create_allocation_account_scope(
+    sb,
+    *,
+    account_id: str,
+    user_id: str,
+    tier: str,
+    period_start_iso: str,
+    period_end_iso: str,
+):
+    result = (
+        sb.table("token_allocations")
+        .select("*")
+        .eq("account_id", account_id)
+        .eq("period_start", period_start_iso)
+        .maybe_single()
+        .execute()
+    )
+    if result.data:
+        row = result.data
+        limits = _tier_limits(tier)
+        if row.get("tier") != tier:
+            sb.table("token_allocations").update({
+                "tier": tier,
+                "input_allocated": limits["input_allocated"],
+                "output_allocated": limits["output_allocated"],
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }).eq("id", row["id"]).execute()
+            row["tier"] = tier
+            row["input_allocated"] = limits["input_allocated"]
+            row["output_allocated"] = limits["output_allocated"]
+        return row
+
+    limits = _tier_limits(tier)
+    insert_row = {
+        "account_id": account_id,
+        "user_id": user_id,  # actor traceability for first writer in cycle
+        "tier": tier,
+        "period_start": period_start_iso,
+        "period_end": period_end_iso,
+        "input_allocated": limits["input_allocated"],
+        "output_allocated": limits["output_allocated"],
+        "input_used": 0,
+        "output_used": 0,
+        "overage_input": 0,
+        "overage_output": 0,
+    }
+    insert_result = (
+        sb.table("token_allocations")
+        .upsert(insert_row, on_conflict="account_id,period_start")
+        .execute()
+    )
+    if insert_result.data:
+        return insert_result.data[0] if isinstance(insert_result.data, list) else insert_result.data
+    return insert_row
+
+
 # ─── Public API ────────────────────────────────────────────────────────────────
 
-def get_or_create_allocation(sb, user_id: str, tier: str) -> dict | None:
+def get_or_create_allocation(
+    sb,
+    user_id: str,
+    tier: str,
+    account_id: Optional[str] = None,
+) -> dict | None:
     """Return the current month's token_allocations row, creating it if absent.
 
     Parameters
@@ -205,58 +359,33 @@ def get_or_create_allocation(sb, user_id: str, tier: str) -> dict | None:
     Returns the allocation dict or None on error.
     """
     tier = _normalize_tier(tier)
+    resolved_account_id = account_id or _resolve_account_id(sb, user_id)
     period_start, period_end = _current_period()
     period_start_iso = period_start.isoformat()
     period_end_iso = period_end.isoformat()
 
     try:
-        result = (
-            sb.table("token_allocations")
-            .select("*")
-            .eq("user_id", user_id)
-            .eq("period_start", period_start_iso)
-            .maybe_single()
-            .execute()
+        if resolved_account_id:
+            try:
+                return _get_or_create_allocation_account_scope(
+                    sb,
+                    account_id=resolved_account_id,
+                    user_id=user_id,
+                    tier=tier,
+                    period_start_iso=period_start_iso,
+                    period_end_iso=period_end_iso,
+                )
+            except Exception:
+                # Compatibility fallback for environments where account_id
+                # has not been added to token_allocations yet.
+                pass
+        return _get_or_create_allocation_user_scope(
+            sb,
+            user_id=user_id,
+            tier=tier,
+            period_start_iso=period_start_iso,
+            period_end_iso=period_end_iso,
         )
-        if result.data:
-            # If tier changed mid-period, update the allocation ceilings
-            row = result.data
-            limits = TIER_TOKEN_LIMITS.get(tier, TIER_TOKEN_LIMITS["free"])
-            if row.get("tier") != tier:
-                sb.table("token_allocations").update({
-                    "tier": tier,
-                    "input_allocated": limits["input_allocated"],
-                    "output_allocated": limits["output_allocated"],
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                }).eq("id", row["id"]).execute()
-                row["tier"] = tier
-                row["input_allocated"] = limits["input_allocated"]
-                row["output_allocated"] = limits["output_allocated"]
-            return row
-
-        # Create new allocation for this period
-        limits = TIER_TOKEN_LIMITS.get(tier, TIER_TOKEN_LIMITS["free"])
-        insert_row = {
-            "user_id": user_id,
-            "tier": tier,
-            "period_start": period_start_iso,
-            "period_end": period_end_iso,
-            "input_allocated": limits["input_allocated"],
-            "output_allocated": limits["output_allocated"],
-            "input_used": 0,
-            "output_used": 0,
-            "overage_input": 0,
-            "overage_output": 0,
-        }
-        insert_result = (
-            sb.table("token_allocations")
-            .upsert(insert_row, on_conflict="user_id,period_start")
-            .execute()
-        )
-        if insert_result.data:
-            return insert_result.data[0] if isinstance(insert_result.data, list) else insert_result.data
-        return insert_row  # fallback: return what we tried to insert
-
     except Exception as exc:
         logger.error("[TokenMetering] get_or_create_allocation failed for user %s: %s", str(user_id)[:8], exc)
         return None
@@ -270,6 +399,7 @@ def record_token_usage(
     output_tokens: int,
     feature: str = "llm_call",
     tier: str | None = None,
+    account_id: Optional[str] = None,
 ) -> bool:
     """Record token usage from a single LLM call.
 
@@ -286,6 +416,7 @@ def record_token_usage(
     today = now.date().isoformat()
     key = f"{user_id}:{feature}:{today}"
     cost_aud = _compute_cost_aud(model, input_tokens, output_tokens)
+    resolved_account_id = account_id or _resolve_account_id(sb, user_id)
 
     # 1 ── ai_usage_log: ACCUMULATE across all calls in the same (user, feature, date)
     # The previous implementation overwrote the row on every upsert, erasing
@@ -326,7 +457,7 @@ def record_token_usage(
 
     # 2 ── Update token_allocations
     try:
-        alloc = get_or_create_allocation(sb, user_id, tier or "free")
+        alloc = get_or_create_allocation(sb, user_id, tier or "free", account_id=resolved_account_id)
         if alloc is None:
             return False
 
@@ -359,7 +490,12 @@ def record_token_usage(
         return False
 
 
-def check_token_budget(sb, user_id: str, tier: str | None = None) -> dict:
+def check_token_budget(
+    sb,
+    user_id: str,
+    tier: str | None = None,
+    account_id: Optional[str] = None,
+) -> dict:
     """Return remaining budget + overage status for the current month.
 
     Returns a dict:
@@ -377,9 +513,10 @@ def check_token_budget(sb, user_id: str, tier: str | None = None) -> dict:
         }
     """
     effective_tier = _normalize_tier(tier)
+    resolved_account_id = account_id or _resolve_account_id(sb, user_id)
 
     try:
-        alloc = get_or_create_allocation(sb, user_id, effective_tier)
+        alloc = get_or_create_allocation(sb, user_id, effective_tier, account_id=resolved_account_id)
     except Exception as exc:
         logger.error("[TokenMetering] check_token_budget failed for user %s: %s", str(user_id)[:8], exc)
         alloc = None
@@ -444,6 +581,173 @@ FREE_TIER_QUOTA_EXHAUSTED_MESSAGE = (
 )
 FREE_TIER_UPGRADE_URL = "/upgrade"
 
+PAID_TIER_QUOTA_EXHAUSTED_ERROR = "tier_capacity_exhausted"
+PAID_TIER_QUOTA_EXHAUSTED_MESSAGE = (
+    "Your AI capacity is exhausted. Complete billing action to continue new AI usage."
+)
+
+
+def _parse_iso(raw: Optional[str]) -> Optional[datetime]:
+    if not raw:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    except Exception:
+        return None
+
+
+def _safe_user_and_policy(sb, user_id: str) -> tuple[dict, dict]:
+    user_state: dict = {}
+    account_policy: dict = {}
+    try:
+        ures = (
+            sb.table("users")
+            .select(
+                "id,account_id,subscription_tier,subscription_status,current_period_end,"
+                "stripe_customer_id,stripe_subscription_id,payment_required,auto_topup_enabled"
+            )
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
+        urows = (ures.data or []) if ures is not None else []
+        user_state = (urows[0] or {}) if urows else {}
+    except Exception:
+        return {}, {}
+    account_id = user_state.get("account_id")
+    if not account_id:
+        return user_state, {}
+    try:
+        pres = (
+            sb.table("account_billing_policy")
+            .select(
+                "account_id,effective_tier,monthly_topup_cap_override,auto_topup_enabled,"
+                "payment_required,current_period_start,current_period_end"
+            )
+            .eq("account_id", account_id)
+            .limit(1)
+            .execute()
+        )
+        prows = (pres.data or []) if pres is not None else []
+        account_policy = (prows[0] or {}) if prows else {}
+    except Exception:
+        account_policy = {}
+    return user_state, account_policy
+
+
+def _resolve_cycle(user_state: dict, account_policy: dict) -> tuple[datetime, datetime]:
+    now = datetime.now(timezone.utc)
+    cycle_end = _parse_iso((account_policy or {}).get("current_period_end") or user_state.get("current_period_end"))
+    cycle_start = _parse_iso((account_policy or {}).get("current_period_start"))
+    if cycle_end is None:
+        cycle_start = cycle_start or datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+        cycle_end = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc) if now.month == 12 else datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc)
+        return cycle_start, cycle_end
+    if cycle_start is None:
+        y, m = cycle_end.year, cycle_end.month - 1
+        if m == 0:
+            y, m = y - 1, 12
+        d = min(cycle_end.day, monthrange(y, m)[1])
+        cycle_start = cycle_end.replace(year=y, month=m, day=d)
+    return cycle_start, cycle_end
+
+
+def _sum_ledger(sb, *, account_id: str, cycle_start: datetime, cycle_end: datetime, kind: str) -> int:
+    try:
+        res = (
+            sb.table("usage_ledger")
+            .select("tokens")
+            .eq("account_id", account_id)
+            .eq("kind", kind)
+            .gte("created_at", cycle_start.isoformat())
+            .lt("created_at", cycle_end.isoformat())
+            .execute()
+        )
+    except Exception:
+        return 0
+    return sum(int(row.get("tokens") or 0) for row in (res.data or []))
+
+
+def _tier_capacity_state(sb, *, user_state: dict, account_policy: dict) -> Optional[dict]:
+    account_id = user_state.get("account_id")
+    if not account_id:
+        return None
+    tier = _normalize_tier((account_policy.get("effective_tier") if account_policy else None) or user_state.get("subscription_tier"))
+    from core.plans import allocation_for
+
+    allowance = allocation_for(tier)
+    cycle_start, cycle_end = _resolve_cycle(user_state, account_policy)
+    consumed = _sum_ledger(sb, account_id=account_id, cycle_start=cycle_start, cycle_end=cycle_end, kind="consume")
+    topped_up = _sum_ledger(sb, account_id=account_id, cycle_start=cycle_start, cycle_end=cycle_end, kind="topup")
+    if allowance < 0:
+        percent = 0.0
+        hard_stop = False
+    else:
+        effective = max(0, allowance + topped_up)
+        percent = 1.0 if effective <= 0 else min(1.0, consumed / effective)
+        hard_stop = percent >= HARD_STOP_THRESHOLD
+    return {
+        "tier": tier,
+        "cycle_start": cycle_start,
+        "cycle_end": cycle_end,
+        "consumed": consumed,
+        "topped_up": topped_up,
+        "allowance": allowance,
+        "percent_consumed": round(percent, 4),
+        "warning": percent >= WARNING_THRESHOLD,
+        "urgent_warning": percent >= URGENT_WARNING_THRESHOLD,
+        "hard_stop": hard_stop,
+    }
+
+
+def _enforce_paid_tier_budget_with_request_time_topup(sb, *, user_id: str, tier: str) -> None:
+    normalized = _normalize_tier(tier)
+    if normalized in {"free", "super_admin"}:
+        return
+    user_state, account_policy = _safe_user_and_policy(sb, user_id)
+    if not user_state:
+        return
+    account_id = user_state.get("account_id")
+    if not account_id:
+        return
+
+    capacity = _tier_capacity_state(sb, user_state=user_state, account_policy=account_policy)
+    if not capacity or not capacity["hard_stop"]:
+        return
+
+    # Request-time auto top-up foundation: attempt to create/reuse a pending
+    # top-up when hard-stop is hit. No token grant occurs here.
+    try:
+        from services.topup_service import maybe_trigger_request_time_auto_topup
+
+        maybe_trigger_request_time_auto_topup(
+            sb,
+            user_state=user_state,
+            account_policy=account_policy,
+            consumed=capacity["consumed"],
+            topped_up=capacity["topped_up"],
+            threshold_trigger=HARD_STOP_THRESHOLD,
+        )
+    except Exception as exc:
+        logger.warning("[TokenMetering] request-time auto-topup trigger failed for %s: %s", user_id, exc)
+
+    refreshed = _tier_capacity_state(sb, user_state=user_state, account_policy=account_policy)
+    if not refreshed or not refreshed["hard_stop"]:
+        return
+
+    payment_required = bool(account_policy.get("payment_required", user_state.get("payment_required", False)))
+    detail = {
+        "error": PAID_TIER_QUOTA_EXHAUSTED_ERROR,
+        "message": PAID_TIER_QUOTA_EXHAUSTED_MESSAGE,
+        "tier": normalized,
+        "percent_consumed": refreshed["percent_consumed"],
+        "payment_required": payment_required,
+        "existing_intelligence_read_only": True,
+        "next_action": "billing_action_required",
+    }
+    raise HTTPException(status_code=402, detail=detail)
+
 
 def enforce_free_tier_budget(sb, user_id: str, tier: str | None) -> None:
     """Hard-stop free-tier users at 100% of the monthly token allocation.
@@ -482,7 +786,8 @@ def enforce_free_tier_budget(sb, user_id: str, tier: str | None) -> None:
     # pre-normalise.
     normalized = _normalize_tier(tier)
     if normalized != "free":
-        return  # paid tiers are not hard-stopped at this gate
+        _enforce_paid_tier_budget_with_request_time_topup(sb, user_id=user_id, tier=normalized)
+        return
 
     if not user_id:
         # No user context (admin task, background job, health probe) — do not
