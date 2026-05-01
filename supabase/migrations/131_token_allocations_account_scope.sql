@@ -1,4 +1,4 @@
--- Migration 128: account-scoped token allocation foundation
+-- Migration 131: account-scoped token allocation foundation
 -- Purpose:
 --   1) Add nullable account_id to token_allocations (non-destructive).
 --   2) Backfill account_id from users.account_id where deterministic.
