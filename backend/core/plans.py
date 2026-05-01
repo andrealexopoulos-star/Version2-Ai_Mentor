@@ -22,13 +22,6 @@ from config.entitlement_constants import (
     TOPUP_PRICE_AUD_CENTS as CANONICAL_TOPUP_PRICE_AUD_CENTS,
     TOPUP_TOKENS as CANONICAL_TOPUP_TOKENS,
 )
-from config.entitlement_constants import (
-    BUSINESS_TOKENS,
-    PRO_TOKENS,
-    STARTER_TOKENS,
-    TOPUP_PRICE_AUD_CENTS as CANONICAL_TOPUP_PRICE_AUD_CENTS,
-    TOPUP_TOKENS as CANONICAL_TOPUP_TOKENS,
-)
 from middleware.token_metering import MODEL_PRICING  # noqa: F401 — single source of truth
 
 logger = logging.getLogger(__name__)

@@ -32,6 +32,9 @@ from routes.deps import (
     get_sb,
 )
 from routes.integrations import get_accounting_summary
+from services.topup_consent_service import get_effective_consent, record_consent_event
+from services.topup_policy_service import build_eligibility, latest_topup_attempt
+from services.topup_service import manual_topup
 
 
 router = APIRouter()
@@ -45,6 +48,18 @@ class AutoTopupPatchBody(BaseModel):
 
 class TopupCapPatchBody(BaseModel):
     monthly_topup_cap_override: Optional[int] = None
+
+
+class TopupConsentBody(BaseModel):
+    consent_action: str
+    consent_version: str = "v1"
+    source: str = "billing_ui"
+    auto_topup_enabled_after: Optional[bool] = None
+    monthly_topup_cap_after: Optional[int] = None
+
+
+class ManualTopupBody(BaseModel):
+    trigger_type: str = "manual"
 
 
 # Sprint B #18 (2026-04-22): cancel-reason capture before Stripe portal
@@ -542,6 +557,15 @@ async def get_billing_overview(current_user: dict = Depends(get_current_user)):
                 percent_consumed = round(min(1.0, consumed / effective_allowance), 4)
 
         payment_rows = _safe_payment_rows(user_id)
+        consent_state = get_effective_consent(sb, account_id=account_id)
+        eligibility = build_eligibility(
+            sb,
+            user_state={**user_state, "id": user_id},
+            account_policy=account_policy or {},
+            account_id=account_id,
+            tier=tier,
+        )
+        latest_attempt = latest_topup_attempt(sb, account_id=account_id)
 
         return {
             "ok": True,
@@ -574,6 +598,11 @@ async def get_billing_overview(current_user: dict = Depends(get_current_user)):
             "subscription_status": user_state.get("subscription_status"),
             "trial_ends_at": user_state.get("trial_ends_at"),
             "monthly_topup_cap_override": account_policy.get("monthly_topup_cap_override"),
+            "effective_topup_consent": bool(consent_state.get("effective", False)),
+            "latest_topup_attempt": latest_attempt,
+            "topup_cap_limit": eligibility.get("cap_limit"),
+            "topup_cap_used": eligibility.get("cap_used"),
+            "topup_cap_remaining": eligibility.get("cap_remaining"),
             "topup_pack": {
                 "tokens": TOPUP_TOKENS,
                 "price_aud_cents": TOPUP_PRICE_AUD_CENTS,
@@ -662,6 +691,80 @@ async def patch_topup_cap(
     except Exception as e:
         logger.error(f"[billing-topup-cap] Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/billing/topup/consent")
+async def post_topup_consent(
+    body: TopupConsentBody,
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["id"]
+    sb = get_sb()
+    try:
+        user_state = _safe_user_billing_state(sb, user_id)
+        account_id = user_state.get("account_id")
+        if not account_id:
+            raise HTTPException(status_code=409, detail="Account billing scope is not configured")
+        event = record_consent_event(
+            sb,
+            account_id=account_id,
+            user_id=user_id,
+            consent_action=body.consent_action,
+            consent_version=body.consent_version,
+            source=body.source,
+            auto_topup_enabled_after=body.auto_topup_enabled_after,
+            monthly_topup_cap_after=body.monthly_topup_cap_after,
+        )
+        consent_state = get_effective_consent(sb, account_id=account_id)
+        return {
+            "ok": True,
+            "event_id": event.get("id"),
+            "effective_topup_consent": bool(consent_state.get("effective", False)),
+        }
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("[billing-topup-consent] Error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Unable to record top-up consent")
+
+
+@router.post("/billing/topup")
+async def post_manual_topup(
+    body: ManualTopupBody,
+    current_user: dict = Depends(get_current_user),
+):
+    if (body.trigger_type or "manual").strip().lower() != "manual":
+        raise HTTPException(status_code=422, detail="trigger_type must be 'manual'")
+
+    user_id = current_user["id"]
+    sb = get_sb()
+    try:
+        user_state = _safe_user_billing_state(sb, user_id)
+        account_id = user_state.get("account_id")
+        if not account_id:
+            raise HTTPException(status_code=409, detail="Account billing scope is not configured")
+        account_policy = _safe_account_billing_policy(sb, account_id)
+        result = manual_topup(
+            sb,
+            user_state={**user_state, "id": user_id},
+            account_policy=account_policy or {},
+        )
+        attempt = result.get("attempt") or {}
+        return {
+            "ok": True,
+            "attempt_id": attempt.get("id"),
+            "status": attempt.get("status"),
+            "stripe_payment_intent_id": attempt.get("stripe_payment_intent_id"),
+            "client_secret": result.get("payment_intent_client_secret"),
+            "reused_pending": bool(result.get("reused_pending", False)),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("[billing-topup] Error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Unable to initiate top-up")
 
 
 # ─── Endpoint: POST /billing/cancel-reason (Sprint B #18, 2026-04-22) ──

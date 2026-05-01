@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 from routes.auth import get_current_user
+from services.payment_state_service import (
+    apply_failed_or_action_required_outcome,
+    clear_payment_required_on_success,
+)
+from services.topup_ledger_service import grant_topup_tokens_once
+from services.topup_service import get_attempt_by_payment_intent, mark_attempt_status
 
 load_dotenv()
 STRIPE_KEY = os.environ.get("STRIPE_API_KEY", "")
@@ -1514,6 +1520,85 @@ async def stripe_webhook(request: Request):
                             status="active",
                             past_due_since=None,
                             stripe_customer_id=customer_id,
+                        )
+
+            elif event.type == "payment_intent.succeeded":
+                pi = event.data.object
+                pi_id = getattr(pi, "id", None)
+                if not pi_id:
+                    logger.warning("payment_intent.succeeded received without id")
+                else:
+                    attempt = get_attempt_by_payment_intent(sb, payment_intent_id=pi_id)
+                    if not attempt:
+                        logger.info("payment_intent.succeeded with no topup attempt match pi=%s", pi_id)
+                    else:
+                        status = str(attempt.get("status") or "").lower()
+                        if status != "succeeded":
+                            mark_attempt_status(
+                                sb,
+                                attempt_id=attempt["id"],
+                                status="succeeded",
+                                stripe_invoice_id=getattr(pi, "invoice", None),
+                            )
+                        attempt["stripe_invoice_id"] = getattr(pi, "invoice", None)
+                        grant_topup_tokens_once(sb, attempt=attempt)
+                        clear_payment_required_on_success(sb, account_id=attempt["account_id"])
+
+            elif event.type == "payment_intent.payment_failed":
+                pi = event.data.object
+                pi_id = getattr(pi, "id", None)
+                if not pi_id:
+                    logger.warning("payment_intent.payment_failed received without id")
+                else:
+                    attempt = get_attempt_by_payment_intent(sb, payment_intent_id=pi_id)
+                    if not attempt:
+                        logger.info("payment_intent.payment_failed with no topup attempt match pi=%s", pi_id)
+                    else:
+                        reason = (
+                            getattr(getattr(pi, "last_payment_error", None), "code", None)
+                            or getattr(getattr(pi, "last_payment_error", None), "message", None)
+                            or "payment_failed"
+                        )
+                        mark_attempt_status(
+                            sb,
+                            attempt_id=attempt["id"],
+                            status="failed",
+                            failure_reason=str(reason),
+                            stripe_invoice_id=getattr(pi, "invoice", None),
+                        )
+                        apply_failed_or_action_required_outcome(
+                            sb,
+                            account_id=attempt["account_id"],
+                            tier=attempt["tier"],
+                            cycle_start=str(attempt["cycle_start"]),
+                            cycle_end=str(attempt["cycle_end"]),
+                            failure_reason=str(reason),
+                        )
+
+            elif event.type == "payment_intent.requires_action":
+                pi = event.data.object
+                pi_id = getattr(pi, "id", None)
+                if not pi_id:
+                    logger.warning("payment_intent.requires_action received without id")
+                else:
+                    attempt = get_attempt_by_payment_intent(sb, payment_intent_id=pi_id)
+                    if not attempt:
+                        logger.info("payment_intent.requires_action with no topup attempt match pi=%s", pi_id)
+                    else:
+                        mark_attempt_status(
+                            sb,
+                            attempt_id=attempt["id"],
+                            status="requires_action",
+                            failure_reason="requires_action",
+                            stripe_invoice_id=getattr(pi, "invoice", None),
+                        )
+                        apply_failed_or_action_required_outcome(
+                            sb,
+                            account_id=attempt["account_id"],
+                            tier=attempt["tier"],
+                            cycle_start=str(attempt["cycle_start"]),
+                            cycle_end=str(attempt["cycle_end"]),
+                            failure_reason="requires_action",
                         )
 
             elif event.type == "invoice.payment_succeeded":

@@ -16,6 +16,7 @@ client without touching the network or Supabase.
 """
 from __future__ import annotations
 
+import asyncio
 import importlib
 import sys
 import types
@@ -65,6 +66,10 @@ class _FakeQuery:
 
     def limit(self, n: int) -> "_FakeQuery":
         self.limit_n = n
+        return self
+
+    def order(self, col: str, desc: bool = False) -> "_FakeQuery":
+        self.filters.append(("order", col, bool(desc)))
         return self
 
     def select(self, cols: str = "*") -> "_FakeQuery":
@@ -582,3 +587,82 @@ def test_account_billing_policy_lookup_returns_row(billing_module, fake_sb):
     assert row["account_id"] == "acc-1"
     assert row["effective_tier"] == "pro"
     assert row["monthly_topup_cap_override"] == 5
+
+
+def test_billing_overview_exposes_effective_consent_and_latest_topup_state(
+    billing_module, fake_sb, monkeypatch
+):
+    def users_handler(q: _FakeQuery):
+        if q.op != "select":
+            return _FakeExecResult([])
+        return _FakeExecResult([{
+            "subscription_tier": "starter",
+            "subscription_status": "active",
+            "current_period_end": "2026-06-01T00:00:00+00:00",
+            "past_due_since": None,
+            "trial_ends_at": None,
+            "stripe_customer_id": "cus_1",
+            "stripe_subscription_id": "sub_1",
+            "auto_topup_enabled": True,
+            "payment_required": False,
+            "topup_warned_at": None,
+            "account_id": "acc-1",
+        }])
+
+    def account_policy_handler(q: _FakeQuery):
+        return _FakeExecResult([{
+            "account_id": "acc-1",
+            "effective_tier": "starter",
+            "monthly_topup_cap_override": None,
+            "auto_topup_enabled": True,
+            "payment_required": False,
+            "topup_warned_at": None,
+            "current_period_start": "2026-05-01T00:00:00+00:00",
+            "current_period_end": "2026-06-01T00:00:00+00:00",
+        }])
+
+    def usage_handler(q: _FakeQuery):
+        filters = q.filters
+        if ("eq", "kind", "reset") in filters:
+            return _FakeExecResult([])
+        if ("eq", "kind", "consume") in filters:
+            # _sum_consume_since or _daily_average_since
+            return _FakeExecResult([{"tokens": 1000}])
+        if ("eq", "kind", "topup") in filters:
+            return _FakeExecResult([{
+                "created_at": "2026-05-10T00:00:00+00:00",
+                "tokens": 250000,
+                "price_aud_cents": 1900,
+                "stripe_payment_intent_id": "pi_1",
+                "stripe_invoice_id": None,
+            }])
+        if ("in", "kind", ["consume", "topup"]) in filters:
+            return _FakeExecResult([
+                {"kind": "consume", "tokens": 2000},
+                {"kind": "topup", "tokens": 250000},
+            ])
+        return _FakeExecResult([])
+
+    fake_sb.response_handlers["users"] = users_handler
+    fake_sb.response_handlers["account_billing_policy"] = account_policy_handler
+    fake_sb.response_handlers["usage_ledger"] = usage_handler
+    fake_sb.response_handlers["payment_transactions"] = lambda q: _FakeExecResult([])
+    monkeypatch.setattr(billing_module, "get_sb", lambda: fake_sb)
+    monkeypatch.setattr(
+        billing_module,
+        "get_effective_consent",
+        lambda sb, account_id: {"effective": True, "latest_event": {"id": "evt-1"}},
+    )
+    monkeypatch.setattr(
+        billing_module,
+        "latest_topup_attempt",
+        lambda sb, account_id: {"id": "att-1", "status": "requires_action"},
+    )
+
+    out = asyncio.run(
+        billing_module.get_billing_overview({"id": "user-1", "email": "u@example.com"})
+    )
+    assert out["ok"] is True
+    assert out["effective_topup_consent"] is True
+    assert out["latest_topup_attempt"]["status"] == "requires_action"
+    assert out["topup_cap_limit"] == 3

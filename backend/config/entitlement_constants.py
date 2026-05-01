@@ -1,4 +1,8 @@
-"""Canonical BIQc billing and entitlement constants."""
+"""Canonical BIQc billing and entitlement constants.
+
+PR-2 lock: all top-up, token allowance, cap, and threshold values MUST come
+from this module so backend paths cannot drift from the contract docs.
+"""
 
 from __future__ import annotations
 
@@ -15,26 +19,26 @@ ENTERPRISE_TIER = "enterprise"
 CUSTOM_BUILD_TIER = "custom_build"
 SUPER_ADMIN_TIER = "super_admin"
 
-# Seats (commercial contract)
+# Seats (approved contract values)
 STARTER_SEATS = 1
 PRO_SEATS = 5
 BUSINESS_SEATS = 12
 
-# Monthly token allowances (commercial contract)
+# Monthly token allowances (approved contract values)
 STARTER_TOKENS = 1_000_000
 PRO_TOKENS = 5_000_000
 BUSINESS_TOKENS = 20_000_000
 
-# Top-up pack (commercial contract)
+# Top-up pack (approved contract values)
 TOPUP_TOKENS = 250_000
 TOPUP_PRICE_AUD_CENTS = 1900
 
-# Per-cycle top-up caps (commercial contract)
+# Per-cycle top-up caps (approved contract values)
 STARTER_TOPUP_CAP = 3
 PRO_TOPUP_CAP = 5
 BUSINESS_TOPUP_CAP = 10
 
-# Usage thresholds
+# Usage thresholds (approved contract values)
 WARNING_THRESHOLD = 0.80
 URGENT_WARNING_THRESHOLD = 0.95
 HARD_STOP_THRESHOLD = 1.00
@@ -79,3 +83,4 @@ TOPUP_FINAL_STATUSES = {
 TOPUP_CONSENT_GRANTED = "granted"
 TOPUP_CONSENT_REVOKED = "revoked"
 TOPUP_CONSENT_ACTIONS = {TOPUP_CONSENT_GRANTED, TOPUP_CONSENT_REVOKED}
+
