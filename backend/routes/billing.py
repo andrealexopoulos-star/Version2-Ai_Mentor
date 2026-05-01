@@ -268,7 +268,7 @@ def _safe_user_billing_state(sb, user_id: str) -> Dict[str, Any]:
             sb.table("users")
             .select(
                 "subscription_tier,subscription_status,current_period_end,"
-                "past_due_since,trial_ends_at,stripe_customer_id,"
+                "past_due_since,trial_ends_at,stripe_customer_id,stripe_subscription_id,"
                 "auto_topup_enabled,payment_required,topup_warned_at,account_id"
             )
             .eq("id", user_id)
