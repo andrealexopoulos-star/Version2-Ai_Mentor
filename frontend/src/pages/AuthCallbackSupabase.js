@@ -28,6 +28,21 @@ const AuthCallbackSupabase = () => {
     let safetyTimeout = null;
     let loginRedirectTimeout = null;
 
+    const consumeNextPath = () => {
+      const search = new URLSearchParams(window.location.search);
+      const fromQuery = String(search.get('next') || '');
+      if (fromQuery.startsWith('/')) return fromQuery;
+      try {
+        const fromStorage = String(sessionStorage.getItem('biqc_auth_next') || '');
+        if (fromStorage.startsWith('/')) return fromStorage;
+      } catch {}
+      return '';
+    };
+
+    const clearNextPath = () => {
+      try { sessionStorage.removeItem('biqc_auth_next'); } catch {}
+    };
+
     const routeAfterAuth = async (session) => {
       if (!session?.access_token) {
         navigate('/soundboard', { replace: true });
@@ -81,6 +96,13 @@ const AuthCallbackSupabase = () => {
         return;
       }
 
+      const pendingNextPath = consumeNextPath();
+      if (pendingNextPath) {
+        clearNextPath();
+        navigate(pendingNextPath, { replace: true });
+        return;
+      }
+
       try {
         const backendUrl = getBackendUrl();
         const [mergeRes, outlookRes, gmailRes] = await Promise.allSettled([
@@ -112,13 +134,17 @@ const AuthCallbackSupabase = () => {
         }
 
         if (!anyProbeSucceeded) {
+          clearNextPath();
           navigate('/integrations?onboarding=1&source=auth-callback-probe-failed', { replace: true });
         } else if (hasConnectedTools) {
+          clearNextPath();
           navigate('/soundboard', { replace: true });
         } else {
+          clearNextPath();
           navigate('/integrations?onboarding=1&source=auth-callback', { replace: true });
         }
       } catch {
+        clearNextPath();
         navigate('/integrations?onboarding=1&source=auth-callback-error', { replace: true });
       }
     };

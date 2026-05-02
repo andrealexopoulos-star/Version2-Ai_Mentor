@@ -459,6 +459,12 @@ const Settings = () => {
     email: user?.email || '',
     company: user?.company_name || '',
   });
+
+  useEffect(() => {
+    if (_initialTab === 'billing') {
+      navigate('/billing', { replace: true });
+    }
+  }, [_initialTab, navigate]);
   const [timezone, setTimezone] = useState('Australia/Sydney');
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [memberSince, setMemberSince] = useState(null);

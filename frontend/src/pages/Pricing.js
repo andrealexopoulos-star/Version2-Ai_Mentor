@@ -90,7 +90,9 @@ const FAQS = [
 
 const planCtaHref = (user, planId) => {
   if (planId === 'specialist') return '/speak-with-local-specialist';
-  return user ? '/subscribe' : '/register-supabase';
+  const plan = planId === 'growth' ? 'starter' : planId;
+  const next = encodeURIComponent(`/subscribe?plan=${plan}`);
+  return user ? `/subscribe?plan=${plan}` : `/login-supabase?next=${next}`;
 };
 
 const planCtaLabel = (planId) => {
@@ -185,6 +187,28 @@ export default function Pricing() {
       <section className="pb-14 px-4 sm:px-6 overflow-x-hidden">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-5">
           {PLANS.map((plan) => <PlanCard key={plan.id} plan={plan} user={user} />)}
+        </div>
+      </section>
+
+      <section className="pb-12 px-6">
+        <div className="max-w-[1100px] mx-auto rounded-2xl p-6" style={{ border: '1px solid rgba(140,170,210,0.16)', background: 'rgba(248,250,252,0.8)' }}>
+          <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--ink-display, #0A0A0A)' }}>
+            Need help choosing?
+          </h2>
+          <p className="text-sm mb-4" style={{ color: 'var(--ink-secondary, #6B7280)' }}>
+            Take the match quiz, run a Calibration Scan, or compare plans side-by-side.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/still-not-sure" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold" style={{ border: '1px solid rgba(10,10,10,0.12)', color: 'var(--ink-display, #0A0A0A)' }}>
+              Take the quiz
+            </Link>
+            <Link to="/still-not-sure" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold" style={{ border: '1px solid rgba(10,10,10,0.12)', color: 'var(--ink-display, #0A0A0A)' }}>
+              Run a Calibration Scan
+            </Link>
+            <Link to="/pricing#comparison" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold" style={{ border: '1px solid rgba(10,10,10,0.12)', color: 'var(--ink-display, #0A0A0A)' }}>
+              Compare plans
+            </Link>
+          </div>
         </div>
       </section>
 
