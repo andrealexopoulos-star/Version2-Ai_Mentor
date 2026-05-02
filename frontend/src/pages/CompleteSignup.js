@@ -120,7 +120,7 @@ const CompleteSignup = () => {
             Choose your plan capacity, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{userName.split(' ')[0] || 'there'}</em>.
           </h1>
           <p className="text-base mb-6" style={{ fontFamily: UI, color: '#525252' }}>
-            Your account <strong style={{ color: '#0A0A0A' }}>{userEmail}</strong> is signed in. Continue to secure checkout to start your 14-day trial with <strong style={{ color: '#0A0A0A' }}>$0 today</strong>.
+            Your account <strong style={{ color: '#0A0A0A' }}>{userEmail}</strong> is signed in. Continue to secure checkout to complete subscription setup with transparent pricing before confirmation.
           </p>
           <p className="text-sm mb-6" style={{ fontFamily: UI, color: '#525252' }}>
             Every paid plan includes the same BIQc core intelligence system. You are selecting the capacity that fits your business.
@@ -145,7 +145,7 @@ const CompleteSignup = () => {
                     Secure checkout reassurance
                   </p>
                   <p style={{ fontFamily: UI, color: '#525252', fontSize: 13 }}>
-                    $0 today, 14-day trial, cancel anytime. Secure billing via Stripe, your data stays yours, and you have Australian/local specialist support with no lock-in.
+                    Eligible accounts may see $0 today with a 14-day trial in Stripe checkout. Cancel anytime. Secure billing via Stripe, your data stays yours, and you have Australian/local specialist support with no lock-in.
                   </p>
                 </div>
               </div>
