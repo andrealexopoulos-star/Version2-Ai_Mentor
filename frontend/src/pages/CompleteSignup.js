@@ -307,7 +307,7 @@ const CompleteSignup = () => {
                 }}
                 data-testid="complete-signup-book-demo"
               >
-                Speak with a Local Specialist
+                Book a call with a BIQc Specialist
               </button>
             </div>
 
@@ -336,7 +336,7 @@ const CompleteSignup = () => {
               </div>
             </div>
             <p className="text-xs mt-3" style={{ fontFamily: MONO, color: '#737373' }}>
-              Australian/local specialist support is available at every stage of onboarding.
+              Secure billing via Stripe, no lock-in, and Australian/local specialist support at every stage of onboarding.
             </p>
 
             {trialFailureMessage && (

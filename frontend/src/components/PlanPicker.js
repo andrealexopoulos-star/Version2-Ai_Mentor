@@ -8,7 +8,7 @@ import { fontFamily } from '../design-system/tokens';
  * Three cards: Growth ($69), Pro ($199), Business ($349) — all AUD/mo.
  * Growth is default + tagged "Most Popular" per the /pricing page Trust Layer.
  *
- * Clicking a card calls onChange with the plan id ("starter" | "professional" |
+ * Clicking a card calls onChange with the plan id ("starter" | "pro" |
  * "business"). Uses radio-style single-select with visible selection ring.
  */
 
@@ -27,7 +27,7 @@ const PLANS = [
     highlight: true,
   },
   {
-    id: 'professional',
+    id: 'pro',
     name: 'Pro',
     price: '$199',
     period: 'AUD/mo',

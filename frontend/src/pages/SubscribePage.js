@@ -19,7 +19,13 @@ const FEATURE_LABELS = {
 };
 
 // Checkout-visible plans: paid tiers that can be self-served.
-const PLANS = PRICING_TIERS.filter((t) => ['starter', 'pro', 'business', 'enterprise'].includes(t.id));
+const PLANS = PRICING_TIERS.filter((t) => ['starter', 'pro', 'business'].includes(t.id));
+
+const canonicalCheckoutPlanId = (planId) => {
+  if (planId === 'growth' || planId === 'foundation') return 'starter';
+  if (planId === 'professional') return 'pro';
+  return planId;
+};
 
 const SubscribePage = () => {
   const { user, refreshSession } = useSupabaseAuth();
@@ -45,6 +51,7 @@ const SubscribePage = () => {
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
   const [loading, setLoading] = useState(null);
+  const [checkoutError, setCheckoutError] = useState('');
 
   useEffect(() => {
     refreshSessionRef.current = refreshSession;
@@ -112,18 +119,28 @@ const SubscribePage = () => {
   }, [sessionId, status, pollPaymentStatus]);
 
   const handleUpgrade = async (packageId) => {
-    setLoading(packageId);
+    if (!user) {
+      const next = encodeURIComponent('/subscribe');
+      navigate(`/login-supabase?next=${next}`);
+      return;
+    }
+    const canonicalPackageId = canonicalCheckoutPlanId(packageId);
+    setCheckoutError('');
+    setLoading(canonicalPackageId);
     try {
       const origin = window.location.origin;
-      const res = await apiClient.post('/payments/checkout', { package_id: packageId, origin_url: origin });
+      const res = await apiClient.post('/payments/checkout', { package_id: canonicalPackageId, origin_url: origin });
       if (res.data?.url) {
         window.location.href = res.data.url;
         return;
       }
+      setCheckoutError('Checkout did not return a secure payment link. Please try again or speak with a BIQc Specialist.');
       toast.error('Checkout is unavailable right now. Please try again.');
     } catch (err) {
       console.error('Checkout error:', err);
-      toast.error('Checkout failed. Please try again.');
+      const detail = err?.response?.data?.detail;
+      setCheckoutError(detail || 'Checkout failed before redirect. Please try again or speak with a BIQc Specialist.');
+      toast.error(detail || 'Checkout failed. Please try again.');
     } finally {
       setLoading(null);
     }
@@ -147,6 +164,16 @@ const SubscribePage = () => {
         <div className="w-full max-w-xl mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: 'var(--lava-wash)', border: '1px solid var(--lava)', borderRadius: 'var(--r-lg)' }}>
           <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--lava)' }} />
           <p className="text-sm" style={{ color: 'var(--lava)', fontFamily: 'var(--font-ui)' }}>Verifying payment...</p>
+        </div>
+      )}
+
+      {checkoutError && (
+        <div className="w-full max-w-xl mb-6 p-4 rounded-xl" style={{
+          background: 'var(--danger-wash)',
+          border: '1px solid var(--danger)',
+          borderRadius: 'var(--r-lg)',
+        }} data-testid="subscribe-checkout-error">
+          <p className="text-sm" style={{ color: 'var(--danger)', fontFamily: 'var(--font-ui)' }}>{checkoutError}</p>
         </div>
       )}
 
@@ -198,14 +225,30 @@ const SubscribePage = () => {
           const isCurrent = plan.id === currentTier;
           const isPopular = plan.recommended;
           return (
-            <div key={plan.id} className="relative flex flex-col" style={{
+            <div
+              key={plan.id}
+              className="relative flex flex-col"
+              style={{
               background: 'var(--surface)',
               border: isCurrent ? '1px solid var(--lava)' : isPopular ? '1px solid var(--ink-display)' : '1px solid var(--border)',
               borderRadius: 'var(--r-2xl)',
               padding: 'var(--sp-8, 32px)',
               boxShadow: isCurrent ? '0 0 0 1px var(--lava), var(--elev-2)' : isPopular ? '0 0 0 1px var(--ink-display), var(--elev-3)' : 'var(--elev-1)',
               transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-            }} data-testid={`plan-${plan.id}`}>
+              cursor: (isCurrent || loading) ? 'default' : 'pointer',
+            }}
+              data-testid={`plan-${plan.id}`}
+              onClick={() => { if (!isCurrent && !loading) handleUpgrade(plan.id); }}
+              role={isCurrent ? undefined : 'button'}
+              tabIndex={isCurrent ? -1 : 0}
+              onKeyDown={(event) => {
+                if (isCurrent || loading) return;
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  handleUpgrade(plan.id);
+                }
+              }}
+            >
               {isCurrent && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full whitespace-nowrap" style={{ background: 'var(--lava-wash)', color: 'var(--lava-deep, var(--lava))', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Current plan</span>
               )}
@@ -222,7 +265,7 @@ const SubscribePage = () => {
               {isCurrent ? (
                 <div className="w-full py-3.5 text-center text-sm font-semibold" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border-strong, var(--border))', color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', marginBottom: 'var(--sp-6, 24px)', cursor: 'default' }}>Current Plan</div>
               ) : (
-                <button onClick={() => handleUpgrade(plan.id)} disabled={loading === plan.id}
+                <button onClick={(event) => { event.stopPropagation(); handleUpgrade(plan.id); }} disabled={loading === plan.id}
                   className="w-full py-3.5 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
                   style={{
                     borderRadius: 'var(--r-lg)',
@@ -232,7 +275,7 @@ const SubscribePage = () => {
                     fontFamily: 'var(--font-ui)',
                     transition: 'all 0.15s ease',
                   }} data-testid={`upgrade-${plan.id}`}>
-                  {loading === plan.id ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</> : <>Upgrade <ArrowRight className="w-4 h-4" /></>}
+                  {loading === plan.id ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</> : <>Continue to secure checkout <ArrowRight className="w-4 h-4" /></>}
                 </button>
               )}
               <div style={{ height: 1, background: 'var(--border)', marginBottom: 'var(--sp-5, 20px)' }} />
@@ -251,6 +294,21 @@ const SubscribePage = () => {
       </div>
 
       <div className="w-full max-w-4xl mb-8 p-5" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--elev-1)' }}>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Specialist support</p>
+        <div className="mt-2 mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
+            Need rollout guidance before checkout? Book a call with a BIQc Specialist.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/speak-with-local-specialist')}
+            className="px-4 py-2 text-sm font-semibold text-white"
+            style={{ background: 'var(--lava)', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-lg)' }}
+            data-testid="subscribe-specialist-cta"
+          >
+            Book a call with a BIQc Specialist
+          </button>
+        </div>
         <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Custom Build</p>
         <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
