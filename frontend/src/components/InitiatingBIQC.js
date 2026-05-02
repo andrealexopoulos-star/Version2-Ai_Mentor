@@ -31,8 +31,8 @@ const InitiatingBIQC = ({ onReady }) => {
         @keyframes initBar{0%{width:0}100%{width:100%}}
       `}</style>
       <div className="text-center space-y-6">
-        <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#E85D00', animation: 'initPulse 2s ease-in-out infinite' }}>
-          <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-mono)" }}>B</span>
+        <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto overflow-hidden" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(10,10,10,0.08)', animation: 'initPulse 2s ease-in-out infinite' }}>
+          <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 36, height: 'auto' }} />
         </div>
         <h1 className="text-xl font-semibold text-[var(--ink-display)] tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Initiating BIQc{dots}</h1>
         <p className="text-sm text-[var(--ink-secondary)]" style={{ fontFamily: "var(--font-ui)" }}>Preparing your Intelligence Platform.</p>

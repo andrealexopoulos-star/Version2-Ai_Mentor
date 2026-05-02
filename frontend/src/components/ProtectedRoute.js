@@ -3,7 +3,6 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useSupabaseAuth, AUTH_STATE } from "../context/SupabaseAuthContext";
 import { apiClient } from "../lib/api";
 import { isPrivilegedUser } from "../lib/privilegedUser";
-import BiqcLogoCard from "./BiqcLogoCard";
 
 const SUPER_ADMIN_ROLES = ['superadmin', 'super_admin'];
 
@@ -29,7 +28,7 @@ const LoadingScreen = () => {
       `}</style>
       <div className="text-center space-y-6">
         <div style={{ animation: 'biqcPulse 2s ease-in-out infinite' }}>
-          <BiqcLogoCard size="sm" to={null} static />
+          <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 122, height: 'auto', margin: '0 auto' }} />
         </div>
         <div style={{ animation: 'biqcFade 0.8s ease-out' }}>
           <p className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: "var(--font-display)" }}>

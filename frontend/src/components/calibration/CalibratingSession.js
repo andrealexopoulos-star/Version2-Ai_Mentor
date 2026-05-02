@@ -44,8 +44,8 @@ const CalibratingSession = ({
       <header className="px-6 sm:px-8 py-3" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#E85D00' }}>
-              <span className="text-white font-bold text-[10px]" style={{ fontFamily: fontFamily.mono }}>B</span>
+            <div className="w-6 h-6 rounded-md flex items-center justify-center overflow-hidden" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(10,10,10,0.08)' }}>
+              <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 16, height: 'auto' }} />
             </div>
             <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: 'var(--biqc-text-2)', letterSpacing: '0.12em', fontFamily: fontFamily.mono }}>
               Calibration
