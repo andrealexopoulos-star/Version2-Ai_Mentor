@@ -98,7 +98,7 @@ const FAQS = [
 
 const PlanCard = ({ plan }) => (
   <article
-    className="rounded-2xl p-6 flex flex-col"
+    className="rounded-2xl p-6 flex flex-col min-w-0 overflow-hidden"
     style={{
       border: plan.featured ? '1px solid rgba(232,93,0,0.35)' : '1px solid rgba(140,170,210,0.16)',
       background: plan.featured ? 'rgba(232,93,0,0.04)' : 'rgba(255,255,255,0.7)',
@@ -114,19 +114,19 @@ const PlanCard = ({ plan }) => (
     >
       {plan.label}
     </span>
-    <h3 className="text-xl font-semibold mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)' }}>
+    <h3 className="text-xl font-semibold mb-1 break-words" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #0A0A0A)' }}>
       {plan.name}
     </h3>
     <div className="flex items-baseline gap-1 mb-3">
       <span className="text-4xl font-bold" style={{ color: 'var(--ink-display, #0A0A0A)' }}>{plan.price}</span>
       {plan.period ? <span className="text-sm" style={{ color: 'var(--ink-secondary, #6B7280)' }}>{plan.period}</span> : null}
     </div>
-    <p className="text-sm mb-5" style={{ color: 'var(--ink-secondary, #6B7280)', fontFamily: fontFamily.body }}>
+    <p className="text-sm mb-5 break-words" style={{ color: 'var(--ink-secondary, #6B7280)', fontFamily: fontFamily.body }}>
       {plan.summary}
     </p>
     <ul className="space-y-2 mb-6 flex-1">
       {plan.capacity.map((item) => (
-        <li key={item} className="flex items-start gap-2 text-sm" style={{ color: 'var(--ink, #111827)' }}>
+        <li key={item} className="flex items-start gap-2 text-sm break-words" style={{ color: 'var(--ink, #111827)' }}>
           <Check className="w-4 h-4 shrink-0 mt-0.5 text-[#16A34A]" />
           {item}
         </li>
@@ -178,8 +178,8 @@ const PricingPage = () => {
         </div>
       </section>
 
-      <section className="pb-14 px-4 sm:px-6">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      <section className="pb-14 px-4 sm:px-6 overflow-x-hidden">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-5">
           {PLANS.map((plan) => <PlanCard key={plan.id} plan={plan} />)}
         </div>
       </section>
