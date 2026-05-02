@@ -441,10 +441,14 @@ const DashboardLayout = ({ children }) => {
           <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-black/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
             {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: '#E85D00', boxShadow: '0 0 8px rgba(232,93,0,0.4)' }} />
-            <span className="font-semibold text-sm" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #0A0A0A)' }}>BIQc</span>
-          </div>
+          <button
+            onClick={() => navigate('/advisor')}
+            className="flex items-center rounded-md p-1 transition-colors hover:bg-black/5"
+            aria-label="Go to BIQc advisor home"
+            data-testid="dashboard-topbar-brand"
+          >
+            <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 92, height: 'auto' }} />
+          </button>
         </div>
 
         {/* ═══ SEARCH BAR (center of topbar) ═══ */}

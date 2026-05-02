@@ -22,8 +22,8 @@ const ANALYZE_PHASES = [
 export const CalibrationLoading = () => (
   <div className="flex-1 flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }} data-testid="calibration-loading">
     <div className="text-center">
-      <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: '#E85D00', animation: 'pulse 2s ease-in-out infinite' }}>
-        <span className="text-white font-bold text-lg" style={{ fontFamily: "var(--font-mono)" }}>B</span>
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(10,10,10,0.08)', animation: 'pulse 2s ease-in-out infinite', overflow: 'hidden' }}>
+        <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 32, height: 'auto' }} />
       </div>
       <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }}>Loading calibration...</p>
     </div>
@@ -152,8 +152,8 @@ export const WelcomeHandshake = ({
 
             {/* BIQc logo mark */}
             <div className="w-16 h-16 rounded-2xl mx-auto mb-7 flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', boxShadow: '0 0 40px rgba(232,93,0,0.25)' }}>
-              <span className="text-white font-bold text-2xl" style={{ fontFamily: "var(--font-mono)" }}>B</span>
+              style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(10,10,10,0.08)', boxShadow: '0 0 40px rgba(232,93,0,0.15)', overflow: 'hidden' }}>
+              <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 42, height: 'auto' }} />
             </div>
 
             <h1 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
