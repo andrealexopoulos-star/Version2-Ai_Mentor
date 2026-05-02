@@ -68,7 +68,7 @@ const PLANS = [
       'Local specialist-led onboarding',
       'Commercial review and support plan',
     ],
-    cta: 'Talk to a Local Specialist',
+    cta: 'Book a call with a BIQc Specialist',
     link: '/speak-with-local-specialist',
   },
 ];
@@ -200,7 +200,7 @@ const PricingPage = () => {
             className="inline-flex items-center gap-2 text-sm font-semibold"
             style={{ color: '#E85D00', fontFamily: fontFamily.body }}
           >
-            Talk to a Local Specialist <ArrowRight className="w-4 h-4" />
+            Book a call with a BIQc Specialist <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
@@ -257,14 +257,14 @@ const PricingPage = () => {
             Prefer a guided setup?
           </h2>
           <p className="text-sm mb-4" style={{ color: 'var(--ink-secondary, #6B7280)', fontFamily: fontFamily.body }}>
-            Talk to a local specialist to map plan capacity to your workflow, integrations, and rollout timing.
+            Book a call with a BIQc Specialist to map plan capacity to your workflow, integrations, and rollout timing.
           </p>
           <Link
             to="/speak-with-local-specialist"
             className="inline-flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold"
             style={{ background: '#E85D00', color: '#FFFFFF', fontFamily: fontFamily.body }}
           >
-            Speak with a Local Specialist <ArrowRight className="w-4 h-4" />
+            Book a call with a BIQc Specialist <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>

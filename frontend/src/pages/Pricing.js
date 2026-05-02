@@ -94,7 +94,7 @@ const planCtaHref = (user, planId) => {
 };
 
 const planCtaLabel = (planId) => {
-  if (planId === 'specialist') return 'Talk to a Local Specialist';
+  if (planId === 'specialist') return 'Book a call with a BIQc Specialist';
   if (planId === 'growth') return 'Start with Growth';
   if (planId === 'business') return 'Choose Business';
   return 'Choose Pro';
@@ -200,7 +200,7 @@ export default function Pricing() {
             Planned top-up reference: 250,000 AI tokens for $19 AUD. Live purchase is disabled until billing activation is approved.
           </p>
           <Link to="/speak-with-local-specialist" className="inline-flex items-center gap-2 text-sm font-semibold" style={{ color: '#E85D00' }}>
-            Talk to a Local Specialist <ArrowRight className="w-4 h-4" />
+            Book a call with a BIQc Specialist <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
@@ -257,10 +257,10 @@ export default function Pricing() {
             Prefer a guided setup?
           </h2>
           <p className="text-sm mb-4" style={{ color: 'var(--ink-secondary, #6B7280)' }}>
-            Talk to a local specialist to map plan capacity to your workflow, integrations, and rollout timing.
+            Book a call with a BIQc Specialist to map plan capacity to your workflow, integrations, and rollout timing.
           </p>
           <Link to="/speak-with-local-specialist" className="inline-flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold" style={{ background: '#E85D00', color: '#FFFFFF' }}>
-            Speak with a Local Specialist <ArrowRight className="w-4 h-4" />
+            Book a call with a BIQc Specialist <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
