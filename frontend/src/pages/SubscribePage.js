@@ -120,7 +120,8 @@ const SubscribePage = () => {
 
   const handleUpgrade = async (packageId) => {
     if (!user) {
-      navigate('/login-supabase');
+      const next = encodeURIComponent('/subscribe');
+      navigate(`/login-supabase?next=${next}`);
       return;
     }
     const canonicalPackageId = canonicalCheckoutPlanId(packageId);
@@ -234,10 +235,19 @@ const SubscribePage = () => {
               padding: 'var(--sp-8, 32px)',
               boxShadow: isCurrent ? '0 0 0 1px var(--lava), var(--elev-2)' : isPopular ? '0 0 0 1px var(--ink-display), var(--elev-3)' : 'var(--elev-1)',
               transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-              cursor: isCurrent ? 'default' : 'pointer',
+              cursor: (isCurrent || loading) ? 'default' : 'pointer',
             }}
               data-testid={`plan-${plan.id}`}
               onClick={() => { if (!isCurrent && !loading) handleUpgrade(plan.id); }}
+              role={isCurrent ? undefined : 'button'}
+              tabIndex={isCurrent ? -1 : 0}
+              onKeyDown={(event) => {
+                if (isCurrent || loading) return;
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  handleUpgrade(plan.id);
+                }
+              }}
             >
               {isCurrent && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full whitespace-nowrap" style={{ background: 'var(--lava-wash)', color: 'var(--lava-deep, var(--lava))', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Current plan</span>
