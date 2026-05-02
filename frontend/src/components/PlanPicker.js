@@ -5,7 +5,7 @@ import { fontFamily } from '../design-system/tokens';
 /**
  * Phase 6.11 — plan picker for CC-mandatory signup.
  *
- * Three cards: Growth ($69), Professional ($199), Business ($349) — all AUD/mo.
+ * Three cards: Growth ($69), Pro ($199), Business ($349) — all AUD/mo.
  * Growth is default + tagged "Most Popular" per the /pricing page Trust Layer.
  *
  * Clicking a card calls onChange with the plan id ("starter" | "professional" |
@@ -22,17 +22,17 @@ const PLANS = [
     name: 'Growth',
     price: '$69',
     period: 'AUD/mo',
-    tagline: 'The starting brain — continuous awareness across your business.',
-    features: ['Daily brief + priority inbox', '3 integrations', 'Unlimited Ask BIQc'],
+    tagline: 'For solo operators and early-stage teams.',
+    features: ['1 user included', '1,000,000 AI tokens / month per account', 'Recent data sync history'],
     highlight: true,
   },
   {
     id: 'professional',
-    name: 'Professional',
+    name: 'Pro',
     price: '$199',
     period: 'AUD/mo',
-    tagline: 'The operator brain — full-depth intelligence + revenue + risk.',
-    features: ['Everything in Growth', 'WarRoom + BoardRoom', '5 integrations + automations'],
+    tagline: 'For teams running weekly intelligence workflows.',
+    features: ['Up to 5 users included', '5,000,000 AI tokens / month per account', 'Extended data sync history'],
     highlight: false,
   },
   {
@@ -40,8 +40,8 @@ const PLANS = [
     name: 'Business',
     price: '$349',
     period: 'AUD/mo',
-    tagline: 'The leadership brain — multi-entity, advanced governance.',
-    features: ['Everything in Professional', 'Unlimited integrations', 'Priority support'],
+    tagline: 'For established teams needing deeper monthly capacity.',
+    features: ['Up to 12 users included', '20,000,000 AI tokens / month per account', 'Advanced data sync history'],
     highlight: false,
   },
 ];

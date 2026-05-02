@@ -272,6 +272,9 @@ const CompleteSignup = () => {
           <p className="text-base mb-6" style={{ fontFamily: UI, color: '#525252' }}>
             Your account <strong style={{ color: '#0A0A0A' }}>{userEmail}</strong> is signed in. Add a card to start your 14-day free trial — cancel any time in the first 14 days for <strong style={{ color: '#0A0A0A' }}>$0</strong>.
           </p>
+          <p className="text-sm mb-6" style={{ fontFamily: UI, color: '#525252' }}>
+            Every paid plan includes the same BIQc core intelligence system. You are selecting the capacity that fits your business.
+          </p>
 
           <form onSubmit={handleSubmit} data-testid="complete-signup-form" style={{
             background: 'linear-gradient(135deg, #F6F7F9 0%, #E8ECF1 60%, #DDE3EB 100%)',
@@ -332,6 +335,9 @@ const CompleteSignup = () => {
                 </div>
               </div>
             </div>
+            <p className="text-xs mt-3" style={{ fontFamily: MONO, color: '#737373' }}>
+              Australian/local specialist support is available at every stage of onboarding.
+            </p>
 
             {trialFailureMessage && (
               <div style={{

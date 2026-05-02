@@ -159,6 +159,9 @@ const SubscribePage = () => {
         </h1>
         {featureLabel && <p className="text-xs mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)' }}>{featureLabel} requires a paid plan</p>}
         <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>Current plan: <strong style={{ color: 'var(--ink-display)', textTransform: 'capitalize' }}>{currentTier}</strong></p>
+        <p className="mt-1 text-xs" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
+          Same core intelligence in every paid plan. Choose based on users and monthly AI capacity.
+        </p>
         <p className="mt-2 text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
           Transparent billing: shown amount is charged exactly as displayed. No hidden fees.
         </p>
@@ -173,6 +176,21 @@ const SubscribePage = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="w-full max-w-3xl mb-6 p-4" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--elev-1)' }}>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Top-up launch hold</p>
+        <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
+          Informational only: planned top-up is 250,000 AI tokens for $19 AUD. Live top-up purchase is currently disabled.
+        </p>
+        <button
+          type="button"
+          disabled
+          className="mt-3 px-4 py-2 text-xs font-semibold"
+          style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', color: 'var(--ink-muted)', background: 'var(--surface-sunken)' }}
+        >
+          Top-up unavailable at this stage
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 max-w-4xl w-full mb-8 md:grid-cols-3" style={{ alignItems: 'start' }}>
@@ -357,41 +375,16 @@ const SubscribePage = () => {
 
 /* ── Feature Comparison Table ─────────────────────────────────────────────── */
 const COMPARISON_DATA = [
-  { category: 'Core platform', features: [
-    { name: 'Advisor (daily brief)', free: true, growth: true, pro: true },
-    { name: 'Email inbox + priority scoring', free: true, growth: true, pro: true },
-    { name: 'Calendar intelligence', free: true, growth: true, pro: true },
-    { name: 'Alert centre', free: true, growth: true, pro: true },
-    { name: 'Ask BIQc queries', free: '10 / day', growth: 'Unlimited', pro: 'Unlimited' },
-    { name: 'Market position', free: true, growth: true, pro: true },
-    { name: 'Business DNA', free: true, growth: true, pro: true },
-    { name: 'Integrations', free: '4', growth: '10', pro: 'Unlimited' },
+  { category: 'Capacity', features: [
+    { name: 'Users included', growth: '1', pro: 'Up to 5', business: 'Up to 12' },
+    { name: 'Monthly AI tokens', growth: '1,000,000', pro: '5,000,000', business: '20,000,000' },
+    { name: 'Data sync history', growth: 'Recent', pro: 'Extended', business: 'Advanced' },
+    { name: 'Core BIQc intelligence', growth: true, pro: true, business: true },
   ]},
-  { category: 'Growth intelligence', features: [
-    { name: 'BoardRoom AI', free: false, growth: true, pro: true },
-    { name: 'Revenue analytics', free: false, growth: true, pro: true },
-    { name: 'Operations metrics', free: false, growth: true, pro: true },
-    { name: 'Reports', free: false, growth: true, pro: true },
-    { name: 'Decision tracker', free: false, growth: true, pro: true },
-    { name: 'SOP generator', free: false, growth: true, pro: true },
-    { name: 'Marketing automation', free: false, growth: true, pro: true },
-    { name: 'Marketing intelligence', free: false, growth: true, pro: true },
-    { name: 'Exposure scan', free: false, growth: true, pro: true },
-  ]},
-  { category: 'Pro intelligence', features: [
-    { name: 'WarRoom crisis AI', free: false, growth: false, pro: true },
-    { name: 'Risk matrix', free: false, growth: false, pro: true },
-    { name: 'Compliance tracking', free: false, growth: false, pro: true },
-    { name: 'Cross-domain signals', free: false, growth: false, pro: true },
-    { name: 'Watchtower', free: false, growth: false, pro: true },
-    { name: 'Document library', free: false, growth: false, pro: true },
-    { name: 'Intel centre', free: false, growth: false, pro: true },
-    { name: 'Audit log', free: false, growth: false, pro: true },
-  ]},
-  { category: 'Support', features: [
-    { name: 'Community', free: true, growth: true, pro: true },
-    { name: 'Email support', free: false, growth: true, pro: true },
-    { name: 'Priority support', free: false, growth: false, pro: true },
+  { category: 'Support and rollout', features: [
+    { name: 'Support level', growth: 'Email', pro: 'Priority', business: 'Priority' },
+    { name: 'Local specialist guidance', growth: false, pro: true, business: true },
+    { name: 'Integrations', growth: 'Included', pro: 'Included', business: 'Included' },
   ]},
 ];
 
@@ -411,9 +404,9 @@ const FeatureComparisonTable = () => (
         <thead>
           <tr style={{ background: 'var(--surface-sunken)' }}>
             <th className="text-left px-5 py-4 text-[11px] font-semibold uppercase" style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps, 0.08em)', fontFamily: 'var(--font-mono)' }}>Feature</th>
-            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Free</th>
             <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'white', background: 'var(--surface-sunken, #F5F5F5)', fontFamily: 'var(--font-ui)' }}>Growth $69</th>
             <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Pro $199</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Business $349</th>
           </tr>
         </thead>
         <tbody>
@@ -428,9 +421,9 @@ const FeatureComparisonTable = () => (
               {section.features.map(f => (
                 <tr key={f.name} className="hover:bg-white/[0.02]">
                   <td className="px-4 py-3 font-medium" style={{ color: 'var(--ink-secondary)', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-ui)' }}>{f.name}</td>
-                  <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.free} /></td>
                   <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.growth} /></td>
                   <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.pro} /></td>
+                  <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.business} /></td>
                 </tr>
               ))}
             </React.Fragment>
@@ -445,7 +438,7 @@ const FeatureComparisonTable = () => (
 const FAQ_ITEMS = [
   { q: 'What happens when my 14-day trial ends?', a: 'You\'ll be charged for the plan you selected at signup (Growth $69 by default) and your full platform access continues uninterrupted. No charges happen before day 14. You can downgrade, upgrade, or cancel at any time from Settings → Billing. If you cancel during the trial you are never charged.' },
   { q: 'Can I switch plans later?', a: 'Absolutely. Upgrade or downgrade at any time from Settings → Billing. When you upgrade, you get instant access to all features in your new tier. When you downgrade, you keep access until the end of your current billing period.' },
-  { q: 'How do integrations work across tiers?', a: 'Growth: up to 5 integrations (email, calendar, CRM, accounting). Professional: expanded connector allowance. Business: up to 15 integrations with team access. Enterprise: unlimited integrations with real-time webhook processing and advanced data enrichment.' },
+  { q: 'How do integrations work across tiers?', a: 'Growth, Pro, and Business all include core BIQc integrations. Higher plans are designed for larger teams and deeper monthly AI capacity.' },
   { q: 'Is my data secure?', a: 'Yes. All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We never use your data for AI model training. You retain full ownership and can export or delete everything at any time. We\'re SOC 2 compliant and GDPR/APPs aligned.' },
   { q: 'Do you offer discounts for annual billing?', a: 'Yes — save 20% with annual billing. Growth drops from $69/month to $55/month ($660/year). Pro drops from $199/month to $159/month ($1,908/year). All annual plans include priority onboarding.' },
   { q: 'What payment methods do you accept?', a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex) via Stripe. For Enterprise plans, we also offer invoice billing with NET 30 terms. All prices are in AUD.' },

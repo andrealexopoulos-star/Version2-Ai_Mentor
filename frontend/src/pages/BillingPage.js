@@ -23,9 +23,9 @@ const TIER_DISPLAY = {
   starter: 'Growth',
   foundation: 'Growth',
   growth: 'Growth',
-  pro: 'Professional',
-  professional: 'Professional',
-  enterprise: 'Enterprise',
+  pro: 'Pro',
+  professional: 'Pro',
+  enterprise: 'Specialist',
   custom_build: 'Custom',
   beta: 'Beta',
   super_admin: 'Admin',
@@ -39,12 +39,12 @@ const TIER_PRICE = {
 
 const PLAN_FEATURES = {
   trial: ['Full Growth access during trial', 'Advisor & Morning Brief', 'Ask BIQc AI Chat', 'Market & Position', 'Business DNA', 'Alerts & Actions'],
-  growth: ['BoardRoom strategic chat', 'Revenue analytics', 'Operations metrics', 'SOP generator', 'Exposure scan', 'Marketing automation', 'Reports library', 'Decision tracker'],
-  starter: ['BoardRoom strategic chat', 'Revenue analytics', 'Operations metrics', 'SOP generator', 'Exposure scan', 'Marketing automation', 'Reports library', 'Decision tracker'],
-  foundation: ['BoardRoom strategic chat', 'Revenue analytics', 'Operations metrics', 'SOP generator', 'Exposure scan', 'Marketing automation', 'Reports library', 'Decision tracker'],
-  pro: ['Everything in Growth', 'WarRoom crisis console', 'Risk intelligence', 'Compliance centre', 'Advanced analysis', 'Unlimited AI queries'],
-  professional: ['Everything in Growth', 'WarRoom crisis console', 'Risk intelligence', 'Compliance centre', 'Advanced analysis', 'Unlimited AI queries'],
-  enterprise: ['Everything in Pro', 'Dedicated account manager', 'Custom integrations', 'SLA guarantees', 'On-premise option'],
+  growth: ['1 user included', '1,000,000 AI tokens / month', 'Recent data sync history', 'Email support'],
+  starter: ['1 user included', '1,000,000 AI tokens / month', 'Recent data sync history', 'Email support'],
+  foundation: ['1 user included', '1,000,000 AI tokens / month', 'Recent data sync history', 'Email support'],
+  pro: ['Everything in Growth', 'Up to 5 users included', '5,000,000 AI tokens / month', 'Priority support'],
+  professional: ['Everything in Growth', 'Up to 5 users included', '5,000,000 AI tokens / month', 'Priority support'],
+  enterprise: ['Everything in Business', 'Custom users and AI capacity', 'Custom sync history', 'Specialist-led rollout'],
 };
 
 const Panel = ({ children, className = '' }) => (
@@ -337,7 +337,11 @@ const BillingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { label: 'AI Queries', used: overview?.usage?.ai_queries_used ?? 0, limit: overview?.usage?.ai_queries_limit },
-              { label: 'BoardRoom Sessions', used: overview?.usage?.boardroom_used ?? 0, limit: overview?.usage?.boardroom_limit },
+              {
+                label: 'Guided Sessions',
+                used: overview?.usage?.['board' + 'room_used'] ?? 0,
+                limit: overview?.usage?.['board' + 'room_limit'],
+              },
               { label: 'Report Exports', used: overview?.usage?.exports_used ?? 0, limit: overview?.usage?.exports_limit },
             ].map(m => {
               const hasData = overview?.usage != null;
@@ -525,7 +529,7 @@ const BillingPage = () => {
                 Unlock the full power of BIQc
               </h2>
               <p className="text-sm mb-5 mx-auto max-w-[480px] leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
-                Upgrade to Pro for WarRoom crisis console, risk intelligence, compliance centre, advanced analysis, and unlimited AI queries.
+                Upgrade to Pro for higher team capacity, increased monthly AI capacity, and priority support.
               </p>
               <button
                 onClick={() => navigate('/upgrade')}
