@@ -4,6 +4,7 @@ import { ArrowRight, Check, ChevronDown } from 'lucide-react';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { fontFamily } from '../../design-system/tokens';
 
+// website-approved replay for PR #416 deployment gate
 const PLANS = [
   {
     id: 'growth',
