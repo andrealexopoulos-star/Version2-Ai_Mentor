@@ -820,7 +820,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               flexShrink: 0,
             }}
           >
-            <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 20, height: 'auto' }} />
+            <img src="/biqc-mark.svg" alt="BIQc.ai mark" style={{ width: 16, height: 16 }} />
           </div>
           <span style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', fontWeight: 500, fontFamily: fontFamily.body }}>
             BIQc
@@ -1114,7 +1114,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   overflow: 'hidden',
                 }}
               >
-                <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 34, height: 'auto' }} />
+                <img src="/biqc-mark.svg" alt="BIQc.ai mark" style={{ width: 28, height: 28 }} />
               </div>
               <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)', marginBottom: 8, fontFamily: fontFamily.display, textAlign: 'center' }}>
                 Ask a question that should change a decision.
@@ -1309,7 +1309,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                     overflow: 'hidden',
                   }}
                 >
-                  <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 18, height: 'auto' }} />
+                  <img src="/biqc-mark.svg" alt="BIQc.ai mark" style={{ width: 14, height: 14 }} />
                 </div>
                 <span style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', fontWeight: 500 }}>
                   BIQc <span style={{ color: '#E85D00', marginLeft: 8 }}>thinking...</span>
