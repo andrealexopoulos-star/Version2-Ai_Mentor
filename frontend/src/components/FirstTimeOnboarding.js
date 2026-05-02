@@ -565,9 +565,7 @@ const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null, hasConnecti
         <div className="flex items-center justify-between px-5 py-3.5"
           style={{ borderBottom: '1px solid #1E2D3D' }}>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#E85D00' }}>
-              <span className="text-white font-bold text-[10px]">B</span>
-            </div>
+            <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 42, height: 'auto' }} />
             <span className="text-xs font-semibold" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>
               {step === 'welcome_back' ? 'Welcome Back' : step === 0 ? 'Getting Started' : step === 1 ? 'Connect Email' : step === 2 ? 'Build Intelligence' : step === 3 ? 'Connect Tools' : 'Ready'}
             </span>

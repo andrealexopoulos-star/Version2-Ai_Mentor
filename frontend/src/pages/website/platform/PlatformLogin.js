@@ -11,9 +11,7 @@ const PlatformLogin = () => (
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-10">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#E85D00' }}>
-            <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
-          </div>
+          <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 58, height: 'auto' }} />
           <div>
             <span className="text-lg font-semibold text-[#EDF1F7] block" style={{ fontFamily: fontFamily.display }}>BIQc</span>
             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>powered by Business Intelligence Quotient Centre</span>

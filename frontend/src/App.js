@@ -3,6 +3,7 @@ import "@/mobile.css";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { SupabaseAuthProvider, useSupabaseAuth, AUTH_STATE } from "./context/SupabaseAuthContext";
 import ProtectedRoute, { LoadingScreen } from "./components/ProtectedRoute";
+import BiqcLogoCard from "./components/BiqcLogoCard";
 import { MobileDrawerProvider } from "./context/MobileDrawerContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -193,7 +194,7 @@ class AppErrorBoundary extends React.Component {
     if (this.state.error) {
       return (
         <div style={{ minHeight: '100vh', background: '#070E18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 32 }}>
-          <div style={{ color: '#E85D00', fontSize: 32, fontWeight: 'bold' }}>B</div>
+          <BiqcLogoCard size="sm" to={null} static />
           <p style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: 'var(--font-ui, Inter, sans-serif)', fontSize: 18, fontWeight: 600 }}>Something went wrong</p>
           <p style={{ color: '#64748B', fontFamily: 'var(--font-ui, Inter, sans-serif)', fontSize: 14, textAlign: 'center', maxWidth: 400 }}>
             BIQc encountered an error. Please refresh to continue.
@@ -290,6 +291,14 @@ const LegacyIntegrationsQueryRedirect = () => {
   }
 
   return <Navigate to="/integrations" replace />;
+};
+
+const LegacyUpgradeSuccessRedirect = () => {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  if (!params.get('status')) params.set('status', 'success');
+  if (!params.get('from')) params.set('from', '/upgrade/success');
+  return <Navigate to={`/subscribe?${params.toString()}`} replace />;
 };
 
 const LaunchRoute = ({ children, access, featureKey = null }) => {
@@ -426,7 +435,7 @@ function AppRoutes() {
         {/* Subscription (canonical entrypoint for all paid/waitlist upsell routing) */}
         <Route path="/subscribe" element={<ProtectedRoute><RouteErrorBoundary><SubscribePage /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/upgrade" element={<ProtectedRoute><Navigate to="/subscribe?from=/upgrade" replace /></ProtectedRoute>} />
-        <Route path="/upgrade/success" element={<ProtectedRoute><Navigate to="/subscribe?status=success&from=/upgrade/success" replace /></ProtectedRoute>} />
+        <Route path="/upgrade/success" element={<ProtectedRoute><LegacyUpgradeSuccessRedirect /></ProtectedRoute>} />
         <Route path="/biqc-foundation" element={<ProtectedRoute><Navigate to="/subscribe?section=foundation" replace /></ProtectedRoute>} />
         <Route path="/more-features" element={<ProtectedRoute><Navigate to="/subscribe?section=advanced" replace /></ProtectedRoute>} />
         <Route path="/biqc-legal" element={<ProtectedRoute><RouteErrorBoundary><BIQcLegalPage /></RouteErrorBoundary></ProtectedRoute>} />

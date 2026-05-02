@@ -3,6 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useSupabaseAuth, AUTH_STATE } from "../context/SupabaseAuthContext";
 import { apiClient } from "../lib/api";
 import { isPrivilegedUser } from "../lib/privilegedUser";
+import BiqcLogoCard from "./BiqcLogoCard";
 
 const SUPER_ADMIN_ROLES = ['superadmin', 'super_admin'];
 
@@ -27,8 +28,8 @@ const LoadingScreen = () => {
         @keyframes biqcBar{0%{width:0}100%{width:100%}}
       `}</style>
       <div className="text-center space-y-6">
-        <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#E85D00', animation: 'biqcPulse 2s ease-in-out infinite' }}>
-          <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-mono)" }}>B</span>
+        <div style={{ animation: 'biqcPulse 2s ease-in-out infinite' }}>
+          <BiqcLogoCard size="sm" to={null} static />
         </div>
         <div style={{ animation: 'biqcFade 0.8s ease-out' }}>
           <p className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: "var(--font-display)" }}>
@@ -221,6 +222,11 @@ export default function ProtectedRoute({ children, adminOnly }) {
   }
 
   // ── Subscription gate — runs FIRST, before NEEDS_CALIBRATION ──
+  // Route priority state machine (P0 signup stability):
+  // 1) unauthenticated -> /login-supabase?next=...
+  // 2) signed in + subscription incomplete -> /complete-signup -> /subscribe
+  // 3) signed in + subscription active/trialing + calibration incomplete -> onboarding/calibration routes
+  // 4) signed in + subscription active/trialing + calibration complete -> app routes
   // Andreas 2026-04-20: closing /complete-signup mid-flow then signing
   // back in let the user slide into /calibration because the
   // NEEDS_CALIBRATION branch below allows it. This gate runs ahead of
@@ -256,7 +262,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
       '/calibration', '/market/calibration', '/settings',
       '/onboarding', '/onboarding-decision', '/profile-import',
       '/admin', '/support-admin', '/observability', '/admin/prompt-lab',
-      '/complete-signup',
+      '/complete-signup', '/subscribe',
       '/connect-email', '/soundboard', '/advisor', '/cmo-report',
     ];
     if (allowedPaths.some(p => location.pathname.startsWith(p))) {

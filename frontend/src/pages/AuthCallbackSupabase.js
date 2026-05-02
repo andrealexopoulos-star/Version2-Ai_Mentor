@@ -43,11 +43,33 @@ const AuthCallbackSupabase = () => {
       try { sessionStorage.removeItem('biqc_auth_next'); } catch {}
     };
 
+    const extractPlanFromPath = (path) => {
+      const raw = String(path || '').trim();
+      if (!raw.startsWith('/')) return '';
+      const queryStart = raw.indexOf('?');
+      if (queryStart < 0) return '';
+      const params = new URLSearchParams(raw.slice(queryStart + 1));
+      const plan = String(params.get('plan') || '').trim().toLowerCase();
+      if (!plan) return '';
+      if (plan === 'growth' || plan === 'foundation') return 'starter';
+      if (plan === 'professional') return 'pro';
+      return plan;
+    };
+
+    const buildCompleteSignupTarget = (nextPath = '') => {
+      const params = new URLSearchParams();
+      const normalizedPlan = extractPlanFromPath(nextPath);
+      if (normalizedPlan) params.set('plan', normalizedPlan);
+      params.set('from', '/auth/callback');
+      return `/complete-signup?${params.toString()}`;
+    };
+
     const routeAfterAuth = async (session) => {
       if (!session?.access_token) {
         navigate('/soundboard', { replace: true });
         return;
       }
+      const pendingNextPath = consumeNextPath();
 
       const headers = {
         Authorization: `Bearer ${session.access_token}`,
@@ -70,7 +92,8 @@ const AuthCallbackSupabase = () => {
         const backendUrl = getBackendUrl();
         const meRes = await fetch(`${backendUrl}/api/auth/supabase/me`, { headers });
         if (!meRes.ok) {
-          navigate('/complete-signup', { replace: true });
+          clearNextPath();
+          navigate(buildCompleteSignupTarget(pendingNextPath), { replace: true });
           return;
         }
         const meData = await meRes.json();
@@ -84,7 +107,8 @@ const AuthCallbackSupabase = () => {
           const status = String(u.subscription_status || '').toLowerCase();
           const hasTrialOrPaid = status === 'active' || status === 'trialing';
           if (!hasStripeCustomer || !hasTrialOrPaid) {
-            navigate('/complete-signup', { replace: true });
+            clearNextPath();
+            navigate(buildCompleteSignupTarget(pendingNextPath), { replace: true });
             return;
           }
         }
@@ -92,11 +116,11 @@ const AuthCallbackSupabase = () => {
         // FAIL CLOSED. Do not let a transient /auth/me error bypass the
         // billing gate. /complete-signup is idempotent and routes back
         // in if the user already has a sub.
-        navigate('/complete-signup', { replace: true });
+        clearNextPath();
+        navigate(buildCompleteSignupTarget(pendingNextPath), { replace: true });
         return;
       }
 
-      const pendingNextPath = consumeNextPath();
       if (pendingNextPath) {
         clearNextPath();
         navigate(pendingNextPath, { replace: true });

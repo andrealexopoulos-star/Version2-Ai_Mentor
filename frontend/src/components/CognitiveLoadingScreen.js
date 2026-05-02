@@ -40,8 +40,8 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
       <div className="max-w-xl w-full text-center relative z-10">
         {/* Logo */}
         <div className="mb-10" style={{ animation: 'ignFadeUp 1s ease-out' }}>
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto" style={{ background: '#E85D00', animation: 'ignPulse 2s ease-in-out infinite' }}>
-            <span className="text-white font-bold text-3xl" style={{ fontFamily: fontFamily.mono }}>B</span>
+          <div style={{ animation: 'ignPulse 2s ease-in-out infinite' }}>
+            <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 96, height: 'auto', margin: '0 auto' }} />
           </div>
         </div>
 
@@ -137,8 +137,8 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
       <div className="max-w-lg w-full text-center">
         <div className="relative w-32 h-32 mx-auto mb-8">
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#E85D00', animation: 'cogPulseGlow 2s ease-in-out infinite' }}>
-              <span className="text-white font-bold text-2xl" style={{ fontFamily: fontFamily.mono }}>B</span>
+            <div style={{ animation: 'cogPulseGlow 2s ease-in-out infinite' }}>
+              <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 84, height: 'auto' }} />
             </div>
           </div>
           {[0, 1, 2, 3, 4, 5].map(i => (
