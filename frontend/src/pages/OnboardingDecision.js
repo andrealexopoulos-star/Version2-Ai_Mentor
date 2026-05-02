@@ -1,6 +1,7 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import useForceLightTheme from '../hooks/useForceLightTheme';
+import BiqcLogoCard from '../components/BiqcLogoCard';
 
 const OnboardingDecision = () => {
   // P0 2026-04-23 (Andreas CTO): signup/onboarding/calibration path MUST be
@@ -140,17 +141,7 @@ const OnboardingDecision = () => {
         padding: 'var(--sp-6) var(--sp-10)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <Link to="/" style={{
-          display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
-          color: 'var(--ink-display)', textDecoration: 'none',
-          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600,
-        }}>
-          <span style={{
-            width: 10, height: 10, borderRadius: '50%',
-            background: 'var(--lava)', boxShadow: '0 0 16px var(--lava)',
-          }} />
-          <span>BIQc</span>
-        </Link>
+        <BiqcLogoCard size="sm" />
         <div style={{
           display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
           fontFamily: 'var(--font-mono)', fontSize: 11,
