@@ -423,8 +423,8 @@ function AppRoutes() {
 
         {/* Subscription (canonical entrypoint for all paid/waitlist upsell routing) */}
         <Route path="/subscribe" element={<ProtectedRoute><RouteErrorBoundary><SubscribePage /></RouteErrorBoundary></ProtectedRoute>} />
-        <Route path="/upgrade" element={<ProtectedRoute><RouteErrorBoundary><UpgradePage /></RouteErrorBoundary></ProtectedRoute>} />
-        <Route path="/upgrade/success" element={<ProtectedRoute><RouteErrorBoundary><UpgradePage success /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/upgrade" element={<ProtectedRoute><Navigate to="/subscribe?from=/upgrade" replace /></ProtectedRoute>} />
+        <Route path="/upgrade/success" element={<ProtectedRoute><Navigate to="/subscribe?status=success&from=/upgrade/success" replace /></ProtectedRoute>} />
         <Route path="/biqc-foundation" element={<ProtectedRoute><Navigate to="/subscribe?section=foundation" replace /></ProtectedRoute>} />
         <Route path="/more-features" element={<ProtectedRoute><Navigate to="/subscribe?section=advanced" replace /></ProtectedRoute>} />
         <Route path="/biqc-legal" element={<ProtectedRoute><RouteErrorBoundary><BIQcLegalPage /></RouteErrorBoundary></ProtectedRoute>} />
