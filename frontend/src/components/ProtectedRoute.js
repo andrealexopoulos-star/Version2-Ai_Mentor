@@ -211,7 +211,8 @@ export default function ProtectedRoute({ children, adminOnly }) {
     if ((hasStoredAuth && Date.now() - authGraceStart < 20000) || (recentLoginTs && Date.now() - recentLoginTs < 20000)) {
       return <LoadingScreen />;
     }
-    return <Navigate to="/login-supabase" replace />;
+    const nextPath = `${location.pathname || '/'}${location.search || ''}${location.hash || ''}`;
+    return <Navigate to={`/login-supabase?next=${encodeURIComponent(nextPath)}`} replace />;
   }
 
   // Error → show error screen
@@ -228,7 +229,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
   //
   // /complete-signup itself and admin paths are exempt (they're the
   // destination / they bypass all product gating).
-  const GATE_EXEMPT_PATHS = ['/complete-signup', '/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
+  const GATE_EXEMPT_PATHS = ['/complete-signup', '/subscribe', '/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
   const isGateExemptPath = GATE_EXEMPT_PATHS.some(p => location.pathname.startsWith(p));
   if (!isGateExemptPath && (user || session)) {
     if (!subscriptionChecked) {

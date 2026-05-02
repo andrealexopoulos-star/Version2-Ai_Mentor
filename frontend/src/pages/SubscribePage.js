@@ -36,6 +36,11 @@ const SubscribePage = () => {
   const sessionId = searchParams.get('session_id');
   const status = searchParams.get('status');
   const section = searchParams.get('section') || '';
+  const requestedPlanRaw = String(searchParams.get('plan') || '').toLowerCase();
+  const requestedPlan =
+    requestedPlanRaw === 'growth' || requestedPlanRaw === 'foundation' ? 'starter'
+      : requestedPlanRaw === 'professional' ? 'pro'
+        : requestedPlanRaw;
   const featureLabel = FEATURE_LABELS[from] || (from ? from.replace(/\//g, '').replace(/-/g, ' ') : '');
   const currentTier = resolveTier(user);
   const foundationUnlocked = ['starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin'].includes(currentTier);
@@ -224,16 +229,23 @@ const SubscribePage = () => {
         {PLANS.map(plan => {
           const isCurrent = plan.id === currentTier;
           const isPopular = plan.recommended;
+          const isRequested = requestedPlan && plan.id === requestedPlan;
           return (
             <div
               key={plan.id}
               className="relative flex flex-col"
               style={{
               background: 'var(--surface)',
-              border: isCurrent ? '1px solid var(--lava)' : isPopular ? '1px solid var(--ink-display)' : '1px solid var(--border)',
+              border: isCurrent ? '1px solid var(--lava)' : isRequested ? '1px solid var(--warning)' : isPopular ? '1px solid var(--ink-display)' : '1px solid var(--border)',
               borderRadius: 'var(--r-2xl)',
               padding: 'var(--sp-8, 32px)',
-              boxShadow: isCurrent ? '0 0 0 1px var(--lava), var(--elev-2)' : isPopular ? '0 0 0 1px var(--ink-display), var(--elev-3)' : 'var(--elev-1)',
+              boxShadow: isCurrent
+                ? '0 0 0 1px var(--lava), var(--elev-2)'
+                : isRequested
+                  ? '0 0 0 1px var(--warning), var(--elev-2)'
+                  : isPopular
+                    ? '0 0 0 1px var(--ink-display), var(--elev-3)'
+                    : 'var(--elev-1)',
               transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
               cursor: (isCurrent || loading) ? 'default' : 'pointer',
             }}
@@ -251,6 +263,9 @@ const SubscribePage = () => {
             >
               {isCurrent && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full whitespace-nowrap" style={{ background: 'var(--lava-wash)', color: 'var(--lava-deep, var(--lava))', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Current plan</span>
+              )}
+              {isRequested && !isCurrent && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full whitespace-nowrap" style={{ background: 'var(--warning-wash)', color: 'var(--warning)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Recommended from previous step</span>
               )}
               {isPopular && !isCurrent && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full text-white whitespace-nowrap" style={{ background: 'var(--surface-sunken, #F5F5F5)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Most popular</span>

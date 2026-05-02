@@ -47,6 +47,7 @@ const BlogArticlePage = React.lazy(() => import(/* webpackChunkName: "marketing"
 const ContactPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/ContactPage'));
 const SpeakWithLocalSpecialist = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/SpeakWithLocalSpecialist'));
 const Pricing = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/Pricing'));
+const StillNotSurePage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/StillNotSurePage'));
 const SubscribePage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/SubscribePage'));
 const EnterpriseTerms = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/EnterpriseTerms'));
 const LandingIntelligent = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/LandingIntelligent'));
@@ -354,6 +355,7 @@ function AppRoutes() {
         <Route path="/intelligence" element={<SiteIntelligencePage />} />
         <Route path="/our-integrations" element={<SiteIntegrationsPage />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/still-not-sure" element={<StillNotSurePage />} />
         <Route path="/trust" element={<SiteTrustLandingPage />} />
         <Route path="/trust/ai-learning-guarantee" element={<AILearningGuarantee />} />
         <Route path="/trust/terms" element={<SiteTermsPage />} />
@@ -452,12 +454,9 @@ function AppRoutes() {
 
         {/* Paid routes */}
         <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="revenue"><RouteErrorBoundary><RevenuePage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
-        {/* /billing (BillingPage) deprecated 2026-04-22 — Track B4 rewrote
-            /billing/overview to the new token-allowance shape which only
-            Settings billing tab consumes correctly. BillingPage.js still
-            expects the old shape (payment_method/usage/subscription) and
-            would render stale/undefined. Redirect to the canonical UI. */}
-        <Route path="/billing" element={<Navigate to="/settings?tab=billing" replace />} />
+        <Route path="/billing" element={<ProtectedRoute><RouteErrorBoundary><BillingPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/manage-users" element={<ProtectedRoute><Navigate to="/billing?view=users" replace /></ProtectedRoute>} />
+        <Route path="/admin-billing" element={<ProtectedRoute adminOnly><Navigate to="/admin" replace /></ProtectedRoute>} />
         <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="operations"><RouteErrorBoundary><OperationsPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="risk-workforce"><RouteErrorBoundary><RiskPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="compliance"><RouteErrorBoundary><CompliancePage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />

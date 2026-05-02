@@ -204,14 +204,44 @@ def _is_allowed_checkout_origin(origin: str) -> bool:
             return ""
         return f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
 
-    allowed = {
+    def _is_local_origin(value: str) -> bool:
+        parsed = urlparse((value or "").strip())
+        return (parsed.hostname or "").strip().lower() in {"localhost", "127.0.0.1"}
+
+    # Keep explicit production defaults to avoid customer-facing checkout
+    # regressions when env vars are temporarily absent/misconfigured.
+    default_origins = {
+        "https://biqc.ai",
+        "https://www.biqc.ai",
+        "https://biqc-web.azurewebsites.net",
+    }
+    if not _is_production():
+        default_origins.update({
+            "http://localhost:3000",
+            "http://localhost:8765",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:8765",
+        })
+
+    env_allowed = {
         _normalize_origin(os.environ.get("FRONTEND_URL") or ""),
         _normalize_origin(os.environ.get("PUBLIC_FRONTEND_URL") or ""),
         _normalize_origin(os.environ.get("REACT_APP_FRONTEND_URL") or ""),
     }
+    if _is_production():
+        env_allowed = {item for item in env_allowed if not _is_local_origin(item)}
+
+    allowed = set(env_allowed)
+    allowed.update(_normalize_origin(item) for item in default_origins)
     extra = (os.environ.get("CHECKOUT_ALLOWED_ORIGINS") or "").strip()
     if extra:
-        allowed.update(_normalize_origin(item) for item in extra.split(",") if item.strip())
+        for item in extra.split(","):
+            normalized = _normalize_origin(item)
+            if not normalized:
+                continue
+            if _is_production() and _is_local_origin(normalized):
+                continue
+            allowed.add(normalized)
     allowed = {item for item in allowed if item}
     return origin in allowed
 
