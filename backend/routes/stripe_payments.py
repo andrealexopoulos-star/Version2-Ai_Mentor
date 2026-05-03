@@ -546,6 +546,7 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
         cancel_url = f"{base_origin}/upgrade"
 
     stripe_price = _resolve_active_monthly_price(plan_id, plan)
+    trial_days = _trial_days_for_user(sb, user_id)
 
     # Tax / GST / ABN collection — only enabled once Stripe Tax is activated
     # in the dashboard (see _stripe_tax_enabled docstring).
@@ -566,9 +567,14 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
             "pricing_plan_version": str((plan.get("governance", {}) or {}).get("plan_version", "")),
             "stripe_product_id": stripe_price["product_id"],
             "stripe_price_id": stripe_price["id"],
+            "trial_days": str(trial_days),
             "tax_enabled": "1" if _stripe_tax_enabled() else "0",
         },
     }
+    if trial_days > 0:
+        # First-time user/account receives the 14-day trial on the primary
+        # checkout path as well (not just the signup trial endpoint).
+        session_kwargs["subscription_data"] = {"trial_period_days": trial_days}
 
     if _stripe_tax_enabled():
         # Stripe Tax pipeline — requires Tax dashboard activation.
@@ -857,6 +863,16 @@ def _user_has_had_paid_or_trial_before(sb, user_id: str, *, account_id: Optional
     return False
 
 
+def _trial_days_for_user(sb, user_id: str, *, account_id: Optional[str] = None) -> int:
+    """Shared trial-days resolver for all subscription-creation paths.
+
+    Returns SIGNUP_TRIAL_DAYS for first-time user/account only; otherwise 0.
+    """
+    return SIGNUP_TRIAL_DAYS if not _user_has_had_paid_or_trial_before(
+        sb, user_id, account_id=account_id
+    ) else 0
+
+
 class SignupSetupIntentRequest(BaseModel):
     plan: str  # "starter" (Growth) | "professional" (Pro) | "business"
 
@@ -904,7 +920,7 @@ async def signup_create_setup_intent(
     # ever had a subscription (including canceled ones). Signup trial is a
     # one-time benefit per user_id. Cancelled users should re-subscribe
     # via /pricing (no trial), not through signup.
-    if _user_has_had_paid_or_trial_before(sb, user_id, account_id=user_row.get("account_id")):
+    if _trial_days_for_user(sb, user_id, account_id=user_row.get("account_id")) == 0:
         raise HTTPException(
             status_code=409,
             detail="This account has already used its 14-day trial. Please upgrade from the pricing page instead.",
@@ -1041,11 +1057,7 @@ async def confirm_trial_signup(
     # held any subscription (active/trialing/past_due/canceled). Returning
     # customers must upgrade via /pricing, which uses the non-trial
     # Checkout path.
-    trial_days = SIGNUP_TRIAL_DAYS if not _user_has_had_paid_or_trial_before(
-        sb,
-        user_id,
-        account_id=existing_row.get("account_id"),
-    ) else 0
+    trial_days = _trial_days_for_user(sb, user_id, account_id=existing_row.get("account_id"))
     if trial_days == 0:
         # Defense-in-depth: /signup-create-setup-intent should have already
         # blocked this path. If we get here, refuse rather than silently
