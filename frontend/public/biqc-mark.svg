@@ -1,0 +1,57 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="qGlass" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFD180"/>
+      <stop offset="35%" stop-color="#FFA726"/>
+      <stop offset="100%" stop-color="#D84315"/>
+    </linearGradient>
+
+    <linearGradient id="qSheen" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="slashGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB74D"/>
+      <stop offset="100%" stop-color="#BF360C"/>
+    </linearGradient>
+
+    <linearGradient id="slashSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="lift" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="0" dy="3"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <mask id="topHalf">
+      <rect x="0" y="0" width="512" height="256" fill="white"/>
+    </mask>
+  </defs>
+
+  <g filter="url(#lift)">
+    <circle cx="256" cy="256" r="88" fill="none" stroke="url(#qGlass)" stroke-width="42"/>
+  </g>
+  <g mask="url(#topHalf)">
+    <circle cx="256" cy="256" r="88" fill="none" stroke="url(#qSheen)" stroke-width="42"/>
+  </g>
+  <circle cx="256" cy="256" r="67" fill="none" stroke="#FFFFFF" stroke-width="0.7" stroke-opacity="0.3"/>
+  <circle cx="256" cy="256" r="109" fill="none" stroke="#FFFFFF" stroke-width="0.7" stroke-opacity="0.14"/>
+
+  <g transform="translate(256 256) rotate(40)">
+    <g filter="url(#lift)">
+      <rect x="-21" y="30" width="42" height="148" fill="url(#slashGlass)"/>
+    </g>
+    <rect x="-21" y="30" width="42" height="148" fill="url(#slashSheen)"/>
+    <rect x="-21" y="30" width="42" height="0.8" fill="#FFE0B2" opacity="0.75"/>
+    <rect x="-21" y="30" width="0.6" height="148" fill="#FFE0B2" opacity="0.35"/>
+    <rect x="20.4" y="30" width="0.6" height="148" fill="#000000" opacity="0.22"/>
+  </g>
+</svg>

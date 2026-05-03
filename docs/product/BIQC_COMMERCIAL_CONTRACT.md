@@ -17,6 +17,14 @@ Capacity and access claims must reflect enforced backend behavior.
 | Business | business | $349 AUD/month | up to 12 users | 20M tokens | 10 top-ups | 1,095 days | Long-term business memory | all supported integrations | Priority support | Choose Business |
 | Specialist | specialist | Custom | Custom | Custom | Custom | Custom | Custom | all supported + custom planning | Specialist-led | Book a call with a BIQc Specialist |
 
+### 3A. Stripe Product/Price Contract (monthly recurring)
+| Plan | Stripe Product ID | Stripe Price ID | Amount | Currency | Interval | Active |
+|---|---|---|---:|---|---|---|
+| Growth | prod_U8D8vKuXXK7qhO | price_1T9wiVRoX8RKDDG5AOSi8Cu6 | 6900 | aud | month | true |
+| Pro | prod_ULf4KFDh0UKpeR | price_1TMxjtRoX8RKDDG5btgRBrRu | 19900 | aud | month | true |
+| Business | prod_ULfA7QJoT3Ontk | price_1TMxplRoX8RKDDG59IaUg7aV | 34900 | aud | month | true |
+| Lite (contracted/optional) | prod_URgYIlMeF24vrN | price_1TSnBMRoX8RKDDG5akGL7RkT | 1400 | aud | month | true |
+
 ## 4. Approved seat model
 - Growth / Starter: 1 user
 - Pro: up to 5 users

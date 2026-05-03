@@ -67,8 +67,8 @@ export const CognitiveMesh = ({ message, compact = false }) => {
 
       {/* Microcopy */}
       <div className="relative z-10 text-center">
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-4" style={{ background: '#E85D00', animation: prefersReduced ? 'none' : 'meshGlow 3s ease-in-out infinite' }}>
-          <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
+        <div className="mx-auto mb-4" style={{ animation: prefersReduced ? 'none' : 'meshGlow 3s ease-in-out infinite' }}>
+          <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 72, height: 'auto', margin: '0 auto' }} />
         </div>
         <p className="text-xs transition-opacity duration-400" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono, opacity: fade ? 1 : 0 }}>
           {message || MESH_MESSAGES[msgIdx]}

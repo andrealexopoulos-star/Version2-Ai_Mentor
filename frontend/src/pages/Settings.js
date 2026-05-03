@@ -47,7 +47,6 @@ const SettingsBillingContent = ({ navigate, user }) => {
   const [overview, setOverview] = useState(null);
   const [loading, setBillingLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
-  const [topupSaving, setTopupSaving] = useState(false);
   // Sprint B #18 (2026-04-22): cancel-reason modal before Stripe portal.
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
@@ -153,19 +152,6 @@ const SettingsBillingContent = ({ navigate, user }) => {
     } finally {
       setPortalLoading(false);
       setCancelModalOpen(false);
-    }
-  };
-
-  const toggleAutoTopup = async (enabled) => {
-    setTopupSaving(true);
-    try {
-      const res = await apiClient.patch('/billing/auto-topup', { enabled });
-      setOverview(prev => prev ? { ...prev, auto_topup_enabled: !!res.data?.auto_topup_enabled } : prev);
-      toast.success(enabled ? 'Auto top-up on' : 'Auto top-up off');
-    } catch {
-      toast.error('Could not update auto top-up');
-    } finally {
-      setTopupSaving(false);
     }
   };
 
@@ -332,24 +318,25 @@ const SettingsBillingContent = ({ navigate, user }) => {
         </div>
       </div>
 
-      {/* Auto top-up toggle */}
+      {/* Auto top-up launch hold */}
       {!unmetered && (
         <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border, rgba(10,10,10,0.08))', borderRadius: 'var(--r-lg, 12px)', padding: 'var(--sp-5, 20px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)' }}>
-              Auto top-up
+              Auto top-up launch hold
             </p>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-muted, #737373)', marginTop: 2 }}>
               {overview?.topup_pack
-                ? <>When your allowance runs out we'll auto-charge {fmtAud(overview.topup_pack.price_aud_cents)} for {fmtTokens(overview.topup_pack.tokens)} more tokens so BIQc keeps working.</>
-                : 'When your allowance runs out we automatically top you up.'}
+                ? <>Top-up remains informational at launch: {fmtTokens(overview.topup_pack.tokens)} for {fmtAud(overview.topup_pack.price_aud_cents)}. Automatic charging is disabled until payment verification is complete.</>
+                : 'Top-up remains informational at launch. Automatic charging is disabled until payment verification is complete.'}
             </p>
           </div>
-          <Switch
-            checked={!!overview?.auto_topup_enabled}
-            disabled={topupSaving}
-            onCheckedChange={(v) => toggleAutoTopup(!!v)}
-          />
+          <Button
+            onClick={() => navigate('/speak-with-local-specialist')}
+            style={{ fontFamily: 'var(--font-ui)', fontSize: 13, background: 'var(--lava, #E85D00)', color: 'var(--ink-inverse, #fff)', borderRadius: 'var(--r-md, 8px)', border: 'none' }}
+          >
+            Speak with a local specialist
+          </Button>
         </div>
       )}
 
@@ -472,6 +459,12 @@ const Settings = () => {
     email: user?.email || '',
     company: user?.company_name || '',
   });
+
+  useEffect(() => {
+    if (_initialTab === 'billing') {
+      navigate('/billing', { replace: true });
+    }
+  }, [_initialTab, navigate]);
   const [timezone, setTimezone] = useState('Australia/Sydney');
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [memberSince, setMemberSince] = useState(null);

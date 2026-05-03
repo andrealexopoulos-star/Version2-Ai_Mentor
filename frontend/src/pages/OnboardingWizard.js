@@ -466,8 +466,7 @@ const OnboardingWizard = () => {
           <div className="relative z-[1]">
             {/* Brand */}
             <Link to="/" className="flex items-center gap-3" style={{ color: '#FFFFFF', textDecoration: 'none' }}>
-              <span className="inline-block rounded-full" style={{ width: 10, height: 10, background: '#E85D00', boxShadow: '0 0 16px #E85D00' }} />
-              <span className="text-[22px] font-semibold" style={{ fontFamily: fontFamily.display }}>BIQc</span>
+              <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 112, height: 'auto' }} />
             </Link>
 
             {/* Step indicators */}

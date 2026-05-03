@@ -3,6 +3,7 @@ import "@/mobile.css";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { SupabaseAuthProvider, useSupabaseAuth, AUTH_STATE } from "./context/SupabaseAuthContext";
 import ProtectedRoute, { LoadingScreen } from "./components/ProtectedRoute";
+import BiqcLogoCard from "./components/BiqcLogoCard";
 import { MobileDrawerProvider } from "./context/MobileDrawerContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -47,6 +48,7 @@ const BlogArticlePage = React.lazy(() => import(/* webpackChunkName: "marketing"
 const ContactPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/ContactPage'));
 const SpeakWithLocalSpecialist = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/SpeakWithLocalSpecialist'));
 const Pricing = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/Pricing'));
+const StillNotSurePage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/StillNotSurePage'));
 const SubscribePage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/SubscribePage'));
 const EnterpriseTerms = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/EnterpriseTerms'));
 const LandingIntelligent = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/LandingIntelligent'));
@@ -192,7 +194,7 @@ class AppErrorBoundary extends React.Component {
     if (this.state.error) {
       return (
         <div style={{ minHeight: '100vh', background: '#070E18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 32 }}>
-          <div style={{ color: '#E85D00', fontSize: 32, fontWeight: 'bold' }}>B</div>
+          <BiqcLogoCard size="sm" to={null} static />
           <p style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: 'var(--font-ui, Inter, sans-serif)', fontSize: 18, fontWeight: 600 }}>Something went wrong</p>
           <p style={{ color: '#64748B', fontFamily: 'var(--font-ui, Inter, sans-serif)', fontSize: 14, textAlign: 'center', maxWidth: 400 }}>
             BIQc encountered an error. Please refresh to continue.
@@ -291,6 +293,18 @@ const LegacyIntegrationsQueryRedirect = () => {
   return <Navigate to="/integrations" replace />;
 };
 
+export const buildLegacyUpgradeSuccessRedirectPath = (search = '') => {
+  const params = new URLSearchParams(search);
+  if (!params.get('status')) params.set('status', 'success');
+  if (!params.get('from')) params.set('from', '/upgrade/success');
+  return `/advisor?${params.toString()}`;
+};
+
+const LegacyUpgradeSuccessRedirect = () => {
+  const location = useLocation();
+  return <Navigate to={buildLegacyUpgradeSuccessRedirectPath(location.search)} replace />;
+};
+
 const LaunchRoute = ({ children, access, featureKey = null }) => {
   const location = useLocation();
   const { user, session, authState, loading } = useSupabaseAuth();
@@ -354,6 +368,7 @@ function AppRoutes() {
         <Route path="/intelligence" element={<SiteIntelligencePage />} />
         <Route path="/our-integrations" element={<SiteIntegrationsPage />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/still-not-sure" element={<StillNotSurePage />} />
         <Route path="/trust" element={<SiteTrustLandingPage />} />
         <Route path="/trust/ai-learning-guarantee" element={<AILearningGuarantee />} />
         <Route path="/trust/terms" element={<SiteTermsPage />} />
@@ -423,8 +438,8 @@ function AppRoutes() {
 
         {/* Subscription (canonical entrypoint for all paid/waitlist upsell routing) */}
         <Route path="/subscribe" element={<ProtectedRoute><RouteErrorBoundary><SubscribePage /></RouteErrorBoundary></ProtectedRoute>} />
-        <Route path="/upgrade" element={<ProtectedRoute><RouteErrorBoundary><UpgradePage /></RouteErrorBoundary></ProtectedRoute>} />
-        <Route path="/upgrade/success" element={<ProtectedRoute><RouteErrorBoundary><UpgradePage success /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/upgrade" element={<ProtectedRoute><Navigate to="/subscribe?from=/upgrade" replace /></ProtectedRoute>} />
+        <Route path="/upgrade/success" element={<ProtectedRoute><LegacyUpgradeSuccessRedirect /></ProtectedRoute>} />
         <Route path="/biqc-foundation" element={<ProtectedRoute><Navigate to="/subscribe?section=foundation" replace /></ProtectedRoute>} />
         <Route path="/more-features" element={<ProtectedRoute><Navigate to="/subscribe?section=advanced" replace /></ProtectedRoute>} />
         <Route path="/biqc-legal" element={<ProtectedRoute><RouteErrorBoundary><BIQcLegalPage /></RouteErrorBoundary></ProtectedRoute>} />
@@ -452,12 +467,9 @@ function AppRoutes() {
 
         {/* Paid routes */}
         <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="revenue"><RouteErrorBoundary><RevenuePage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
-        {/* /billing (BillingPage) deprecated 2026-04-22 — Track B4 rewrote
-            /billing/overview to the new token-allowance shape which only
-            Settings billing tab consumes correctly. BillingPage.js still
-            expects the old shape (payment_method/usage/subscription) and
-            would render stale/undefined. Redirect to the canonical UI. */}
-        <Route path="/billing" element={<Navigate to="/settings?tab=billing" replace />} />
+        <Route path="/billing" element={<ProtectedRoute><RouteErrorBoundary><BillingPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/manage-users" element={<ProtectedRoute><Navigate to="/billing?view=users" replace /></ProtectedRoute>} />
+        <Route path="/admin-billing" element={<ProtectedRoute adminOnly><Navigate to="/admin" replace /></ProtectedRoute>} />
         <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="operations"><RouteErrorBoundary><OperationsPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="risk-workforce"><RouteErrorBoundary><RiskPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="compliance"><RouteErrorBoundary><CompliancePage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
