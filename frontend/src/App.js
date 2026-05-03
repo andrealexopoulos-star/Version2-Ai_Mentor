@@ -298,7 +298,7 @@ const LegacyUpgradeSuccessRedirect = () => {
   const params = new URLSearchParams(location.search);
   if (!params.get('status')) params.set('status', 'success');
   if (!params.get('from')) params.set('from', '/upgrade/success');
-  return <Navigate to={`/subscribe?${params.toString()}`} replace />;
+  return <Navigate to={`/advisor?${params.toString()}`} replace />;
 };
 
 const LaunchRoute = ({ children, access, featureKey = null }) => {

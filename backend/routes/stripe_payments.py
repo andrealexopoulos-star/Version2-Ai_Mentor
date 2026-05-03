@@ -140,50 +140,141 @@ PLANS = {
 PACKAGES = PLANS
 
 
-# Per-process cache of Stripe Product IDs keyed by plan name. Prevents
-# hitting Stripe.Product.list on every signup. Seeded lazily on first
-# subscription create. Test and live accounts have independent Product
-# IDs so the cache is scoped per-process (restart clears it).
-_PRODUCT_ID_CACHE: dict[str, str] = {}
+# Canonical Stripe catalog mapping (product IDs are stable identifiers).
+# Verified live 2026-05-03:
+#   growth   prod_U8D8vKuXXK7qhO  -> price_1T9wiVRoX8RKDDG5AOSi8Cu6 ($69 AUD / month)
+#   pro      prod_ULf4KFDh0UKpeR  -> price_1TMxjtRoX8RKDDG5btgRBrRu ($199 AUD / month)
+#   business prod_ULfA7QJoT3Ontk  -> price_1TMxplRoX8RKDDG59IaUg7aV ($349 AUD / month)
+#   lite     prod_URgYIlMeF24vrN  -> price_1TSnBMRoX8RKDDG5akGL7RkT ($14 AUD / month)
+STRIPE_PRODUCT_IDS = {
+    "growth": "prod_U8D8vKuXXK7qhO",
+    "pro": "prod_ULf4KFDh0UKpeR",
+    "business": "prod_ULfA7QJoT3Ontk",
+    "lite": "prod_URgYIlMeF24vrN",
+}
+
+STRIPE_EXPECTED_MONTHLY_PRICE_IDS = {
+    "growth": "price_1T9wiVRoX8RKDDG5AOSi8Cu6",
+    "pro": "price_1TMxjtRoX8RKDDG5btgRBrRu",
+    "business": "price_1TMxplRoX8RKDDG59IaUg7aV",
+    "lite": "price_1TSnBMRoX8RKDDG5akGL7RkT",
+}
+
+_STRIPE_MONTHLY_PRICE_CACHE: dict[str, Dict[str, Any]] = {}
 
 
-def _get_or_create_plan_product(plan_name: str) -> str:
-    """Return Stripe Product.id matching `plan_name`; create if missing.
+def _obj_get(obj: Any, key: str, default: Any = None) -> Any:
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
 
-    2026-04-20: subscription create was passing inline `product_data`,
-    which is a Checkout-only parameter. Stripe requires a real Product
-    id when creating Subscriptions inline. This helper makes sure one
-    exists (cached per process) keyed on plan name.
-    """
-    cached = _PRODUCT_ID_CACHE.get(plan_name)
+
+def _canonical_product_key_for_plan(plan_id: str) -> str:
+    plan = (plan_id or "").strip().lower()
+    if plan in {"starter", "foundation", "growth"}:
+        return "growth"
+    if plan in {"professional", "pro"}:
+        return "pro"
+    return plan
+
+
+def _price_matches_contract(price: Any, *, product_id: str, amount: int, currency: str, interval: str) -> bool:
+    recurring = _obj_get(price, "recurring", {}) or {}
+    recurring_interval = _obj_get(recurring, "interval", None)
+    recurring_count = _obj_get(recurring, "interval_count", 1)
+
+    price_product = _obj_get(price, "product", "")
+    if isinstance(price_product, dict):
+        price_product = _obj_get(price_product, "id", "")
+
+    return bool(_obj_get(price, "active", False)) \
+        and _obj_get(price, "type", "") == "recurring" \
+        and recurring_interval == interval \
+        and int(recurring_count or 1) == 1 \
+        and str(_obj_get(price, "currency", "")).lower() == str(currency).lower() \
+        and int(_obj_get(price, "unit_amount", -1) or -1) == int(amount) \
+        and str(price_product) == str(product_id)
+
+
+def _resolve_active_monthly_price(plan_id: str, plan: Dict[str, Any]) -> Dict[str, Any]:
+    product_key = _canonical_product_key_for_plan(plan_id)
+    product_id = STRIPE_PRODUCT_IDS.get(product_key)
+    if not product_id:
+        raise HTTPException(status_code=503, detail="Stripe product mapping is not configured for this plan")
+
+    cache_key = f"{product_key}:{int(plan.get('amount') or 0)}:{str(plan.get('currency') or 'aud').lower()}:{str(plan.get('interval') or 'month')}"
+    cached = _STRIPE_MONTHLY_PRICE_CACHE.get(cache_key)
     if cached:
         return cached
-    try:
-        # Search existing products for a matching ACTIVE one. Stripe
-        # `Product.list` returns up to 100 per page; BIQc has <10 tiers.
-        existing = stripe.Product.list(limit=100, active=True)
-        for p in existing.auto_paging_iter():
-            if getattr(p, "name", None) == plan_name:
-                _PRODUCT_ID_CACHE[plan_name] = p.id
-                logger.info("Stripe product matched: name=%s id=%s", plan_name, p.id)
-                return p.id
-    except Exception as exc:
-        logger.warning("stripe.Product.list failed (continuing to create): %s", exc)
 
-    # No match — create it. Idempotency key ensures concurrent signups
-    # for the same new plan don't create duplicates.
-    try:
-        created = stripe.Product.create(
-            name=plan_name,
-            metadata={"source": "biqc_auto_created", "plan_name": plan_name},
-            idempotency_key=f"biqc-plan-product-{plan_name.replace(' ', '-').lower()}",
-        )
-        _PRODUCT_ID_CACHE[plan_name] = created.id
-        logger.info("Stripe product created: name=%s id=%s", plan_name, created.id)
-        return created.id
-    except Exception as exc:
-        logger.error("stripe.Product.create failed for %s: %s", plan_name, exc)
-        raise
+    amount = int(plan.get("amount") or 0)
+    currency = str(plan.get("currency") or "aud").lower()
+    interval = str(plan.get("interval") or "month").lower()
+    expected_price_id = STRIPE_EXPECTED_MONTHLY_PRICE_IDS.get(product_key)
+
+    selected_price = None
+    if expected_price_id:
+        try:
+            candidate = stripe.Price.retrieve(expected_price_id)
+            if _price_matches_contract(
+                candidate,
+                product_id=product_id,
+                amount=amount,
+                currency=currency,
+                interval=interval,
+            ):
+                selected_price = candidate
+            else:
+                logger.warning(
+                    "Expected Stripe price failed contract validation: plan=%s product=%s price=%s",
+                    plan_id,
+                    product_id,
+                    expected_price_id,
+                )
+        except Exception as exc:
+            logger.warning(
+                "Expected Stripe price lookup failed: plan=%s product=%s price=%s err=%s",
+                plan_id,
+                product_id,
+                expected_price_id,
+                exc,
+            )
+
+    if selected_price is None:
+        try:
+            listing = stripe.Price.list(product=product_id, active=True, type="recurring", limit=100)
+            iterator = listing.auto_paging_iter() if hasattr(listing, "auto_paging_iter") else (_obj_get(listing, "data", []) or [])
+            matches = [
+                p for p in iterator
+                if _price_matches_contract(
+                    p,
+                    product_id=product_id,
+                    amount=amount,
+                    currency=currency,
+                    interval=interval,
+                )
+            ]
+        except Exception as exc:
+            logger.error("Stripe price listing failed: plan=%s product=%s err=%s", plan_id, product_id, exc)
+            raise HTTPException(status_code=502, detail="Stripe pricing lookup failed")
+
+        if not matches:
+            raise HTTPException(
+                status_code=503,
+                detail="No active monthly Stripe price matches this plan contract",
+            )
+        selected_price = sorted(matches, key=lambda p: int(_obj_get(p, "created", 0) or 0), reverse=True)[0]
+
+    resolved = {
+        "id": str(_obj_get(selected_price, "id", "")),
+        "product_id": product_id,
+        "amount": amount,
+        "currency": currency,
+        "interval": interval,
+        "active": bool(_obj_get(selected_price, "active", False)),
+    }
+    _STRIPE_MONTHLY_PRICE_CACHE[cache_key] = resolved
+    return resolved
 
 
 def _is_production() -> bool:
@@ -454,25 +545,13 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
     else:
         cancel_url = f"{base_origin}/upgrade"
 
+    stripe_price = _resolve_active_monthly_price(plan_id, plan)
+
     # Tax / GST / ABN collection — only enabled once Stripe Tax is activated
-    # in the dashboard (see _stripe_tax_enabled docstring). We set
-    # tax_behavior='inclusive' on the price: AU convention is that
-    # advertised prices already include GST, so Stripe subtracts it from
-    # the displayed amount rather than adding on top.
+    # in the dashboard (see _stripe_tax_enabled docstring).
     session_kwargs: Dict[str, Any] = {
         "payment_method_types": ["card"],
-        "line_items": [{
-            "price_data": {
-                "currency": plan["currency"],
-                "unit_amount": plan["amount"],
-                "recurring": {"interval": plan["interval"]},
-                "product_data": {
-                    "name": plan["name"],
-                    "description": "Paid operating tier for visibility, revenue and operations control, marketing intelligence, Boardroom context, governance workflows, and up to 5 integrations.",
-                },
-            },
-            "quantity": 1,
-        }],
+        "line_items": [{"price": stripe_price["id"], "quantity": 1}],
         "mode": "subscription",
         "success_url": success_url,
         "cancel_url": cancel_url,
@@ -485,6 +564,8 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
             "pricing_source": (plan.get("governance", {}) or {}).get("source", "legacy_static"),
             "pricing_plan_key": (plan.get("governance", {}) or {}).get("plan_key", plan_id),
             "pricing_plan_version": str((plan.get("governance", {}) or {}).get("plan_version", "")),
+            "stripe_product_id": stripe_price["product_id"],
+            "stripe_price_id": stripe_price["id"],
             "tax_enabled": "1" if _stripe_tax_enabled() else "0",
         },
     }
@@ -498,16 +579,14 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
         #   buyer's jurisdiction before calculating tax.
         # - customer_update: after collecting new address/name, write them
         #   back onto the Customer record so renewals keep the right data.
-        # - tax_behavior=inclusive on the line item: advertised prices
-        #   already include GST (AU convention).
+        # - tax_behavior=inclusive is configured on the canonical Stripe
+        #   price object so advertised amounts remain GST-inclusive.
         session_kwargs["automatic_tax"] = {"enabled": True}
         session_kwargs["tax_id_collection"] = {"enabled": True}
         session_kwargs["billing_address_collection"] = "required"
         session_kwargs["customer_update"] = {"address": "auto", "name": "auto"}
-        # Per-line tax_behavior tells Stripe that `unit_amount` already
-        # bakes in GST. Without this, Stripe might add GST on top in
-        # some configurations (depends on product defaults).
-        session_kwargs["line_items"][0]["price_data"]["tax_behavior"] = "inclusive"
+        # Price-level tax_behavior is configured in Stripe Dashboard on
+        # the canonical recurring price object referenced above.
 
     try:
         session = stripe.checkout.Session.create(**session_kwargs)
@@ -694,13 +773,13 @@ async def confirm_checkout_session(
 # Stripe; BIQc only ever sees the payment_method_id (an opaque handle).
 
 
-def _user_has_had_paid_or_trial_before(sb, user_id: str) -> bool:
+def _user_has_had_paid_or_trial_before(sb, user_id: str, *, account_id: Optional[str] = None) -> bool:
     """Server-side trial-eligibility guard (revenue-leak defense).
 
-    Returns True if this user_id has EVER held a non-free subscription or
-    trial — active, trialing, or canceled. Used to prevent a returning
-    user from re-triggering a fresh 14-day trial by hitting the signup
-    endpoint again after cancellation.
+    Returns True if this user_id OR account_id has EVER held a non-free
+    subscription or trial — active, trialing, or canceled. Used to prevent
+    a returning user (or another user on the same account) from re-triggering
+    a fresh 14-day trial.
 
     Checks two independent sources:
       1. users.subscription_status / subscription_tier — the canonical
@@ -722,8 +801,15 @@ def _user_has_had_paid_or_trial_before(sb, user_id: str) -> bool:
     PRIOR_TX_STATUSES = {"paid", "trialing", "active", "past_due", "canceled"}
 
     try:
-        u_res = sb.table("users").select("subscription_status,subscription_tier").eq("id", user_id).limit(1).execute()
+        u_res = (
+            sb.table("users")
+            .select("subscription_status,subscription_tier,account_id")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
         urow = (u_res.data or [{}])[0] if u_res.data else {}
+        account_id = account_id or urow.get("account_id")
         if (urow.get("subscription_status") or "").lower() in PRIOR_STATUSES:
             return True
         if (urow.get("subscription_tier") or "").lower() in PRIOR_TIERS:
@@ -731,11 +817,33 @@ def _user_has_had_paid_or_trial_before(sb, user_id: str) -> bool:
     except Exception as exc:
         logger.warning("users eligibility lookup failed for %s: %s — erring on side of trial allowed", user_id, exc)
 
+    account_user_ids = [user_id]
+    if account_id:
+        try:
+            acct_res = (
+                sb.table("users")
+                .select("id,subscription_status,subscription_tier")
+                .eq("account_id", account_id)
+                .limit(200)
+                .execute()
+            )
+            for row in (acct_res.data or []):
+                rid = str(row.get("id") or "")
+                if rid:
+                    account_user_ids.append(rid)
+                if (row.get("subscription_status") or "").lower() in PRIOR_STATUSES:
+                    return True
+                if (row.get("subscription_tier") or "").lower() in PRIOR_TIERS:
+                    return True
+        except Exception as exc:
+            logger.warning("account eligibility lookup failed for account=%s user=%s: %s", account_id, user_id, exc)
+    account_user_ids = sorted({uid for uid in account_user_ids if uid})
+
     try:
         tx_res = (
             sb.table("payment_transactions")
             .select("id")
-            .eq("user_id", user_id)
+            .in_("user_id", account_user_ids)
             .in_("tier", list(PRIOR_TIERS))
             .in_("payment_status", list(PRIOR_TX_STATUSES))
             .limit(1)
@@ -777,7 +885,13 @@ async def signup_create_setup_intent(
     sb = _get_service_supabase()
 
     try:
-        user_res = sb.table("users").select("stripe_customer_id,subscription_status").eq("id", user_id).limit(1).execute()
+        user_res = (
+            sb.table("users")
+            .select("stripe_customer_id,subscription_status,account_id")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
         user_row = (user_res.data or [{}])[0] if user_res.data else {}
     except Exception as exc:
         logger.warning("users lookup failed in signup flow: %s", exc)
@@ -790,7 +904,7 @@ async def signup_create_setup_intent(
     # ever had a subscription (including canceled ones). Signup trial is a
     # one-time benefit per user_id. Cancelled users should re-subscribe
     # via /pricing (no trial), not through signup.
-    if _user_has_had_paid_or_trial_before(sb, user_id):
+    if _user_has_had_paid_or_trial_before(sb, user_id, account_id=user_row.get("account_id")):
         raise HTTPException(
             status_code=409,
             detail="This account has already used its 14-day trial. Please upgrade from the pricing page instead.",
@@ -905,7 +1019,13 @@ async def confirm_trial_signup(
 
     # Idempotency — return existing subscription if user already has one.
     try:
-        row_res = sb.table("users").select("subscription_status,subscription_tier,trial_ends_at").eq("id", user_id).limit(1).execute()
+        row_res = (
+            sb.table("users")
+            .select("subscription_status,subscription_tier,trial_ends_at,account_id")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
         existing_row = (row_res.data or [{}])[0] if row_res.data else {}
     except Exception:
         existing_row = {}
@@ -921,7 +1041,11 @@ async def confirm_trial_signup(
     # held any subscription (active/trialing/past_due/canceled). Returning
     # customers must upgrade via /pricing, which uses the non-trial
     # Checkout path.
-    trial_days = SIGNUP_TRIAL_DAYS if not _user_has_had_paid_or_trial_before(sb, user_id) else 0
+    trial_days = SIGNUP_TRIAL_DAYS if not _user_has_had_paid_or_trial_before(
+        sb,
+        user_id,
+        account_id=existing_row.get("account_id"),
+    ) else 0
     if trial_days == 0:
         # Defense-in-depth: /signup-create-setup-intent should have already
         # blocked this path. If we get here, refuse rather than silently
@@ -942,19 +1066,7 @@ async def confirm_trial_signup(
             invoice_settings={"default_payment_method": req.payment_method_id},
         )
 
-        # 2026-04-20 critical fix: subscription create was using
-        # items[0].price_data.product_data — that parameter is ONLY valid
-        # on Stripe Checkout Session creation, NOT on Subscription.create.
-        # Stripe rejected every request with "parameter_unknown". Result:
-        # NO BIQc customer has ever actually gotten a Stripe subscription
-        # on signup (test OR live) since this code was written. Caught
-        # during P0 test-card verification on 2026-04-20.
-        #
-        # Fix: look up (or auto-create) a Stripe Product named after this
-        # plan tier, then reference its id in price_data.product. Products
-        # are cached at module import via _get_or_create_plan_product so
-        # we're not hammering the Products API on every signup.
-        product_id = _get_or_create_plan_product(plan["name"])
+        stripe_price = _resolve_active_monthly_price(plan_id, plan)
 
         # Idempotency key — concurrent retries (double-submit, network
         # retry, two tabs) return the SAME subscription from Stripe instead
@@ -964,14 +1076,7 @@ async def confirm_trial_signup(
         # Codex P2: "concurrent retries ... can race past the pre-check".
         subscription = stripe.Subscription.create(
             customer=req.customer_id,
-            items=[{
-                "price_data": {
-                    "currency": plan["currency"],
-                    "unit_amount": plan["amount"],
-                    "recurring": {"interval": plan["interval"]},
-                    "product": product_id,
-                },
-            }],
+            items=[{"price": stripe_price["id"]}],
             trial_period_days=trial_days,
             default_payment_method=req.payment_method_id,
             metadata={
@@ -979,6 +1084,8 @@ async def confirm_trial_signup(
                 "tier": plan["tier"],
                 "source": "biqc_signup",
                 "trial_days": str(trial_days),
+                "stripe_product_id": stripe_price["product_id"],
+                "stripe_price_id": stripe_price["id"],
             },
             idempotency_key=f"biqc-signup-sub-{user_id}-{plan_id}-{req.payment_method_id[-8:]}",
         )
