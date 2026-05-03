@@ -9,7 +9,6 @@ permissions:
   contents: read
   actions: read
   issues: write
-
 jobs:
   production-calibration-smoke:
     runs-on: ubuntu-latest
