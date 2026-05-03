@@ -298,6 +298,8 @@ export const SupabaseAuthProvider = ({ children }) => {
                 ...prev,
                 role: dbUser.role || prev?.role || 'user',
                 subscription_tier: dbUser.subscription_tier || prev?.subscription_tier || 'free',
+                subscription_status: dbUser.subscription_status || prev?.subscription_status || null,
+                stripe_subscription_id: dbUser.stripe_subscription_id || prev?.stripe_subscription_id || null,
                 trial_expires_at: dbUser.trial_expires_at || prev?.trial_expires_at || null,
                 trial_tier: dbUser.trial_tier || prev?.trial_tier || null,
                 effective_tier: dbUser.effective_tier || prev?.effective_tier || null,

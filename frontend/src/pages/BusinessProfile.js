@@ -36,6 +36,7 @@ const BusinessProfile = () => {
   const [scores, setScores] = useState({ completeness: 0, strength: 0 });
   const [activeTab, setActiveTab] = useState('market');
   const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const [signalDraft, setSignalDraft] = useState('');
   const saveTimerRef = useRef(null);
 
   // 2026-04-23 P0: resolveTier() correctly returns 'pro' during active Pro trial.
@@ -73,6 +74,13 @@ const BusinessProfile = () => {
 
       // Merge: raw profile takes precedence, then resolved facts
       const merged = { ...rawProfile };
+      const trace = rawProfile?.dna_trace || {};
+      if (Array.isArray(trace.business_signals) && !merged.business_signals) {
+        merged.business_signals = trace.business_signals;
+      }
+      if (typeof trace.target_market_notes === 'string' && !merged.target_market_notes) {
+        merged.target_market_notes = trace.target_market_notes;
+      }
       for (const [field, factData] of Object.entries(resolvedFields)) {
         if (factData?.value && !merged[field]) {
           merged[field] = factData.value;
@@ -161,6 +169,25 @@ const BusinessProfile = () => {
       debouncedSave(updated);
       return updated;
     });
+  };
+
+  const addBusinessSignal = () => {
+    const value = signalDraft.trim();
+    if (!value) return;
+    const current = Array.isArray(profile.business_signals) ? profile.business_signals : [];
+    updateProfile('business_signals', [...current, value]);
+    setSignalDraft('');
+  };
+
+  const updateBusinessSignalAt = (index, value) => {
+    const current = Array.isArray(profile.business_signals) ? [...profile.business_signals] : [];
+    current[index] = value;
+    updateProfile('business_signals', current);
+  };
+
+  const removeBusinessSignal = (index) => {
+    const current = Array.isArray(profile.business_signals) ? profile.business_signals : [];
+    updateProfile('business_signals', current.filter((_, idx) => idx !== index));
   };
 
   const [saving, setSaving] = useState(false);
@@ -259,7 +286,7 @@ const BusinessProfile = () => {
 
           {/* Tabs — Live Baselines only (admin fields moved to Settings) */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full mb-8">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-6 w-full mb-8">
               <TabsTrigger value="market" className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 <span className="hidden sm:inline">Market</span>
@@ -279,6 +306,10 @@ const BusinessProfile = () => {
               <TabsTrigger value="kpis" className="flex items-center gap-2" data-testid="business-dna-kpi-tab-trigger">
                 <TrendingUp className="w-4 h-4" />
                 <span className="hidden sm:inline">KPIs</span>
+              </TabsTrigger>
+              <TabsTrigger value="signals" className="flex items-center gap-2" data-testid="business-dna-signals-tab-trigger">
+                <Target className="w-4 h-4" />
+                <span className="hidden sm:inline">Signals</span>
               </TabsTrigger>
             </TabsList>
 
@@ -654,6 +685,48 @@ const BusinessProfile = () => {
 
             <TabsContent value="kpis">
               <KpiThresholdTab />
+            </TabsContent>
+
+            <TabsContent value="signals">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Business Signals</CardTitle>
+                  <CardDescription>Customer-facing business conditions BIQc monitors over time. Kept separate from KPI thresholds.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      value={signalDraft}
+                      onChange={(e) => setSignalDraft(e.target.value)}
+                      placeholder="Add a signal (e.g. Pipeline slowdown)"
+                      data-testid="business-dna-signal-draft"
+                    />
+                    <Button type="button" onClick={addBusinessSignal} data-testid="business-dna-signal-add">Add</Button>
+                  </div>
+                  <div className="space-y-2" data-testid="business-dna-signal-list">
+                    {(Array.isArray(profile.business_signals) ? profile.business_signals : []).map((signal, index) => (
+                      <div key={`${signal}-${index}`} className="flex gap-2">
+                        <Input
+                          value={signal}
+                          onChange={(e) => updateBusinessSignalAt(index, e.target.value)}
+                          data-testid={`business-dna-signal-${index}`}
+                        />
+                        <Button type="button" variant="outline" onClick={() => removeBusinessSignal(index)} data-testid={`business-dna-signal-remove-${index}`}>Delete</Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <Label>Target Market Notes</Label>
+                    <Textarea
+                      value={profile.target_market_notes || ''}
+                      onChange={(e) => updateProfile('target_market_notes', e.target.value)}
+                      rows={3}
+                      className="mt-2"
+                      data-testid="business-dna-target-market-notes"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
 

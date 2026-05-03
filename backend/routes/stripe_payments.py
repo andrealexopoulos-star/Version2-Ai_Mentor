@@ -495,6 +495,39 @@ def _resolve_governed_plan(sb, requested_plan_id: str) -> Dict[str, Any]:
     }
 
 
+def _user_calibration_complete(sb, user_id: str) -> bool:
+    """Return True when calibration/onboarding is complete for routing."""
+    if not user_id:
+        return False
+    try:
+        scs = (
+            sb.table("strategic_console_state")
+            .select("is_complete,status")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+        row = (scs.data or [{}])[0] if scs.data else {}
+        if bool(row.get("is_complete")):
+            return True
+        if str(row.get("status") or "").strip().upper() in {"COMPLETE", "COMPLETED"}:
+            return True
+    except Exception:
+        pass
+    try:
+        op = (
+            sb.table("user_operator_profile")
+            .select("persona_calibration_status")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+        row = (op.data or [{}])[0] if op.data else {}
+        return str(row.get("persona_calibration_status") or "").strip().lower() == "complete"
+    except Exception:
+        return False
+
+
 class CheckoutRequest(BaseModel):
     tier: Optional[str] = None
     package_id: Optional[str] = None   # legacy support
@@ -538,12 +571,15 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
     if req.success_url:
         success_url = _normalize_checkout_url(req.success_url, allow_local_http=allow_local_http)
     else:
-        success_url = f"{base_origin}/upgrade/success?session_id={{CHECKOUT_SESSION_ID}}"
+        if _user_calibration_complete(sb, user_id):
+            success_url = f"{base_origin}/upgrade/success?session_id={{CHECKOUT_SESSION_ID}}"
+        else:
+            success_url = f"{base_origin}/onboarding-decision?checkout=success&session_id={{CHECKOUT_SESSION_ID}}"
 
     if req.cancel_url:
         cancel_url = _normalize_checkout_url(req.cancel_url, allow_local_http=allow_local_http)
     else:
-        cancel_url = f"{base_origin}/upgrade"
+        cancel_url = f"{base_origin}/subscribe?plan={plan['tier']}"
 
     stripe_price = _resolve_active_monthly_price(plan_id, plan)
     trial_decision = _trial_decision_for_user(sb, user_id)
