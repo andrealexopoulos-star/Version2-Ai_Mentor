@@ -74,10 +74,16 @@ class _FakeTable:
     def execute(self):
         if self.name == "users":
             if "id" in self._eq:
+                if self.sb.fail_users_lookup:
+                    raise RuntimeError("users lookup failed")
                 return _Obj({"data": [self.sb.user_row] if self.sb.user_row else []})
             if "account_id" in self._eq:
+                if self.sb.fail_account_scan:
+                    raise RuntimeError("account scan failed")
                 return _Obj({"data": self.sb.account_rows})
         if self.name == "payment_transactions":
+            if self.sb.fail_payment_lookup:
+                raise RuntimeError("payment history lookup failed")
             return _Obj({"data": self.sb.payment_rows})
         return _Obj({"data": []})
 
@@ -88,6 +94,9 @@ class _FakeSb:
         self.account_rows = account_rows or []
         self.payment_rows = payment_rows or []
         self.inserts: List[Any] = []
+        self.fail_users_lookup = False
+        self.fail_account_scan = False
+        self.fail_payment_lookup = False
 
     def table(self, name: str):
         return _FakeTable(self, name)
@@ -156,7 +165,6 @@ def test_trial_applied_for_eligible_new_user(stripe_payments_module, monkeypatch
     monkeypatch.setattr(module, "_get_service_supabase", lambda: sb)
     monkeypatch.setattr(module, "_resolve_governed_plan", lambda *_: None)
     monkeypatch.setattr(module, "_resolve_active_monthly_price", lambda *_: {"id": "price_growth", "product_id": "prod_growth"})
-    monkeypatch.setattr(module, "_trial_days_for_user", lambda *_args, **_kwargs: 14)
 
     captured = {}
 
@@ -203,7 +211,6 @@ def test_shared_trial_logic_across_checkout_paths(stripe_payments_module, monkey
     monkeypatch.setattr(module, "_get_service_supabase", lambda: sb)
     monkeypatch.setattr(module, "_resolve_governed_plan", lambda *_: None)
     monkeypatch.setattr(module, "_resolve_active_monthly_price", lambda *_: {"id": "price_growth", "product_id": "prod_growth"})
-    monkeypatch.setattr(module, "_trial_days_for_user", lambda *_args, **_kwargs: 14)
     monkeypatch.setattr(module, "_apply_tier_upgrade", lambda *args, **kwargs: None)
     monkeypatch.setattr(module, "_update_subscription_lifecycle", lambda *args, **kwargs: None)
 
@@ -246,6 +253,69 @@ def test_lite_disabled_from_active_checkout(stripe_payments_module):
     with pytest.raises(HTTPException) as exc:
         _run(module.create_checkout(req=req, request=None, current_user={"id": "user-1", "email": "buyer@example.com"}))
     assert exc.value.status_code == 400
+
+
+def test_trial_lookup_failure_does_not_apply_trial_checkout(stripe_payments_module, monkeypatch):
+    module = stripe_payments_module
+    sb = _FakeSb(user_row={"id": "user-1", "account_id": "acct-1"})
+    sb.fail_users_lookup = True
+    monkeypatch.setattr(module, "_get_service_supabase", lambda: sb)
+    monkeypatch.setattr(module, "_resolve_governed_plan", lambda *_: None)
+    monkeypatch.setattr(module, "_resolve_active_monthly_price", lambda *_: {"id": "price_growth", "product_id": "prod_growth"})
+    captured = {}
+    monkeypatch.setattr(
+        module.stripe.checkout.Session,
+        "create",
+        lambda **kwargs: captured.update(kwargs) or _Obj({"id": "cs_123", "url": "https://stripe.example/checkout", "customer": None, "subscription": None}),
+    )
+    req = module.CheckoutRequest(tier="starter")
+    _run(module.create_checkout(req=req, request=None, current_user={"id": "user-1", "email": "buyer@example.com"}))
+    assert "subscription_data" not in captured
+    assert captured["metadata"]["trial_applied"] == "0"
+
+
+def test_checkout_metadata_marks_trial_not_applied_when_unverified(stripe_payments_module, monkeypatch):
+    module = stripe_payments_module
+    sb = _FakeSb(user_row={"id": "user-1", "account_id": "acct-1"})
+    sb.fail_users_lookup = True
+    monkeypatch.setattr(module, "_get_service_supabase", lambda: sb)
+    monkeypatch.setattr(module, "_resolve_governed_plan", lambda *_: None)
+    monkeypatch.setattr(module, "_resolve_active_monthly_price", lambda *_: {"id": "price_growth", "product_id": "prod_growth"})
+    captured = {}
+    monkeypatch.setattr(
+        module.stripe.checkout.Session,
+        "create",
+        lambda **kwargs: captured.update(kwargs) or _Obj({"id": "cs_123", "url": "https://stripe.example/checkout", "customer": None, "subscription": None}),
+    )
+    req = module.CheckoutRequest(tier="starter")
+    _run(module.create_checkout(req=req, request=None, current_user={"id": "user-1", "email": "buyer@example.com"}))
+    assert captured["metadata"]["trial_reason"] == "trial_eligibility_unverified"
+    assert captured["metadata"]["trial_days"] == "0"
+
+
+def test_trial_lookup_failure_blocks_confirm_trial_signup_or_sets_trial_zero(stripe_payments_module, monkeypatch):
+    module = stripe_payments_module
+    sb = _FakeSb(user_row={"id": "user-1", "subscription_status": None, "subscription_tier": "trial", "trial_ends_at": None, "account_id": "acct-1"})
+    sb.fail_users_lookup = True
+    monkeypatch.setattr(module, "_get_service_supabase", lambda: sb)
+    monkeypatch.setattr(module.stripe.Customer, "retrieve", lambda _cid: _Obj({"metadata": {"user_id": "user-1"}}))
+    req = module.ConfirmTrialSignupRequest(customer_id="cus_123", payment_method_id="pm_12345678", plan="starter")
+    with pytest.raises(HTTPException) as exc:
+        _run(module.confirm_trial_signup(req=req, current_user={"id": "user-1", "email": "buyer@example.com"}))
+    assert exc.value.status_code == 503
+
+
+def test_trial_lookup_failure_is_fail_closed_for_account_scan(stripe_payments_module):
+    module = stripe_payments_module
+    sb = _FakeSb(
+        user_row={"id": "user-1", "subscription_status": None, "subscription_tier": "trial", "account_id": "acct-1"},
+        account_rows=[],
+        payment_rows=[],
+    )
+    sb.fail_account_scan = True
+    decision = module._trial_decision_for_user(sb, "user-1", account_id="acct-1")
+    assert decision["trial_days"] == 0
+    assert decision["reason"] == "trial_eligibility_unverified"
 
 
 def test_success_redirect_not_subscribe_loop():

@@ -546,7 +546,8 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
         cancel_url = f"{base_origin}/upgrade"
 
     stripe_price = _resolve_active_monthly_price(plan_id, plan)
-    trial_days = _trial_days_for_user(sb, user_id)
+    trial_decision = _trial_decision_for_user(sb, user_id)
+    trial_days = int(trial_decision.get("trial_days") or 0)
 
     # Tax / GST / ABN collection — only enabled once Stripe Tax is activated
     # in the dashboard (see _stripe_tax_enabled docstring).
@@ -568,6 +569,8 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
             "stripe_product_id": stripe_price["product_id"],
             "stripe_price_id": stripe_price["id"],
             "trial_days": str(trial_days),
+            "trial_applied": "1" if trial_days > 0 else "0",
+            "trial_reason": str(trial_decision.get("reason") or "trial_not_applied"),
             "tax_enabled": "1" if _stripe_tax_enabled() else "0",
         },
     }
@@ -779,32 +782,31 @@ async def confirm_checkout_session(
 # Stripe; BIQc only ever sees the payment_method_id (an opaque handle).
 
 
-def _user_has_had_paid_or_trial_before(sb, user_id: str, *, account_id: Optional[str] = None) -> bool:
-    """Server-side trial-eligibility guard (revenue-leak defense).
+def _trial_decision_for_user(sb, user_id: str, *, account_id: Optional[str] = None) -> Dict[str, Any]:
+    """Return fail-closed trial decision with explicit reason metadata.
 
-    Returns True if this user_id OR account_id has EVER held a non-free
-    subscription or trial — active, trialing, or canceled. Used to prevent
-    a returning user (or another user on the same account) from re-triggering
-    a fresh 14-day trial.
-
-    Checks two independent sources:
-      1. users.subscription_status / subscription_tier — the canonical
-         lifecycle state. 'active', 'trialing', 'past_due', 'canceled'
-         all count as "has had a subscription". Only null / 'free' /
-         missing = eligible.
-      2. payment_transactions — historical record. Any row with
-         tier in {starter, pro, business, enterprise} and
-         payment_status in {paid, trialing, active, past_due, canceled}
-         proves prior subscription.
-
-    Both sources must be checked because (a) users may be data-cleaned
-    but transactions kept for accounting, (b) a Stripe-side cancellation
-    could leave a transient state where status was reset but history
-    remains.
+    Reasons:
+      - trial_eligible_first_time
+      - trial_already_used
+      - trial_eligibility_unverified
     """
     PRIOR_STATUSES = {"active", "trialing", "past_due", "canceled"}
     PRIOR_TIERS = {"starter", "pro", "professional", "business", "enterprise"}
     PRIOR_TX_STATUSES = {"paid", "trialing", "active", "past_due", "canceled"}
+    resolved_account_id = account_id
+    eligibility_unverified = False
+    failure_types: list[str] = []
+
+    def _decision(reason: str, trial_days: int, *, account_for_log: Optional[str]) -> Dict[str, Any]:
+        return {
+            "trial_days": int(trial_days),
+            "trial_applied": bool(trial_days > 0),
+            "reason": reason,
+            "eligibility_verified": reason != "trial_eligibility_unverified",
+            "user_id": user_id,
+            "account_id": account_for_log,
+            "failure_types": list(failure_types),
+        }
 
     try:
         u_res = (
@@ -815,21 +817,28 @@ def _user_has_had_paid_or_trial_before(sb, user_id: str, *, account_id: Optional
             .execute()
         )
         urow = (u_res.data or [{}])[0] if u_res.data else {}
-        account_id = account_id or urow.get("account_id")
+        resolved_account_id = resolved_account_id or urow.get("account_id")
         if (urow.get("subscription_status") or "").lower() in PRIOR_STATUSES:
-            return True
+            return _decision("trial_already_used", 0, account_for_log=resolved_account_id)
         if (urow.get("subscription_tier") or "").lower() in PRIOR_TIERS:
-            return True
+            return _decision("trial_already_used", 0, account_for_log=resolved_account_id)
     except Exception as exc:
-        logger.warning("users eligibility lookup failed for %s: %s — erring on side of trial allowed", user_id, exc)
+        eligibility_unverified = True
+        failure_types.append(f"users_lookup_failed:{type(exc).__name__}")
+        logger.warning(
+            "trial eligibility lookup failed (users): user_id=%s account_id=%s reason=trial_eligibility_unverified failure_type=%s",
+            user_id,
+            resolved_account_id,
+            type(exc).__name__,
+        )
 
     account_user_ids = [user_id]
-    if account_id:
+    if resolved_account_id:
         try:
             acct_res = (
                 sb.table("users")
                 .select("id,subscription_status,subscription_tier")
-                .eq("account_id", account_id)
+                .eq("account_id", resolved_account_id)
                 .limit(200)
                 .execute()
             )
@@ -838,11 +847,18 @@ def _user_has_had_paid_or_trial_before(sb, user_id: str, *, account_id: Optional
                 if rid:
                     account_user_ids.append(rid)
                 if (row.get("subscription_status") or "").lower() in PRIOR_STATUSES:
-                    return True
+                    return _decision("trial_already_used", 0, account_for_log=resolved_account_id)
                 if (row.get("subscription_tier") or "").lower() in PRIOR_TIERS:
-                    return True
+                    return _decision("trial_already_used", 0, account_for_log=resolved_account_id)
         except Exception as exc:
-            logger.warning("account eligibility lookup failed for account=%s user=%s: %s", account_id, user_id, exc)
+            eligibility_unverified = True
+            failure_types.append(f"account_scan_failed:{type(exc).__name__}")
+            logger.warning(
+                "trial eligibility lookup failed (account_scan): user_id=%s account_id=%s reason=trial_eligibility_unverified failure_type=%s",
+                user_id,
+                resolved_account_id,
+                type(exc).__name__,
+            )
     account_user_ids = sorted({uid for uid in account_user_ids if uid})
 
     try:
@@ -856,11 +872,21 @@ def _user_has_had_paid_or_trial_before(sb, user_id: str, *, account_id: Optional
             .execute()
         )
         if tx_res.data:
-            return True
+            return _decision("trial_already_used", 0, account_for_log=resolved_account_id)
     except Exception as exc:
-        logger.warning("payment_transactions eligibility lookup failed for %s: %s", user_id, exc)
+        eligibility_unverified = True
+        failure_types.append(f"payment_history_lookup_failed:{type(exc).__name__}")
+        logger.warning(
+            "trial eligibility lookup failed (payment_history): user_id=%s account_id=%s reason=trial_eligibility_unverified failure_type=%s",
+            user_id,
+            resolved_account_id,
+            type(exc).__name__,
+        )
 
-    return False
+    if eligibility_unverified:
+        return _decision("trial_eligibility_unverified", 0, account_for_log=resolved_account_id)
+
+    return _decision("trial_eligible_first_time", SIGNUP_TRIAL_DAYS, account_for_log=resolved_account_id)
 
 
 def _trial_days_for_user(sb, user_id: str, *, account_id: Optional[str] = None) -> int:
@@ -868,9 +894,7 @@ def _trial_days_for_user(sb, user_id: str, *, account_id: Optional[str] = None) 
 
     Returns SIGNUP_TRIAL_DAYS for first-time user/account only; otherwise 0.
     """
-    return SIGNUP_TRIAL_DAYS if not _user_has_had_paid_or_trial_before(
-        sb, user_id, account_id=account_id
-    ) else 0
+    return int(_trial_decision_for_user(sb, user_id, account_id=account_id).get("trial_days") or 0)
 
 
 class SignupSetupIntentRequest(BaseModel):
@@ -920,7 +944,13 @@ async def signup_create_setup_intent(
     # ever had a subscription (including canceled ones). Signup trial is a
     # one-time benefit per user_id. Cancelled users should re-subscribe
     # via /pricing (no trial), not through signup.
-    if _trial_days_for_user(sb, user_id, account_id=user_row.get("account_id")) == 0:
+    setup_trial_decision = _trial_decision_for_user(sb, user_id, account_id=user_row.get("account_id"))
+    if int(setup_trial_decision.get("trial_days") or 0) == 0:
+        if setup_trial_decision.get("reason") == "trial_eligibility_unverified":
+            raise HTTPException(
+                status_code=503,
+                detail="Trial eligibility could not be verified right now. Please continue from pricing without trial.",
+            )
         raise HTTPException(
             status_code=409,
             detail="This account has already used its 14-day trial. Please upgrade from the pricing page instead.",
@@ -1057,7 +1087,13 @@ async def confirm_trial_signup(
     # held any subscription (active/trialing/past_due/canceled). Returning
     # customers must upgrade via /pricing, which uses the non-trial
     # Checkout path.
-    trial_days = _trial_days_for_user(sb, user_id, account_id=existing_row.get("account_id"))
+    confirm_trial_decision = _trial_decision_for_user(sb, user_id, account_id=existing_row.get("account_id"))
+    trial_days = int(confirm_trial_decision.get("trial_days") or 0)
+    if confirm_trial_decision.get("reason") == "trial_eligibility_unverified":
+        raise HTTPException(
+            status_code=503,
+            detail="Trial eligibility could not be verified right now. Please continue from pricing without trial.",
+        )
     if trial_days == 0:
         # Defense-in-depth: /signup-create-setup-intent should have already
         # blocked this path. If we get here, refuse rather than silently
