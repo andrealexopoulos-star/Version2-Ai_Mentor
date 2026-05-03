@@ -482,9 +482,10 @@ def _recent_invoices(payment_rows: List[Dict[str, Any]], limit: int = 5) -> List
     return out
 
 
-# Tier prices in AUD cents. Matches Stripe products (verified 2026-04-21 against
-# acct_1T8sPaRoX8RKDDG5): Growth prod_U8D8vKuXXK7qhO=$69, Pro prod_ULf4KFDh0UKpeR=$199,
-# Business prod_ULfA7QJoT3Ontk=$349.
+# Tier prices in AUD cents. Matches Stripe product/price contract
+# (verified 2026-05-03): Growth prod_U8D8vKuXXK7qhO/price_1T9wiVRoX8RKDDG5AOSi8Cu6=$69,
+# Pro prod_ULf4KFDh0UKpeR/price_1TMxjtRoX8RKDDG5btgRBrRu=$199,
+# Business prod_ULfA7QJoT3Ontk/price_1TMxplRoX8RKDDG59IaUg7aV=$349.
 _TIER_PRICE_AUD_CENTS = {
     "trial":        0,
     "free":         0,

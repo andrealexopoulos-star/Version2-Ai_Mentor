@@ -293,12 +293,16 @@ const LegacyIntegrationsQueryRedirect = () => {
   return <Navigate to="/integrations" replace />;
 };
 
-const LegacyUpgradeSuccessRedirect = () => {
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
+export const buildLegacyUpgradeSuccessRedirectPath = (search = '') => {
+  const params = new URLSearchParams(search);
   if (!params.get('status')) params.set('status', 'success');
   if (!params.get('from')) params.set('from', '/upgrade/success');
-  return <Navigate to={`/subscribe?${params.toString()}`} replace />;
+  return `/advisor?${params.toString()}`;
+};
+
+const LegacyUpgradeSuccessRedirect = () => {
+  const location = useLocation();
+  return <Navigate to={buildLegacyUpgradeSuccessRedirectPath(location.search)} replace />;
 };
 
 const LaunchRoute = ({ children, access, featureKey = null }) => {
