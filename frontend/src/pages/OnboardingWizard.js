@@ -40,6 +40,33 @@ const SIDEBAR_STEPS = [
   { num: 5, name: 'Your first brief', hint: 'Live in 90 seconds' },
 ];
 
+const TARGET_MARKET_OPTIONS = [
+  'Local consumers',
+  'Local SMBs',
+  'Australian SMBs',
+  'Enterprise',
+  'Government',
+  'Healthcare / NDIS',
+  'Construction / trades',
+  'Retail / ecommerce',
+  'Hospitality',
+  'Education',
+  'Professional services',
+  'Technology / SaaS',
+  'Finance / insurance',
+  'Real estate / property',
+  'Non-profit / community',
+  'Other',
+];
+
+const decodeHtmlEntities = (value) => {
+  const input = String(value || '');
+  if (!input || typeof window === 'undefined') return input;
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = input;
+  return textarea.value;
+};
+
 const OnboardingWizard = () => {
   // P0 2026-04-23 (Andreas CTO): signup/onboarding/calibration path is ALWAYS
   // light theme. Must own it explicitly so nothing upstream can leak dark.
@@ -53,15 +80,9 @@ const OnboardingWizard = () => {
   const [existingProfile, setExistingProfile] = useState({});
   const [resolvedFieldsMap, setResolvedFieldsMap] = useState({});
   const [enriching, setEnriching] = useState(false);
-  const [signalToggles, setSignalToggles] = useState({
-    deal_stalled: true,
-    cash_runway: true,
-    churn_risk: true,
-    invoice_aging: true,
-    meeting_overload: false,
-    competitor_mentions: true,
-    press_mentions: false,
-  });
+  const [productDraft, setProductDraft] = useState('');
+  const [signalDraft, setSignalDraft] = useState('');
+  const [detectState, setDetectState] = useState({ state: 'idle', reason: '' });
   const [enrichPreview, setEnrichPreview] = useState(null);
   const saveTimerRef = useRef(null);
 
@@ -126,6 +147,9 @@ const OnboardingWizard = () => {
       if (onboarding.current_step && onboarding.current_step > 0) {
         setCurrentStep(onboarding.current_step);
       }
+      if (Array.isArray(merged.business_signals)) {
+        setFormData((prev) => ({ ...prev, business_signals: merged.business_signals }));
+      }
     } catch (error) {
       console.warn('[Onboarding] Failed to load context:', error);
     } finally {
@@ -180,7 +204,8 @@ const OnboardingWizard = () => {
     'business_name', 'industry', 'business_stage', 'location', 'website',
     'target_market', 'business_model', 'main_products_services', 'unique_value_proposition',
     'team_size', 'years_operating', 'short_term_goals', 'long_term_goals',
-    'main_challenges', 'growth_strategy', 'growth_goals', 'risk_profile'
+    'main_challenges', 'growth_strategy', 'growth_goals', 'risk_profile',
+    'target_market_notes', 'business_signals'
   ];
 
   const syncToBusinessProfile = async (field, value) => {
@@ -209,14 +234,10 @@ const OnboardingWizard = () => {
     }
   };
 
-  const toggleSignal = (key) => {
-    setSignalToggles(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
   const completeOnboarding = async () => {
     setSaving(true);
     try {
-      await apiClient.put('/business-profile', { ...formData, signal_preferences: signalToggles });
+      await apiClient.put('/business-profile', formData);
       await apiClient.post('/onboarding/complete');
       markOnboardingComplete();
       trackActivationStep('onboarding_complete', { entrypoint: 'onboarding_wizard' });
@@ -241,16 +262,38 @@ const OnboardingWizard = () => {
     if (!url) return;
     
     setEnriching(true);
+    setDetectState({ state: 'loading', reason: '' });
     setEnrichPreview(null);
     try {
-      const res = await apiClient.post('/website/enrich', { url });
-      const data = res.data;
-      if (data.title || data.description) {
-        setEnrichPreview(data);
+      const res = await apiClient.post('/enrichment/website', { action: 'scan', url });
+      const responseState = String(res?.data?.state || '').toUpperCase();
+      const payload = res?.data?.enrichment || {};
+      const products = String(payload.main_products_services || '')
+        .split(/[\n;,]+/)
+        .map((item) => decodeHtmlEntities(item).trim())
+        .filter(Boolean);
+      const preview = {
+        title: decodeHtmlEntities(payload.title || ''),
+        description: decodeHtmlEntities(payload.description || ''),
+        inferred_name: decodeHtmlEntities(payload.business_name || payload.title || ''),
+        abn: decodeHtmlEntities(payload.abn || ''),
+        target_market: decodeHtmlEntities(payload.target_market || ''),
+        main_products_services: products,
+        business_signals: Array.isArray(payload.business_signals) ? payload.business_signals.map((s) => decodeHtmlEntities(s)) : [],
+      };
+      if (preview.title || preview.description || preview.inferred_name || preview.abn || preview.main_products_services.length > 0) {
+        setEnrichPreview(preview);
+        if (responseState && responseState !== 'DATA_AVAILABLE') {
+          setDetectState({ state: 'degraded', reason: responseState });
+        } else {
+          setDetectState({ state: 'ready', reason: '' });
+        }
       } else {
+        setDetectState({ state: 'degraded', reason: responseState || 'NO_DATA' });
         toast.info('Could not extract details from this website');
       }
     } catch {
+      setDetectState({ state: 'error', reason: 'REQUEST_FAILED' });
       toast.error('Failed to fetch website details');
     } finally {
       setEnriching(false);
@@ -266,9 +309,80 @@ const OnboardingWizard = () => {
     if (enrichPreview.description && !formData.mission_statement) {
       updates.mission_statement = enrichPreview.description;
     }
+    if (enrichPreview.abn && !formData.abn) {
+      updates.abn = enrichPreview.abn;
+    }
+    if (enrichPreview.target_market && !formData.target_market) {
+      updates.target_market = enrichPreview.target_market;
+    }
+    if (Array.isArray(enrichPreview.main_products_services) && enrichPreview.main_products_services.length > 0) {
+      updates.products_services_list = enrichPreview.main_products_services;
+      updates.products_services = enrichPreview.main_products_services.join(', ');
+    }
+    if (Array.isArray(enrichPreview.business_signals) && enrichPreview.business_signals.length > 0) {
+      updates.business_signals = enrichPreview.business_signals;
+    }
     setFormData(prev => ({ ...prev, ...updates }));
     setEnrichPreview(null);
+    setDetectState({ state: 'applied', reason: '' });
     toast.success('Details applied from website');
+  };
+
+  const getProductsList = () => {
+    if (Array.isArray(formData.products_services_list) && formData.products_services_list.length > 0) {
+      return formData.products_services_list;
+    }
+    return String(formData.products_services || '')
+      .split(/[\n;,]+/)
+      .map((item) => decodeHtmlEntities(item).trim())
+      .filter(Boolean);
+  };
+
+  const setProductsList = (items) => {
+    const cleaned = items.map((item) => decodeHtmlEntities(item).trim()).filter(Boolean);
+    updateField('products_services_list', cleaned);
+    updateField('products_services', cleaned.join(', '));
+  };
+
+  const addProduct = () => {
+    const value = productDraft.trim();
+    if (!value) return;
+    setProductsList([...getProductsList(), value]);
+    setProductDraft('');
+  };
+
+  const removeProduct = (index) => {
+    const next = getProductsList().filter((_, idx) => idx !== index);
+    setProductsList(next);
+  };
+
+  const updateProductAt = (index, value) => {
+    const next = [...getProductsList()];
+    next[index] = value;
+    setProductsList(next);
+  };
+
+  const getBusinessSignals = () => {
+    if (Array.isArray(formData.business_signals)) return formData.business_signals;
+    return [];
+  };
+
+  const addBusinessSignal = () => {
+    const value = signalDraft.trim();
+    if (!value) return;
+    updateField('business_signals', [...getBusinessSignals(), value]);
+    setSignalDraft('');
+  };
+
+  const updateBusinessSignalAt = (index, value) => {
+    const next = [...getBusinessSignals()];
+    next[index] = value;
+    updateField('business_signals', next);
+  };
+
+  const removeBusinessSignal = (index) => {
+    const next = getBusinessSignals().filter((_, idx) => idx !== index);
+    updateField('business_signals', next);
   };
 
   const hasExistingValue = (field) => {
@@ -592,6 +706,17 @@ const OnboardingWizard = () => {
                         <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>Business name: </span>{enrichPreview.inferred_name}
                       </div>
                     )}
+                    {enrichPreview.abn && (
+                      <div className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>ABN: </span>{enrichPreview.abn}
+                      </div>
+                    )}
+                    {Array.isArray(enrichPreview.main_products_services) && enrichPreview.main_products_services.length > 0 && (
+                      <div className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>Products/services: </span>
+                        {enrichPreview.main_products_services.join(', ')}
+                      </div>
+                    )}
                     <Button
                       onClick={applyEnrichment}
                       size="sm"
@@ -601,6 +726,13 @@ const OnboardingWizard = () => {
                     >
                       <CheckCircle className="w-3 h-3 mr-1" /> Apply these details
                     </Button>
+                  </div>
+                )}
+                {(detectState.state === 'degraded' || detectState.state === 'error') && (
+                  <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.24)' }} data-testid="detect-degraded-state">
+                    <p className="text-sm" style={{ color: '#F59E0B' }}>
+                      Detect completed in degraded mode. Reason: {detectState.reason || 'UNKNOWN'}
+                    </p>
                   </div>
                 )}
 
@@ -639,13 +771,25 @@ const OnboardingWizard = () => {
                 <WizStepHeader step={4} total={STEPS.length} title={<>Market & <em style={{ fontStyle: 'italic', color: '#E85D00' }}>customers</em></>} subtitle="Understanding your market helps BIQc prioritize signals." />
                 
                 {renderField('target_market', 'Target Market',
+                  <Select value={formData.target_market || ''} onValueChange={(val) => updateField('target_market', val)}>
+                    <SelectTrigger className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]" data-testid="select-target-market">
+                      <SelectValue placeholder="Select target market" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TARGET_MARKET_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {formData.target_market === 'Other' && renderField('target_market_notes', 'Target Market Notes',
                   <Textarea
-                    value={formData.target_market || ''}
-                    onChange={(e) => updateField('target_market', e.target.value)}
-                    placeholder="Describe your target market..."
+                    value={formData.target_market_notes || ''}
+                    onChange={(e) => updateField('target_market_notes', e.target.value)}
+                    placeholder="Describe your target market in detail..."
                     rows={3}
                     className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
-                    data-testid="input-target-market"
+                    data-testid="input-target-market-notes"
                   />
                 )}
 
@@ -704,14 +848,31 @@ const OnboardingWizard = () => {
                 <WizStepHeader step={5} total={STEPS.length} title={<>Products & <em style={{ fontStyle: 'italic', color: '#E85D00' }}>services</em></>} subtitle="What you offer and why customers choose you." />
                 
                 {renderField('products_services', 'Main Products/Services',
-                  <Textarea
-                    value={formData.products_services || ''}
-                    onChange={(e) => updateField('products_services', e.target.value)}
-                    placeholder="Describe your main offerings..."
-                    rows={3}
-                    className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
-                    data-testid="input-products"
-                  />
+                  <div className="space-y-3 mt-2">
+                    <div className="flex gap-2">
+                      <Input
+                        value={productDraft}
+                        onChange={(e) => setProductDraft(e.target.value)}
+                        placeholder="Add a product/service"
+                        className="bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]"
+                        data-testid="input-products-draft"
+                      />
+                      <Button type="button" onClick={addProduct} data-testid="btn-product-add">Add</Button>
+                    </div>
+                    <div className="space-y-2" data-testid="products-list-editor">
+                      {getProductsList().map((product, index) => (
+                        <div key={`${product}-${index}`} className="flex gap-2">
+                          <Input
+                            value={product}
+                            onChange={(e) => updateProductAt(index, e.target.value)}
+                            className="bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]"
+                            data-testid={`input-product-${index}`}
+                          />
+                          <Button type="button" variant="outline" onClick={() => removeProduct(index)} data-testid={`btn-product-remove-${index}`}>Delete</Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {renderField('unique_value_proposition', 'What makes you different?',
@@ -887,59 +1048,52 @@ const OnboardingWizard = () => {
               </div>
             )}
 
-            {/* STEP 8: Tune Signals — matches calibration.html mockup */}
+            {/* STEP 8: Tune Signals — customer-facing business conditions */}
             {currentStep === 8 && (
               <div className="space-y-6" data-testid="step-signals">
-                <WizStepHeader step={9} total={STEPS.length} title={<>Which signals matter <em style={{ fontStyle: 'italic', color: '#E85D00' }}>most to you</em>?</>} subtitle="BIQc starts with default signals tuned for your business type. Toggle anything you don't care about — you can adjust thresholds later." />
+                <WizStepHeader step={9} total={STEPS.length} title={<>Which signals matter <em style={{ fontStyle: 'italic', color: '#E85D00' }}>most to you</em>?</>} subtitle="Add the business conditions BIQc should actively track. You can edit these later in Business DNA." />
 
-                <div className="flex flex-col gap-3">
-                  {[
-                    { key: 'deal_stalled', title: 'Deal stalled in pipeline', hint: 'Active opportunity with no inbox activity for N days', threshold: 'Default threshold \u00b7 14 days' },
-                    { key: 'cash_runway', title: 'Cash runway alert', hint: 'Burn rate \u00f7 cash on hand drops below threshold', threshold: 'Default threshold \u00b7 6 months' },
-                    { key: 'churn_risk', title: 'Customer churn risk', hint: 'Engagement drop or sentiment shift in inbound emails', threshold: 'Default threshold \u00b7 21 days silence' },
-                    { key: 'invoice_aging', title: 'Invoice aging spike', hint: 'AR over 60 days as % of total trending up', threshold: 'Default threshold \u00b7 15% of AR' },
-                    { key: 'meeting_overload', title: 'Meeting overload', hint: 'Calendar density above your historical baseline', threshold: 'Default threshold \u00b7 60% above 4-week avg' },
-                    { key: 'competitor_mentions', title: 'Competitor mentions', hint: 'Inbound emails referencing named competitors', threshold: 'Default threshold \u00b7 3 mentions / 7 days' },
-                    { key: 'press_mentions', title: 'Press / media mentions', hint: 'Your business name surfacing in news, blogs, social', threshold: 'Default threshold \u00b7 Any mention' },
-                  ].map(signal => (
-                    <div key={signal.key} className="flex items-center justify-between gap-4 p-5 rounded-xl transition-all" style={{ background: 'var(--surface, #0E1628)', border: `1px solid ${signalToggles[signal.key] ? 'rgba(232,93,0,0.3)' : 'rgba(140,170,210,0.15)'}` }}>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[15px] font-semibold" style={{ color: 'var(--ink-display, #0A0A0A)' }}>{signal.title}</div>
-                        <div className="text-[13px] mt-0.5" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{signal.hint}</div>
-                        <div className="text-[11px] mt-2 uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>{signal.threshold}</div>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <Input
+                      value={signalDraft}
+                      onChange={(e) => setSignalDraft(e.target.value)}
+                      placeholder="Add a business condition signal (e.g. Cashflow pressure)"
+                      className="bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]"
+                      data-testid="input-signal-draft"
+                    />
+                    <Button type="button" onClick={addBusinessSignal} data-testid="btn-signal-add">Add</Button>
+                  </div>
+                  <div className="space-y-2" data-testid="signals-list-editor">
+                    {getBusinessSignals().map((signal, index) => (
+                      <div key={`${signal}-${index}`} className="flex gap-2">
+                        <Input
+                          value={signal}
+                          onChange={(e) => updateBusinessSignalAt(index, e.target.value)}
+                          className="bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]"
+                          data-testid={`input-signal-${index}`}
+                        />
+                        <Button type="button" variant="outline" onClick={() => removeBusinessSignal(index)} data-testid={`btn-signal-remove-${index}`}>Delete</Button>
                       </div>
-                      <button
-                        onClick={() => toggleSignal(signal.key)}
-                        className="relative shrink-0 rounded-full transition-all duration-200"
-                        style={{
-                          width: 44, height: 26,
-                          background: signalToggles[signal.key] ? '#E85D00' : 'rgba(140,170,210,0.3)',
-                          cursor: 'pointer', border: 'none',
-                        }}
-                        aria-label={`${signal.title} signal ${signalToggles[signal.key] ? 'enabled' : 'disabled'}`}
-                        data-testid={`toggle-${signal.key}`}
-                      >
-                        <span className="absolute top-[3px] rounded-full transition-all duration-200" style={{
-                          width: 20, height: 20,
-                          background: 'white',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                          left: signalToggles[signal.key] ? 21 : 3,
-                        }} />
-                      </button>
-                    </div>
-                  ))}
+                    ))}
+                    {getBusinessSignals().length === 0 && (
+                      <p className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }} data-testid="signals-empty-state">
+                        No business signals added yet. Continue now and tune these conditions later if needed.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-4">
                   <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
-                    {Object.values(signalToggles).filter(Boolean).length} of 7 signals active
+                    {getBusinessSignals().length} business signal{getBusinessSignals().length === 1 ? '' : 's'} configured
                   </span>
                   <button
-                    onClick={() => setSignalToggles({ deal_stalled: true, cash_runway: true, churn_risk: true, invoice_aging: true, meeting_overload: false, competitor_mentions: true, press_mentions: false })}
+                    onClick={() => updateField('business_signals', [])}
                     className="text-xs transition-colors"
                     style={{ color: '#E85D00', background: 'none', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}
                   >
-                    Use defaults
+                    Clear list
                   </button>
                 </div>
               </div>

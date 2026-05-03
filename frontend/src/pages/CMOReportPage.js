@@ -324,8 +324,10 @@ function CMOReportPageInner() {
       URL.revokeObjectURL(url);
     } catch (err) {
       const status = err?.response?.status;
-      if (status === 404 || status === 501) {
-        toast.info('PDF export is not available on this plan yet.');
+      if (status === 403) {
+        toast.info(err?.response?.data?.detail || 'PDF export is not available on this plan yet.');
+      } else if (status === 404 || status === 501) {
+        toast.error('PDF export endpoint is unavailable. Please contact support if this persists.');
       } else {
         toast.error('Could not generate PDF. Please try again.');
       }
