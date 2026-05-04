@@ -421,4 +421,14 @@ async def get_market_intelligence(current_user: dict = Depends(get_current_user)
         if bp.get("industry"):
             cognitive["industry"] = bp["industry"]
 
-    return {"cognitive": cognitive, "crm": crm_summary, "forensic": forensic, "has_data": bool(cognitive.get("system_state") or crm_summary or forensic)}
+    # Contract v2 / boundary scrub: cognitive carries data assembled from
+    # CRM (Merge.dev), forensic_calibration (operator_profile), and the
+    # snapshot summary. Each can carry internal markers (`source: 'merge'`,
+    # `_http_status`, etc.). Pass the entire response through the recursive
+    # internal-key scrub before it leaves the backend.
+    return scrub_response_for_external({
+        "cognitive": cognitive,
+        "crm": crm_summary,
+        "forensic": forensic,
+        "has_data": bool(cognitive.get("system_state") or crm_summary or forensic),
+    })
