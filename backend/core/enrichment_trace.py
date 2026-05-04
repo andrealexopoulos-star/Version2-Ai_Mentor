@@ -199,12 +199,27 @@ def _get_sb_client():
     Late import — this module loads in every backend boot, but the
     supabase_client module pulls in env vars that may not exist at import
     time in tests.
+
+    Uses init_supabase() (service-role admin client) — same path that
+    business_dna_persistence + ai_core use successfully. The previous
+    import (get_supabase_client) returned an ANON-key client which
+    cannot bypass RLS, so every trace insert silently failed and
+    enrichment_traces stayed empty across the entire 2026-05-04 deploy
+    of PR #450. Empty traces blank the CMO Report's roadmap + SWOT
+    items via the provenance filter — the user-visible CMO regression.
     """
     try:
-        from supabase_client import get_supabase_client
-        return get_supabase_client()
+        from supabase_client import init_supabase
+        client = init_supabase()
+        if client is None:
+            logger.warning(
+                "[enrichment_trace] supabase admin not configured; "
+                "trace writes are disabled until SUPABASE_URL + "
+                "SUPABASE_SERVICE_ROLE_KEY are set"
+            )
+        return client
     except Exception as exc:  # pragma: no cover
-        logger.debug("[enrichment_trace] sb client unavailable: %s", exc)
+        logger.warning("[enrichment_trace] sb client init failed: %s", exc)
         return None
 
 
