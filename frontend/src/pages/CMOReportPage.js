@@ -202,6 +202,18 @@ function CMOReportPageInner() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Share Report state — fix/p0-marjo-e8 (PR #449 follow-up).
+  // Replaces the previous handleShare which silently no-op'd when both
+  // navigator.share and navigator.clipboard were unavailable. We now ALWAYS
+  // hit the backend, ALWAYS show explicit success/error UI, and the action
+  // is provably persisted in `share_events`.
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareInFlight, setShareInFlight] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareExpiresAt, setShareExpiresAt] = useState('');
+  const [shareError, setShareError] = useState('');
+  const [shareCopied, setShareCopied] = useState(false);
+
   // SVG gauge animation
   const gaugeRef = useRef(null);
   const [gaugeVisible, setGaugeVisible] = useState(false);
@@ -319,30 +331,87 @@ function CMOReportPageInner() {
   const overall = mps.overall || 0;
   const gaugeOffset = gaugeVisible ? gaugeCirc - (gaugeCirc * overall / 100) : gaugeCirc;
 
+  // fix/p0-marjo-e8 (PR #449 follow-up): proven non-no-op share.
+  //   1. POSTs to /reports/cmo-report/share — backend writes share_events
+  //      row + returns {share_url, expires_at}.
+  //   2. On success: opens an in-page modal with the copyable URL. Never
+  //      a silent toast-only path — the URL must be visible until the
+  //      user explicitly closes the modal.
+  //   3. On failure: shows an explicit error banner inside the modal AND
+  //      a destructive toast. No silent no-op possible.
+  //   4. While the request is in-flight the button is disabled to prevent
+  //      a double-submit creating two share rows for one click.
   const handleShare = async () => {
+    if (shareInFlight) return;
+    setShareInFlight(true);
+    setShareError('');
+    setShareCopied(false);
+    setShareModalOpen(true);
     try {
-      const url = typeof window !== 'undefined' ? window.location.href : '';
-      if (navigator?.share) {
-        await navigator.share({ title: 'BIQc CMO Report', text: 'BIQc CMO Intelligence Report', url });
-        toast.success('Share sheet opened');
-        return;
+      const res = await apiClient.post('/reports/cmo-report/share', {});
+      const data = res?.data || {};
+      const url = String(data.share_url || '').trim();
+      if (!url) {
+        // Backend returned 200 with empty share_url — Contract v2 violation.
+        // Surface as error rather than silently swallowing.
+        throw new Error('Share link missing from response');
       }
-      if (navigator?.clipboard && url) {
-        await navigator.clipboard.writeText(url);
-        toast.success('Report link copied to clipboard');
-        return;
-      }
-      toast.info('Share is unavailable in this browser. Copy the URL from the address bar.');
+      setShareUrl(url);
+      setShareExpiresAt(String(data.expires_at || ''));
+      toast.success('Share link ready');
     } catch (err) {
-      const name = String(err?.name || '');
-      // User-cancelled native share should still get explicit non-error feedback.
-      if (name === 'AbortError') {
-        toast.info('Share cancelled');
-        return;
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.detail;
+      let msg;
+      if (status === 401 || status === 403) {
+        msg = 'You need to be signed in to share this report.';
+      } else if (status === 502 || status === 503) {
+        msg = 'The share service is temporarily unavailable. Please try again in a moment.';
+      } else if (typeof detail === 'string' && detail.length < 200) {
+        msg = detail;
+      } else {
+        msg = 'Could not create the share link. Please try again.';
       }
-      toast.error('Share failed. Please copy the URL from the address bar.');
+      setShareError(msg);
+      setShareUrl('');
+      toast.error(msg);
+    } finally {
+      setShareInFlight(false);
     }
   };
+
+  const handleCopyShareUrl = async () => {
+    if (!shareUrl) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        // Fallback for browsers without async clipboard support.
+        const ta = document.createElement('textarea');
+        ta.value = shareUrl;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'absolute';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand && document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setShareCopied(true);
+      toast.success('Copied!');
+      setTimeout(() => setShareCopied(false), 2500);
+    } catch (copyErr) {
+      // Never silent — surface the failure to the user.
+      toast.error('Could not copy. Please copy the URL manually.');
+    }
+  };
+
+  const handleCloseShareModal = () => {
+    setShareModalOpen(false);
+    setShareError('');
+    setShareCopied(false);
+  };
+
   const handleDownloadPDF = async () => {
     try {
       toast.info('Preparing PDF\u2026');
@@ -417,8 +486,25 @@ function CMOReportPageInner() {
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', background: V.sunken, border: `1px solid ${V.border}`, borderRadius: 'var(--r-pill)', fontSize: 10, fontWeight: 600, color: V.inkMuted, letterSpacing: 'var(--ls-caps)' }}>
                 {data.version || '\u2014'} &middot; {data.status || 'Draft'}
               </span>
-              <button onClick={handleShare} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, border: `1px solid ${V.border}`, background: 'transparent', color: V.ink, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>
-                <Share2 size={14} /> Share Report
+              <button
+                onClick={handleShare}
+                disabled={shareInFlight}
+                aria-busy={shareInFlight}
+                aria-label="Share Report"
+                data-testid="cmo-share-button"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  border: `1px solid ${V.border}`,
+                  background: 'transparent',
+                  color: V.ink,
+                  cursor: shareInFlight ? 'not-allowed' : 'pointer',
+                  opacity: shareInFlight ? 0.6 : 1,
+                  fontFamily: 'var(--font-ui)',
+                }}
+              >
+                {shareInFlight ? <Loader2 size={14} className="biqc-spin" /> : <Share2 size={14} />}
+                {shareInFlight ? 'Preparing…' : 'Share Report'}
               </button>
               <button onClick={handleDownloadPDF} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, border: 'none', background: `linear-gradient(135deg, ${V.lava}, ${V.lavaWarm})`, color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>
                 <Download size={14} /> Download PDF
@@ -793,6 +879,122 @@ function CMOReportPageInner() {
       </div>
 
       {/* ═══════════════════════════════════════════════════
+          SHARE REPORT MODAL — fix/p0-marjo-e8 (PR #449 follow-up)
+          Always visible after a click. Either shows the URL + Copy
+          button (success) or an explicit error banner (failure).
+          ═══════════════════════════════════════════════════ */}
+      {shareModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cmo-share-modal-title"
+          data-testid="cmo-share-modal"
+          onClick={handleCloseShareModal}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(15,17,28,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: V.surface, border: `1px solid ${V.border}`,
+              borderRadius: 'var(--r-lg)', maxWidth: 520, width: '100%',
+              padding: 24, boxShadow: '0 12px 40px rgba(15,17,28,0.25)',
+              fontFamily: 'var(--font-ui)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 id="cmo-share-modal-title" style={{
+                margin: 0, fontFamily: 'var(--font-display)',
+                fontSize: 18, color: V.inkDisplay, letterSpacing: 'var(--ls-display)',
+              }}>Share CMO Report</h3>
+              <button
+                onClick={handleCloseShareModal}
+                aria-label="Close share dialog"
+                data-testid="cmo-share-close"
+                style={{ background: 'transparent', border: 'none', color: V.inkMuted, cursor: 'pointer', fontSize: 18, lineHeight: 1 }}
+              >×</button>
+            </div>
+
+            {shareInFlight && (
+              <div data-testid="cmo-share-loading" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', color: V.inkSecondary, fontSize: 13 }}>
+                <Loader2 size={16} className="biqc-spin" />
+                Creating a secure share link…
+              </div>
+            )}
+
+            {!shareInFlight && shareError && (
+              <div
+                role="alert"
+                data-testid="cmo-share-error"
+                style={{
+                  background: 'var(--danger-wash)', color: 'var(--danger)',
+                  border: '1px solid var(--danger)',
+                  borderRadius: 8, padding: '10px 12px', fontSize: 13, marginBottom: 12,
+                }}
+              >
+                {shareError}
+                <div style={{ marginTop: 8 }}>
+                  <button
+                    onClick={handleShare}
+                    data-testid="cmo-share-retry"
+                    style={{
+                      background: 'transparent', color: 'var(--danger)',
+                      border: '1px solid var(--danger)',
+                      padding: '4px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
+                    }}
+                  >Try again</button>
+                </div>
+              </div>
+            )}
+
+            {!shareInFlight && !shareError && shareUrl && (
+              <>
+                <p style={{ margin: '0 0 8px', fontSize: 13, color: V.inkSecondary, lineHeight: 1.5 }}>
+                  Anyone with this link can view a read-only copy of this report. The link expires automatically.
+                </p>
+                <div style={{
+                  display: 'flex', alignItems: 'stretch', gap: 0,
+                  border: `1px solid ${V.border}`, borderRadius: 8, overflow: 'hidden',
+                  marginBottom: 12,
+                }}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={shareUrl}
+                    data-testid="cmo-share-url"
+                    onFocus={(e) => e.target.select()}
+                    style={{
+                      flex: 1, padding: '10px 12px', border: 'none', outline: 'none',
+                      background: V.sunken, color: V.ink, fontSize: 13, fontFamily: 'var(--font-mono)',
+                    }}
+                  />
+                  <button
+                    onClick={handleCopyShareUrl}
+                    data-testid="cmo-share-copy"
+                    style={{
+                      padding: '10px 16px', border: 'none',
+                      background: shareCopied ? 'var(--positive)' : V.lava,
+                      color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+                      transition: 'background 0.2s ease',
+                    }}
+                  >{shareCopied ? 'Copied!' : 'Copy'}</button>
+                </div>
+                {shareExpiresAt && (
+                  <div style={{ fontSize: 11, color: V.inkMuted }}>
+                    Expires {new Date(shareExpiresAt).toLocaleString()}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════
           FLOATING PDF BUTTON
           ═══════════════════════════════════════════════════ */}
       <FloatingPDFButton onClick={handleDownloadPDF} />
@@ -808,6 +1010,11 @@ function CMOReportPageInner() {
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
+        @keyframes biqc-spin-kf {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .biqc-spin { animation: biqc-spin-kf 0.9s linear infinite; }
         @media (max-width: 767px) {
           /* Stack gauge grid on mobile */
           div[style*="gridTemplateColumns: '240px 1fr'"],
