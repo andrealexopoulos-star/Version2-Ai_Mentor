@@ -1047,7 +1047,8 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
             col_fp = row.get("digital_footprint")
             if isinstance(col_fp, dict) and col_fp:
                 enrichment.setdefault("digital_footprint", col_fp)
-            enrichment_created_at = row.get("created_at") or row.get("updated_at")
+            # Use the freshest timestamp for report recency and cache correctness.
+            enrichment_created_at = row.get("updated_at") or row.get("created_at")
     except Exception as enr_err:
         logger.warning(f"[cmo-report] business_dna_enrichment lookup failed: {enr_err}")
 
@@ -1211,7 +1212,13 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     }
     response["section_inventory"] = section_inventory
 
-    report_state = derive_report_state([v["status"] for v in section_inventory.values()])
+    section_states = [v["status"] for v in section_inventory.values()]
+    report_state = derive_report_state(section_states)
+    # Hard guard: if we have zero evidence points after shaping, this can never
+    # be presented as a partial/complete report.
+    real_points = _count_real_data_points(response)
+    if real_points == 0 and report_state != REPORT_STATE_FAILED:
+        report_state = REPORT_STATE_INSUFFICIENT
     if report_state == REPORT_STATE_COMPLETE:
         response["state"] = ExternalState.DATA_AVAILABLE.value
         response["state_message"] = "Report sections are source-backed."
@@ -1226,9 +1233,9 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         response["state_message"] = "Report failed zero-fake-data checks due to placeholder or invalid sections."
     response["report_state"] = report_state
 
-    evidence_confidence = estimate_confidence([v["status"] for v in section_inventory.values()])
+    evidence_confidence = estimate_confidence(section_states)
     response["confidence"] = confidence if confidence > 0 else evidence_confidence
-    response["data_points"] = f"{_count_real_data_points(response)} evidence points"
+    response["data_points"] = f"{real_points} evidence points"
 
     # 8) Contract v2 / Step 3c (2026-04-23): scrub internal keys at any depth
     #    before returning. Strips ai_errors, sources.edge_tools, _http_status,
