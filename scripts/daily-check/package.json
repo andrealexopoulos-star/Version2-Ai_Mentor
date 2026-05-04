@@ -8,7 +8,9 @@
     "aggregate": "tsx aggregate-results.ts",
     "persist": "tsx persist-run.ts",
     "alert": "tsx post-alerts.ts",
-    "escalation": "tsx check-escalation.ts"
+    "escalation": "tsx check-escalation.ts",
+    "test": "node --test --import tsx --test-reporter=spec __tests__/*.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@playwright/test": "1.58.0",

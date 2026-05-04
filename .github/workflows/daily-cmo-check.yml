@@ -265,9 +265,26 @@ jobs:
         run: npx tsx check-escalation.ts
 
       - name: Post alert webhook on FAIL or DEGRADED
+        # Per F6 P0-2 patch: post-alerts.ts now fails the step (exit 3) if the
+        # webhook delivery cannot be made after 3 retries. We use
+        # `continue-on-error: true` so the next steps (GH issue creation,
+        # final fail-on-not-pass) still run — but the step itself surfaces
+        # red in the workflow UI and the ::error:: annotation appears at the
+        # top of the run page.
         if: always()
+        continue-on-error: true
+        id: post_alert
         working-directory: scripts/daily-check
         run: npx tsx post-alerts.ts
+
+      - name: Upload alert delivery marker
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alert-delivery-${{ github.run_id }}
+          path: scripts/daily-check/aggregate-input/alert-delivery.json
+          if-no-files-found: ignore
+          retention-days: 90
 
       - name: Open GitHub issue on FAIL
         if: always()
@@ -285,6 +302,18 @@ jobs:
               core.info('Overall PASS — no issue opened.');
               return;
             }
+            // Per F6 P0-2 patch: read the alert-delivery marker so the issue
+            // body explicitly records whether the webhook also failed (a
+            // signal Andreas needs to see in the same place as the failure).
+            const markerPath = 'scripts/daily-check/aggregate-input/alert-delivery.json';
+            let alertMarker = null;
+            if (fs.existsSync(markerPath)) {
+              try {
+                alertMarker = JSON.parse(fs.readFileSync(markerPath, 'utf8'));
+              } catch (e) {
+                core.warning(`alert-delivery.json present but unparseable: ${e.message}`);
+              }
+            }
             const lines = [
               `Daily CMO E2E check ${agg.overall_status} at ${agg.run_at_utc} UTC.`,
               ``,
@@ -293,9 +322,30 @@ jobs:
               `- Pass: ${agg.pass_count}/5  Fail: ${agg.fail_count}/5  Degraded: ${agg.degraded_count}/5`,
               `- Severity: ${agg.severity}`,
               ``,
-              `## Per-URL results`,
-              ``,
             ];
+            if (alertMarker) {
+              if (alertMarker.delivered) {
+                lines.push(`- Alert webhook: delivered on attempt ${alertMarker.attempt_count}`);
+              } else {
+                lines.push(`- **ALERT WEBHOOK FAILED** after ${alertMarker.attempt_count} attempts (final status=${alertMarker.final_status ?? 'NONE'}, error=${alertMarker.final_error ?? 'unknown'}). ALERT_WEBHOOK_URL secret may be invalid/rotated — fix urgently.`);
+              }
+            } else {
+              lines.push(`- Alert webhook: delivery status unknown (no marker file)`);
+            }
+            // Per F6 P0-3: if the aggregator detected missing per-URL JSONs
+            // (matrix slot crashed before writing result.json), surface the
+            // missing URLs at the top of the issue body — they're the most
+            // actionable signal of "tests didn't even run".
+            if (Array.isArray(agg.missing_urls) && agg.missing_urls.length > 0) {
+              lines.push(``);
+              lines.push(`### MISSING per-URL results (matrix slots crashed before writing JSON)`);
+              for (const m of agg.missing_urls) {
+                lines.push(`- ${m.label || m.url} (${m.url})`);
+              }
+            }
+            lines.push(``);
+            lines.push(`## Per-URL results`);
+            lines.push(``);
             for (const u of (agg.per_url || [])) {
               lines.push(`### ${u.label} (${u.url}) — ${u.overall_status}`);
               lines.push('');
