@@ -471,10 +471,17 @@ def filter_swot_items_with_provenance(
             continue
         if not text or is_placeholder_string(text):
             continue
-        # Provenance check: either a trace id is present, OR the item text
-        # mentions a competitor surfaced by this scan, OR the caller marked
-        # the item with an explicit evidence_tag (from our own enrichment).
-        has_trace = any(t in trace_set for t in item_traces) or bool(item_traces)
+        # Provenance check: at least one item_trace MUST intersect the
+        # available trace set, OR the item text mentions a real competitor
+        # surfaced by this scan, OR the caller marked the item with an
+        # explicit evidence_tag (from our own enrichment).
+        #
+        # F7 P1-2 (BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2):
+        # Removed `or bool(item_traces)` — that clause silently passed items
+        # whose item_traces were FABRICATED (not in trace_set). Provenance
+        # MUST require a real intersection — that's the whole point of the
+        # check. R6 finding 13041978-flagged.
+        has_trace = any(t in trace_set for t in item_traces)
         has_comp_mention = any(c and c in text.lower() for c in comp_set_lower)
         has_evidence_tag = bool(evidence_tag)
         if not (has_trace or has_comp_mention or has_evidence_tag):
@@ -531,7 +538,12 @@ def filter_roadmap_items_with_provenance(
             continue
         if not text or is_placeholder_string(text):
             continue
-        has_trace = any(t in trace_set for t in item_traces) or bool(item_traces)
+        # F7 P1-2 (BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2):
+        # Removed `or bool(item_traces)` — fabricated trace ids that don't
+        # intersect the available_trace_ids set must NOT pass the provenance
+        # check. Real intersection or competitor/metric mention or
+        # evidence_tag is required.
+        has_trace = any(t in trace_set for t in item_traces)
         has_comp_mention = any(c and c in text.lower() for c in comp_set_lower)
         has_metric_mention = any(m and m in text.lower() for m in metric_set_lower)
         has_evidence_tag = bool(evidence_tag)
