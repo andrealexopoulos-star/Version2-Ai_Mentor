@@ -630,66 +630,75 @@ async def generate_benchmark_pdf(current_user: dict = Depends(get_current_user))
 @router.post("/reports/cmo-report/pdf")
 async def generate_cmo_report_pdf(current_user: dict = Depends(get_current_user)):
     """Generate CMO report PDF for entitled plans (Pro and above)."""
-    from supabase_client import get_supabase_client
-    from routes.intelligence_modules import get_cmo_report
+    try:
+        from supabase_client import get_supabase_client
+        from routes.intelligence_modules import get_cmo_report
 
-    sb = get_supabase_client()
-    user_row = sb.table('users').select('subscription_tier').eq('id', current_user['id']).maybe_single().execute()
-    tier = str((user_row.data or {}).get('subscription_tier', 'free')).strip().lower()
-    entitled_tiers = {'pro', 'professional', 'business', 'enterprise', 'custom_build', 'super_admin'}
-    if tier not in entitled_tiers:
-        raise HTTPException(status_code=403, detail='PDF export is available on Pro and Business plans.')
+        sb = get_supabase_client()
+        user_row = sb.table('users').select('subscription_tier').eq('id', current_user['id']).maybe_single().execute()
+        tier = str((user_row.data or {}).get('subscription_tier', 'free')).strip().lower()
+        entitled_tiers = {'pro', 'professional', 'business', 'enterprise', 'custom_build', 'super_admin'}
+        if tier not in entitled_tiers:
+            raise HTTPException(status_code=403, detail='PDF export is available on Pro and Business plans.')
 
-    report = await get_cmo_report(current_user)
-    if not isinstance(report, dict):
-        raise HTTPException(status_code=500, detail='CMO report payload is unavailable')
+        report = await get_cmo_report(current_user)
+        if not isinstance(report, dict):
+            raise HTTPException(status_code=500, detail='CMO report payload is unavailable')
 
-    pdf = _get_safe_pdf_class()()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-    pdf.set_font("Helvetica", "B", 18)
-    pdf.cell(0, 12, "BIQc CMO Report", new_x="LMARGIN", new_y="NEXT")
-    pdf.set_font("Helvetica", "", 10)
-    pdf.cell(0, 6, f"Business: {report.get('company_name') or 'Your business'}", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 6, f"Report Date: {report.get('report_date') or datetime.now(timezone.utc).strftime('%d/%m/%Y')}", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 6, f"Confidence: {report.get('confidence') or '--'}", new_x="LMARGIN", new_y="NEXT")
-    pdf.ln(4)
-
-    def _section(title: str, lines: List[str]) -> None:
-        pdf.set_font("Helvetica", "B", 12)
-        pdf.cell(0, 8, title, new_x="LMARGIN", new_y="NEXT")
+        pdf = _get_safe_pdf_class()()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        pdf.set_font("Helvetica", "B", 18)
+        pdf.cell(0, 12, "BIQc CMO Report", new_x="LMARGIN", new_y="NEXT")
         pdf.set_font("Helvetica", "", 10)
-        if not lines:
-            pdf.cell(0, 6, "No data available.", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 6, f"Business: {report.get('company_name') or 'Your business'}", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 6, f"Report Date: {report.get('report_date') or datetime.now(timezone.utc).strftime('%d/%m/%Y')}", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 6, f"Confidence: {report.get('confidence') or '--'}", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 6, f"Report State: {report.get('report_state') or report.get('state') or 'UNKNOWN'}", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(4)
+
+        def _section(title: str, lines: List[str]) -> None:
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.cell(0, 8, title, new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 10)
+            if not lines:
+                pdf.cell(0, 6, "Insufficient evidence for this section.", new_x="LMARGIN", new_y="NEXT")
+                pdf.ln(2)
+                return
+            for line in lines:
+                pdf.multi_cell(0, 6, f"- {line}")
             pdf.ln(2)
-            return
-        for line in lines:
-            pdf.multi_cell(0, 6, f"- {line}")
-        pdf.ln(2)
 
-    _section("Chief Marketing Summary", [str(report.get("executive_summary") or "").strip()] if report.get("executive_summary") else [])
-    _section("Market Position Score", [
-        f"Overall: {(report.get('market_position') or {}).get('overall', '--')}",
-        f"Brand: {(report.get('market_position') or {}).get('brand', '--')}",
-        f"Digital: {(report.get('market_position') or {}).get('digital', '--')}",
-        f"Sentiment: {(report.get('market_position') or {}).get('sentiment', '--')}",
-    ])
-    swot = report.get("swot") or {}
-    _section("SWOT - Strengths", [str(x) for x in (swot.get("strengths") or [])])
-    _section("SWOT - Weaknesses", [str(x) for x in (swot.get("weaknesses") or [])])
-    _section("SWOT - Opportunities", [str(x) for x in (swot.get("opportunities") or [])])
-    _section("SWOT - Threats", [str(x) for x in (swot.get("threats") or [])])
-    roadmap = report.get("roadmap") or {}
-    _section("Strategic Roadmap - 7 Day", [str(x) for x in (roadmap.get("quick_wins") or [])])
-    _section("Strategic Roadmap - 30 Day", [str(x) for x in (roadmap.get("priorities") or [])])
-    _section("Strategic Roadmap - 90 Day", [str(x) for x in (roadmap.get("strategic") or [])])
+        _section("Chief Marketing Summary", [str(report.get("executive_summary") or "").strip()] if report.get("executive_summary") else [])
+        _section("Market Position Score", [
+            f"Overall: {(report.get('market_position') or {}).get('overall', '--')}",
+            f"Brand: {(report.get('market_position') or {}).get('brand', '--')}",
+            f"Digital: {(report.get('market_position') or {}).get('digital', '--')}",
+            f"Sentiment: {(report.get('market_position') or {}).get('sentiment', '--')}",
+        ])
+        swot = report.get("swot") or {}
+        _section("SWOT - Strengths", [str(x) for x in (swot.get("strengths") or [])])
+        _section("SWOT - Weaknesses", [str(x) for x in (swot.get("weaknesses") or [])])
+        _section("SWOT - Opportunities", [str(x) for x in (swot.get("opportunities") or [])])
+        _section("SWOT - Threats", [str(x) for x in (swot.get("threats") or [])])
+        roadmap = report.get("roadmap") or {}
+        _section("Strategic Roadmap - 7 Day", [str(x) for x in (roadmap.get("quick_wins") or [])])
+        _section("Strategic Roadmap - 30 Day", [str(x) for x in (roadmap.get("priorities") or [])])
+        _section("Strategic Roadmap - 90 Day", [str(x) for x in (roadmap.get("strategic") or [])])
 
-    workspace_id = current_user.get('id', 'unknown')
-    ts = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
-    filename = f"biqc_cmo_report_{workspace_id[:8]}_{ts}.pdf"
-    pdf_bytes = bytes(pdf.output())
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+        workspace_id = current_user.get('id', 'unknown')
+        ts = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+        filename = f"biqc_cmo_report_{workspace_id[:8]}_{ts}.pdf"
+        pdf_bytes = bytes(pdf.output())
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except HTTPException:
+        raise
+    except ImportError:
+        raise HTTPException(status_code=500, detail="PDF generation library not available")
+    except Exception as e:
+        logger.error(f"CMO PDF generation failed: {e}")
+        raise HTTPException(status_code=500, detail="CMO PDF generation failed")

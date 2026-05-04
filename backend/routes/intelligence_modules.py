@@ -855,13 +855,21 @@ def _shape_roadmap_from_enrichment(enr: Dict[str, Any]) -> Dict[str, List[Any]]:
     priority = enr.get("cmo_priority_actions") if isinstance(enr.get("cmo_priority_actions"), list) else []
     industry = enr.get("industry_action_items") if isinstance(enr.get("industry_action_items"), list) else []
 
-    def _wrap(items: List[Any], pri: str) -> List[Dict[str, str]]:
+    def _wrap(items: List[Any], pri: str) -> List[Dict[str, Any]]:
         out = []
         for it in items:
             text = it if isinstance(it, str) else (it.get("text") if isinstance(it, dict) else None)
             if not text:
                 continue
-            out.append({"text": text, "priority": pri})
+            entry: Dict[str, Any] = {"text": str(text), "priority": pri}
+            if isinstance(it, dict):
+                if it.get("evidence_tag"):
+                    entry["evidence_tag"] = str(it.get("evidence_tag"))
+                elif it.get("source") or it.get("source_type"):
+                    entry["evidence_tag"] = str(it.get("source") or it.get("source_type"))
+                if isinstance(it.get("confidence"), (int, float)):
+                    entry["confidence"] = round(float(it.get("confidence")), 2)
+            out.append(entry)
         return out
 
     # 7-day quick wins: top-of-list priority actions (first 3, tagged critical).

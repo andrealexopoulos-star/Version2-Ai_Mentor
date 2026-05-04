@@ -324,6 +324,7 @@ function CMOReportPageInner() {
       const url = typeof window !== 'undefined' ? window.location.href : '';
       if (navigator?.share) {
         await navigator.share({ title: 'BIQc CMO Report', text: 'BIQc CMO Intelligence Report', url });
+        toast.success('Share sheet opened');
         return;
       }
       if (navigator?.clipboard && url) {
@@ -331,9 +332,15 @@ function CMOReportPageInner() {
         toast.success('Report link copied to clipboard');
         return;
       }
-      toast.info('Copy the URL from the address bar to share');
-    } catch {
-      // user cancelled share sheet \u2014 silent
+      toast.info('Share is unavailable in this browser. Copy the URL from the address bar.');
+    } catch (err) {
+      const name = String(err?.name || '');
+      // User-cancelled native share should still get explicit non-error feedback.
+      if (name === 'AbortError') {
+        toast.info('Share cancelled');
+        return;
+      }
+      toast.error('Share failed. Please copy the URL from the address bar.');
     }
   };
   const handleDownloadPDF = async () => {
@@ -699,6 +706,8 @@ function CMOReportPageInner() {
                   {(col.items.length ? col.items : [{ text: 'Insufficient evidence for recommendations in this horizon.', priority: 'medium' }]).map((item, i) => {
                     const text = typeof item === 'string' ? item : item.text;
                     const priority = typeof item === 'string' ? 'medium' : (item.priority || 'medium');
+                    const evidenceTag = typeof item === 'string' ? '' : (item.evidence_tag || '');
+                    const confidence = typeof item === 'string' ? null : (typeof item.confidence === 'number' ? item.confidence : null);
                     return (
                       <div key={i} style={{ display: 'flex', gap: 12, padding: 12, borderRadius: 8, background: V.sunken, alignItems: 'flex-start' }}>
                         <span style={{
@@ -706,7 +715,15 @@ function CMOReportPageInner() {
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 10, fontWeight: 700, color: '#fff', background: col.dotColor,
                         }}>{i + 1}</span>
-                        <span style={{ fontSize: 14, color: V.inkSecondary, lineHeight: 1.5, flex: 1 }}>{text}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+                          <span style={{ fontSize: 14, color: V.inkSecondary, lineHeight: 1.5 }}>{text}</span>
+                          {(evidenceTag || confidence !== null) && (
+                            <span style={{ fontSize: 11, color: V.inkMuted }}>
+                              {evidenceTag ? `Evidence: ${evidenceTag}` : 'Evidence: inferred from available scan signals'}
+                              {confidence !== null ? ` • Confidence: ${Math.round(confidence * 100)}%` : ''}
+                            </span>
+                          )}
+                        </div>
                         <PriorityBadge priority={priority} />
                       </div>
                     );

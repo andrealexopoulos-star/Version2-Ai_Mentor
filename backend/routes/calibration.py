@@ -328,6 +328,14 @@ async def _call_edge_function(
             if res.status_code >= 500 and attempt == 0:
                 await asyncio.sleep(2)
                 continue
+            # Some infra/warmup edge functions intentionally return 204 with
+            # no JSON body. Treat this as a healthy success envelope.
+            if res.status_code == 204:
+                return _normalize_edge_result(
+                    function_name,
+                    res.status_code,
+                    {"ok": True, "code": "NO_CONTENT", "status": "ok"},
+                )
             try:
                 data = res.json()
             except Exception:
@@ -2431,7 +2439,42 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
                 return result
 
-            deep_recon, social_enrichment, competitor_monitor, market_analysis, market_scorer, browse_ai_reviews, semrush_intel = await asyncio.gather(
+            (
+                warm_cognitive,
+                calibration_business_dna,
+                business_identity_lookup,
+                calibration_sync,
+                deep_recon,
+                social_enrichment,
+                competitor_monitor,
+                market_analysis,
+                market_scorer,
+                browse_ai_reviews,
+                semrush_intel,
+            ) = await asyncio.gather(
+                _cached_edge("warm-cognitive-engine", {"user_id": user_id}),
+                _cached_edge(
+                    "calibration-business-dna",
+                    {
+                        "user_id": user_id,
+                        "website_url": url,
+                        "website": url,
+                        "business_name_hint": business_name_hint,
+                        "location_hint": (enrichment.get("location") or enrichment.get("target_market") or "Australia"),
+                        "abn_hint": (abn_candidates[0] if abn_candidates else ""),
+                    },
+                ),
+                _cached_edge(
+                    "business-identity-lookup",
+                    {
+                        "user_id": user_id,
+                        "domain": domain,
+                        "business_name_hint": business_name_hint,
+                        "location_hint": (enrichment.get("location") or enrichment.get("target_market") or "Australia"),
+                        "abn": (abn_candidates[0] if abn_candidates else ""),
+                    },
+                ),
+                _cached_edge("calibration-sync", {"user_id": user_id}),
                 _cached_edge("deep-web-recon", {"user_id": user_id, "website": url}),
                 _cached_edge("social-enrichment", {"user_id": user_id, "website_url": url}),
                 _cached_edge("competitor-monitor", {"user_id": user_id}),
@@ -2451,6 +2494,10 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 _cached_edge("semrush-domain-intel", {"user_id": user_id, "domain": domain, "database": "us"}),
                 return_exceptions=True,
             )
+            if isinstance(warm_cognitive, Exception): warm_cognitive = {"error": str(warm_cognitive)}
+            if isinstance(calibration_business_dna, Exception): calibration_business_dna = {"error": str(calibration_business_dna)}
+            if isinstance(business_identity_lookup, Exception): business_identity_lookup = {"error": str(business_identity_lookup)}
+            if isinstance(calibration_sync, Exception): calibration_sync = {"error": str(calibration_sync)}
             if isinstance(deep_recon, Exception): deep_recon = {"error": str(deep_recon)}
             if isinstance(social_enrichment, Exception): social_enrichment = {"error": str(social_enrichment)}
             if isinstance(competitor_monitor, Exception): competitor_monitor = {"error": str(competitor_monitor)}
@@ -2458,6 +2505,10 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if isinstance(market_scorer, Exception): market_scorer = {"error": str(market_scorer)}
             if isinstance(browse_ai_reviews, Exception): browse_ai_reviews = {"error": str(browse_ai_reviews)}
             if isinstance(semrush_intel, Exception): semrush_intel = {"error": str(semrush_intel)}
+            if not isinstance(warm_cognitive, dict): warm_cognitive = {"error": f"invalid_payload:{type(warm_cognitive).__name__}"}
+            if not isinstance(calibration_business_dna, dict): calibration_business_dna = {"error": f"invalid_payload:{type(calibration_business_dna).__name__}"}
+            if not isinstance(business_identity_lookup, dict): business_identity_lookup = {"error": f"invalid_payload:{type(business_identity_lookup).__name__}"}
+            if not isinstance(calibration_sync, dict): calibration_sync = {"error": f"invalid_payload:{type(calibration_sync).__name__}"}
             if not isinstance(deep_recon, dict): deep_recon = {"error": f"invalid_payload:{type(deep_recon).__name__}"}
             if not isinstance(social_enrichment, dict): social_enrichment = {"error": f"invalid_payload:{type(social_enrichment).__name__}"}
             if not isinstance(competitor_monitor, dict): competitor_monitor = {"error": f"invalid_payload:{type(competitor_monitor).__name__}"}
@@ -2468,6 +2519,10 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
 
             ai_errors = []
             edge_failures = [
+                ("warm-cognitive-engine", warm_cognitive),
+                ("calibration-business-dna", calibration_business_dna),
+                ("business-identity-lookup", business_identity_lookup),
+                ("calibration-sync", calibration_sync),
                 ("deep-web-recon", deep_recon),
                 ("social-enrichment", social_enrichment),
                 ("competitor-monitor", competitor_monitor),
@@ -2483,6 +2538,40 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         "error": str((edge_result or {}).get("error") or (edge_result or {}).get("detail") or "edge_function_failed"),
                         "status": (edge_result or {}).get("_http_status"),
                     })
+
+            # Ingest identity/profile fields from dedicated edge outputs only
+            # when they add real signal over baseline scrape extraction.
+            if isinstance(business_identity_lookup, dict) and not _edge_result_failed(business_identity_lookup):
+                if not enrichment.get("abn") and business_identity_lookup.get("abn"):
+                    enrichment["abn"] = str(business_identity_lookup.get("abn"))
+                if not enrichment.get("business_name") and business_identity_lookup.get("legal_name"):
+                    enrichment["business_name"] = str(business_identity_lookup.get("legal_name"))
+                if not enrichment.get("location") and business_identity_lookup.get("address"):
+                    enrichment["location"] = str(business_identity_lookup.get("address"))
+                enrichment["business_identity_lookup"] = {
+                    "status": business_identity_lookup.get("status") or "unknown",
+                    "match_confidence": business_identity_lookup.get("match_confidence"),
+                    "match_reason": business_identity_lookup.get("match_reason"),
+                }
+
+            if isinstance(calibration_business_dna, dict) and not _edge_result_failed(calibration_business_dna):
+                extracted_data = calibration_business_dna.get("extracted_data")
+                if isinstance(extracted_data, dict):
+                    for src_key, target_key in (
+                        ("business_name", "business_name"),
+                        ("industry", "industry"),
+                        ("location", "location"),
+                        ("abn", "abn"),
+                        ("target_market", "target_market"),
+                        ("main_products_services", "main_products_services"),
+                    ):
+                        if not enrichment.get(target_key) and extracted_data.get(src_key):
+                            enrichment[target_key] = extracted_data.get(src_key)
+                enrichment["calibration_business_dna"] = {
+                    "ok": True,
+                    "fields_extracted": calibration_business_dna.get("fields_extracted"),
+                    "generated_at": calibration_business_dna.get("generated_at"),
+                }
 
             edge_meta = {
                 "market_analysis_failed": _edge_result_failed(market_analysis),
@@ -2896,6 +2985,22 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             try:
                 enrichment.setdefault("sources", {})
                 enrichment["sources"]["edge_tools"] = {
+                    "warm_cognitive_engine": {
+                        "ok": not _edge_result_failed(warm_cognitive),
+                        "status": (warm_cognitive or {}).get("_http_status"),
+                    } if 'warm_cognitive' in locals() else {"ok": False},
+                    "calibration_business_dna": {
+                        "ok": not _edge_result_failed(calibration_business_dna),
+                        "status": (calibration_business_dna or {}).get("_http_status"),
+                    } if 'calibration_business_dna' in locals() else {"ok": False},
+                    "business_identity_lookup": {
+                        "ok": not _edge_result_failed(business_identity_lookup),
+                        "status": (business_identity_lookup or {}).get("_http_status"),
+                    } if 'business_identity_lookup' in locals() else {"ok": False},
+                    "calibration_sync": {
+                        "ok": not _edge_result_failed(calibration_sync),
+                        "status": (calibration_sync or {}).get("_http_status"),
+                    } if 'calibration_sync' in locals() else {"ok": False},
                     "deep_web_recon": {
                         "ok": not _edge_result_failed(deep_recon),
                         "status": (deep_recon or {}).get("_http_status"),
