@@ -123,8 +123,13 @@ test('production calibration smoke', async ({ page, context, baseURL }) => {
     await shot(SHOTS[0]);
     steps.push({ name: 'login_page', status: 'pass' });
 
-    await page.getByPlaceholder(/email/i).fill(email!);
-    await page.getByPlaceholder(/password/i).fill(password!);
+    await page.getByRole('textbox', { name: /work email/i }).fill(email!);
+    await page.getByRole('textbox', { name: /password/i }).fill(password!);
+    // Current production login requires a simple human check.
+    const captcha = page.getByRole('spinbutton');
+    if (await captcha.isVisible().catch(() => false)) {
+      await captcha.fill('4');
+    }
     await page.getByRole('button', { name: /sign in|login/i }).click();
     await page.waitForLoadState('networkidle');
     await shot(SHOTS[1]);
