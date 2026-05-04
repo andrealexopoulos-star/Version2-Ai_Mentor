@@ -1113,10 +1113,18 @@ def _build_section_evidence_for_cmo(
         reason=None if website_url else "Business website not yet captured for this scan.",
     )
     scan_source = response.get("scan_source")
+    # F7 P1-1 (BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2):
+    # Use evidence key "name" — NOT "source". The key "source" is in the
+    # response_sanitizer._INTERNAL_KEYS denylist (it identifies supplier
+    # provenance like "semrush"/"perplexity") and would be stripped by
+    # scrub_response_for_external, leaving evidence={} and degrading the
+    # scan_source section to effectively-empty. "name" is also clearer
+    # semantically — this is the source-name label, not a supplier provenance
+    # tag. R6 finding 13041978-flagged.
     sections["scan_source"] = make_section(
         "scan_source",
         state=section_state_for_value(scan_source),
-        evidence={"source": scan_source} if scan_source else None,
+        evidence={"name": scan_source} if scan_source else None,
     )
     real_pts = _count_real_data_points(response)
     sections["data_points_count"] = make_section(

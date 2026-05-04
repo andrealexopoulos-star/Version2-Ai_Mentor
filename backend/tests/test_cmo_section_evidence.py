@@ -46,7 +46,7 @@ from core.section_evidence import (  # noqa: E402
     section_state_for_value,
     validate_section_evidence,
 )
-from core.response_sanitizer import ExternalState  # noqa: E402
+from core.response_sanitizer import ExternalState, scrub_response_for_external  # noqa: E402
 
 
 # ── 1. Schema + state validation ──
@@ -500,3 +500,172 @@ def test_cmo_endpoint_every_section_validates_against_schema(monkeypatch):
     response_rich = asyncio.run(intel_mod2.get_cmo_report({"id": "user-1"}))
     for sid in SECTION_IDS:
         validate_section_evidence(response_rich["sections"][sid], section_id=sid)
+
+
+# ── 6. F7 P1 regression tests (R6 findings on E6) ──────────────────────────
+#
+# Both regressions cover silent-failure paths the E6 contract was meant to
+# close but quietly bypassed.
+
+
+def test_f7_p1_1_scan_source_evidence_survives_external_sanitizer():
+    """R6 P1-1: scan_source emits evidence={'name': ...} (NOT 'source').
+
+    The key 'source' is on response_sanitizer._INTERNAL_KEYS denylist
+    (it identifies supplier provenance). If scan_source uses 'source' as
+    its evidence key, scrub_response_for_external strips the value and
+    leaves evidence={} — silently degrading DATA_AVAILABLE → effectively
+    empty. Renaming to 'name' preserves the value through the sanitiser.
+    """
+    sec = make_section(
+        "scan_source",
+        state=ExternalState.DATA_AVAILABLE.value,
+        evidence={"name": "calibration-business-dna-scan"},
+    )
+    # Wrap in a typical response shape so the sanitizer walks through it
+    # exactly as it would for the real CMO endpoint payload.
+    response = {"sections": {"scan_source": sec}}
+    scrubbed = scrub_response_for_external(response)
+    scrubbed_evidence = scrubbed["sections"]["scan_source"]["evidence"]
+    # Evidence must be preserved as a non-empty dict containing 'name'.
+    assert scrubbed_evidence is not None, "scan_source evidence dropped by sanitizer"
+    assert scrubbed_evidence != {}, (
+        "scan_source evidence emptied by sanitizer — likely using 'source' key collision"
+    )
+    assert "name" in scrubbed_evidence, (
+        f"expected 'name' in scan_source evidence, got {scrubbed_evidence!r}"
+    )
+    assert scrubbed_evidence["name"] == "calibration-business-dna-scan"
+    # And confirm the now-banned 'source' key is NOT present (defence in depth).
+    assert "source" not in scrubbed_evidence
+
+
+def test_f7_p1_1_legacy_source_key_would_be_stripped():
+    """Documents WHY the rename was needed: the legacy 'source' key gets
+    stripped by scrub_response_for_external because it sits on the internal-
+    keys denylist (used by suppliers like SEMrush/Perplexity field tags).
+    If a future change re-introduces evidence={'source': ...} for scan_source,
+    this test fires the alarm.
+    """
+    legacy_response = {
+        "sections": {
+            "scan_source": {
+                "state": "DATA_AVAILABLE",
+                "evidence": {"source": "some-scan-source-name"},
+                "reason": None,
+                "source_trace_ids": [],
+            }
+        }
+    }
+    scrubbed = scrub_response_for_external(legacy_response)
+    # The 'source' key must be gone (it's on the denylist) — that's exactly
+    # the silent-degradation bug we're guarding against.
+    assert "source" not in scrubbed["sections"]["scan_source"]["evidence"]
+    assert scrubbed["sections"]["scan_source"]["evidence"] == {}, (
+        "the legacy key 'source' should be stripped, leaving an empty evidence dict"
+    )
+
+
+def test_f7_p1_2_swot_drops_items_with_fabricated_traces():
+    """R6 P1-2: SWOT items with item_traces that DON'T intersect the
+    available trace_set must be dropped — even though item_traces is
+    non-empty. The previous `or bool(item_traces)` clause silently let
+    fabricated trace ids through; that's the exact silent-failure class
+    the function was designed to prevent.
+    """
+    items = [
+        {"text": "We dominate organic SEO based on supplier estimates",
+         "trace_ids": ["trace-fabricated-1", "trace-fabricated-2"]},
+    ]
+    kept = filter_swot_items_with_provenance(
+        items,
+        available_trace_ids=["trace-a", "trace-b"],
+        available_competitor_names=[],
+    )
+    assert kept == [], (
+        f"expected items with fabricated trace ids to be DROPPED, got {kept!r}"
+    )
+
+
+def test_f7_p1_2_swot_keeps_items_with_one_real_trace():
+    """An item with a mix of real + fabricated trace ids passes the check
+    (at least one real trace is enough — provenance, not purity)."""
+    items = [
+        {"text": "Local pack rank #4 vs ACME at #2 in Brisbane CBD",
+         "trace_ids": ["trace-a", "trace-fabricated-1"]},
+    ]
+    kept = filter_swot_items_with_provenance(
+        items,
+        available_trace_ids=["trace-a", "trace-b"],
+        available_competitor_names=[],
+    )
+    assert len(kept) == 1
+    # Both trace ids preserved on the item; the filter doesn't strip
+    # individual trace ids, only the whole item if no real one is present.
+    assert kept[0]["text"].startswith("Local pack rank")
+    assert "trace-a" in kept[0]["source_trace_ids"]
+
+
+def test_f7_p1_2_swot_empty_bucket_flips_to_insufficient_signal():
+    """End-to-end: when every SWOT item in a bucket fails provenance
+    (all fabricated), the bucket emits an empty list and the caller
+    flips it to INSUFFICIENT_SIGNAL — NOT DATA_AVAILABLE-with-junk.
+    """
+    items = [
+        {"text": "Generic SWOT line 1",
+         "trace_ids": ["trace-fabricated-x"]},
+        {"text": "Generic SWOT line 2",
+         "trace_ids": ["trace-fabricated-y", "trace-fabricated-z"]},
+    ]
+    kept = filter_swot_items_with_provenance(
+        items,
+        available_trace_ids=["trace-real-a", "trace-real-b"],
+        available_competitor_names=[],
+    )
+    assert kept == []
+    # The caller in routes/intelligence_modules.py uses this empty list
+    # as the trigger to emit the bucket as INSUFFICIENT_SIGNAL — which the
+    # other CMO-endpoint integration tests already cover. This test just
+    # confirms the upstream filter returns the empty list cleanly.
+    sec = make_section(
+        "swot_strengths",
+        state=(
+            ExternalState.DATA_AVAILABLE.value if kept
+            else ExternalState.INSUFFICIENT_SIGNAL.value
+        ),
+        evidence={"items": kept} if kept else None,
+    )
+    assert sec["state"] == ExternalState.INSUFFICIENT_SIGNAL.value
+    assert sec["evidence"] is None
+
+
+def test_f7_p1_2_roadmap_drops_items_with_fabricated_traces():
+    """Same provenance-bypass fix on the roadmap filter."""
+    items = [
+        {"text": "Run an aggressive SEO blitz over the next 30 days.",
+         "trace_ids": ["trace-fabricated-a"], "priority": "high"},
+    ]
+    kept = filter_roadmap_items_with_provenance(
+        items,
+        available_trace_ids=["trace-real-1"],
+        available_competitor_names=[],
+        available_brand_metric_names=[],
+    )
+    assert kept == [], (
+        f"expected fabricated-trace roadmap items to be dropped, got {kept!r}"
+    )
+
+
+def test_f7_p1_2_roadmap_keeps_items_with_one_real_trace():
+    items = [
+        {"text": "Beat ACME on review velocity (target: 3 verified reviews / month).",
+         "trace_ids": ["trace-real-1", "trace-fabricated-x"], "priority": "medium"},
+    ]
+    kept = filter_roadmap_items_with_provenance(
+        items,
+        available_trace_ids=["trace-real-1"],
+        available_competitor_names=[],
+        available_brand_metric_names=[],
+    )
+    assert len(kept) == 1
+    assert kept[0]["priority"] == "medium"
