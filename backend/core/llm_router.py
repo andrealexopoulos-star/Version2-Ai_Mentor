@@ -270,6 +270,96 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
+
+# ── ADR-049 — Trinity quorum observability ────────────────────────────────
+# Every llm_trinity_chat invocation emits a structured trace describing which
+# providers participated, which produced output, and which one synthesized.
+# This closes the Contract v2 ambiguity surface flagged in PR #449
+# ("configured in other functions, not proven in scan path"): the scan path
+# DOES wire Anthropic + Gemini through llm_trinity_chat, but a silent
+# collapse to single-provider when keys are missing was previously invisible.
+#
+# Quorum states (INTERNAL only — never surface raw to frontend):
+#   FULL_QUORUM      = 3 providers participated
+#   PARTIAL_QUORUM   = 2 providers participated
+#   SINGLE_PROVIDER  = 1 provider — Contract v2 maps this to external DEGRADED
+#   FAILED           = 0 providers — exception propagates
+#
+# See docs/adr/049-anthropic-gemini-scan-path.md for the full design.
+
+QUORUM_FULL = "FULL_QUORUM"
+QUORUM_PARTIAL = "PARTIAL_QUORUM"
+QUORUM_SINGLE = "SINGLE_PROVIDER"
+QUORUM_FAILED = "FAILED"
+
+
+def _classify_quorum_state(succeeded_count: int) -> str:
+    """Map provider success-count to a Contract v2 internal quorum enum."""
+    if succeeded_count >= 3:
+        return QUORUM_FULL
+    if succeeded_count == 2:
+        return QUORUM_PARTIAL
+    if succeeded_count == 1:
+        return QUORUM_SINGLE
+    return QUORUM_FAILED
+
+
+def _emit_trinity_trace(
+    *,
+    requested: list,
+    succeeded: list,
+    failed: list,
+    synthesis_provider: str | None,
+    quorum_state: str,
+    user_id: str | None,
+    feature: str = "trinity_synthesis",
+) -> None:
+    """Internal-only structured log of Trinity provider participation.
+
+    Designed so a downstream parser (or the future enrichment_traces table
+    from agent E2) can lift the fields directly. INTERNAL by Contract v2 —
+    contains supplier names, must never reach a frontend response.
+    """
+    safe_user = str(user_id or "")[:8]
+    logger.info(
+        "[Trinity Trace] user=%s feature=%s quorum=%s requested=%s succeeded=%s failed_count=%d synth=%s",
+        safe_user,
+        feature,
+        quorum_state,
+        list(requested),
+        list(succeeded),
+        len(failed),
+        synthesis_provider or "none",
+    )
+    # Surface each individual provider failure at WARNING so the
+    # daily health check (ops_daily_health_check_procedure.md) can
+    # alert on a key getting silently revoked / a provider 5xx-storm.
+    for entry in failed:
+        try:
+            label = entry.get("provider", "unknown")
+            reason = entry.get("reason", "unknown")
+            logger.warning(
+                "[Trinity Trace] provider_failed user=%s feature=%s provider=%s reason=%s",
+                safe_user,
+                feature,
+                label,
+                str(reason)[:240],
+            )
+        except Exception:
+            # Never let trace emission throw — caller already has the response.
+            continue
+
+
+def _quorum_capability_from_keys() -> str:
+    """What quorum state CAN this deployment achieve given its env vars?
+
+    Reflects the ceiling, not the per-call result. Used by get_router_config
+    so the daily health check can detect a deployment-state regression
+    (e.g. a key getting unset and dropping the ceiling from FULL to SINGLE).
+    """
+    available = sum(1 for k in (OPENAI_API_KEY, GOOGLE_API_KEY, ANTHROPIC_API_KEY) if k)
+    return _classify_quorum_state(available)
+
 OPENAI_MODEL_NORMAL = os.environ.get("OPENAI_MODEL_NORMAL", "gpt-5.3")
 OPENAI_MODEL_DEEP = os.environ.get("OPENAI_MODEL_DEEP", "gpt-5.4")
 GEMINI_MODEL_PRO = os.environ.get("GEMINI_MODEL_PRO", "gemini-3-pro-preview")
@@ -558,9 +648,13 @@ async def llm_trinity_chat(
 
     raw_results = await asyncio.gather(*tasks, return_exceptions=True)
     candidates = []
+    # ADR-049 — track per-provider outcomes for the quorum trace
+    succeeded_labels: list = []
+    failed_entries: list = []
     for label, model_name, result in zip(labels, models_used, raw_results):
         if isinstance(result, Exception):
             logger.warning(f"[Trinity] {label} candidate failed: {result}")
+            failed_entries.append({"provider": label, "reason": str(result)[:240]})
             continue
         # All providers now return (text, usage) tuples
         if isinstance(result, tuple):
@@ -570,10 +664,38 @@ async def llm_trinity_chat(
             text = result
         if text:
             candidates.append((label, str(text).strip()))
+            succeeded_labels.append(label)
+        else:
+            failed_entries.append({"provider": label, "reason": "empty_response"})
 
     if not candidates:
+        # Emit FAILED trace before raising so we can see the wreckage.
+        _emit_trinity_trace(
+            requested=labels,
+            succeeded=succeeded_labels,
+            failed=failed_entries,
+            synthesis_provider=None,
+            quorum_state=QUORUM_FAILED,
+            user_id=user_id,
+            feature="trinity_failed",
+        )
         raise RuntimeError("Trinity failed across all providers")
+
+    quorum_state = _classify_quorum_state(len(succeeded_labels))
+
     if len(candidates) == 1:
+        # SINGLE_PROVIDER path — Contract v2 maps this to external DEGRADED
+        # for any caller that surfaces Trinity-quality signals. We still
+        # return the response (no silent failure), but we log the truth.
+        _emit_trinity_trace(
+            requested=labels,
+            succeeded=succeeded_labels,
+            failed=failed_entries,
+            synthesis_provider=succeeded_labels[0] if succeeded_labels else None,
+            quorum_state=quorum_state,
+            user_id=user_id,
+            feature="trinity_single_provider",
+        )
         return candidates[0][1]
 
     synthesis_system = (
@@ -590,6 +712,7 @@ async def llm_trinity_chat(
     # Fallbacks to OpenAI/Gemini only engage if ANTHROPIC_API_KEY is absent or
     # the Opus call itself errors at the transport layer (network/5xx) — in
     # that degraded case we prefer a response over a hard failure.
+    # ADR-049 — annotate the eventual synthesis provider into the trace.
     if ANTHROPIC_API_KEY:
         try:
             content, usage = await _anthropic_chat(
@@ -603,9 +726,19 @@ async def llm_trinity_chat(
                 api_key=ANTHROPIC_API_KEY,
             )
             await _record_usage(user_id, ANTHROPIC_MODEL_OPUS, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
+            _emit_trinity_trace(
+                requested=labels,
+                succeeded=succeeded_labels,
+                failed=failed_entries,
+                synthesis_provider="anthropic",
+                quorum_state=quorum_state,
+                user_id=user_id,
+                feature="trinity_synthesis",
+            )
             return content
         except Exception as exc:
             logger.warning(f"[Trinity] flagship Opus synthesis failed, falling back: {exc}")
+            failed_entries.append({"provider": "anthropic_synthesis", "reason": str(exc)[:240]})
 
     if OPENAI_API_KEY:
         fused, usage = await _openai_chat(
@@ -619,6 +752,15 @@ async def llm_trinity_chat(
             api_key=OPENAI_API_KEY,
         )
         await _record_usage(user_id, OPENAI_MODEL_DEEP, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
+        _emit_trinity_trace(
+            requested=labels,
+            succeeded=succeeded_labels,
+            failed=failed_entries,
+            synthesis_provider="openai",
+            quorum_state=quorum_state,
+            user_id=user_id,
+            feature="trinity_synthesis",
+        )
         return fused
 
     content, usage = await _gemini_chat(
@@ -632,6 +774,15 @@ async def llm_trinity_chat(
         api_key=GOOGLE_API_KEY,
     )
     await _record_usage(user_id, GEMINI_MODEL_PRO, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
+    _emit_trinity_trace(
+        requested=labels,
+        succeeded=succeeded_labels,
+        failed=failed_entries,
+        synthesis_provider="google",
+        quorum_state=quorum_state,
+        user_id=user_id,
+        feature="trinity_synthesis",
+    )
     return content
 
 
@@ -785,12 +936,24 @@ async def llm_realtime_negotiate(sdp_offer: str, api_key: str = None) -> str:
 
 
 def get_router_config() -> dict:
-    """Return route table + provider state for health checks."""
+    """Return route table + provider state for health checks.
+
+    `quorum_capability` (ADR-049) reports the quorum ceiling this deployment
+    can reach. Daily health check (ops_daily_health_check_procedure.md) should
+    P0-flag any drop below the policy floor. Anchors for review:
+      - FULL_QUORUM    → all 3 providers reachable; no action.
+      - PARTIAL_QUORUM → one key missing; recoverable but Trinity-grade
+                          synthesis is degraded. Investigate within 24h.
+      - SINGLE_PROVIDER → Trinity collapsed; Contract v2 maps to DEGRADED for
+                          any frontend label that says "Trinity". P0.
+      - FAILED         → no key set; scan synthesis offline. P0.
+    """
     return {
         "providers": {
             "openai": bool(OPENAI_API_KEY),
             "google": bool(GOOGLE_API_KEY),
             "anthropic": bool(ANTHROPIC_API_KEY),
         },
+        "quorum_capability": _quorum_capability_from_keys(),
         "routes": {name: {"model": cfg["model"], "timeout": cfg["timeout"]} for name, cfg in ROUTE_TABLE.items()},
     }
