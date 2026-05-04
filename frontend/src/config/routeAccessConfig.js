@@ -8,7 +8,7 @@ const ROUTE_ACCESS_MAP = {
   // destination: users either have a trialing/active subscription (>=
   // starter) or they're sent to /subscribe. Routes below stay on 'free'
   // ONLY because they must remain accessible during/after signup:
-  //   • Identity + signup flow (calibration, onboarding, profile-import)
+  //   • Identity + signup flow (onboarding, profile-import)
   //   • Account self-service (settings — to cancel/reactivate)
   //   • Purchase path (subscribe, upgrade)
   //   • Legal + catalog (biqc-legal, more-features)
@@ -16,7 +16,7 @@ const ROUTE_ACCESS_MAP = {
   // whose tier resolves to 'free' hitting a starter route is redirected
   // to /subscribe.
   '/settings':              { minTier: 'free', launchType: 'free' },
-  '/calibration':           { minTier: 'free', launchType: 'free' },
+  '/calibration':           { minTier: 'starter', launchType: 'free' },
   '/onboarding':            { minTier: 'free', launchType: 'free' },
   '/onboarding-decision':   { minTier: 'free', launchType: 'free' },
   '/profile-import':        { minTier: 'free', launchType: 'free' },
@@ -29,7 +29,7 @@ const ROUTE_ACCESS_MAP = {
   '/advisor':               { minTier: 'starter', launchType: 'free' },
   '/market':                { minTier: 'starter', launchType: 'free' },
   '/business-profile':      { minTier: 'starter', launchType: 'free' },
-  '/integrations':          { minTier: 'free', launchType: 'free' },
+  '/integrations':          { minTier: 'starter', launchType: 'free' },
   '/connect-email':         { minTier: 'starter', launchType: 'free' },
   '/data-health':           { minTier: 'starter', launchType: 'free' },
   '/competitive-benchmark': { minTier: 'starter', launchType: 'free' },

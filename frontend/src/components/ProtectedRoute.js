@@ -165,13 +165,13 @@ export default function ProtectedRoute({ children, adminOnly }) {
         const role = String(u.role || '').toLowerCase();
         const isMaster = u.is_master_account === true;
         const isSuper = SUPER_ADMIN_ROLES.includes(role) || isMaster;
-        // P0 2026-04-23: gate on stripe_customer_id — hard truth field.
-        // A null stripe_customer_id means the user never went through
-        // /complete-signup. status + tier alone can lie; the customer id
-        // cannot.
+        // P0 hard gate: require both Stripe customer + subscription ids.
+        // A missing subscription id means billing is not fully activated.
         const hasStripeCustomer =
           typeof u.stripe_customer_id === 'string' && u.stripe_customer_id.length > 0;
-        const hasSub = hasStripeCustomer && (status === 'active' || status === 'trialing');
+        const hasStripeSubscription =
+          typeof u.stripe_subscription_id === 'string' && u.stripe_subscription_id.length > 0;
+        const hasSub = hasStripeCustomer && hasStripeSubscription && (status === 'active' || status === 'trialing');
         if (!cancelled) {
           // Super-admin bypass only. Everyone else MUST have a Stripe
           // customer AND an active/trialing sub. Andreas 2026-04-23.
