@@ -1,0 +1,25 @@
+{
+  "name": "biqc-daily-cmo-check",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BIQc daily CMO E2E check runner — Andreas's standing order 2026-04-23. Runs against 5 production URLs twice per day from GitHub Actions. See SETUP.md.",
+  "scripts": {
+    "run-check": "tsx run-cmo-check.ts",
+    "aggregate": "tsx aggregate-results.ts",
+    "persist": "tsx persist-run.ts",
+    "alert": "tsx post-alerts.ts",
+    "escalation": "tsx check-escalation.ts"
+  },
+  "dependencies": {
+    "@playwright/test": "1.58.0",
+    "@supabase/supabase-js": "2.90.1",
+    "playwright": "1.58.0",
+    "pdf-parse": "1.1.1"
+  },
+  "devDependencies": {
+    "tsx": "4.19.2",
+    "typescript": "5.6.3",
+    "@types/node": "22.7.5",
+    "@types/pdf-parse": "1.1.4"
+  }
+}
