@@ -43,7 +43,6 @@ test('production calibration smoke', async ({ page, context, baseURL }) => {
   const screenshotDir = path.join(resultDir, 'calibration-smoke-screenshots');
   fs.mkdirSync(screenshotDir, { recursive: true });
   const steps: StepResult[] = [];
-  await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
   let testError: Error | null = null;
   let detectResult: 'pass' | 'fail' | 'blocked' | 'unverified' = 'unverified';
   let abnResult: 'pass' | 'fail' | 'blocked' | 'unverified' = 'unverified';
@@ -199,10 +198,6 @@ test('production calibration smoke', async ({ page, context, baseURL }) => {
     testError = error instanceof Error ? error : new Error(message);
     steps.push({ name: 'runtime_failure', status: 'fail', detail: message });
   }
-
-  const tracePath = path.join(resultDir, 'trace');
-  fs.mkdirSync(tracePath, { recursive: true });
-  await context.tracing.stop({ path: path.join(tracePath, 'production-calibration-smoke.zip') }).catch(() => undefined);
 
   const output = {
     timestamp: new Date().toISOString(),
