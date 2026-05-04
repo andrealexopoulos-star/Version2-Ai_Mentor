@@ -25,8 +25,17 @@ export function getPathTier(path) {
   return getRouteAccess(path)?.minTier ?? 'free';
 }
 
-/** canAccess(userTier, path, userEmail) — delegates to tierResolver (privileged bypass there). */
+/** canAccess(userTier, path, userEmail) — delegates to tierResolver (privileged bypass there).
+ *
+ * 2026-05-05 fix (13041978): super_admin / admin tiers must short-circuit BEFORE we
+ * rebuild a stripped-down user object. The caller has already done the tier resolution
+ * (resolveTier) which DID see role='superadmin' on the full user. Rebuilding `{tier,email}`
+ * here drops the role, so when checkRouteAccess re-runs resolveTier it falls through to
+ * 'free' (because REACT_APP_BIQC_MASTER_ADMIN_EMAIL is not always present in the build
+ * env). That's how a superadmin ended up seeing every menu item locked.
+ */
 export function canAccess(userTier, path, userEmail) {
+  if (userTier === 'super_admin' || userTier === 'admin' || userTier === 'enterprise' || userTier === 'custom_build') return true;
   const user = { tier: userTier, email: userEmail };
   const access = checkRouteAccess(path, user);
   return access?.allowed !== false;
