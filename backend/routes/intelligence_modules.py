@@ -37,6 +37,25 @@ from cmo_truth import (
     is_placeholder_text,
 )
 
+# R2E (2026-05-04): world-class CMO synthesis prompts that USE the deep
+# R2A-D + F14/F15 enrichment data. The synthesis_prompts module owns the
+# prompt construction; this route owns the orchestration (deciding when to
+# call the LLM, parsing the output, applying provenance enforcement).
+from core.synthesis_prompts import (
+    PROMPT_ANTI_TEMPLATE_TERMS,
+    build_swot_prompt,
+    build_strategic_roadmap_prompt,
+    build_chief_marketing_summary_prompt,
+    build_executive_summary_prompt,
+    build_competitive_landscape_prompt,
+    build_review_intelligence_prompt,
+    collect_available_competitor_names,
+    collect_available_brand_metric_names,
+    collect_available_trace_ids,
+    has_sufficient_synthesis_inputs,
+    parse_synthesis_json,
+)
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -1005,6 +1024,325 @@ def _apply_render_time_filters(report: Dict[str, Any]) -> Dict[str, Any]:
     return report
 
 
+# ─── R2E synthesis-enrichment orchestration ─────────────────────────────
+#
+# When `enrichment` carries the deepened R2A-D + F14/F15 data but the
+# report payload sections are thin (empty SWOT / empty roadmap / no exec
+# summary), invoke the world-class synthesis prompts in
+# `core/synthesis_prompts.py` to produce evidence-cited content. Each
+# section is gated by has_sufficient_synthesis_inputs to avoid burning
+# Trinity tokens when the inputs would only produce thin output anyway.
+#
+# All synthesis output passes through the provenance + anti-template
+# filters before being merged back into the response. Sections that
+# cannot be enriched (LLM error / parse error / all items dropped) keep
+# their existing thin content unchanged — synthesis NEVER replaces
+# evidence-backed content with thinner content.
+#
+# Cost containment: the synthesis call is opt-in via env flag
+# CMO_SYNTHESIS_ENRICHMENT_ENABLED (default ON). The flag is checked
+# every request so a superadmin can disable it without a redeploy if
+# the trinity bill spikes.
+
+
+def _synthesis_enabled_for_request() -> bool:
+    """True when the optional R2E LLM synthesis enrichment may run.
+
+    Default ON. Set the env var to "0", "false", or "off" to disable
+    without a code change. Read at request-time so changes take effect
+    on the next call.
+    """
+    import os
+    raw = os.environ.get("CMO_SYNTHESIS_ENRICHMENT_ENABLED", "1").strip().lower()
+    return raw not in {"0", "false", "off", "no"}
+
+
+def _section_is_thin(section_payload: Any, *, min_items: int = 1) -> bool:
+    """True when the section_payload is empty / sparse enough to enrich.
+
+    Used by `_enrich_cmo_with_synthesis` to decide which sections to call
+    LLM synthesis for. We never enrich a section that already has rich
+    content — the goal is to fill gaps, not overwrite signal-backed text.
+    """
+    if section_payload is None:
+        return True
+    if isinstance(section_payload, str):
+        return not section_payload.strip()
+    if isinstance(section_payload, (list, tuple)):
+        return len(section_payload) < min_items
+    if isinstance(section_payload, dict):
+        # Any-bucket-empty for SWOT/roadmap shape
+        if section_payload and all(
+            isinstance(v, (list, tuple)) and len(v) < min_items
+            for v in section_payload.values()
+        ):
+            return True
+        if not section_payload:
+            return True
+    return False
+
+
+async def _enrich_cmo_with_synthesis(
+    response: Dict[str, Any],
+    enrichment: Dict[str, Any],
+    *,
+    business_name: str,
+    user_id: str,
+    tier: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Optionally enrich the CMO response with R2E trinity synthesis.
+
+    Strategy:
+      1. Gate on env flag (synthesis disabled in dev / paused under cost spike).
+      2. Gate on `has_sufficient_synthesis_inputs` — never burn tokens when
+         the inputs wouldn't produce world-class output anyway.
+      3. For each thin section: build the section prompt, call trinity
+         synthesis, parse JSON, drop items via provenance filter.
+      4. Merge cited content back into `response` only if the LLM returned
+         non-empty enriched content. Never overwrite existing evidence-backed
+         content with thinner content — synthesis only fills gaps.
+
+    Errors at any step are caught and logged. The route NEVER blocks on
+    synthesis — if the LLM is paused, errored, or out-of-budget, the
+    response is returned unchanged.
+    """
+    if not _synthesis_enabled_for_request():
+        return response
+    if not has_sufficient_synthesis_inputs(enrichment):
+        return response
+
+    # Lazy import to avoid pulling httpx into the SQL-only test paths.
+    try:
+        from core.llm_router import llm_trinity_synthesis
+    except Exception as imp_exc:
+        logger.debug(f"[cmo-synthesis] llm_trinity_synthesis import skipped: {imp_exc}")
+        return response
+
+    available_trace_ids = collect_available_trace_ids(enrichment)
+    available_competitor_names = collect_available_competitor_names(enrichment)
+    available_metric_names = collect_available_brand_metric_names(enrichment)
+
+    from core.synthesis_prompts import (
+        filter_synthesis_swot_with_provenance,
+        filter_synthesis_roadmap_with_provenance,
+    )
+
+    # ─── Chief Marketing Summary + Executive Summary ──────────────────
+    if _section_is_thin(response.get("executive_summary")):
+        try:
+            cm_system, cm_user = build_chief_marketing_summary_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            cm_raw = await llm_trinity_synthesis(
+                cm_system, cm_user,
+                temperature=0.3, max_tokens=900, timeout=60,
+                user_id=user_id, tier=tier,
+            )
+            cm_parsed = parse_synthesis_json(cm_raw)
+            if isinstance(cm_parsed, dict) and isinstance(cm_parsed.get("summary"), str):
+                summary_text = cm_parsed["summary"].strip()
+                # Reject if the synthesised summary itself slipped through
+                # an anti-template phrase (the prompt forbids it but defence
+                # in depth keeps us honest).
+                from core.synthesis_prompts import is_anti_template_phrase
+                if summary_text and not is_anti_template_phrase(summary_text):
+                    response["executive_summary"] = summary_text
+                    response.setdefault("executive_summary_provenance", {})
+                    response["executive_summary_provenance"] = {
+                        "source_trace_ids": cm_parsed.get("source_trace_ids") or [],
+                        "signals_cited": cm_parsed.get("signals_cited") or [],
+                    }
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] chief_marketing_summary skipped: {exc}")
+
+    # ─── Executive Summary bullets ─────────────────────────────────────
+    # Only synthesise if there is no existing exec_summary_bullets array.
+    if _section_is_thin(response.get("exec_summary_bullets"), min_items=1):
+        try:
+            es_system, es_user = build_executive_summary_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            es_raw = await llm_trinity_synthesis(
+                es_system, es_user,
+                temperature=0.3, max_tokens=1100, timeout=60,
+                user_id=user_id, tier=tier,
+            )
+            es_parsed = parse_synthesis_json(es_raw)
+            if isinstance(es_parsed, dict) and isinstance(es_parsed.get("bullets"), list):
+                from core.synthesis_prompts import is_anti_template_phrase
+                cleaned_bullets = []
+                for b in es_parsed["bullets"]:
+                    if not isinstance(b, dict):
+                        continue
+                    text = str(b.get("text") or "").strip()
+                    if not text or is_anti_template_phrase(text):
+                        continue
+                    cleaned_bullets.append({
+                        "text": text,
+                        "source_trace_ids": b.get("source_trace_ids") or [],
+                        "dataset": b.get("dataset"),
+                        "metric_value": b.get("metric_value"),
+                    })
+                if cleaned_bullets:
+                    response["exec_summary_bullets"] = cleaned_bullets
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] executive_summary skipped: {exc}")
+
+    # ─── SWOT (4 buckets) ─────────────────────────────────────────────
+    swot = response.get("swot") or {}
+    if _section_is_thin(swot, min_items=1):
+        try:
+            sw_system, sw_user = build_swot_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            sw_raw = await llm_trinity_synthesis(
+                sw_system, sw_user,
+                temperature=0.35, max_tokens=2000, timeout=80,
+                user_id=user_id, tier=tier,
+            )
+            sw_parsed = parse_synthesis_json(sw_raw)
+            if isinstance(sw_parsed, dict):
+                enriched_swot: Dict[str, List[Dict[str, Any]]] = {}
+                for bucket in ("strengths", "weaknesses", "opportunities", "threats"):
+                    raw_items = sw_parsed.get(bucket) or []
+                    cleaned = filter_synthesis_swot_with_provenance(
+                        raw_items,
+                        available_trace_ids=available_trace_ids,
+                        available_competitor_names=available_competitor_names,
+                    )
+                    enriched_swot[bucket] = cleaned
+                # Only merge if at least one bucket has content. We never
+                # downgrade existing rich content with empty arrays.
+                non_empty_count = sum(1 for v in enriched_swot.values() if v)
+                if non_empty_count >= 2:
+                    response["swot_v2"] = enriched_swot
+                    # Backfill flat string lists for the legacy `swot` shape
+                    # the frontend already consumes — never overwrite a
+                    # bucket that already had content (gap-fill only).
+                    for bucket, items in enriched_swot.items():
+                        existing = (swot.get(bucket) or []) if isinstance(swot, dict) else []
+                        if not existing and items:
+                            swot[bucket] = [it["text"] for it in items if it.get("text")]
+                    response["swot"] = swot
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] swot skipped: {exc}")
+
+    # ─── Strategic Roadmap (3 horizons) ───────────────────────────────
+    roadmap = response.get("roadmap") or {}
+    if _section_is_thin(roadmap, min_items=1):
+        try:
+            rm_system, rm_user = build_strategic_roadmap_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            rm_raw = await llm_trinity_synthesis(
+                rm_system, rm_user,
+                temperature=0.35, max_tokens=2000, timeout=80,
+                user_id=user_id, tier=tier,
+            )
+            rm_parsed = parse_synthesis_json(rm_raw)
+            if isinstance(rm_parsed, dict):
+                enriched_roadmap: Dict[str, List[Dict[str, Any]]] = {}
+                bucket_alias = {
+                    "quick_wins": ("quick_wins", "seven_day_quick_wins", "7_day"),
+                    "priorities": ("priorities", "thirty_day_priorities", "30_day"),
+                    "strategic": ("strategic", "ninety_day_strategic_goals", "90_day"),
+                }
+                for canonical_key, alias_keys in bucket_alias.items():
+                    raw_items: List[Any] = []
+                    for ak in alias_keys:
+                        cand = rm_parsed.get(ak)
+                        if isinstance(cand, list):
+                            raw_items = cand
+                            break
+                    cleaned = filter_synthesis_roadmap_with_provenance(
+                        raw_items,
+                        available_trace_ids=available_trace_ids,
+                        available_competitor_names=available_competitor_names,
+                        available_brand_metric_names=available_metric_names,
+                    )
+                    enriched_roadmap[canonical_key] = cleaned
+                non_empty = sum(1 for v in enriched_roadmap.values() if v)
+                if non_empty >= 2:
+                    response["roadmap_v2"] = enriched_roadmap
+                    # Gap-fill the existing roadmap shape — never overwrite
+                    # a column that already had content.
+                    for col, items in enriched_roadmap.items():
+                        existing = (roadmap.get(col) or []) if isinstance(roadmap, dict) else []
+                        if not existing and items:
+                            roadmap[col] = items
+                    response["roadmap"] = roadmap
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] roadmap skipped: {exc}")
+
+    # ─── Competitive Landscape ────────────────────────────────────────
+    if _section_is_thin(response.get("competitors"), min_items=2):
+        try:
+            cl_system, cl_user = build_competitive_landscape_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            cl_raw = await llm_trinity_synthesis(
+                cl_system, cl_user,
+                temperature=0.3, max_tokens=2000, timeout=80,
+                user_id=user_id, tier=tier,
+            )
+            cl_parsed = parse_synthesis_json(cl_raw)
+            if isinstance(cl_parsed, dict) and isinstance(cl_parsed.get("competitors"), list):
+                rows = []
+                for c in cl_parsed["competitors"][:10]:
+                    if not isinstance(c, dict):
+                        continue
+                    name = (c.get("name") or "").strip()
+                    if not name:
+                        continue
+                    rows.append(c)
+                if rows:
+                    response["competitive_landscape_v2"] = {"competitors": rows}
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] competitive_landscape skipped: {exc}")
+
+    # ─── Review / Workplace Intelligence ──────────────────────────────
+    review_state_thin = (
+        not (response.get("reviews") or {}).get("count")
+        and not response.get("review_themes", {}).get("positive")
+    )
+    if review_state_thin:
+        try:
+            ri_system, ri_user = build_review_intelligence_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            ri_raw = await llm_trinity_synthesis(
+                ri_system, ri_user,
+                temperature=0.3, max_tokens=1800, timeout=70,
+                user_id=user_id, tier=tier,
+            )
+            ri_parsed = parse_synthesis_json(ri_raw)
+            if isinstance(ri_parsed, dict):
+                cs = ri_parsed.get("customer_sentiment") or {}
+                wi = ri_parsed.get("workplace_intelligence") or {}
+                if cs or wi:
+                    response["review_intelligence_v2"] = {
+                        "customer_sentiment": cs,
+                        "workplace_intelligence": wi,
+                        "source_trace_ids": ri_parsed.get("source_trace_ids") or [],
+                    }
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] review_intelligence skipped: {exc}")
+
+    return response
+
+
 @router.get("/intelligence/cmo-report")
 async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     """
@@ -1175,6 +1513,26 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     # 6) Render-time safety filter: even if enrichment still contains legacy
     #    sentinels or meta-gap bullets, strip them before returning.
     response = _apply_render_time_filters(response)
+
+    # 6b) R2E (2026-05-04): optional LLM synthesis enrichment.
+    #     When the deep R2A-D + F14/F15 enrichment data is present but the
+    #     report sections are thin, call the world-class synthesis prompts
+    #     (core/synthesis_prompts.py) to fill the gaps with evidence-cited
+    #     content. Provenance + anti-template filters are applied inside
+    #     _enrich_cmo_with_synthesis. Errors here are non-fatal — the route
+    #     never blocks on synthesis. See module docstring for the full
+    #     contract.
+    try:
+        tier_str = current_user.get("tier") if isinstance(current_user, dict) else None
+        response = await _enrich_cmo_with_synthesis(
+            response,
+            enrichment,
+            business_name=company_from_enrichment or company,
+            user_id=user_id,
+            tier=tier_str,
+        )
+    except Exception as syn_err:
+        logger.debug(f"[cmo-report] synthesis enrichment skipped (non-fatal): {syn_err}")
 
     # 7) Evidence inventory + report state (zero-fake-data gate).
     competitor_status = classify_section(

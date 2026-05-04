@@ -1,0 +1,149 @@
+{
+  "scan_state": "DEGRADED",
+  "business_name": "Mid Co",
+  "synthesis_eligible": true,
+  "available_trace_ids_count": 3,
+  "available_competitor_names_count": 2,
+  "sections": {
+    "chief_marketing_summary": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "We don't yet have enough verified marketing intelligence to write a chief-marketing summary.",
+      "source_trace_ids": []
+    },
+    "executive_summary": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "We don't yet have enough verified intelligence to write a complete executive summary for this business.",
+      "source_trace_ids": []
+    },
+    "swot": {
+      "state": "DEGRADED",
+      "raw_synthesis_output": {
+        "strengths": [
+          {
+            "text": "22 customer reviews on google rating 4.0/5 with 'responsive support' as dominant theme.",
+            "source_trace_ids": [
+              "rv_trace_mg1"
+            ],
+            "evidence_tag": "review_theme"
+          },
+          {
+            "text": "Strong brand awareness and good reputation."
+          }
+        ],
+        "weaknesses": [
+          {
+            "text": "Improve social media presence."
+          },
+          {
+            "text": "midcompetitor1.com.au runs 1,200 organic keywords (vs unknown for us) \u2014 visibility gap implied.",
+            "source_trace_ids": [
+              "comp_trace_m1"
+            ],
+            "evidence_tag": "competitor"
+          }
+        ],
+        "opportunities": [],
+        "threats": []
+      },
+      "post_provenance_filter": {
+        "strengths": [
+          {
+            "text": "22 customer reviews on google rating 4.0/5 with 'responsive support' as dominant theme.",
+            "source_trace_ids": [
+              "rv_trace_mg1"
+            ],
+            "evidence_tag": "review_theme"
+          }
+        ],
+        "weaknesses": [
+          {
+            "text": "midcompetitor1.com.au runs 1,200 organic keywords (vs unknown for us) \u2014 visibility gap implied.",
+            "source_trace_ids": [
+              "comp_trace_m1"
+            ],
+            "evidence_tag": "competitor"
+          }
+        ],
+        "opportunities": [],
+        "threats": []
+      },
+      "items_dropped_count": 2,
+      "reason": "Partial intelligence \u2014 only review-theme + competitor signals were strong enough; opportunities + threats produced no provenance-backed items."
+    },
+    "strategic_roadmap": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "Insufficient evidence to compose an evidence-backed strategic roadmap.",
+      "source_trace_ids": []
+    },
+    "competitive_landscape": {
+      "state": "DATA_AVAILABLE",
+      "synthesis_output": {
+        "competitors": [
+          {
+            "name": "midcompetitor1.com.au",
+            "organic_keywords": 1200,
+            "organic_traffic": 4000,
+            "common_keywords_with_you": null,
+            "paid_keywords": null,
+            "threat_level": "medium",
+            "comparative_positioning": "Largest mid-tier competitor by organic footprint (1,200 keywords, 4,000 monthly visits).",
+            "where_they_outrank_you": [],
+            "source_trace_ids": [
+              "comp_trace_m1"
+            ]
+          },
+          {
+            "name": "midcompetitor2.com.au",
+            "organic_keywords": 800,
+            "organic_traffic": 2500,
+            "common_keywords_with_you": null,
+            "paid_keywords": null,
+            "threat_level": "low",
+            "comparative_positioning": "Second-tier competitor with smaller footprint.",
+            "where_they_outrank_you": [],
+            "source_trace_ids": [
+              "comp_trace_m2"
+            ]
+          }
+        ]
+      }
+    },
+    "review_intelligence": {
+      "state": "DATA_AVAILABLE",
+      "synthesis_output": {
+        "customer_sentiment": {
+          "weighted_avg_rating": 4.0,
+          "total_reviews": 22,
+          "per_platform": [
+            {
+              "platform": "google",
+              "rating": 4.0,
+              "count": 22
+            }
+          ],
+          "top_themes": [
+            {
+              "theme": "responsive support",
+              "mentions": 8,
+              "sentiment_pct": 75,
+              "example_quote": null
+            },
+            {
+              "theme": "value for money",
+              "mentions": 5,
+              "sentiment_pct": 80,
+              "example_quote": null
+            }
+          ]
+        },
+        "workplace_intelligence": {},
+        "source_trace_ids": [
+          "rv_trace_mg1"
+        ]
+      }
+    }
+  }
+}
