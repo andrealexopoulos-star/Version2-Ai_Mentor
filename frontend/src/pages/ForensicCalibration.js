@@ -455,6 +455,42 @@ function StepResults({ data, onRecalibrate, onViewReport }) {
   const ringRef = useRef(null);
   const [ringAnimated, setRingAnimated] = useState(false);
   const e = data?.enrichment || data || {};
+  const rawState = String(e.report_state || e.state || '').toUpperCase();
+  const completionUi = {
+    COMPLETE_SOURCE_BACKED: {
+      badge: 'Calibration Complete',
+      title: 'Intelligence Profile Ready',
+      intro: 'Your business has been scanned across multiple intelligence vectors. Here is what we found.',
+      badgeBg: C.positiveWash,
+      badgeColor: C.positive,
+      badgeBorder: 'rgba(22,163,74,0.25)',
+    },
+    PARTIAL_DEGRADED: {
+      badge: 'Partial Intelligence Profile',
+      title: 'Partial Intelligence Profile',
+      intro: e.report_state_message || 'Some sections are degraded due to insufficient verified evidence.',
+      badgeBg: C.warningWash,
+      badgeColor: C.warning,
+      badgeBorder: 'rgba(245,158,11,0.25)',
+    },
+    INSUFFICIENT_EVIDENCE: {
+      badge: 'Insufficient Evidence',
+      title: 'Insufficient Evidence',
+      intro: e.report_state_message || 'We could not verify enough evidence to generate a complete intelligence profile.',
+      badgeBg: C.warningWash,
+      badgeColor: C.warning,
+      badgeBorder: 'rgba(245,158,11,0.25)',
+    },
+    FAILED: {
+      badge: 'Recalibration Failed',
+      title: 'Recalibration Failed',
+      intro: e.report_state_message || 'Quality gates blocked this report because required evidence was missing or invalid.',
+      badgeBg: C.lavaWash,
+      badgeColor: C.lava,
+      badgeBorder: 'rgba(232,93,0,0.25)',
+    },
+  };
+  const completion = completionUi[rawState] || completionUi.PARTIAL_DEGRADED;
 
   useEffect(() => {
     const t = setTimeout(() => setRingAnimated(true), 400);
@@ -467,7 +503,8 @@ function StepResults({ data, onRecalibrate, onViewReport }) {
   const location      = e.location || e.city || e.state || 'Australia';
   const competitors   = e.competitors_found ?? e.competitors?.length ?? '--';
   const reviewSources = e.review_sources ?? e.reviews?.length ?? '--';
-  const digitalScore  = e.digital_presence_score ?? e.market_score ?? 75;
+  const hasExplicitScore = Number.isFinite(Number(e.digital_presence_score ?? e.market_score));
+  const digitalScore  = hasExplicitScore ? Number(e.digital_presence_score ?? e.market_score) : 0;
   const abn           = e.abn || '';
   const established   = e.established || '';
   const anzsic        = e.anzsic || '';
@@ -533,12 +570,12 @@ function StepResults({ data, onRecalibrate, onViewReport }) {
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 'var(--sp-2)',
           padding: 'var(--sp-2) var(--sp-4)', marginBottom: 'var(--sp-4)',
-          background: C.positiveWash,
-          border: '1px solid rgba(22,163,74,0.25)',
+          background: completion.badgeBg,
+          border: `1px solid ${completion.badgeBorder}`,
           borderRadius: 'var(--r-pill)',
-          fontSize: 'var(--size-xs)', fontWeight: 600, color: C.positive,
+          fontSize: 'var(--size-xs)', fontWeight: 600, color: completion.badgeColor,
         }}>
-          <CheckCircle2 size={14} /> Calibration Complete
+          <CheckCircle2 size={14} /> {completion.badge}
         </div>
         <h2 style={{
           fontFamily: 'var(--font-display)',
@@ -546,12 +583,12 @@ function StepResults({ data, onRecalibrate, onViewReport }) {
           color: C.ink,
           letterSpacing: 'var(--ls-display)',
           marginBottom: 'var(--sp-3)',
-        }}>Intelligence Profile Ready</h2>
+        }}>{completion.title}</h2>
         <p style={{
           color: C.inkSecondary, fontSize: 'var(--size-body)',
           maxWidth: '48ch', margin: '0 auto',
         }}>
-          Your business has been scanned across multiple intelligence vectors. Here is what we found.
+          {completion.intro}
         </p>
       </div>
 
