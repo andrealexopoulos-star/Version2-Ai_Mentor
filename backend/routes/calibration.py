@@ -26,6 +26,7 @@ from scan_cache import (
 from core.llm_router import llm_trinity_chat
 from core.helpers import serper_search, scrape_url_text
 from core.response_sanitizer import sanitize_enrichment_for_external
+from core.business_dna_persistence import safe_upsert_business_dna
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, logger, cognitive_core, check_rate_limit,
@@ -2145,14 +2146,21 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                                     "computed_at": datetime.now(timezone.utc).isoformat(),
                                 }
                                 cached["digital_footprint"] = cached_fp
-                            get_sb().table("business_dna_enrichment").upsert({
-                                "user_id": user_id,
-                                "business_profile_id": cache_profile_id,
-                                "website_url": url,
-                                "enrichment": cached,
-                                "digital_footprint": cached_fp,
-                                "updated_at": datetime.now(timezone.utc).isoformat(),
-                            }, on_conflict="user_id,business_profile_id").execute()
+                            # P0 Marjo (E5): all writes go through the
+                            # safe_upsert_business_dna chokepoint — validates
+                            # required fields, strips ai_errors, derives
+                            # core_signals, records incident on contract
+                            # violation, never raises. See
+                            # backend/core/business_dna_persistence.py.
+                            safe_upsert_business_dna(
+                                get_sb(),
+                                user_id=user_id,
+                                business_profile_id=cache_profile_id,
+                                website_url=url,
+                                enrichment=cached,
+                                digital_footprint=cached_fp,
+                                source="calibration_scan_cache_hit",
+                            )
                             logger.info("[enrichment/website] cache HIT persisted to business_dna_enrichment for user %s", user_id)
                 except Exception as cache_persist_err:
                     logger.error("[enrichment/website] cache HIT persistence failed: %s", cache_persist_err)
@@ -3169,15 +3177,28 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                             logger.warning(f"[enrichment/website] Could not auto-create business profile: {profile_create_err}")
 
                     if bde_profile_id:
-                        get_sb().table("business_dna_enrichment").upsert({
-                            "user_id": user_id,
-                            "business_profile_id": bde_profile_id,
-                            "website_url": url,
-                            "enrichment": enrichment,
-                            "digital_footprint": enrichment.get("digital_footprint") or {},
-                            "updated_at": datetime.now(timezone.utc).isoformat(),
-                        }, on_conflict="user_id,business_profile_id").execute()
-                        logger.info(f"[enrichment/website] business_dna_enrichment persisted for user {user_id}")
+                        # P0 Marjo (E5): all writes go through the
+                        # safe_upsert_business_dna chokepoint. Validates
+                        # required fields (business_name / industry /
+                        # core_signals), strips ai_errors, records incident
+                        # row + alert when contract violated.
+                        persistence_report = safe_upsert_business_dna(
+                            get_sb(),
+                            user_id=user_id,
+                            business_profile_id=bde_profile_id,
+                            website_url=url,
+                            enrichment=enrichment,
+                            digital_footprint=enrichment.get("digital_footprint") or {},
+                            source="calibration_scan_fresh",
+                        )
+                        logger.info(
+                            "[enrichment/website] business_dna_enrichment persisted for user %s "
+                            "truth_state=%s missing=%s stripped_ai_errors=%d",
+                            user_id,
+                            persistence_report.get("truth_state"),
+                            persistence_report.get("missing_required"),
+                            persistence_report.get("stripped_ai_errors", 0),
+                        )
 
                         # Mark onboarding complete in strategic_console_state so the
                         # ProtectedRoute "needs calibration" check stops bouncing the
