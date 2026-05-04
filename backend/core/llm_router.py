@@ -5,9 +5,70 @@ import asyncio
 import contextvars
 import os
 import logging
+import time as _trace_time
 import httpx
 
 logger = logging.getLogger(__name__)
+
+
+# ─── Provider trace bracket (P0 Marjo E2 / 2026-05-04) ───────────────────
+# Each provider call below (_openai_chat / _anthropic_chat / _gemini_chat)
+# is bracketed with begin_trace + complete_trace so a per-call row lands
+# in public.enrichment_traces. Telemetry is fire-and-forget — never breaks
+# the call. Resolved scan_id comes from the calibration ContextVar; outside
+# the scan path the trace is a no-op. Cites BIQc_PLATFORM_CONTRACT_SECURE
+# _NO_SILENT_FAILURE_v2 + zero-401.
+
+async def _trace_llm_begin(provider: str, model: str, system_message: str, user_message: str) -> tuple:
+    """Open a trace for an upcoming LLM call. Returns (trace_id, t_start) tuple
+    or (None, t_start) if no active scan / tracer unavailable."""
+    t0 = _trace_time.perf_counter()
+    try:
+        from core.enrichment_trace import (
+            get_active_scan_id, get_active_user_id, abegin_trace,
+        )
+        sid = get_active_scan_id()
+        if not sid:
+            return (None, t0)
+        trace_id = await abegin_trace(
+            scan_id=sid,
+            provider=provider,
+            user_id=get_active_user_id(),
+            request_summary={
+                "model": str(model)[:80],
+                "system_chars": len(system_message or ""),
+                "user_chars": len(user_message or ""),
+            },
+        )
+        return (trace_id, t0)
+    except Exception as exc:
+        logger.debug("[LLM Router] _trace_llm_begin failed: %s", exc)
+        return (None, t0)
+
+
+async def _trace_llm_complete(trace_id, t_start, http_status: int, content: str, usage: dict, error: str | None) -> None:
+    """Close a trace opened by _trace_llm_begin. Always safe."""
+    if not trace_id:
+        return
+    try:
+        from core.enrichment_trace import acomplete_trace
+        elapsed_ms = int((_trace_time.perf_counter() - t_start) * 1000)
+        await acomplete_trace(
+            trace_id,
+            http_status=http_status,
+            latency_ms=elapsed_ms,
+            response_summary={
+                "ok": http_status == 200 and not error,
+                "completion_chars": len(content or ""),
+                "prompt_tokens": (usage or {}).get("prompt_tokens", 0),
+                "completion_tokens": (usage or {}).get("completion_tokens", 0),
+                "total_tokens": (usage or {}).get("total_tokens", 0),
+            },
+            error=error,
+            sanitiser_applied=True,
+        )
+    except Exception as exc:
+        logger.debug("[LLM Router] _trace_llm_complete failed: %s", exc)
 
 # Token metering — lazy import to avoid circular deps at module load
 _token_metering = None
@@ -323,15 +384,30 @@ async def _openai_chat(*, model: str, system_message: str, user_message: str, me
             formatted.append({"role": role, "content": content})
     formatted.append({"role": "user", "content": user_message})
 
-    async with httpx.AsyncClient(timeout=float(timeout)) as client:
-        resp = await client.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json={"model": model, "messages": formatted, "temperature": temperature, "max_tokens": max_tokens},
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]["content"], data.get("usage", {})
+    # P0 Marjo E2 / 2026-05-04: per-scan trace.
+    trace_id, t_start = await _trace_llm_begin("openai", model, system_message, user_message)
+    try:
+        async with httpx.AsyncClient(timeout=float(timeout)) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={"model": model, "messages": formatted, "temperature": temperature, "max_tokens": max_tokens},
+            )
+            http_status = resp.status_code
+            resp.raise_for_status()
+            data = resp.json()
+            content = data["choices"][0]["message"]["content"]
+            usage = data.get("usage", {})
+            await _trace_llm_complete(trace_id, t_start, http_status, content, usage, None)
+            return content, usage
+    except httpx.HTTPStatusError as exc:
+        await _trace_llm_complete(trace_id, t_start, exc.response.status_code, "", {},
+                                  f"PROVIDER_HTTP_{exc.response.status_code} : openai upstream error")
+        raise
+    except Exception as exc:
+        await _trace_llm_complete(trace_id, t_start, 502, "", {},
+                                  f"PROVIDER_NETWORK_ERROR : {str(exc)[:200]}")
+        raise
 
 
 async def _gemini_chat(*, model: str, system_message: str, user_message: str, messages: list | None, temperature: float, max_tokens: int, timeout: float, api_key: str) -> tuple[str, dict]:
@@ -344,19 +420,32 @@ async def _gemini_chat(*, model: str, system_message: str, user_message: str, me
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": float(temperature), "maxOutputTokens": int(max_tokens)},
     }
-    async with httpx.AsyncClient(timeout=float(timeout)) as client:
-        resp = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
-        resp.raise_for_status()
-        data = resp.json()
-        text = (((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or [{}])[0].get("text", "")
-        # Extract usage metadata from Gemini response
-        usage_meta = data.get("usageMetadata") or {}
-        usage = {
-            "prompt_tokens": usage_meta.get("promptTokenCount", 0),
-            "completion_tokens": usage_meta.get("candidatesTokenCount", 0),
-            "total_tokens": usage_meta.get("totalTokenCount", 0),
-        }
-        return text, usage
+    # P0 Marjo E2 / 2026-05-04: per-scan trace.
+    trace_id, t_start = await _trace_llm_begin("gemini", model, system_message, user_message)
+    try:
+        async with httpx.AsyncClient(timeout=float(timeout)) as client:
+            resp = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
+            http_status = resp.status_code
+            resp.raise_for_status()
+            data = resp.json()
+            text = (((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or [{}])[0].get("text", "")
+            # Extract usage metadata from Gemini response
+            usage_meta = data.get("usageMetadata") or {}
+            usage = {
+                "prompt_tokens": usage_meta.get("promptTokenCount", 0),
+                "completion_tokens": usage_meta.get("candidatesTokenCount", 0),
+                "total_tokens": usage_meta.get("totalTokenCount", 0),
+            }
+            await _trace_llm_complete(trace_id, t_start, http_status, text, usage, None)
+            return text, usage
+    except httpx.HTTPStatusError as exc:
+        await _trace_llm_complete(trace_id, t_start, exc.response.status_code, "", {},
+                                  f"PROVIDER_HTTP_{exc.response.status_code} : gemini upstream error")
+        raise
+    except Exception as exc:
+        await _trace_llm_complete(trace_id, t_start, 502, "", {},
+                                  f"PROVIDER_NETWORK_ERROR : {str(exc)[:200]}")
+        raise
 
 
 async def _anthropic_chat(*, model: str, system_message: str, user_message: str, messages: list | None, temperature: float, max_tokens: int, timeout: float, api_key: str) -> tuple[str, dict]:
@@ -377,30 +466,43 @@ async def _anthropic_chat(*, model: str, system_message: str, user_message: str,
         "system": system_message,
         "messages": conversation,
     }
-    async with httpx.AsyncClient(timeout=float(timeout)) as client:
-        resp = await client.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            },
-            json=payload,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        content = data.get("content") or []
-        text = ""
-        if content and isinstance(content[0], dict):
-            text = content[0].get("text", "")
-        # Extract usage from Anthropic response
-        usage_raw = data.get("usage") or {}
-        usage = {
-            "prompt_tokens": usage_raw.get("input_tokens", 0),
-            "completion_tokens": usage_raw.get("output_tokens", 0),
-            "total_tokens": usage_raw.get("input_tokens", 0) + usage_raw.get("output_tokens", 0),
-        }
-        return text, usage
+    # P0 Marjo E2 / 2026-05-04: per-scan trace.
+    trace_id, t_start = await _trace_llm_begin("anthropic", model, system_message, user_message)
+    try:
+        async with httpx.AsyncClient(timeout=float(timeout)) as client:
+            resp = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json=payload,
+            )
+            http_status = resp.status_code
+            resp.raise_for_status()
+            data = resp.json()
+            content = data.get("content") or []
+            text = ""
+            if content and isinstance(content[0], dict):
+                text = content[0].get("text", "")
+            # Extract usage from Anthropic response
+            usage_raw = data.get("usage") or {}
+            usage = {
+                "prompt_tokens": usage_raw.get("input_tokens", 0),
+                "completion_tokens": usage_raw.get("output_tokens", 0),
+                "total_tokens": usage_raw.get("input_tokens", 0) + usage_raw.get("output_tokens", 0),
+            }
+            await _trace_llm_complete(trace_id, t_start, http_status, text, usage, None)
+            return text, usage
+    except httpx.HTTPStatusError as exc:
+        await _trace_llm_complete(trace_id, t_start, exc.response.status_code, "", {},
+                                  f"PROVIDER_HTTP_{exc.response.status_code} : anthropic upstream error")
+        raise
+    except Exception as exc:
+        await _trace_llm_complete(trace_id, t_start, 502, "", {},
+                                  f"PROVIDER_NETWORK_ERROR : {str(exc)[:200]}")
+        raise
 
 
 async def llm_chat(
