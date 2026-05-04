@@ -1176,9 +1176,14 @@ def _build_boardroom_fallback(
     has_crm: bool,
     has_accounting: bool,
     has_email: bool,
+    has_file_storage: bool = False,
 ) -> str:
     business_name = (profile or {}).get("business_name") or "your business"
-    connected = [name for name, enabled in [("CRM", has_crm), ("Accounting", has_accounting), ("Email", has_email)] if enabled]
+    connected = [
+        name
+        for name, enabled in [("CRM", has_crm), ("Accounting", has_accounting), ("Email", has_email), ("File Storage", has_file_storage)]
+        if enabled
+    ]
     connected_label = ", ".join(connected) if connected else "no live connectors yet"
     return (
         f"Priority now: tighten one operating decision this week for {business_name}, starting with the strongest available signal.\n\n"
@@ -1190,8 +1195,8 @@ def _build_boardroom_fallback(
     )
 
 
-def _soundboard_contract_meta(*, has_crm: bool, has_accounting: bool, has_email: bool, live_signal_count: int, live_signal_age_hours: Optional[float], coverage_pct: float, top_concerns: List[Dict[str, Any]]) -> Dict[str, Any]:
-    data_sources_count = int(has_crm) + int(has_accounting) + int(has_email)
+def _soundboard_contract_meta(*, has_crm: bool, has_accounting: bool, has_email: bool, has_file_storage: bool = False, live_signal_count: int, live_signal_age_hours: Optional[float], coverage_pct: float, top_concerns: List[Dict[str, Any]]) -> Dict[str, Any]:
+    data_sources_count = int(has_crm) + int(has_accounting) + int(has_email) + int(has_file_storage)
     if live_signal_count > 0:
         data_sources_count += 1
     if top_concerns:
@@ -1201,7 +1206,7 @@ def _soundboard_contract_meta(*, has_crm: bool, has_accounting: bool, has_email:
     if live_signal_age_hours is not None:
         freshness = f"{int(round(live_signal_age_hours * 60))}m" if live_signal_age_hours < 1 else f"{int(round(live_signal_age_hours))}h"
 
-    confidence = 0.28 + (0.12 * int(has_crm)) + (0.12 * int(has_accounting)) + (0.1 * int(has_email))
+    confidence = 0.28 + (0.10 * int(has_crm)) + (0.10 * int(has_accounting)) + (0.08 * int(has_email)) + (0.08 * int(has_file_storage))
     confidence += 0.12 if live_signal_count > 0 else 0
     confidence += 0.16 * min(1.0, float(coverage_pct or 0) / 100.0)
     confidence = max(0.2, min(0.98, confidence))
@@ -1218,6 +1223,7 @@ def _soundboard_contract_meta(*, has_crm: bool, has_accounting: bool, has_email:
                 "crm": has_crm,
                 "accounting": has_accounting,
                 "email": has_email,
+                "file_storage": has_file_storage,
             },
             "connected_sources_list": [
                 source
@@ -1225,6 +1231,7 @@ def _soundboard_contract_meta(*, has_crm: bool, has_accounting: bool, has_email:
                     ("crm", has_crm),
                     ("accounting", has_accounting),
                     ("email", has_email),
+                    ("file_storage", has_file_storage),
                     ("signals", live_signal_count > 0),
                 )
                 if enabled
@@ -1240,6 +1247,7 @@ def _build_evidence_pack(
     has_crm: bool,
     has_accounting: bool,
     has_email: bool,
+    has_file_storage: bool = False,
     live_signal_count: int,
     live_signal_age_hours: Optional[float],
     top_concerns: List[Dict[str, Any]],
@@ -1287,6 +1295,16 @@ def _build_evidence_pack(
                 "freshness": connector_freshness,
                 "confidence": 0.76,
                 "summary": "Inbox/sent communication signal patterns",
+            }
+        )
+    if has_file_storage:
+        sources.append(
+            {
+                "id": "file_storage",
+                "source": "file_storage",
+                "freshness": connector_freshness,
+                "confidence": 0.72,
+                "summary": "Connected file storage source available",
             }
         )
     if live_signal_count > 0:
@@ -2737,8 +2755,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         has_accounting = any(r.get("category") == "accounting" for r in (int_result.data or []))
         email_res = sb.table("email_connections").select("id").eq("user_id", user_id).limit(1).execute()
         has_email = bool(email_res.data)
+        drive_res = (
+            sb.table("merge_integrations")
+            .select("id")
+            .eq("user_id", user_id)
+            .eq("integration_category", "file_storage")
+            .limit(1)
+            .execute()
+        )
+        has_file_storage = bool(drive_res.data)
     except Exception:
-        has_crm = has_accounting = has_email = False
+        has_crm = has_accounting = has_email = has_file_storage = False
 
     coverage = calculate_coverage(
         profile=profile or {},
@@ -2771,7 +2798,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # Live signal freshness check
     live_signal_count, live_signal_age_hours = _fetch_observation_signal_state(sb, user_id)
     materialization_state: Dict[str, Any] = {"attempted": False, "signals_emitted": 0}
-    if live_signal_count == 0 and (request_looks_report_grade or has_crm or has_accounting or has_email):
+    if live_signal_count == 0 and (request_looks_report_grade or has_crm or has_accounting or has_email or has_file_storage):
         materialization_state = await _attempt_soundboard_signal_materialization(sb, user_id)
         if materialization_state.get("signals_emitted", 0) > 0:
             live_signal_count, live_signal_age_hours = _fetch_observation_signal_state(sb, user_id)
@@ -2797,6 +2824,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         has_crm=has_crm,
         has_accounting=has_accounting,
         has_email=has_email,
+        has_file_storage=has_file_storage,
         live_signal_count=live_signal_count,
         live_signal_age_hours=live_signal_age_hours,
         coverage_pct=coverage_pct,
@@ -3300,6 +3328,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         has_crm=has_crm,
         has_accounting=has_accounting,
         has_email=has_email,
+        has_file_storage=has_file_storage,
         live_signal_count=live_signal_count,
         live_signal_age_hours=live_signal_age_hours,
         top_concerns=top_brain_concerns,
@@ -3312,7 +3341,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     # If live integrations are connected, do not hard-block strategic responses.
     # Degrade gracefully and keep responses grounded in connected evidence.
-    if guardrail_status == "BLOCKED" and (has_crm or has_accounting or has_email):
+    if guardrail_status == "BLOCKED" and (has_crm or has_accounting or has_email or has_file_storage):
         logger.info(
             f"[GUARDRAIL_OVERRIDE] user={user_id[:8]} coverage={coverage_pct}% "
             "live_integrations_present=True forcing DEGRADED"
@@ -3412,7 +3441,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         guardrail_injection = f"\n[ADVISOR CONTEXT — DATA COVERAGE {coverage_pct}% — FULL MODE: All key data available. Deliver sharp, number-grounded advice.]\n"
 
     # ═══ CALIBRATION CONTEXT INJECTION when no integrations ═══
-    if not has_crm and not has_accounting and not has_email:
+    if not has_crm and not has_accounting and not has_email and not has_file_storage:
         calibration_context = ""
         if profile:
             abn = profile.get("abn") or profile.get("business_number") or ""
@@ -3743,6 +3772,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                     has_crm=has_crm,
                     has_accounting=has_accounting,
                     has_email=has_email,
+                    has_file_storage=has_file_storage,
                 )
             else:
                 response = _build_specificity_fallback(
@@ -3765,6 +3795,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                     ("CRM", has_crm),
                     ("Accounting", has_accounting),
                     ("Email", has_email),
+                    ("File Storage", has_file_storage),
                 )
                 if enabled
             ]
@@ -3824,7 +3855,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             report_grade_request=report_grade_request,
             grounded_report_ready=grounded_report_ready,
             guardrail_status=guardrail_status,
-            has_connected_sources=bool(has_crm or has_accounting or has_email),
+            has_connected_sources=bool(has_crm or has_accounting or has_email or has_file_storage),
             live_signal_count=live_signal_count,
             coverage_window=coverage_window,
             retrieval_depth=retrieval_depth,
@@ -4134,6 +4165,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             has_crm=has_crm,
             has_accounting=has_accounting,
             has_email=has_email,
+            has_file_storage=has_file_storage,
         ) if effective_agent_id == "boardroom" else _build_specificity_fallback(
             profile=profile or {},
             top_concerns=top_brain_concerns,
@@ -4161,7 +4193,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             report_grade_request=report_grade_request,
             grounded_report_ready=False,
             guardrail_status=guardrail_status,
-            has_connected_sources=bool(has_crm or has_accounting or has_email),
+            has_connected_sources=bool(has_crm or has_accounting or has_email or has_file_storage),
             live_signal_count=live_signal_count,
             coverage_window=coverage_window,
             retrieval_depth=retrieval_depth,
@@ -4235,6 +4267,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             has_crm=has_crm,
             has_accounting=has_accounting,
             has_email=has_email,
+            has_file_storage=has_file_storage,
         ) if effective_agent_id == "boardroom" else _build_specificity_fallback(
             profile=profile or {},
             top_concerns=top_brain_concerns,
@@ -4262,7 +4295,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             report_grade_request=report_grade_request,
             grounded_report_ready=False,
             guardrail_status=guardrail_status,
-            has_connected_sources=bool(has_crm or has_accounting or has_email),
+            has_connected_sources=bool(has_crm or has_accounting or has_email or has_file_storage),
             live_signal_count=live_signal_count,
             coverage_window=coverage_window,
             retrieval_depth=retrieval_depth,
