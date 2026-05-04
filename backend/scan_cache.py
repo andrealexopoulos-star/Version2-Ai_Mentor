@@ -28,6 +28,17 @@ EDGE_TTL = 3_600        # 1 hour
 KEY_PREFIX_SCAN = "biqc:scan"
 KEY_PREFIX_EDGE = "biqc:edge"
 
+# ─── R2D: per-edge TTL overrides ────────────────────────────────────────────
+# SEMrush domain stats (rank, organic KW, backlinks) do NOT change minute to
+# minute. The R2D brief mandates 24h domain-level caching to stay inside the
+# API-units budget — re-scanning the same domain inside 24h must hit cache
+# and consume zero units. Bump the TTL from 1h (default) to 24h for the
+# semrush-domain-intel edge function only. Other functions (e.g. social
+# enrichment, calibration sync) keep the standard 1h freshness.
+EDGE_TTL_OVERRIDES: dict = {
+    "semrush-domain-intel": 86_400,   # 24 hours
+}
+
 
 def _cache_disabled() -> bool:
     """Diagnostic bypass — when BIQC_DISABLE_CACHE=1 the entire cache layer
@@ -136,14 +147,21 @@ async def set_edge_result(
     function_name: str,
     domain: str,
     result: Dict[str, Any],
-    ttl: int = EDGE_TTL,
+    ttl: Optional[int] = None,
 ) -> None:
-    """Cache an edge-function result. Fire-and-forget."""
+    """Cache an edge-function result. Fire-and-forget.
+
+    ``ttl`` defaults to ``EDGE_TTL`` (1h) but is overridden per-edge via
+    ``EDGE_TTL_OVERRIDES``. R2D bumps semrush-domain-intel to 24h so the
+    same domain inside a 24h window costs zero SEMrush API units.
+    """
     if _cache_disabled():
         return
     redis = get_redis()
     if redis is None or not domain:
         return
+    if ttl is None:
+        ttl = EDGE_TTL_OVERRIDES.get(function_name, EDGE_TTL)
     try:
         await redis.set(
             _edge_key(function_name, domain),

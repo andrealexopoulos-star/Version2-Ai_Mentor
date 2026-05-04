@@ -95,6 +95,9 @@ SECTION_UNCERTAINTY_MESSAGE: Mapping[str, str] = {
     "competitor_swot": "Competitive landscape could not be reliably determined",
     "paid_competitor_analysis": "Paid competitor landscape unavailable for this scan",
     "backlink_profile": "Domain authority + backlink data unavailable for this scan",
+    "backlink_intelligence": "Domain authority + backlink data unavailable for this scan",
+    "keyword_intelligence": "Keyword and top-pages intelligence unavailable for this scan",
+    "advertising_intelligence": "Advertising history and budget posture unavailable for this scan",
     "social_media_analysis": "Social media footprint data unavailable for this scan",
     "swot": "Insufficient market signal to assess strategic position",
     "market_position": "Market positioning data unavailable for this scan",
@@ -301,17 +304,35 @@ _INTERNAL_KEYS: Tuple[str, ...] = (
     # Marjo R2A (2026-05-04) — per-edge-fn audit metadata for the 4 missed
     # scan-fanout fns. Carries internal slug/status/code; never exposed.
     "_edge_response_summary",
+    # Marjo R2D (2026-05-04) — SEMrush-deep internal audit / supplier-named keys
+    "semrush_data",      # raw passthrough of edge response — leaks supplier name + raw_overview + ai_errors
+    "semrush_competitors",  # alias of competitor_analysis.organic_competitors — supplier-named field
+    "provider_telemetry",   # backend audit only — never leaks api_units_used to UI
+    "provider_traces",      # per-call sub-trace; backend audit only
 )
 
 
+# ─── R2D (2026-05-04): supplier-prefixed key renaming ──────────────────────
+# Some legacy enrichment field names embed the supplier slug (e.g.
+# `semrush_rank`). Renaming them to neutral names removes the only
+# remaining banned-token leak under Contract v2 without dropping the data.
+# Renames are applied in `_scrub_internal_keys` after key-strip.
+_KEY_RENAMES: Dict[str, str] = {
+    "semrush_rank": "authority_rank",
+}
+
+
 def _scrub_internal_keys(obj: Any) -> Any:
-    """Recursively drop any key in `_INTERNAL_KEYS`. Does not mutate input."""
+    """Recursively drop any key in `_INTERNAL_KEYS` and apply `_KEY_RENAMES`.
+    Does not mutate input."""
     if isinstance(obj, dict):
-        return {
-            k: _scrub_internal_keys(v)
-            for k, v in obj.items()
-            if k not in _INTERNAL_KEYS
-        }
+        scrubbed: Dict[str, Any] = {}
+        for k, v in obj.items():
+            if k in _INTERNAL_KEYS:
+                continue
+            new_k = _KEY_RENAMES.get(k, k)
+            scrubbed[new_k] = _scrub_internal_keys(v)
+        return scrubbed
     if isinstance(obj, list):
         return [_scrub_internal_keys(item) for item in obj]
     return obj
@@ -369,6 +390,24 @@ SECTION_CRITERIA: Dict[str, Dict[str, Any]] = {
     },
     "backlink_profile": {
         "required": ("referring_domains", "total_backlinks"),
+        "edge_tools": ("semrush_domain_intel",),
+    },
+    # ─── R2D (2026-05-04): Deep SEMrush intel sections ────────────────────
+    # `keyword_intelligence` is powered by the top-100 organic keyword spread
+    # (domain_organic) plus top-20 landing pages (domain_organic_pages).
+    # `backlink_intelligence` is the brief's preferred alias of backlink_profile.
+    # `advertising_intelligence` is powered by the 12-month domain_adwords_history
+    # series. All three live under semrush_domain_intel.
+    "keyword_intelligence": {
+        "required": ("organic_keywords", "top_pages"),
+        "edge_tools": ("semrush_domain_intel",),
+    },
+    "backlink_intelligence": {
+        "required": ("referring_domains", "total_backlinks"),
+        "edge_tools": ("semrush_domain_intel",),
+    },
+    "advertising_intelligence": {
+        "required": ("ad_history_12m",),
         "edge_tools": ("semrush_domain_intel",),
     },
     "competitors": {

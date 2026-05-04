@@ -1503,6 +1503,28 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         "competitor_swot": enrichment.get("competitor_swot") or [],
         "seo_analysis": enrichment.get("seo_analysis") or {},
         "digital_footprint": enrichment.get("digital_footprint") or {},
+        # ─── R2D (2026-05-04): Deep SEMrush intel surfaced to CMO Report ─
+        # competitive_position consumes detailed_competitors + paid_competitors
+        # brand_strength consumes keyword_intelligence (volume + reach) + backlinks
+        # strategic_roadmap consumes top_pages + target keywords
+        # competitive_landscape consumes advertising_intelligence (ad-spend trend)
+        # market_position_score advertising-intensity dimension also feeds from
+        # advertising_intelligence.budget_posture.
+        "keyword_intelligence": enrichment.get("keyword_intelligence") or {},
+        "backlink_intelligence": (
+            enrichment.get("backlink_intelligence")
+            or enrichment.get("backlink_profile")
+            or {}
+        ),
+        "advertising_intelligence": enrichment.get("advertising_intelligence") or {},
+        # detailed_competitors is also exposed under competitor_analysis;
+        # surface a top-level alias so frontend roadmap components don't
+        # need to drill into competitor_analysis.detailed_competitors.
+        "detailed_competitors": (
+            (enrichment.get("competitor_analysis") or {}).get("detailed_competitors")
+            or []
+        ),
+        "paid_competitor_analysis": enrichment.get("paid_competitor_analysis") or {},
         # Header meta fields.
         "engine": "BIQc Intelligence Engine",
         "scan_source": enrichment.get("website_url") or "Deep calibration scan",
@@ -1620,6 +1642,28 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         degraded=bool(staff_intel.get("has_data")) and (workplace_payload.get("total_reviews") or 0) == 0,
     )
 
+    # ─── R2D (2026-05-04): per-section evidence audit for new SEMrush sections.
+    # Each new section is graded SOURCE_BACKED only when the supplier returned
+    # real data; INSUFFICIENT otherwise (Contract v2 bans fabrication).
+    keyword_intel = response.get("keyword_intelligence") or {}
+    keyword_intel_status = classify_section(
+        has_evidence=bool(
+            keyword_intel.get("organic_keywords")
+            or keyword_intel.get("top_pages")
+        ),
+    )
+    backlink_intel = response.get("backlink_intelligence") or {}
+    backlink_intel_status = classify_section(
+        has_evidence=bool(
+            backlink_intel.get("total_backlinks") is not None
+            and backlink_intel.get("referring_domains") is not None
+        ),
+    )
+    adv_intel = response.get("advertising_intelligence") or {}
+    advertising_intel_status = classify_section(
+        has_evidence=bool(adv_intel.get("ad_history_12m")),
+    )
+
     section_inventory = {
         "Chief Marketing Summary": {"status": exec_status},
         "Executive Summary": {"status": exec_status},
@@ -1629,6 +1673,10 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         "Review Intelligence": {"status": review_status},
         "Workplace Intelligence": {"status": workplace_status},
         "Strategic Roadmap": {"status": roadmap_status},
+        # R2D additions:
+        "Keyword Intelligence": {"status": keyword_intel_status},
+        "Backlink Intelligence": {"status": backlink_intel_status},
+        "Advertising Intelligence": {"status": advertising_intel_status},
     }
     response["section_inventory"] = section_inventory
 
@@ -1704,7 +1752,10 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     _sanitized_enrich = _sanitized_envelope["enrichment"] or {}
     for _key in ("seo_analysis", "paid_media_analysis", "swot",
                  "seo_html_hygiene", "market_position", "market_trajectory",
-                 "social_media_analysis", "website_health"):
+                 "social_media_analysis", "website_health",
+                 # R2D additions: preserve only when DATA_AVAILABLE.
+                 "keyword_intelligence", "backlink_intelligence",
+                 "advertising_intelligence", "paid_competitor_analysis"):
         sanitized_val = _sanitized_enrich.get(_key)
         # Adopt the sanitizer output when it preserves a dict with real data.
         # The new sanitizer (PR 2026-04-23) preserves populated data and

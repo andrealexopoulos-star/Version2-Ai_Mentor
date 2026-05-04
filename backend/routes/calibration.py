@@ -3667,7 +3667,113 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         "referring_ips": sr_backlinks.get("referring_ips"),
                         "referring_ip_class_c": sr_backlinks.get("referring_ip_class_c"),
                         "authority_score": sr_backlinks.get("authority_score"),
+                        # R2D additions: follow ratio + dofollow/nofollow split.
+                        "follow_links": sr_backlinks.get("follow_links"),
+                        "nofollow_links": sr_backlinks.get("nofollow_links"),
+                        "follow_ratio": sr_backlinks.get("follow_ratio"),
+                        "toxic_backlinks_pct": sr_backlinks.get("toxic_backlinks_pct"),
                     }
+
+                # ─── R2D (2026-05-04): Deep SEMrush intel fields ───────────
+                # Three new sections wired in addition to the existing six:
+                #
+                # 1) keyword_intelligence
+                #    - organic_keywords: full top-100 keyword spectrum (was 20)
+                #    - top_pages: top-20 organic landing pages (NEW endpoint
+                #      domain_organic_pages)
+                #    Used by SWOT (current ranking strengths), Strategic
+                #    Roadmap (target keywords + pages to optimise), CMO
+                #    competitive_position + brand_strength sections.
+                #
+                # 2) backlink_intelligence (alias of backlink_profile)
+                #    Surfaced under the brief's preferred key so consumers
+                #    that follow the R2D contract get the data without
+                #    needing to know the legacy `backlink_profile` name.
+                #
+                # 3) advertising_intelligence
+                #    - ad_history_12m: 12-month domain_adwords_history series
+                #    - budget_posture: classified advertiser cadence
+                #    Used by Competitive Landscape (ad-spend trend) and
+                #    Market Position Score (advertising intensity dimension).
+                sr_keyword_intel = semrush_intel.get("keyword_intelligence")
+                if isinstance(sr_keyword_intel, dict) and (
+                    sr_keyword_intel.get("organic_keywords")
+                    or sr_keyword_intel.get("top_pages")
+                ):
+                    enrichment["keyword_intelligence"] = {
+                        "organic_keywords": sr_keyword_intel.get("organic_keywords") or [],
+                        "organic_keywords_count": sr_keyword_intel.get("organic_keywords_count") or 0,
+                        "top_pages": sr_keyword_intel.get("top_pages") or [],
+                        "top_pages_count": sr_keyword_intel.get("top_pages_count") or 0,
+                    }
+
+                # backlink_intelligence is the brief's preferred key.
+                # Mirror backlink_profile so downstream consumers can use
+                # either name; the sanitizer treats them via the same
+                # SECTION_CRITERIA entry.
+                if "backlink_profile" in enrichment:
+                    enrichment["backlink_intelligence"] = dict(enrichment["backlink_profile"])
+
+                sr_adv_intel = semrush_intel.get("advertising_intelligence")
+                if isinstance(sr_adv_intel, dict) and sr_adv_intel.get("ad_history_12m"):
+                    enrichment["advertising_intelligence"] = {
+                        "ad_history_12m": sr_adv_intel.get("ad_history_12m") or [],
+                        "months_active": sr_adv_intel.get("months_active") or 0,
+                        "mean_monthly_traffic": sr_adv_intel.get("mean_monthly_traffic"),
+                        "max_monthly_traffic": sr_adv_intel.get("max_monthly_traffic"),
+                        "budget_posture": sr_adv_intel.get("budget_posture"),
+                    }
+
+                # R2D detailed_competitors — extended top-10 list with
+                # per-competitor mini-overview (organic_keywords, traffic,
+                # cost, intensity tier). Computed inside the edge fn from
+                # the existing domain_organic_organic call, so no extra
+                # API units consumed.
+                sr_detailed = (sr_comp or {}).get("detailed_competitors") if isinstance(sr_comp, dict) else None
+                if isinstance(sr_detailed, list) and sr_detailed:
+                    # Surface under competitor_analysis.detailed_competitors
+                    # so the existing competitor_analysis section grows
+                    # rather than fragmenting into a new top-level key.
+                    if not isinstance(enrichment.get("competitor_analysis"), dict):
+                        enrichment["competitor_analysis"] = {}
+                    enrichment["competitor_analysis"]["detailed_competitors"] = sr_detailed[:10]
+
+                # R2D telemetry passthrough: stash api_units_used and the
+                # per-call trace array on the audit trail so the super-admin
+                # API providers dashboard can reconcile per-scan cost.
+                enrichment.setdefault("provider_telemetry", {})
+                enrichment["provider_telemetry"]["semrush"] = {
+                    "api_units_used": semrush_intel.get("api_units_used") or 0,
+                    "api_calls_made": semrush_intel.get("api_calls_made") or 0,
+                    "api_calls_ok": semrush_intel.get("api_calls_ok") or 0,
+                    "provider_traces": semrush_intel.get("provider_traces") or [],
+                }
+
+                # Fire-and-forget per-call provider_usage rollup (one
+                # row per SEMrush sub-call from this scan). Failures here
+                # never block enrichment — provider_tracker swallows
+                # exceptions internally.
+                try:
+                    from core.provider_tracker import record_provider_call
+                    units_total = int(semrush_intel.get("api_units_used") or 0)
+                    failure_count = sum(
+                        1 for t in (semrush_intel.get("provider_traces") or [])
+                        if isinstance(t, dict) and not t.get("ok")
+                    )
+                    asyncio.create_task(record_provider_call(
+                        "semrush",
+                        cost_aud_micros=0,  # SEMrush is a flat-fee plan
+                        error=(f"{failure_count}_subcall_failures" if failure_count else None),
+                    ))
+                    logger.info(
+                        "[semrush-r2d] api_units_used=%d calls=%d ok=%d failures=%d",
+                        units_total,
+                        semrush_intel.get("api_calls_made") or 0,
+                        semrush_intel.get("api_calls_ok") or 0,
+                        failure_count,
+                    )
+                except Exception as track_err:
+                    logger.debug("[semrush-r2d] provider_tracker failed: %s", track_err)
 
                 enrichment["semrush_data"] = semrush_intel
 
