@@ -1,0 +1,602 @@
+.pricing-container {
+  width: min(1200px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+.pricing-hero {
+  background: linear-gradient(180deg, #FAFBFC 0%, #FFFFFF 100%);
+  border-bottom: 1px solid #E5E9F2;
+  padding: 56px 0 40px;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.pricing-hero-pill,
+.always-free-pill,
+.premium-pill,
+.coming-pill {
+  display: inline-block;
+  border-radius: 100px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.pricing-hero-pill {
+  background: #EEF5FF;
+  color: #2A7FFF;
+}
+
+.pricing-hero h1 {
+  margin: 18px auto 14px;
+  max-width: 860px;
+  color: #0B1F3A;
+  font-size: clamp(2.1rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -1.2px;
+  font-weight: 800;
+}
+
+.pricing-hero-sub {
+  max-width: 700px;
+  margin: 0 auto;
+  color: #5A6B85;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.pricing-hero-checks {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: #5A6B85;
+  font-size: 13px;
+}
+
+.pricing-hero-checks span::before {
+  content: '✓';
+  color: #1A9F5C;
+  margin-right: 6px;
+  font-weight: 700;
+}
+
+.pricing-plans {
+  background: #FAFBFC;
+  padding: 40px 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pricing-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E9F2;
+  border-radius: 14px;
+  padding: 28px 22px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.pricing-card-recommended {
+  border: 2px solid #2A7FFF;
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(42, 127, 255, 0.15);
+}
+
+.pricing-card-badge {
+  position: absolute;
+  top: -12px;
+  left: 22px;
+  background: #2A7FFF;
+  color: #FFFFFF;
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.pricing-card-kicker {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #8B96A8;
+  font-weight: 700;
+}
+
+.pricing-card-kicker.is-recommended {
+  color: #2A7FFF;
+}
+
+.pricing-card h3 {
+  margin: 0 0 6px;
+  color: #0B1F3A;
+  font-size: 22px;
+  letter-spacing: -0.4px;
+  font-weight: 800;
+}
+
+.pricing-card-desc {
+  margin: 0 0 16px;
+  min-height: 38px;
+  color: #5A6B85;
+  font-size: 13px;
+}
+
+.pricing-price-wrap {
+  margin-bottom: 14px;
+}
+
+.pricing-price {
+  color: #0B1F3A;
+  font-size: clamp(36px, 4vw, 42px);
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.pricing-price-period {
+  margin-left: 8px;
+  color: #5A6B85;
+  font-size: 13px;
+}
+
+.pricing-includes {
+  background: #F7F9FC;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+}
+
+.pricing-includes.is-recommended {
+  background: #EEF5FF;
+}
+
+.pricing-includes .label {
+  color: #5A6B85;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pricing-includes.is-recommended .label {
+  color: #2A7FFF;
+}
+
+.pricing-includes .value {
+  color: #0B1F3A;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.pricing-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 18px;
+  flex: 1;
+}
+
+.pricing-card li {
+  color: #3D4D66;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.pricing-card .tick {
+  color: #1A9F5C;
+  margin-right: 7px;
+  font-weight: 700;
+}
+
+.pricing-card-cta {
+  display: inline-flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 12px 18px;
+  border: 1.5px solid #0B1F3A;
+  color: #0B1F3A;
+  background: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.pricing-card-cta.is-primary {
+  background: #2A7FFF;
+  color: #FFFFFF;
+  border-color: #2A7FFF;
+}
+
+.pricing-details {
+  border-top: 1px solid #E5E9F2;
+  padding-top: 12px;
+}
+
+.pricing-details > summary {
+  cursor: pointer;
+  color: #2A7FFF;
+  font-size: 12px;
+  font-weight: 700;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pricing-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pricing-details > summary::after {
+  content: '▾';
+  font-size: 14px;
+}
+
+.pricing-details[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.pricing-details-content {
+  margin-top: 12px;
+  color: #5A6B85;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.pricing-details-content p {
+  margin: 0 0 8px;
+}
+
+.pricing-details-note {
+  background: #F7F9FC;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.always-free-strip {
+  padding: 36px 0;
+  background: #F3FBF6;
+  border-top: 1px solid #BFE5CC;
+  border-bottom: 1px solid #BFE5CC;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.always-free-heading {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.always-free-pill {
+  background: #1A9F5C;
+  color: #FFFFFF;
+  margin-bottom: 12px;
+}
+
+.always-free-heading h2 {
+  margin: 0;
+  color: #0B1F3A;
+  font-size: 28px;
+  letter-spacing: -0.5px;
+  font-weight: 800;
+}
+
+.always-free-heading p {
+  margin: 8px auto 0;
+  max-width: 620px;
+  color: #5A6B85;
+  font-size: 14px;
+}
+
+.always-free-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.always-free-tile {
+  border: 1px solid #BFE5CC;
+  border-radius: 10px;
+  background: #FFFFFF;
+  text-align: center;
+  padding: 14px 12px;
+}
+
+.always-free-tile div {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0B1F3A;
+}
+
+.always-free-tile span {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1A9F5C;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.premium-services {
+  padding: 40px 0;
+  background: #FFFFFF;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.premium-services-heading {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.premium-pill {
+  background: #FFF8EB;
+  color: #E89B00;
+  margin-bottom: 10px;
+}
+
+.premium-services-heading h2 {
+  margin: 0;
+  color: #0B1F3A;
+  font-size: 28px;
+  letter-spacing: -0.5px;
+  font-weight: 800;
+}
+
+.premium-services-heading p {
+  margin: 6px 0 0;
+  color: #5A6B85;
+  font-size: 14px;
+}
+
+.premium-services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.premium-card {
+  border: 1px solid #E5E9F2;
+  border-radius: 12px;
+  padding: 24px 26px;
+}
+
+.premium-kicker {
+  margin: 0 0 4px;
+  color: #8B96A8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.premium-card h3 {
+  margin: 0 0 12px;
+  color: #0B1F3A;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.premium-card table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+}
+
+.premium-card td {
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.premium-card td:first-child {
+  color: #5A6B85;
+}
+
+.premium-card td:last-child {
+  color: #0B1F3A;
+  text-align: right;
+  font-weight: 700;
+}
+
+.premium-card tr.highlight {
+  background: #F7F9FC;
+}
+
+.premium-copy {
+  margin: 0;
+  color: #5A6B85;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.premium-footer-cta {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.premium-footer-cta a {
+  color: #2A7FFF;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pricing-coming-soon {
+  padding: 28px 0;
+  background: #FAFBFC;
+  border-top: 1px solid #E5E9F2;
+  border-bottom: 1px solid #E5E9F2;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.coming-pill {
+  background: #EEF5FF;
+  color: #2A7FFF;
+  margin-bottom: 8px;
+}
+
+.pricing-coming-soon p {
+  margin: 0 auto;
+  max-width: 760px;
+  color: #5A6B85;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pricing-faq {
+  padding: 40px 0;
+  border-top: 1px solid #E5E9F2;
+  background: #FFFFFF;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.pricing-faq-inner {
+  max-width: 760px;
+}
+
+.pricing-faq h2 {
+  margin: 0 0 24px;
+  text-align: center;
+  color: #0B1F3A;
+  font-size: 28px;
+  letter-spacing: -0.5px;
+  font-weight: 800;
+}
+
+.pricing-faq-item {
+  margin-bottom: 12px;
+  border: 1px solid #E5E9F2;
+  border-radius: 10px;
+  background: #FAFBFC;
+  padding: 18px 22px;
+}
+
+.pricing-faq-item > summary {
+  list-style: none;
+  cursor: pointer;
+  color: #0B1F3A;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pricing-faq-item > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pricing-faq-item > summary::after {
+  content: '▾';
+  color: #2A7FFF;
+}
+
+.pricing-faq-item p {
+  margin: 12px 0 0;
+  color: #5A6B85;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.pricing-bottom-cta {
+  background: linear-gradient(135deg, #0B1F3A 0%, #1F3A66 100%);
+  color: #FFFFFF;
+  text-align: center;
+  padding: 48px 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.pricing-bottom-cta h2 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  letter-spacing: -0.6px;
+  font-weight: 800;
+}
+
+.pricing-bottom-cta p {
+  margin: 0 0 24px;
+  opacity: 0.9;
+  font-size: 15px;
+}
+
+.pricing-bottom-cta > .pricing-container > a {
+  display: inline-flex;
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 16px 36px;
+  background: #2A7FFF;
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(42, 127, 255, 0.3);
+}
+
+.pricing-bottom-sub {
+  margin-top: 18px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.pricing-bottom-sub a {
+  color: #BFD7FF;
+}
+
+@media (max-width: 1024px) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pricing-card-recommended {
+    transform: none;
+  }
+
+  .always-free-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .premium-services-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .pricing-container {
+    width: min(1200px, calc(100% - 28px));
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .always-free-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pricing-bottom-cta h2 {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 420px) {
+  .always-free-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pricing-hero-checks {
+    justify-content: flex-start;
+    text-align: left;
+  }
+}

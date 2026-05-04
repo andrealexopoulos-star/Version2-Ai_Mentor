@@ -127,6 +127,8 @@ class BusinessProfileUpdate(BaseModel):
     products_services: Optional[str] = None
     growth_goals: Optional[str] = None
     risk_profile: Optional[str] = None
+    target_market_notes: Optional[str] = None
+    business_signals: Optional[List[str]] = None
 
 
 # ==================== BUSINESS PROFILE ROUTES ====================
@@ -552,6 +554,27 @@ async def update_business_profile(profile: BusinessProfileUpdate, current_user: 
             profile_data.pop("retention_known")  # not a DB column
         if "retention_rate_range" in profile_data:
             profile_data.pop("retention_rate_range")  # not a DB column
+
+        # Persist custom onboarding metadata inside dna_trace JSONB so we can
+        # keep Business Signals separate from KPI thresholds without adding a
+        # breaking schema dependency.
+        if "business_signals" in profile_data or "target_market_notes" in profile_data:
+            incoming_signals = profile_data.pop("business_signals", None)
+            incoming_target_notes = profile_data.pop("target_market_notes", None)
+            existing_profile = await get_business_profile_supabase(get_sb(), user_id)
+            existing_trace = (existing_profile or {}).get("dna_trace")
+            if not isinstance(existing_trace, dict):
+                existing_trace = {}
+            if incoming_signals is not None:
+                cleaned_signals = [
+                    str(item).strip()
+                    for item in (incoming_signals or [])
+                    if str(item).strip()
+                ]
+                existing_trace["business_signals"] = cleaned_signals
+            if incoming_target_notes is not None:
+                existing_trace["target_market_notes"] = str(incoming_target_notes or "").strip()
+            profile_data["dna_trace"] = existing_trace
 
         # Compute retention score (AU baselines) if inputs are present
         computed_rag = compute_retention_rag(

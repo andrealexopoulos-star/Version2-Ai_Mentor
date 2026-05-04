@@ -55,8 +55,8 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
     ) : (
       /* Progress phases */
       <div className="max-w-md w-full text-center">
-        <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-6" style={{ background: '#E85D00', animation: 'revealPulse 2s ease-in-out infinite' }}>
-          <span className="text-white font-bold text-xl" style={{ fontFamily: fontFamily.mono }}>B</span>
+        <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-6" style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid rgba(10,10,10,0.08)', animation: 'revealPulse 2s ease-in-out infinite', overflow: 'hidden' }}>
+          <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 36, height: 'auto' }} />
         </div>
 
         <p className="text-lg mb-2 text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>

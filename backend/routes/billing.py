@@ -32,6 +32,9 @@ from routes.deps import (
     get_sb,
 )
 from routes.integrations import get_accounting_summary
+from services.topup_consent_service import get_effective_consent, record_consent_event
+from services.topup_policy_service import build_eligibility, latest_topup_attempt
+from services.topup_service import manual_topup
 
 
 router = APIRouter()
@@ -41,6 +44,22 @@ router = APIRouter()
 
 class AutoTopupPatchBody(BaseModel):
     enabled: bool
+
+
+class TopupCapPatchBody(BaseModel):
+    monthly_topup_cap_override: Optional[int] = None
+
+
+class TopupConsentBody(BaseModel):
+    consent_action: str
+    consent_version: str = "v1"
+    source: str = "billing_ui"
+    auto_topup_enabled_after: Optional[bool] = None
+    monthly_topup_cap_after: Optional[int] = None
+
+
+class ManualTopupBody(BaseModel):
+    trigger_type: str = "manual"
 
 
 # Sprint B #18 (2026-04-22): cancel-reason capture before Stripe portal
@@ -249,8 +268,8 @@ def _safe_user_billing_state(sb, user_id: str) -> Dict[str, Any]:
             sb.table("users")
             .select(
                 "subscription_tier,subscription_status,current_period_end,"
-                "past_due_since,trial_ends_at,stripe_customer_id,"
-                "auto_topup_enabled,payment_required,topup_warned_at"
+                "past_due_since,trial_ends_at,stripe_customer_id,stripe_subscription_id,"
+                "auto_topup_enabled,payment_required,topup_warned_at,account_id"
             )
             .eq("id", user_id)
             .limit(1)
@@ -263,31 +282,64 @@ def _safe_user_billing_state(sb, user_id: str) -> Dict[str, Any]:
         return {}
 
 
-def _latest_ledger_reset_ts(sb, user_id: str) -> Optional[datetime]:
-    """Most recent kind='reset' row in usage_ledger (authoritative period start)."""
+def _safe_account_billing_policy(sb, account_id: Optional[str]) -> Dict[str, Any]:
+    if not account_id:
+        return {}
     try:
         res = (
-            sb.table("usage_ledger")
-            .select("created_at,period_start")
-            .eq("user_id", user_id)
-            .eq("kind", "reset")
-            .order("created_at", desc=True)
+            sb.table("account_billing_policy")
+            .select(
+                "account_id,effective_tier,monthly_topup_cap_override,"
+                "auto_topup_enabled,payment_required,topup_warned_at,"
+                "current_period_start,current_period_end"
+            )
+            .eq("account_id", account_id)
             .limit(1)
             .execute()
         )
+        rows = (res.data or []) if res is not None else []
+        return (rows[0] or {}) if rows else {}
+    except Exception as exc:
+        logger.warning("account_billing_policy lookup failed for account %s: %s", account_id, exc)
+        return {}
+
+
+def _apply_usage_scope_filter(query, *, user_id: str, account_id: Optional[str]):
+    # PR-1.5 account-billing foundation:
+    # account scope is authoritative when account_id exists.
+    if account_id:
+        return query.eq("account_id", account_id)
+    return query.eq("user_id", user_id)
+
+
+def _latest_ledger_reset_ts(sb, user_id: str, account_id: Optional[str] = None) -> Optional[datetime]:
+    """Most recent kind='reset' row in usage_ledger (authoritative period start)."""
+    try:
+        q = (
+            sb.table("usage_ledger")
+            .select("created_at,period_start")
+            .eq("kind", "reset")
+            .order("created_at", desc=True)
+            .limit(1)
+        )
+        res = _apply_usage_scope_filter(q, user_id=user_id, account_id=account_id).execute()
         rows = (res.data or []) if res is not None else []
         if not rows:
             return None
         return _parse_iso_ts(rows[0].get("period_start")) or _parse_iso_ts(rows[0].get("created_at"))
     except Exception as exc:
-        logger.warning("usage_ledger reset lookup failed for %s: %s", user_id, exc)
+        logger.warning("usage_ledger reset lookup failed for user=%s account=%s: %s", user_id, account_id, exc)
         return None
 
 
-def _resolve_period_start(user_state: Dict[str, Any]) -> datetime:
+def _resolve_period_start(account_policy: Dict[str, Any], user_state: Dict[str, Any]) -> datetime:
     """Fallback when no reset row exists: (current_period_end - 1 month) or first-of-UTC-month."""
     now = datetime.now(timezone.utc)
-    cpe = _parse_iso_ts(user_state.get("current_period_end"))
+    policy_period_start = _parse_iso_ts(account_policy.get("current_period_start")) if account_policy else None
+    if policy_period_start:
+        return policy_period_start
+
+    cpe = _parse_iso_ts((account_policy or {}).get("current_period_end") or user_state.get("current_period_end"))
     if cpe:
         y, m = cpe.year, cpe.month - 1
         if m == 0:
@@ -297,24 +349,28 @@ def _resolve_period_start(user_state: Dict[str, Any]) -> datetime:
     return datetime(now.year, now.month, 1, tzinfo=timezone.utc)
 
 
-def _sum_ledger_by_kind(sb, user_id: str, since: datetime) -> Dict[str, int]:
+def _sum_ledger_by_kind(
+    sb,
+    user_id: str,
+    since: datetime,
+    account_id: Optional[str] = None,
+) -> Dict[str, int]:
     """Sum usage_ledger tokens since `since`, split by kind (consume + topup only)."""
     out = {"consume": 0, "topup": 0}
     try:
-        res = (
+        q = (
             sb.table("usage_ledger")
             .select("kind,tokens")
-            .eq("user_id", user_id)
             .gte("created_at", _iso(since))
             .in_("kind", ["consume", "topup"])
-            .execute()
         )
+        res = _apply_usage_scope_filter(q, user_id=user_id, account_id=account_id).execute()
         for row in (res.data or []):
             k = row.get("kind")
             if k in out:
                 out[k] += int(row.get("tokens") or 0)
     except Exception as exc:
-        logger.warning("usage_ledger sum failed for %s: %s", user_id, exc)
+        logger.warning("usage_ledger sum failed for user=%s account=%s: %s", user_id, account_id, exc)
     return out
 
 
@@ -326,63 +382,76 @@ def _today_utc_start(now: Optional[datetime] = None) -> datetime:
     return datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
 
 
-def _sum_consume_since(sb, user_id: str, since: datetime) -> int:
+def _sum_consume_since(
+    sb,
+    user_id: str,
+    since: datetime,
+    account_id: Optional[str] = None,
+) -> int:
     """Sum kind='consume' tokens since `since`. Separate from _sum_ledger_by_kind
     because the daily window calls this independently of the period window —
     we want two SELECTs not one, so a ledger reset mid-day doesn't zero the
     today counter (resets are period-scoped, not day-scoped)."""
     total = 0
     try:
-        res = (
+        q = (
             sb.table("usage_ledger")
             .select("tokens")
-            .eq("user_id", user_id)
             .eq("kind", "consume")
             .gte("created_at", _iso(since))
-            .execute()
         )
+        res = _apply_usage_scope_filter(q, user_id=user_id, account_id=account_id).execute()
         for row in (res.data or []):
             total += int(row.get("tokens") or 0)
     except Exception as exc:
-        logger.warning("usage_ledger daily sum failed for %s: %s", user_id, exc)
+        logger.warning("usage_ledger daily sum failed for user=%s account=%s: %s", user_id, account_id, exc)
     return total
 
 
-def _daily_average_since(sb, user_id: str, period_start: datetime, today_start: datetime) -> float:
+def _daily_average_since(
+    sb,
+    user_id: str,
+    period_start: datetime,
+    today_start: datetime,
+    account_id: Optional[str] = None,
+) -> float:
     """Average tokens/day across full days elapsed in the current period
     (exclusive of today, which is still accumulating). Returns 0.0 if the
     period just started — caller should treat that as "no baseline yet"."""
     if today_start <= period_start:
         return 0.0
     try:
-        res = (
+        q = (
             sb.table("usage_ledger")
             .select("tokens")
-            .eq("user_id", user_id)
             .eq("kind", "consume")
             .gte("created_at", _iso(period_start))
             .lt("created_at", _iso(today_start))
-            .execute()
         )
+        res = _apply_usage_scope_filter(q, user_id=user_id, account_id=account_id).execute()
         total = sum(int(row.get("tokens") or 0) for row in (res.data or []))
     except Exception as exc:
-        logger.warning("usage_ledger average calc failed for %s: %s", user_id, exc)
+        logger.warning("usage_ledger average calc failed for user=%s account=%s: %s", user_id, account_id, exc)
         return 0.0
     days_elapsed = max(1, (today_start - period_start).days)
     return total / days_elapsed
 
 
-def _recent_topups(sb, user_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+def _recent_topups(
+    sb,
+    user_id: str,
+    account_id: Optional[str] = None,
+    limit: int = 5,
+) -> List[Dict[str, Any]]:
     try:
-        res = (
+        q = (
             sb.table("usage_ledger")
             .select("created_at,tokens,price_aud_cents,stripe_payment_intent_id,stripe_invoice_id")
-            .eq("user_id", user_id)
             .eq("kind", "topup")
             .order("created_at", desc=True)
             .limit(limit)
-            .execute()
         )
+        res = _apply_usage_scope_filter(q, user_id=user_id, account_id=account_id).execute()
         return [
             {
                 "date": row.get("created_at"),
@@ -393,7 +462,7 @@ def _recent_topups(sb, user_id: str, limit: int = 5) -> List[Dict[str, Any]]:
             for row in (res.data or [])
         ]
     except Exception as exc:
-        logger.warning("usage_ledger topup list failed for %s: %s", user_id, exc)
+        logger.warning("usage_ledger topup list failed for user=%s account=%s: %s", user_id, account_id, exc)
         return []
 
 
@@ -413,9 +482,10 @@ def _recent_invoices(payment_rows: List[Dict[str, Any]], limit: int = 5) -> List
     return out
 
 
-# Tier prices in AUD cents. Matches Stripe products (verified 2026-04-21 against
-# acct_1T8sPaRoX8RKDDG5): Growth prod_U8D8vKuXXK7qhO=$69, Pro prod_ULf4KFDh0UKpeR=$199,
-# Business prod_ULfA7QJoT3Ontk=$349.
+# Tier prices in AUD cents. Matches Stripe product/price contract
+# (verified 2026-05-03): Growth prod_U8D8vKuXXK7qhO/price_1T9wiVRoX8RKDDG5AOSi8Cu6=$69,
+# Pro prod_ULf4KFDh0UKpeR/price_1TMxjtRoX8RKDDG5btgRBrRu=$199,
+# Business prod_ULfA7QJoT3Ontk/price_1TMxplRoX8RKDDG59IaUg7aV=$349.
 _TIER_PRICE_AUD_CENTS = {
     "trial":        0,
     "free":         0,
@@ -428,9 +498,9 @@ _TIER_PRICE_AUD_CENTS = {
 }
 
 
-def _next_charge(user_state: Dict[str, Any], tier: str) -> Optional[Dict[str, Any]]:
+def _next_charge(user_state: Dict[str, Any], tier: str, account_policy: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
     """Synthesise {date, amount_aud_cents} from users.current_period_end + tier price."""
-    cpe = user_state.get("current_period_end")
+    cpe = (account_policy or {}).get("current_period_end") or user_state.get("current_period_end")
     if not cpe:
         return None
     return {
@@ -451,21 +521,26 @@ async def get_billing_overview(current_user: dict = Depends(get_current_user)):
         sb = get_sb()
 
         user_state = _safe_user_billing_state(sb, user_id)
-        tier = normalize_tier(user_state.get("subscription_tier"))
+        account_id = user_state.get("account_id")
+        if not account_id:
+            raise HTTPException(status_code=409, detail="Account billing scope is not configured")
+        account_policy = _safe_account_billing_policy(sb, account_id)
+
+        tier = normalize_tier((account_policy.get("effective_tier") if account_policy else None) or user_state.get("subscription_tier"))
         allowance = allocation_for(tier)
         unmetered = allowance < 0
 
-        period_start = _latest_ledger_reset_ts(sb, user_id) or _resolve_period_start(user_state)
+        period_start = _latest_ledger_reset_ts(sb, user_id, account_id=account_id) or _resolve_period_start(account_policy, user_state)
 
-        totals = _sum_ledger_by_kind(sb, user_id, period_start)
+        totals = _sum_ledger_by_kind(sb, user_id, period_start, account_id=account_id)
         consumed = totals["consume"]
         topped_up = totals["topup"]
 
         # Daily meter (2026-04-22): UTC 00:00 today → now. Always computed,
         # including super_admin (the UI hides the ratio, keeps the raw count).
         today_start = _today_utc_start()
-        tokens_today = _sum_consume_since(sb, user_id, today_start)
-        daily_average = _daily_average_since(sb, user_id, period_start, today_start)
+        tokens_today = _sum_consume_since(sb, user_id, today_start, account_id=account_id)
+        daily_average = _daily_average_since(sb, user_id, period_start, today_start, account_id=account_id)
         # percent_of_daily_normal: today / rolling average. None when no baseline
         # (period < 1 full day) so the UI can render "—" instead of /0 ratio.
         percent_of_daily_normal: Optional[float] = None
@@ -483,6 +558,15 @@ async def get_billing_overview(current_user: dict = Depends(get_current_user)):
                 percent_consumed = round(min(1.0, consumed / effective_allowance), 4)
 
         payment_rows = _safe_payment_rows(user_id)
+        consent_state = get_effective_consent(sb, account_id=account_id)
+        eligibility = build_eligibility(
+            sb,
+            user_state={**user_state, "id": user_id},
+            account_policy=account_policy or {},
+            account_id=account_id,
+            tier=tier,
+        )
+        latest_attempt = latest_topup_attempt(sb, account_id=account_id)
 
         return {
             "ok": True,
@@ -500,14 +584,26 @@ async def get_billing_overview(current_user: dict = Depends(get_current_user)):
             "daily_average": round(daily_average, 2),
             "percent_of_daily_normal": percent_of_daily_normal,
             "day_start": _iso(today_start),
-            "next_charge": _next_charge(user_state, tier),
-            "auto_topup_enabled": bool(user_state.get("auto_topup_enabled", True)),
-            "payment_required": bool(user_state.get("payment_required", False)),
-            "recent_topups": _recent_topups(sb, user_id, limit=5),
+            "next_charge": _next_charge(user_state, tier, account_policy=account_policy),
+            "auto_topup_enabled": bool(
+                account_policy.get("auto_topup_enabled", user_state.get("auto_topup_enabled", True))
+            ),
+            "payment_required": bool(
+                account_policy.get("payment_required", user_state.get("payment_required", False))
+            ),
+            "recent_topups": _recent_topups(sb, user_id, account_id=account_id, limit=5),
             "recent_invoices": _recent_invoices(payment_rows, limit=5),
             "period_start": _iso(period_start),
+            "billing_scope": "account",
+            "account_id": account_id,
             "subscription_status": user_state.get("subscription_status"),
             "trial_ends_at": user_state.get("trial_ends_at"),
+            "monthly_topup_cap_override": account_policy.get("monthly_topup_cap_override"),
+            "effective_topup_consent": bool(consent_state.get("effective", False)),
+            "latest_topup_attempt": latest_attempt,
+            "topup_cap_limit": eligibility.get("cap_limit"),
+            "topup_cap_used": eligibility.get("cap_used"),
+            "topup_cap_remaining": eligibility.get("cap_remaining"),
             "topup_pack": {
                 "tokens": TOPUP_TOKENS,
                 "price_aud_cents": TOPUP_PRICE_AUD_CENTS,
@@ -524,21 +620,29 @@ async def patch_auto_topup(
     body: AutoTopupPatchBody,
     current_user: dict = Depends(get_current_user),
 ):
-    """Toggle users.auto_topup_enabled for the authenticated user."""
+    """Toggle account_billing_policy.auto_topup_enabled for the caller account."""
     user_id = current_user["id"]
     sb = get_sb()
     try:
-        res = (
-            sb.table("users")
-            .update({"auto_topup_enabled": bool(body.enabled)})
-            .eq("id", user_id)
-            .execute()
-        )
-        if not (res.data or []):
-            raise HTTPException(status_code=404, detail="User not found")
+        user_state = _safe_user_billing_state(sb, user_id)
+        account_id = user_state.get("account_id")
+        if not account_id:
+            raise HTTPException(status_code=409, detail="Account billing scope is not configured")
+        sb.table("account_billing_policy").upsert(
+            {
+                "account_id": account_id,
+                "effective_tier": normalize_tier(user_state.get("subscription_tier")),
+                "auto_topup_enabled": bool(body.enabled),
+                "payment_required": bool(user_state.get("payment_required", False)),
+                "topup_warned_at": user_state.get("topup_warned_at"),
+                "current_period_end": user_state.get("current_period_end"),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+            on_conflict="account_id",
+        ).execute()
         logger.info(
-            "[billing-auto-topup] user=%s auto_topup_enabled=%s",
-            user_id, bool(body.enabled),
+            "[billing-auto-topup] user=%s account=%s auto_topup_enabled=%s",
+            user_id, account_id, bool(body.enabled),
         )
         return {"ok": True, "auto_topup_enabled": bool(body.enabled)}
     except HTTPException:
@@ -546,6 +650,122 @@ async def patch_auto_topup(
     except Exception as e:
         logger.error(f"[billing-auto-topup] Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/billing/topup-cap")
+async def patch_topup_cap(
+    body: TopupCapPatchBody,
+    current_user: dict = Depends(get_current_user),
+):
+    """Set account_billing_policy.monthly_topup_cap_override for caller account."""
+    if body.monthly_topup_cap_override is not None and body.monthly_topup_cap_override < 0:
+        raise HTTPException(status_code=422, detail="monthly_topup_cap_override must be >= 0")
+
+    user_id = current_user["id"]
+    sb = get_sb()
+    try:
+        user_state = _safe_user_billing_state(sb, user_id)
+        account_id = user_state.get("account_id")
+        if not account_id:
+            raise HTTPException(status_code=409, detail="Account billing scope is not configured")
+
+        sb.table("account_billing_policy").upsert(
+            {
+                "account_id": account_id,
+                "effective_tier": normalize_tier(user_state.get("subscription_tier")),
+                "monthly_topup_cap_override": body.monthly_topup_cap_override,
+                "auto_topup_enabled": bool(user_state.get("auto_topup_enabled", True)),
+                "payment_required": bool(user_state.get("payment_required", False)),
+                "topup_warned_at": user_state.get("topup_warned_at"),
+                "current_period_end": user_state.get("current_period_end"),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+            on_conflict="account_id",
+        ).execute()
+
+        return {
+            "ok": True,
+            "monthly_topup_cap_override": body.monthly_topup_cap_override,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[billing-topup-cap] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/billing/topup/consent")
+async def post_topup_consent(
+    body: TopupConsentBody,
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["id"]
+    sb = get_sb()
+    try:
+        user_state = _safe_user_billing_state(sb, user_id)
+        account_id = user_state.get("account_id")
+        if not account_id:
+            raise HTTPException(status_code=409, detail="Account billing scope is not configured")
+        event = record_consent_event(
+            sb,
+            account_id=account_id,
+            user_id=user_id,
+            consent_action=body.consent_action,
+            consent_version=body.consent_version,
+            source=body.source,
+            auto_topup_enabled_after=body.auto_topup_enabled_after,
+            monthly_topup_cap_after=body.monthly_topup_cap_after,
+        )
+        consent_state = get_effective_consent(sb, account_id=account_id)
+        return {
+            "ok": True,
+            "event_id": event.get("id"),
+            "effective_topup_consent": bool(consent_state.get("effective", False)),
+        }
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("[billing-topup-consent] Error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Unable to record top-up consent")
+
+
+@router.post("/billing/topup")
+async def post_manual_topup(
+    body: ManualTopupBody,
+    current_user: dict = Depends(get_current_user),
+):
+    if (body.trigger_type or "manual").strip().lower() != "manual":
+        raise HTTPException(status_code=422, detail="trigger_type must be 'manual'")
+
+    user_id = current_user["id"]
+    sb = get_sb()
+    try:
+        user_state = _safe_user_billing_state(sb, user_id)
+        account_id = user_state.get("account_id")
+        if not account_id:
+            raise HTTPException(status_code=409, detail="Account billing scope is not configured")
+        account_policy = _safe_account_billing_policy(sb, account_id)
+        result = manual_topup(
+            sb,
+            user_state={**user_state, "id": user_id},
+            account_policy=account_policy or {},
+        )
+        attempt = result.get("attempt") or {}
+        return {
+            "ok": True,
+            "attempt_id": attempt.get("id"),
+            "status": attempt.get("status"),
+            "stripe_payment_intent_id": attempt.get("stripe_payment_intent_id"),
+            "client_secret": result.get("payment_intent_client_secret"),
+            "reused_pending": bool(result.get("reused_pending", False)),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("[billing-topup] Error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Unable to initiate top-up")
 
 
 # ─── Endpoint: POST /billing/cancel-reason (Sprint B #18, 2026-04-22) ──

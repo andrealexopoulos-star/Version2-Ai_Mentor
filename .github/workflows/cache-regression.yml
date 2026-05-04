@@ -1,0 +1,77 @@
+name: Cache Regression (PR #383 stale-failure class)
+
+# Fires on every PR touching the cache layer or the calibration route handler
+# that owns the cache-aware closure `_cached_edge`. Guards the regression
+# class that PR #383 closed: a Redis-cached failure being served indefinitely
+# instead of triggering a live retry. Root cause memory:
+#   memory/session_handoff_forensic_audit_2026_04_23_night.md
+# Contract:
+#   memory/BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.md
+
+on:
+  pull_request:
+    paths:
+      - "backend/routes/calibration.py"
+      - "backend/scan_cache.py"
+      - "backend/tests/test_cache_no_stale_failure.py"
+      - "backend/tests/test_calibration_edge_normalization.py"
+      - ".github/workflows/cache-regression.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/routes/calibration.py"
+      - "backend/scan_cache.py"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  cache-regression:
+    name: Cache regression suite (no stale failures)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pytest only (test does not need backend deps)
+        # The two test files in this job both use AST extraction + a fake
+        # Redis stub, so they avoid the full backend/requirements.txt
+        # install (~2 min). Keeps the gate fast and unblocks PRs quickly.
+        run: pip install "pytest>=8" "pytest-timeout>=2"
+
+      - name: Run cache-poisoning regression tests
+        run: |
+          python -m pytest \
+            backend/tests/test_cache_no_stale_failure.py \
+            backend/tests/test_calibration_edge_normalization.py \
+            --tb=short -v --no-header --timeout=15 -x
+
+      - name: Surface failure context
+        if: failure()
+        run: |
+          echo "::error title=Cache regression detected::"
+          echo "One of the cache-layer regression tests FAILED. This guards"
+          echo "the PR #383 root cause: stale failed edge results being"
+          echo "served from Redis indefinitely (the '5% CMO depth' bug)."
+          echo ""
+          echo "Most likely causes:"
+          echo "  1. Read-side guard removed from _cached_edge in"
+          echo "     backend/routes/calibration.py (the 'if isinstance(hit, dict)"
+          echo "     and not _edge_result_failed(hit):' branch)."
+          echo "  2. Write-side guard removed (set_edge_result called on a"
+          echo "     failed result)."
+          echo "  3. _edge_result_failed contract weakened — review"
+          echo "     test_calibration_edge_normalization.py."
+          echo "  4. BIQC_DISABLE_CACHE bypass not wired into a new"
+          echo "     scan_cache.py public coroutine."
+          echo ""
+          echo "Do NOT bypass this gate. The cache-poisoning bug class"
+          echo "previously caused a multi-hour user-visible data outage."

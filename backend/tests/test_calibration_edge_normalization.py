@@ -3,7 +3,7 @@ import asyncio
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import types
 
 
@@ -13,26 +13,82 @@ CALIBRATION_SOURCE = REPO_ROOT / "backend" / "routes" / "calibration.py"
 
 def _load_edge_helpers():
     tree = ast.parse(CALIBRATION_SOURCE.read_text(encoding="utf-8"))
-    wanted_funcs = {"_edge_result_failed", "_normalize_edge_result", "_call_edge_function"}
+    wanted_funcs = {
+        "_edge_result_failed",
+        "_normalize_edge_result",
+        "_call_edge_function",
+        # Marjo P0 / E1 (2026-05-04): _call_edge_function now routes every
+        # exit through _surface_edge_non_200 to log mission-fn non-200s
+        # explicitly. Pull the helper into scope here too.
+        "_surface_edge_non_200",
+    }
     # Incident H (2026-04-23): EdgeCallMode must be in scope when _call_edge_function
     # is compiled — its signature default references EdgeCallMode.USER_PROXIED.
     wanted_classes = {"EdgeCallMode"}
-    selected = [
-        node
-        for node in tree.body
-        if (
-            (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in wanted_funcs)
-            or (isinstance(node, ast.ClassDef) and node.name in wanted_classes)
-        )
-    ]
+    # MISSION_EDGE_FUNCTIONS_ZERO_401 module-level set is referenced by
+    # _surface_edge_non_200; pull it in.
+    wanted_assigns = {"MISSION_EDGE_FUNCTIONS_ZERO_401"}
+    selected = []
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in wanted_funcs:
+            selected.append(node)
+        elif isinstance(node, ast.ClassDef) and node.name in wanted_classes:
+            selected.append(node)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id in wanted_assigns:
+                    selected.append(node)
+                    break
     module = ast.Module(body=selected, type_ignores=[])
+
+    class _NoopLogger:
+        def error(self, *args, **kwargs):
+            pass
+
+        def warning(self, *args, **kwargs):
+            pass
+
+        def info(self, *args, **kwargs):
+            pass
+
+        def debug(self, *args, **kwargs):
+            pass
+
+    # P0 Marjo E2 (2026-05-04): _call_edge_function now records per-attempt
+    # provider traces via abegin_trace / acomplete_trace / arecord_provider_trace
+    # plus a ContextVar-backed get_active_scan_id. Supply harmless no-op shims so
+    # this AST-extracted test fixture stays HTTP-less and trace-table-less while
+    # exercising the same control-flow as production.
+    async def _noop_async(*args, **kwargs):
+        return None
+
+    def _noop(*args, **kwargs):
+        return None
+
     namespace = {
         "Any": Any,
         "Dict": Dict,
+        "Optional": Optional,
         "Enum": Enum,
         "os": os,
         "asyncio": asyncio,
         "httpx": types.SimpleNamespace(TimeoutException=TimeoutError),
+        # _surface_edge_non_200 references logger.error — supply a no-op so
+        # this test loader stays HTTP-less and silent.
+        "logger": _NoopLogger(),
+        # E2 trace helpers — no-op so trace rows aren't written from tests.
+        "abegin_trace": _noop_async,
+        "acomplete_trace": _noop_async,
+        "arecord_provider_trace": _noop_async,
+        "get_active_scan_id": _noop,
+        "get_active_user_id": _noop,
+        "EDGE_FUNCTION_TO_PROVIDER": {},
+        "_summarise_edge_request": lambda fn, payload: {"edge_function": fn},
+        "_summarise_edge_response": lambda fn, status, normalised: {
+            "edge_function": fn, "http_status": status,
+        },
+        "_time": __import__("time"),
+        "json": __import__("json"),
     }
     exec(compile(module, str(CALIBRATION_SOURCE), "exec"), namespace)
     return namespace

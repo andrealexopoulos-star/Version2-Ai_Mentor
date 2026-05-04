@@ -517,7 +517,7 @@ async def get_current_user(
                         # for the hard gate at AuthCallback + ProtectedRoute.
                         user_row = sb.table("users").select(
                             "trial_expires_at,trial_tier,subscription_tier,subscription_status,"
-                            "stripe_customer_id,stripe_subscription_id,role,is_master_account"
+                            "stripe_customer_id,stripe_subscription_id,role,is_master_account,account_id"
                         ).eq("id", user.get("id")).maybe_single().execute()
                         if user_row.data:
                             user = {**user, **user_row.data}
@@ -616,6 +616,21 @@ def require_owner_or_admin(current_user: dict = Depends(get_current_user)):
 async def get_current_account(current_user: dict = Depends(get_current_user)):
     """Get the account associated with the current user."""
     account_id = current_user.get("account_id")
+    # Billing/account paths require deterministic account linkage. Older
+    # tokens may not carry account_id, so we fall back to users.account_id.
+    if not account_id:
+        try:
+            row = (
+                get_sb()
+                .table("users")
+                .select("account_id")
+                .eq("id", current_user.get("id"))
+                .maybe_single()
+                .execute()
+            )
+            account_id = (row.data or {}).get("account_id") if row is not None else None
+        except Exception as exc:
+            logger.warning("Account lookup failed for user %s: %s", current_user.get("id"), exc)
     if not account_id:
         raise HTTPException(status_code=400, detail="Account not configured")
     from supabase_remaining_helpers import get_account_supabase

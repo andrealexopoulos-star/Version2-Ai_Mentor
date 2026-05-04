@@ -13,10 +13,10 @@ export const TIERS = {
 };
 
 export const STRIPE_PRICES = {
-  lite_monthly: process.env.REACT_APP_STRIPE_LITE_PRICE_ID || 'price_biqc_lite_14',
-  starter_monthly: process.env.REACT_APP_STRIPE_STARTER_PRICE_ID || 'price_biqc_growth_69',
-  pro_monthly: process.env.REACT_APP_STRIPE_PRO_PRICE_ID || 'price_biqc_professional_199',
-  business_monthly: process.env.REACT_APP_STRIPE_BUSINESS_PRICE_ID || 'price_biqc_business_349',
+  lite_monthly: process.env.REACT_APP_STRIPE_LITE_PRICE_ID || 'price_1TSnBMRoX8RKDDG5akGL7RkT',
+  starter_monthly: process.env.REACT_APP_STRIPE_STARTER_PRICE_ID || 'price_1T9wiVRoX8RKDDG5AOSi8Cu6',
+  pro_monthly: process.env.REACT_APP_STRIPE_PRO_PRICE_ID || 'price_1TMxjtRoX8RKDDG5btgRBrRu',
+  business_monthly: process.env.REACT_APP_STRIPE_BUSINESS_PRICE_ID || 'price_1TMxplRoX8RKDDG59IaUg7aV',
   enterprise_monthly: process.env.REACT_APP_STRIPE_ENTERPRISE_PRICE_ID || '',
 };
 

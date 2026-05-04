@@ -37,13 +37,24 @@ export function resolveTier(user) {
   const role = (user.role || '').toLowerCase();
   if (role === 'superadmin' || role === 'super_admin') return 'super_admin';
 
+  // Active reverse-trial grants elevated effective tier only when we have an
+  // explicit trialing signal. Do not infer "pro" from a missing trial_tier.
+  const status = (user.subscription_status || '').toLowerCase().trim();
+  const isTrialing = status === 'trialing' || user.on_trial === true;
+  if (user.trial_expires_at && isTrialing) {
+    const trialExpiry = new Date(user.trial_expires_at);
+    if (trialExpiry > new Date()) {
+      const trialTier = (user.trial_tier || 'starter').toLowerCase();
+      return trialTier === 'pro' || trialTier === 'professional' ? 'pro' : 'starter';
+    }
+  }
+
   // Phase 6.11 — subscription gate. A user who has a tier set but whose
   // Stripe subscription is unhealthy (past-due payment, user-canceled,
   // or explicitly incomplete) is treated as 'free' for access purposes.
   // This way a canceled Pro user loses access until they reactivate,
   // even if users.subscription_tier has not yet been downgraded by the
   // webhook (eventual consistency safety net).
-  const status = (user.subscription_status || '').toLowerCase().trim();
   const INACTIVE_STATUSES = new Set(['past_due', 'canceled', 'cancelled', 'incomplete', 'incomplete_expired', 'unpaid']);
   if (INACTIVE_STATUSES.has(status)) {
     return 'free';

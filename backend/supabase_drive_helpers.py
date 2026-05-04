@@ -64,12 +64,36 @@ async def update_merge_integration_sync(
     sync_data: Dict[str, Any]
 ) -> bool:
     """Update integration sync status"""
-    try:
-        result = supabase_client.table("merge_integrations").update(sync_data).eq("account_token", account_token).execute()
-        return bool(result.data)
-    except Exception as e:
-        logger.error(f"Error updating integration sync: {e}")
-        return False
+    payload_variants = [
+        dict(sync_data or {}),
+        {
+            k: v
+            for k, v in dict(sync_data or {}).items()
+            if k not in {"sync_stats", "sync_status", "last_attempt_at", "integration_name"}
+        },
+        {
+            k: v
+            for k, v in dict(sync_data or {}).items()
+            if k in {"status", "last_sync_at", "error_message"}
+        },
+    ]
+    last_error = None
+    for payload in payload_variants:
+        if not payload:
+            continue
+        try:
+            result = (
+                supabase_client.table("merge_integrations")
+                .update(payload)
+                .eq("account_token", account_token)
+                .execute()
+            )
+            return bool(result.data is not None)
+        except Exception as e:
+            last_error = e
+            continue
+    logger.error(f"Error updating integration sync: {last_error}")
+    return False
 
 
 # =============================================
@@ -153,3 +177,44 @@ async def get_drive_file_by_id(supabase_client, file_id: str) -> Optional[Dict[s
     except Exception as e:
         logger.error(f"Error fetching drive file: {e}")
         return None
+
+
+async def get_drive_scope_policy(supabase_client, user_id: str) -> Optional[Dict[str, Any]]:
+    try:
+        result = (
+            supabase_client.table("drive_scope_policy")
+            .select("*")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+        rows = result.data or []
+        return rows[0] if rows else None
+    except Exception as e:
+        logger.warning(f"Drive scope policy lookup failed (table may be absent): {e}")
+        return None
+
+
+async def upsert_drive_scope_policy(
+    supabase_client,
+    *,
+    user_id: str,
+    allow_all_files: bool,
+    folder_ids: List[str],
+    file_type_includes: List[str],
+    file_type_excludes: List[str],
+) -> bool:
+    payload = {
+        "user_id": user_id,
+        "allow_all_files": bool(allow_all_files),
+        "folder_ids": folder_ids or [],
+        "file_type_includes": file_type_includes or [],
+        "file_type_excludes": file_type_excludes or [],
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        supabase_client.table("drive_scope_policy").upsert(payload, on_conflict="user_id").execute()
+        return True
+    except Exception as e:
+        logger.error(f"Drive scope policy upsert failed: {e}")
+        return False

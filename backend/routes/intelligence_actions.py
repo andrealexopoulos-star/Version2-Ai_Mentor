@@ -17,6 +17,16 @@ from routes.deps import get_current_user, get_sb, OPENAI_KEY, AI_MODEL, logger
 from intelligence_live_truth import get_live_integration_truth
 from supabase_intelligence_helpers import get_business_profile_supabase
 from auth_supabase import get_user_by_id
+# Contract v2 sanitiser — every response leaving this router is funnelled
+# through `sanitise_external_response` so supplier names, edge function
+# names, raw HTTP statuses, and bearer tokens never reach the frontend.
+# Memory ref: BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
+from lib.contract_v2_sanitiser import (
+    sanitize_edge_passthrough,
+    sanitize_error_for_external,
+    InternalErrorType,
+    ExternalState,
+)
 
 router = APIRouter()
 
@@ -174,7 +184,10 @@ async def trigger_social_recon(req: ReconRequest = ReconRequest(), current_user:
     if not any([payload["website"], payload["linkedin"], payload["twitter"], payload["instagram"], payload["facebook"]]):
         return {"status": "no_handles", "message": "No social handles or website configured. Add them via /intelligence/social-handles."}
 
-    # Call deep-web-recon Edge Function
+    # Call the Edge Function. The proxy intentionally does NOT mention the
+    # function name, supplier name, bearer scheme, or HTTP status anywhere
+    # in its return shape — those go to logs only (Contract v2, §3 Hard
+    # Rule 3). The frontend gets `{ok, state}` plus scrubbed data only.
     supabase_url = os.environ.get("SUPABASE_URL")
     service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
@@ -192,16 +205,35 @@ async def trigger_social_recon(req: ReconRequest = ReconRequest(), current_user:
 
             if response.status_code == 200:
                 result = response.json()
-                logger.info(f"[recon] Edge Function returned: ok={result.get('ok')}, signals={result.get('signals_created', 0)}")
-                return result
-            else:
-                error_text = response.text[:200]
-                logger.error(f"[recon] Edge Function failed: {response.status_code} — {error_text}")
-                return {"status": "error", "message": f"Edge Function returned {response.status_code}", "detail": error_text}
+                # Internal log keeps full detail (per zero-401 rule) — but
+                # the response we send out has supplier identity scrubbed.
+                logger.info(
+                    "[recon] Recon edge call ok=%s signals=%s",
+                    result.get("ok"), result.get("signals_created", 0),
+                )
+                return sanitize_edge_passthrough({
+                    "ok": True,
+                    "_http_status": 200,
+                    **(result if isinstance(result, dict) else {"value": result}),
+                })
+
+            # Non-200: log internally with all detail; surface external state.
+            logger.error(
+                "[recon] Edge call non-200 status=%s body=%s",
+                response.status_code, response.text[:200],
+            )
+            return sanitize_edge_passthrough({
+                "ok": False,
+                "_http_status": response.status_code,
+            })
 
     except Exception as e:
-        logger.error(f"[recon] Edge Function call failed: {e}")
-        return {"status": "error", "message": str(e)}
+        # Internal log captures the exception with stack; external response
+        # is the contract-shaped degraded envelope only.
+        logger.error("[recon] Edge call raised: %s", e, exc_info=True)
+        return sanitize_error_for_external(
+            None, error_type=InternalErrorType.SUPPLIER,
+        )
 
 @router.get("/intelligence/brief")
 async def get_intelligence_brief(current_user: dict = Depends(get_current_user)):

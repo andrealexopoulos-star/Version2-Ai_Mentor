@@ -1,0 +1,95 @@
+name: Supabase Migration Repair
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_repair:
+        description: "Type REPAIR_OLD_NUMBERED_MIGRATIONS_ONLY to run repair"
+        required: true
+        type: string
+
+jobs:
+  repair-migration-history:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF != '' && secrets.SUPABASE_PROJECT_REF || 'vwwandhoydemcybltoxz' }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      - name: Guard manual confirmation input
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event.inputs.confirm_repair }}" != "REPAIR_OLD_NUMBERED_MIGRATIONS_ONLY" ]; then
+            echo "::error::Refusing to run. confirm_repair must equal REPAIR_OLD_NUMBERED_MIGRATIONS_ONLY"
+            exit 1
+          fi
+          echo "Manual confirmation accepted."
+
+      - name: Verify required secrets
+        run: |
+          set -euo pipefail
+          MISSING=()
+          [ -z "${SUPABASE_ACCESS_TOKEN:-}" ] && MISSING+=("SUPABASE_ACCESS_TOKEN")
+          [ -z "${SUPABASE_PROJECT_REF:-}" ] && MISSING+=("SUPABASE_PROJECT_REF")
+          [ -z "${SUPABASE_DB_PASSWORD:-}" ] && MISSING+=("SUPABASE_DB_PASSWORD")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error::Missing required secrets: ${MISSING[*]}"
+            exit 1
+          fi
+          echo "All required secrets present."
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          echo "Project linked: $SUPABASE_PROJECT_REF"
+
+      - name: Capture migration list before repair
+        run: |
+          set -euo pipefail
+          supabase migration list --linked | tee before_repair_migration_list.txt
+
+      - name: Repair old numbered migrations only
+        run: |
+          set -euo pipefail
+          supabase migration repair --status applied \
+            001 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030 031 032 033 034 035 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052 053 054 055 056 057 058 059 060 061 062 063 064 069 070 071 072 073 074 075 076 077 078 079 080 081 082 083 084 085 086 087 088 089 090 091 092 093 094 095 096 097 098 099 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130
+
+      - name: Capture migration list after repair
+        run: |
+          set -euo pipefail
+          supabase migration list --linked | tee after_repair_migration_list.txt
+
+      - name: Fail if 131/132/133 appear repaired
+        run: |
+          set -euo pipefail
+          if grep -E '^[[:space:]]*131[[:space:]]*\|[[:space:]]*131[[:space:]]*\|' after_repair_migration_list.txt >/dev/null; then
+            echo "::error::Migration 131 appears applied after repair. Refusing to continue."
+            exit 1
+          fi
+          if grep -E '^[[:space:]]*132[[:space:]]*\|[[:space:]]*132[[:space:]]*\|' after_repair_migration_list.txt >/dev/null; then
+            echo "::error::Migration 132 appears applied after repair. Refusing to continue."
+            exit 1
+          fi
+          if grep -E '^[[:space:]]*133[[:space:]]*\|[[:space:]]*133[[:space:]]*\|' after_repair_migration_list.txt >/dev/null; then
+            echo "::error::Migration 133 appears applied after repair. Refusing to continue."
+            exit 1
+          fi
+          echo "Safety check passed: 131/132/133 are still pending."
+
+      - name: Complete
+        run: echo "Repair completed. Now run Deploy Supabase DB Migrations dry_run=true."

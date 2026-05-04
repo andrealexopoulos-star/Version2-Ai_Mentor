@@ -668,6 +668,12 @@ jobs:
             calibration-sync
             calibration-engine
             competitor-monitor
+            # P0 Marjo F14 (2026-05-04): close perimeter gap for the two
+            # new deep-extraction edge fns added by R2B + R2C. Same
+            # rationale as supabase-functions-deploy.yml — both fns are in
+            # the scan fanout and silent 401 in prod = retention burn.
+            customer-reviews-deep
+            staff-reviews-deep
           )
 
           for fn in "${EDGE_FUNCTIONS[@]}"; do

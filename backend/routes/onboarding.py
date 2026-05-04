@@ -80,36 +80,103 @@ def _get_deps():
 
 # ==================== INVITES (ENTERPRISE ONLY) ====================
 
-def _normalize_tier_for_seats(tier: Optional[str]) -> str:
-    value = (tier or "free").lower().strip()
-    if value in {"growth", "foundation", "trial", "starter"}:
+def _normalize_seat_tier(raw_tier: Optional[str]) -> str:
+    tier = (raw_tier or "").strip().lower()
+    if tier in {"starter", "growth", "foundation"}:
         return "starter"
-    if value in {"professional", "pro"}:
+    if tier in {"pro", "professional"}:
         return "pro"
-    if value in {"custom", "custom_build"}:
-        return "custom_build"
-    if value in {"superadmin", "super_admin"}:
-        return "super_admin"
-    return value
+    if tier == "business":
+        return "business"
+    if tier in {"enterprise", "custom_build", "super_admin"}:
+        return tier
+    return tier
 
 
-def seat_limit_for_tier(tier: Optional[str]) -> Optional[int]:
-    normalized = _normalize_tier_for_seats(tier)
-    if normalized == "starter":
+def seat_limit_for_tier(raw_tier: Optional[str]) -> Optional[int]:
+    """Return seat cap for supported paid tiers.
+
+    - starter/growth/foundation: 1
+    - pro/professional: 5
+    - business: 12
+    - enterprise/custom_build/super_admin: unlimited (None)
+    """
+    tier = _normalize_seat_tier(raw_tier)
+    if tier == "starter":
         return 1
-    if normalized == "pro":
+    if tier == "pro":
         return 5
-    if normalized == "business":
+    if tier == "business":
         return 12
-    if normalized in {"enterprise", "custom_build", "super_admin"}:
+    if tier in {"enterprise", "custom_build", "super_admin"}:
         return None
-    return 1
+    return 0
 
 
 def tier_allows_seats(account: dict) -> bool:
-    # Launch policy: all paid plans include team seats by capacity.
     seat_limit = seat_limit_for_tier(account.get("subscription_tier"))
-    return seat_limit is None or seat_limit > 1
+    return seat_limit is None or seat_limit > 0
+
+
+def _count_account_users(sb, account_id: str) -> int:
+    try:
+        users_result = (
+            sb.table("users")
+            .select("id")
+            .eq("account_id", account_id)
+            .execute()
+        )
+        return len(users_result.data or [])
+    except Exception as exc:
+        logger.warning("[onboarding] failed to count account users for %s: %s", account_id, exc)
+        return 0
+
+
+def _count_pending_invites(sb, account_id: str, now: Optional[datetime] = None) -> int:
+    now = now or datetime.now(timezone.utc)
+    try:
+        invites_result = (
+            sb.table("invites")
+            .select("id,expires_at")
+            .eq("account_id", account_id)
+            .execute()
+        )
+        pending = 0
+        for row in (invites_result.data or []):
+            exp_raw = row.get("expires_at")
+            if not exp_raw:
+                pending += 1
+                continue
+            try:
+                exp_dt = datetime.fromisoformat(str(exp_raw).replace("Z", "+00:00"))
+                if exp_dt.tzinfo is None:
+                    exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+                if exp_dt >= now:
+                    pending += 1
+            except Exception:
+                pending += 1
+        return pending
+    except Exception as exc:
+        logger.warning("[onboarding] failed to count pending invites for %s: %s", account_id, exc)
+        return 0
+
+
+def seat_usage_snapshot(sb, account: dict, now: Optional[datetime] = None) -> dict:
+    account_id = str(account.get("id") or "")
+    tier = _normalize_seat_tier(account.get("subscription_tier"))
+    seat_limit = seat_limit_for_tier(tier)
+    active_users = _count_account_users(sb, account_id)
+    pending_invites = _count_pending_invites(sb, account_id, now=now)
+    committed = active_users + pending_invites
+    can_invite = seat_limit is None or committed < seat_limit
+    return {
+        "tier": tier,
+        "seat_limit": seat_limit,
+        "active_users": active_users,
+        "pending_invites": pending_invites,
+        "committed_seats": committed,
+        "can_invite": can_invite,
+    }
 
 
 def generate_temp_password() -> str:
@@ -119,30 +186,15 @@ def generate_temp_password() -> str:
 
 @router.post("/account/users/invite", response_model=InviteResponse)
 async def invite_user(req: InviteCreateRequest, current_user: dict = Depends(require_owner_or_admin), account: dict = Depends(get_current_account)):
-    seat_limit = seat_limit_for_tier(account.get("subscription_tier"))
-    if seat_limit == 1:
-        raise HTTPException(status_code=403, detail="Growth includes 1 seat. Upgrade to Pro or higher to invite teammates.")
+    if not tier_allows_seats(account):
+        raise HTTPException(status_code=403, detail="User seats are not available for this plan tier")
 
-    # Backend seat enforcement:
-    # count active account users + pending invites before issuing a new invite.
-    current_users_count = 0
-    pending_invites_count = 0
-    try:
-        users_res = get_sb().table("users").select("id").eq("account_id", account["id"]).execute()
-        current_users_count = len(users_res.data or [])
-    except Exception as e:
-        logger.error(f"Error counting current users for account {account.get('id')}: {e}")
-        raise HTTPException(status_code=503, detail="Seat check unavailable. Please retry.")
-    try:
-        invites_res = get_sb().table("invites").select("id").eq("account_id", account["id"]).execute()
-        pending_invites_count = len(invites_res.data or [])
-    except Exception:
-        pending_invites_count = 0
-
-    if seat_limit is not None and (current_users_count + pending_invites_count) >= seat_limit:
+    seats = seat_usage_snapshot(get_sb(), account)
+    if not seats["can_invite"]:
+        limit = seats["seat_limit"]
         raise HTTPException(
             status_code=403,
-            detail=f"Seat limit reached for your plan ({seat_limit}). Upgrade to add more users.",
+            detail=f"Seat cap reached for {seats['tier']} plan ({limit}). Remove users or upgrade your plan.",
         )
 
     # Enforce same-domain (enterprise policy)

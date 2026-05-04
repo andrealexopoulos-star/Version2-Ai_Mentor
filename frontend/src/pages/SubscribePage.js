@@ -20,7 +20,10 @@ const FEATURE_LABELS = {
 
 // Checkout-visible plans: paid tiers that can be self-served.
 // 2026-05-04: 'lite' added at $14 entry tier per code 13041978.
-const PLANS = PRICING_TIERS.filter((t) => ['lite', 'starter', 'pro', 'business', 'enterprise'].includes(t.id));
+// 'enterprise' is intentionally NOT in this list — Enterprise is not self-serve;
+// instead the page renders a 5th "Still Unsure? Speak with a local specialist"
+// CTA card after the 4 self-serve cards (see render below).
+const PLANS = PRICING_TIERS.filter((t) => ['lite', 'starter', 'pro', 'business'].includes(t.id));
 
 const SubscribePage = () => {
   const { user, refreshSession } = useSupabaseAuth();
@@ -177,7 +180,7 @@ const SubscribePage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 max-w-4xl w-full mb-8 md:grid-cols-3" style={{ alignItems: 'start' }}>
+      <div className="grid grid-cols-1 gap-6 max-w-6xl w-full mb-8 md:grid-cols-2 lg:grid-cols-5" style={{ alignItems: 'start' }}>
         {PLANS.map(plan => {
           const isCurrent = plan.id === currentTier;
           const isPopular = plan.recommended;
@@ -232,6 +235,53 @@ const SubscribePage = () => {
             </div>
           );
         })}
+
+        {/* 5th card: sales-handoff CTA for prospects who don't fit a self-serve plan.
+            Per Andreas direction 2026-05-04 (code 13041978) — replaces the prior
+            Enterprise self-serve card. Enterprise pricing is contact-sales only. */}
+        <div className="relative flex flex-col" style={{
+          background: 'var(--surface)',
+          border: '1px dashed var(--border-strong, var(--border))',
+          borderRadius: 'var(--r-2xl)',
+          padding: 'var(--sp-8, 32px)',
+          boxShadow: 'var(--elev-1)',
+          transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+        }} data-testid="plan-specialist-cta">
+          <h3 className="text-[28px] font-semibold mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', lineHeight: 1.1 }}>Still Unsure?</h3>
+          <p className="text-sm mb-6" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', lineHeight: 1.5, minHeight: 44 }}>Talk to a local specialist about your team, integrations, and the right plan.</p>
+          <div className="flex items-baseline gap-2 mb-1">
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '28px', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--ink-display)' }}>Talk to us</span>
+          </div>
+          <div className="mb-6" style={{ minHeight: 18 }} />
+          <Link to="/speak-with-local-specialist" className="w-full py-3.5 text-sm font-semibold flex items-center justify-center gap-2"
+            style={{
+              borderRadius: 'var(--r-lg)',
+              color: 'var(--ink-display, #0A0A0A)',
+              background: 'transparent',
+              border: '1px solid var(--ink-display, #0A0A0A)',
+              marginBottom: 'var(--sp-6, 24px)',
+              fontFamily: 'var(--font-ui)',
+              transition: 'all 0.15s ease',
+              textDecoration: 'none',
+            }} data-testid="upgrade-specialist">
+            Speak with a Local Specialist <ArrowRight className="w-4 h-4" />
+          </Link>
+          <div style={{ height: 1, background: 'var(--border)', marginBottom: 'var(--sp-5, 20px)' }} />
+          <p className="text-[11px] font-semibold uppercase mb-4" style={{ letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Best for</p>
+          <div className="flex flex-col gap-3 flex-1">
+            {[
+              'Larger teams or multi-entity setups',
+              'Custom integrations or SSO',
+              'Procurement, security, or DPA review',
+              'Tailored onboarding and rollout',
+            ].map(f => (
+              <div key={f} className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--ink-muted)' }} />
+                <span className="text-sm" style={{ color: 'var(--ink)', fontFamily: 'var(--font-ui)', lineHeight: 1.4 }}>{f}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="w-full max-w-4xl mb-8 p-5" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--elev-1)' }}>

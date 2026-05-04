@@ -1,0 +1,397 @@
+name: BIQc Daily CMO E2E Check (5 URLs)
+
+# Andreas's standing order 2026-04-23: silent failure = churn.
+# This workflow runs the full URL Scan -> CMO Report flow against 5 production URLs
+# twice per day (5am + 5pm AEST). Every section of the CMO report is screenshot-
+# captured. PDF download + Share are exercised. business_dna_enrichment +
+# enrichment_traces are queried server-side to assert zero-401 + ai_errors empty
+# (per feedback_zero_401_tolerance.md). Contract v2 supplier-name + placeholder
+# denylists are applied to rendered HTML + PDF text per
+# BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.md.
+#
+# Failure = GitHub issue tagged p0-daily-check + ALERT_WEBHOOK_URL POST + recorded
+# in public.daily_check_runs. Two consecutive failed runs raise severity to PAGE.
+
+on:
+  schedule:
+    # 19:00 UTC = 05:00 AEST (winter, UTC+10) / 06:00 AEDT (summer, UTC+11)
+    # 07:00 UTC = 17:00 AEST (winter)            / 18:00 AEDT (summer)
+    # We accept the 1-hour DST drift rather than splitting into 4 cron lines —
+    # the goal is "twice per day", not exact 05:00/17:00 to the minute.
+    - cron: '0 19,7 * * *'
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Optional single URL to test (overrides matrix). Leave empty to run all 5.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+concurrency:
+  # Prevent overlapping runs from clobbering each other.
+  group: daily-cmo-check-${{ github.event.inputs.target_url || 'matrix' }}
+  cancel-in-progress: false
+
+env:
+  EVIDENCE_RETENTION_DAYS: 90
+  WORKFLOW_VERSION: '1.0.0-marjo-e10'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Step 0 — Smoke test. Fail fast and LOUDLY if secrets are missing.
+  # Per task spec step 9: explicit "secret not set" rather than silent skip.
+  # ---------------------------------------------------------------------------
+  preflight-secrets:
+    name: Preflight — verify all 7 secrets present
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify required secrets
+        env:
+          BIQC_QA_EMAIL: ${{ secrets.BIQC_QA_EMAIL }}
+          BIQC_QA_PASSWORD: ${{ secrets.BIQC_QA_PASSWORD }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BIQC_API_BASE_URL: ${{ secrets.BIQC_API_BASE_URL }}
+          BIQC_FRONTEND_BASE_URL: ${{ secrets.BIQC_FRONTEND_BASE_URL }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for var in BIQC_QA_EMAIL BIQC_QA_PASSWORD SUPABASE_SERVICE_ROLE_KEY \
+                     BIQC_API_BASE_URL BIQC_FRONTEND_BASE_URL ALERT_WEBHOOK_URL \
+                     SUPABASE_PROJECT_ID; do
+            if [ -z "${!var:-}" ]; then
+              missing+=("$var")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required secrets: ${missing[*]}"
+            echo "::error::See scripts/daily-check/SETUP.md for the full secret list and how to provision each."
+            exit 1
+          fi
+          echo "All 7 required secrets present."
+
+  # ---------------------------------------------------------------------------
+  # Step 1 — Per-URL parallel matrix. 5 URLs in 5 parallel jobs.
+  # ---------------------------------------------------------------------------
+  per-url-check:
+    name: ${{ matrix.label }}
+    needs: preflight-secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false  # We want all 5 to run even if one fails — full picture.
+      matrix:
+        include:
+          - label: 'sms-global (B2B SaaS, AU/global)'
+            url: 'www.smsglobal.com'
+            slug: 'smsglobal'
+          - label: 'jims-mowing (AU franchise services)'
+            url: 'www.jimsmowing.com.au'
+            slug: 'jimsmowing'
+          - label: 'koalafoam (AU DTC ecommerce)'
+            url: 'www.koalafoam.com.au'
+            slug: 'koalafoam'
+          - label: 'bunnings (AU big-box retail)'
+            url: 'www.bunnings.com.au'
+            slug: 'bunnings'
+          - label: 'maddocks (AU professional services — low-signal)'
+            url: 'www.maddocks.com.au'
+            slug: 'maddocks'
+
+    env:
+      BIQC_QA_EMAIL: ${{ secrets.BIQC_QA_EMAIL }}
+      BIQC_QA_PASSWORD: ${{ secrets.BIQC_QA_PASSWORD }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      BIQC_API_BASE_URL: ${{ secrets.BIQC_API_BASE_URL }}
+      BIQC_FRONTEND_BASE_URL: ${{ secrets.BIQC_FRONTEND_BASE_URL }}
+      TARGET_URL: ${{ matrix.url }}
+      TARGET_SLUG: ${{ matrix.slug }}
+      WORKFLOW_RUN_ID: ${{ github.run_id }}
+      WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    steps:
+      - name: Skip if dispatched with single URL that doesn't match
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.target_url != '' && github.event.inputs.target_url != matrix.url
+        run: |
+          echo "Manual dispatch targeted ${{ github.event.inputs.target_url }}, this matrix slot is ${{ matrix.url }} — skipping."
+          exit 78  # neutral skip
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: scripts/daily-check/package-lock.json
+
+      - name: Install daily-check dependencies
+        working-directory: scripts/daily-check
+        run: |
+          # Use npm install (not ci) on first run when no lockfile present.
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      - name: Install Playwright Chromium
+        working-directory: scripts/daily-check
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E check for ${{ matrix.label }}
+        working-directory: scripts/daily-check
+        # IMPORTANT: do not fail the step on a per-URL FAIL — we still want
+        # the artefact upload + JSON file. The aggregator job decides overall pass.
+        # Per-URL FAIL is encoded in the JSON output.
+        continue-on-error: true
+        run: npx tsx run-cmo-check.ts
+
+      - name: Upload per-URL evidence (screenshots + PDF + JSON)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ matrix.slug }}-${{ github.run_id }}
+          path: |
+            scripts/daily-check/evidence/${{ matrix.slug }}/**
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Upload per-URL JSON report (for aggregator)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: per-url-json-${{ matrix.slug }}
+          path: scripts/daily-check/evidence/${{ matrix.slug }}/result.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Surface failure to step summary
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          if [ -f "scripts/daily-check/evidence/${TARGET_SLUG}/result.json" ]; then
+            status=$(jq -r '.overall_status // "MISSING"' "scripts/daily-check/evidence/${TARGET_SLUG}/result.json")
+            failures=$(jq -r '.failures // [] | length' "scripts/daily-check/evidence/${TARGET_SLUG}/result.json")
+            echo "## ${{ matrix.label }} — Status: ${status} (${failures} failure(s))" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "<details><summary>Per-check breakdown</summary>" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            jq '.checks // {}' "scripts/daily-check/evidence/${TARGET_SLUG}/result.json" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## ${{ matrix.label }} — Status: NO_RESULT_JSON (runner crashed before write)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Step 2 — Aggregate. Walks all 5 per-URL JSONs, builds an overall verdict,
+  # writes to public.daily_check_runs, posts to ALERT_WEBHOOK_URL on FAIL,
+  # and opens a GH issue on FAIL.
+  # ---------------------------------------------------------------------------
+  aggregate-and-alert:
+    name: Aggregate + alert
+    needs: per-url-check
+    if: always()  # Run aggregator even if some matrix slots failed (that's the point).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+      WORKFLOW_RUN_ID: ${{ github.run_id }}
+      WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      GITHUB_TOKEN: ${{ github.token }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install daily-check dependencies
+        working-directory: scripts/daily-check
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      - name: Download all per-URL JSONs
+        uses: actions/download-artifact@v4
+        with:
+          path: scripts/daily-check/aggregate-input
+          pattern: per-url-json-*
+          merge-multiple: false
+
+      - name: Aggregate results
+        working-directory: scripts/daily-check
+        run: npx tsx aggregate-results.ts
+
+      - name: Upload aggregate JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aggregate-result-${{ github.run_id }}
+          path: scripts/daily-check/aggregate-input/aggregate.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Persist run to Supabase daily_check_runs
+        if: always()
+        working-directory: scripts/daily-check
+        run: npx tsx persist-run.ts
+
+      - name: Check for two-consecutive failure escalation
+        if: always()
+        working-directory: scripts/daily-check
+        run: npx tsx check-escalation.ts
+
+      - name: Post alert webhook on FAIL or DEGRADED
+        # Per F6 P0-2 patch: post-alerts.ts now fails the step (exit 3) if the
+        # webhook delivery cannot be made after 3 retries. We use
+        # `continue-on-error: true` so the next steps (GH issue creation,
+        # final fail-on-not-pass) still run — but the step itself surfaces
+        # red in the workflow UI and the ::error:: annotation appears at the
+        # top of the run page.
+        if: always()
+        continue-on-error: true
+        id: post_alert
+        working-directory: scripts/daily-check
+        run: npx tsx post-alerts.ts
+
+      - name: Upload alert delivery marker
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alert-delivery-${{ github.run_id }}
+          path: scripts/daily-check/aggregate-input/alert-delivery.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Open GitHub issue on FAIL
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'scripts/daily-check/aggregate-input/aggregate.json';
+            if (!fs.existsSync(path)) {
+              core.warning('aggregate.json missing — cannot open issue.');
+              return;
+            }
+            const agg = JSON.parse(fs.readFileSync(path, 'utf8'));
+            if (agg.overall_status === 'PASS') {
+              core.info('Overall PASS — no issue opened.');
+              return;
+            }
+            // Per F6 P0-2 patch: read the alert-delivery marker so the issue
+            // body explicitly records whether the webhook also failed (a
+            // signal Andreas needs to see in the same place as the failure).
+            const markerPath = 'scripts/daily-check/aggregate-input/alert-delivery.json';
+            let alertMarker = null;
+            if (fs.existsSync(markerPath)) {
+              try {
+                alertMarker = JSON.parse(fs.readFileSync(markerPath, 'utf8'));
+              } catch (e) {
+                core.warning(`alert-delivery.json present but unparseable: ${e.message}`);
+              }
+            }
+            const lines = [
+              `Daily CMO E2E check ${agg.overall_status} at ${agg.run_at_utc} UTC.`,
+              ``,
+              `- Workflow: ${context.workflow}`,
+              `- Run: ${process.env.WORKFLOW_RUN_URL}`,
+              `- Pass: ${agg.pass_count}/5  Fail: ${agg.fail_count}/5  Degraded: ${agg.degraded_count}/5`,
+              `- Severity: ${agg.severity}`,
+              ``,
+            ];
+            if (alertMarker) {
+              if (alertMarker.delivered) {
+                lines.push(`- Alert webhook: delivered on attempt ${alertMarker.attempt_count}`);
+              } else {
+                lines.push(`- **ALERT WEBHOOK FAILED** after ${alertMarker.attempt_count} attempts (final status=${alertMarker.final_status ?? 'NONE'}, error=${alertMarker.final_error ?? 'unknown'}). ALERT_WEBHOOK_URL secret may be invalid/rotated — fix urgently.`);
+              }
+            } else {
+              lines.push(`- Alert webhook: delivery status unknown (no marker file)`);
+            }
+            // Per F6 P0-3: if the aggregator detected missing per-URL JSONs
+            // (matrix slot crashed before writing result.json), surface the
+            // missing URLs at the top of the issue body — they're the most
+            // actionable signal of "tests didn't even run".
+            if (Array.isArray(agg.missing_urls) && agg.missing_urls.length > 0) {
+              lines.push(``);
+              lines.push(`### MISSING per-URL results (matrix slots crashed before writing JSON)`);
+              for (const m of agg.missing_urls) {
+                lines.push(`- ${m.label || m.url} (${m.url})`);
+              }
+            }
+            lines.push(``);
+            lines.push(`## Per-URL results`);
+            lines.push(``);
+            for (const u of (agg.per_url || [])) {
+              lines.push(`### ${u.label} (${u.url}) — ${u.overall_status}`);
+              lines.push('');
+              if ((u.failures || []).length > 0) {
+                lines.push('Failures:');
+                for (const f of u.failures) {
+                  lines.push(`- ${f.check}: ${f.detail}`);
+                }
+              } else {
+                lines.push('_No failures recorded._');
+              }
+              lines.push('');
+            }
+            lines.push(`## Evidence`);
+            lines.push(``);
+            lines.push(`Screenshots, PDFs, and per-URL JSON are attached to the workflow run as artefacts (90-day retention).`);
+            lines.push(``);
+            lines.push(`## Next action`);
+            lines.push(``);
+            lines.push(`Per ops_daily_health_check_procedure.md + ops_daily_calibration_check.md, every FAIL is treated as a P0. Root-cause + propose hotfix + ask for code \`13041978\` before mutation.`);
+
+            try {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[p0-daily-check] CMO E2E ${agg.overall_status} — ${agg.fail_count} URL(s) failed — ${agg.run_at_utc}`,
+                body: lines.join('\n'),
+                labels: ['p0-daily-check', 'production', 'synthetic-monitor'],
+              });
+              core.info('Issue opened.');
+            } catch (err) {
+              core.error(`Failed to open issue: ${err.message}`);
+            }
+
+      - name: Fail aggregate job if overall != PASS
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f scripts/daily-check/aggregate-input/aggregate.json ]; then
+            echo "::error::aggregate.json was not produced — workflow plumbing broken."
+            exit 1
+          fi
+          status=$(jq -r '.overall_status' scripts/daily-check/aggregate-input/aggregate.json)
+          echo "Overall status: $status"
+          if [ "$status" != "PASS" ]; then
+            echo "::error::Daily CMO check did not pass (status=$status)."
+            exit 1
+          fi

@@ -198,6 +198,30 @@ const CATEGORY_ALIASES = {
   knowledge: ['knowledge', 'file_storage'],
 };
 
+const DRIVE_SAFE_COPY = {
+  connected: 'Connected. Ready to sync.',
+  syncing: 'Sync in progress.',
+  analysing: 'Analysing documents for business signals.',
+  waiting_for_scope: 'Choose folders to start.',
+  no_files: 'No files found in selected folders.',
+  partial_sync: 'Some files synced; some need attention.',
+  failed: 'Connection service is temporarily unavailable.',
+  needs_reconnect: 'Connection authorisation has expired. Please reconnect.',
+  unavailable: 'Connection service is temporarily unavailable.',
+  not_connected: 'Not connected.',
+};
+
+const toSafeDisconnectMessage = (detail) => {
+  const msg = String(detail || '').toLowerCase();
+  if (msg.includes('authorisation') || msg.includes('reconnect') || msg.includes('expired')) {
+    return 'Connection authorisation has expired. Please reconnect.';
+  }
+  if (msg.includes('temporarily unavailable') || msg.includes('service unavailable') || msg.includes('timeout')) {
+    return 'Connection service is temporarily unavailable.';
+  }
+  return "We couldn't disconnect right now. Please try again.";
+};
+
 const categoryMatches = (integrationCategory, rowCategory) => {
   const normalizedIntegration = String(integrationCategory || '').toLowerCase();
   const normalizedRow = String(rowCategory || '').toLowerCase();
@@ -273,13 +297,17 @@ export default function Integrations() {
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
   const [mergeCatalog, setMergeCatalog] = useState([]);
+  const [driveDetailOpen, setDriveDetailOpen] = useState(false);
+  const [driveStatus, setDriveStatus] = useState(null);
+  const [driveFilesPreview, setDriveFilesPreview] = useState([]);
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveActionBusy, setDriveActionBusy] = useState(false);
 
   // Merge Link hook — token starts as '' so SDK initialises cleanly
   const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
     linkToken: mergeLinkToken,
     onSuccess: async (public_token, metadata) => {
       const category = metadata?.integration?.categories?.[0] || metadata?.category || 'crm';
-      const provider = metadata?.integration?.name || 'Unknown';
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) { toast.error('Session expired. Please log in again.'); setMergeLinkToken(''); return; }
@@ -289,14 +317,14 @@ export default function Integrations() {
           body: new URLSearchParams({ public_token, category })
         });
         if (response.ok) {
-          toast.success(`${provider} connected successfully!`);
+          toast.success('Source connected successfully.');
           await loadMergeIntegrations();
         } else {
           const err = await response.json().catch(() => ({}));
-          toast.error(`Failed to connect ${provider}: ${err.detail || 'Server error'}`);
+          toast.error(err.detail || 'Connection service error. Please try again or contact support.');
         }
       } catch (e) {
-        toast.error(`Failed to connect ${provider}: ${e.message}`);
+        toast.error('Connection service error. Please try again or contact support.');
       }
       setMergeLinkToken('');
       setOpeningMerge(null);
@@ -472,7 +500,7 @@ export default function Integrations() {
     const err = searchParams.get('outlook_error') || searchParams.get('gmail_error');
     if (outlookConnected === 'true') { toast.success(connectedEmail ? `Outlook (${decodeURIComponent(connectedEmail)}) connected!` : 'Outlook connected!'); setSearchParams({}); setTimeout(loadOutlookStatus, 2000); }
     if (gmailConnected === 'true') { toast.success(connectedEmail ? `Gmail (${decodeURIComponent(connectedEmail)}) connected!` : 'Gmail connected!'); setSearchParams({}); setTimeout(loadGmailStatus, 2000); }
-    if (err) { toast.error(`Connection error: ${err}`); setSearchParams({}); }
+    if (err) { toast.error('Connection service error. Please try again or contact support.'); setSearchParams({}); }
   }, [searchParams, setSearchParams, loadOutlookStatus, loadGmailStatus]);
 
   const openMergeLink = useCallback(async (integrationId, categories, integrationSlug = null) => {
@@ -573,7 +601,7 @@ export default function Integrations() {
         if (!initResp.ok) throw new Error('Failed to initiate connection');
         const { redirect_url } = await initResp.json();
         window.location.assign(`${getBackendUrl()}${redirect_url}`);
-      } catch (e) { toast.error(`Failed to connect ${integration.type}: ${e.message}`); }
+      } catch (e) { toast.error('Connection service error. Please try again or contact support.'); }
       return;
     }
     if (integration.type === 'gcal') {
@@ -631,6 +659,12 @@ export default function Integrations() {
         await apiClient.post('/gmail/disconnect');
         setGmailStatus({ connected: false, connected_email: null });
         toast.success('Gmail disconnected');
+      } else if (integration.id === 'google-drive') {
+        await apiClient.post('/integrations/google-drive/disconnect');
+        setDriveStatus(null);
+        setDriveFilesPreview([]);
+        await loadMergeIntegrations();
+        toast.success('Source disconnected.');
       } else {
         const match = Object.entries(mergeIntegrations).find(([key, meta]) => {
           const k = key.toLowerCase();
@@ -660,10 +694,67 @@ export default function Integrations() {
         }
       }
     } catch (e) {
-      toast.error(`Failed to disconnect: ${e.response?.data?.detail || e.message}`);
+      toast.error(toSafeDisconnectMessage(e?.response?.data?.detail || e?.message));
     }
     setDisconnecting(null);
   }, [mergeIntegrations, loadMergeIntegrations]);
+
+  const loadDriveDetails = useCallback(async () => {
+    setDriveLoading(true);
+    try {
+      const statusPayload = await authedJsonGet('/integrations/google-drive/status');
+      setDriveStatus(statusPayload || null);
+      if (statusPayload?.connected) {
+        const filesPayload = await authedJsonGet('/integrations/google-drive/files?limit=10');
+        setDriveFilesPreview(Array.isArray(filesPayload?.files) ? filesPayload.files : []);
+      } else {
+        setDriveFilesPreview([]);
+      }
+    } catch {
+      setDriveStatus({
+        connected: false,
+        status: 'unavailable',
+        sync_status: 'unavailable',
+        error_message: 'Connection service is temporarily unavailable.',
+        files_count: 0,
+      });
+      setDriveFilesPreview([]);
+    } finally {
+      setDriveLoading(false);
+    }
+  }, [authedJsonGet]);
+
+  const openDriveDetails = useCallback(async () => {
+    setDriveDetailOpen(true);
+    await loadDriveDetails();
+  }, [loadDriveDetails]);
+
+  const triggerDriveSync = useCallback(async () => {
+    setDriveActionBusy(true);
+    try {
+      await apiClient.post('/integrations/google-drive/sync');
+      toast.success('Sync queued.');
+      await loadDriveDetails();
+      await loadMergeIntegrations();
+    } catch (e) {
+      toast.error(String(e?.response?.data?.detail || '').trim() || 'Connection service is temporarily unavailable.');
+    } finally {
+      setDriveActionBusy(false);
+    }
+  }, [loadDriveDetails, loadMergeIntegrations]);
+
+  const allowAllDriveFiles = useCallback(async () => {
+    setDriveActionBusy(true);
+    try {
+      await apiClient.post('/integrations/google-drive/scope', { allow_all_files: true, folder_ids: [] });
+      toast.success('Source scope saved.');
+      await triggerDriveSync();
+    } catch {
+      toast.error('Connection service error. Please try again or contact support.');
+    } finally {
+      setDriveActionBusy(false);
+    }
+  }, [triggerDriveSync]);
 
   const isConnected = useCallback((integration) => {
     if (integration.type === 'outlook' || integration.type === 'outlook_cal') return outlookStatus.connected;
@@ -899,6 +990,7 @@ export default function Integrations() {
                   truthReason={truthReasonForIntegration(integration)}
                   badge={integration.type === 'coming_soon' ? 'Coming soon' : integration.type === 'gmail' || integration.type === 'outlook' || integration.type === 'gcal' || integration.type === 'outlook_cal' ? 'OAuth' : 'Connector'}
                   comingSoon={integration.type === 'coming_soon'}
+                  onOpenDriveDetails={integration.id === 'google-drive' ? openDriveDetails : null}
                 />
               ))}
             </div>
@@ -906,6 +998,54 @@ export default function Integrations() {
             <div className="py-20 text-center">
               <Search className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)' }} />
               <p className="text-sm mb-1" style={{ color: 'var(--ink-muted)' }}>No connectors found for this filter.</p>
+            </div>
+          )}
+          {driveDetailOpen && (
+            <div className="mt-4 rounded-xl border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }} data-testid="google-drive-detail-panel">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)' }}>File Storage source details</p>
+                  <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+                    {DRIVE_SAFE_COPY[String(driveStatus?.status || '').toLowerCase()] || DRIVE_SAFE_COPY.unavailable}
+                  </p>
+                </div>
+                <button type="button" className="text-xs" onClick={() => setDriveDetailOpen(false)} style={{ color: 'var(--ink-muted)' }}>
+                  Close
+                </button>
+              </div>
+              <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs" style={{ color: 'var(--ink-secondary)' }}>
+                <div><span style={{ color: 'var(--ink-muted)' }}>Account</span><div>{driveStatus?.account_label || '—'}</div></div>
+                <div><span style={{ color: 'var(--ink-muted)' }}>Connected</span><div>{driveStatus?.connected_at ? new Date(driveStatus.connected_at).toLocaleString() : '—'}</div></div>
+                <div><span style={{ color: 'var(--ink-muted)' }}>Last sync</span><div>{driveStatus?.last_sync_at ? new Date(driveStatus.last_sync_at).toLocaleString() : '—'}</div></div>
+                <div><span style={{ color: 'var(--ink-muted)' }}>Files</span><div>{Number(driveStatus?.files_count || 0)}</div></div>
+              </div>
+              {driveStatus?.error_message && (
+                <p className="mt-2 text-xs" style={{ color: 'var(--warning)' }}>{driveStatus.error_message}</p>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={loadDriveDetails} className="px-3 py-1.5 rounded-md text-xs" style={{ border: '1px solid var(--border)' }}>Refresh</button>
+                <button type="button" onClick={triggerDriveSync} disabled={driveActionBusy || driveLoading} className="px-3 py-1.5 rounded-md text-xs" style={{ border: '1px solid var(--border)' }}>Manual sync</button>
+                <button type="button" onClick={allowAllDriveFiles} disabled={driveActionBusy || driveLoading} className="px-3 py-1.5 rounded-md text-xs" style={{ border: '1px solid var(--border)' }}>Allow BIQc to access all files</button>
+                <button type="button" onClick={() => handleDisconnect({ id: 'google-drive', name: 'Google Drive', type: 'merge_storage', category: 'storage' })} className="px-3 py-1.5 rounded-md text-xs" style={{ border: '1px solid var(--border)' }}>Disconnect</button>
+                <button type="button" disabled className="px-3 py-1.5 rounded-md text-xs opacity-70" style={{ border: '1px solid var(--border)' }}>Delete indexed knowledge (coming soon)</button>
+              </div>
+              <div className="mt-3">
+                <p className="text-xs mb-1" style={{ color: 'var(--ink-muted)' }}>Recent files (preview only)</p>
+                <div className="space-y-1">
+                  {driveLoading && <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>Loading…</p>}
+                  {!driveLoading && driveFilesPreview.length === 0 && (
+                    <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>No files found in selected folders.</p>
+                  )}
+                  {driveFilesPreview.map((file) => (
+                    <div key={file.id || file.merge_file_id} className="text-xs flex justify-between gap-3">
+                      <span style={{ color: 'var(--ink-display)' }}>{file.file_name || 'Untitled'}</span>
+                      <span style={{ color: 'var(--ink-muted)' }}>
+                        {file.mime_type || file.file_type || 'file'} · {file.modified_at ? new Date(file.modified_at).toLocaleDateString() : '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -928,7 +1068,7 @@ export default function Integrations() {
 }
 
 // ── Integration card ──────────────────────────────────────────────────────────
-function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, comingSoon, isStale = false, truthState = 'unverified', truthReason = '' }) {
+function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, comingSoon, isStale = false, truthState = 'unverified', truthReason = '', onOpenDriveDetails = null }) {
   const unavailableProvider = !connected
     && !comingSoon
     && (integration.type === 'merge' || integration.type === 'merge_storage' || integration.type === 'merge_catalog')
@@ -1065,6 +1205,16 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
             )}
             {disconnecting || (openingMerge && !isStale) ? 'Working...' : (connected ? 'Disconnect' : (comingSoon ? 'Notify me' : (unavailableProvider ? 'Unavailable' : 'Connect')))}
           </button>
+          {integration.id === 'google-drive' && onOpenDriveDetails && (
+            <button
+              onClick={onOpenDriveDetails}
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold"
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--ink-display)' }}
+              data-testid="google-drive-details"
+            >
+              Details
+            </button>
+          )}
         </div>
       </div>
       {connected && (

@@ -26,6 +26,19 @@ from scan_cache import (
 from core.llm_router import llm_trinity_chat
 from core.helpers import serper_search, scrape_url_text
 from core.response_sanitizer import sanitize_enrichment_for_external
+from core.enrichment_trace import (
+    new_scan_id,
+    set_active_scan,
+    clear_active_scan,
+    get_active_scan_id,
+    get_active_user_id,
+    abegin_trace,
+    acomplete_trace,
+    arecord_provider_trace,
+    EDGE_FUNCTION_TO_PROVIDER,
+)
+import time as _time
+from core.business_dna_persistence import safe_upsert_business_dna
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, logger, cognitive_core, check_rate_limit,
@@ -37,6 +50,17 @@ from auth_supabase import get_user_by_id
 from supabase_intelligence_helpers import get_business_profile_supabase
 from regeneration_governance import request_regeneration, record_regeneration_response
 from fact_resolution import resolve_facts, build_known_facts_prompt
+from domain_labels import domain_business_label
+from cmo_truth import (
+    REPORT_STATE_COMPLETE,
+    REPORT_STATE_FAILED,
+    REPORT_STATE_INSUFFICIENT,
+    REPORT_STATE_PARTIAL,
+    clean_string_list,
+    classify_section,
+    derive_report_state,
+    is_placeholder_text,
+)
 
 router = APIRouter()
 
@@ -181,6 +205,122 @@ async def _crawl_site_context(seed_url: str, seed_html: str, max_pages: int = 10
 _edge_client: Optional[httpx.AsyncClient] = None
 
 
+# ─── Marjo P0 / E1 (2026-05-04) — Zero-401 explicit surfacing ─────────────────
+# Standing rule (memory: feedback_zero_401_tolerance.md, 2026-04-23):
+#   "There MUST Never be a 401. There must be a legitimate 200 at all times on
+#    every single enrichment and part of the scan process. ZERO fall-backs."
+#
+# Anti-pattern this guards against: a non-200 from one of the mission edge
+# functions silently lands in business_dna_enrichment.enrichment.ai_errors and
+# the user sees a confident-looking 75/100 score derived from 35% of inputs.
+#
+# This module-level set captures the canonical URL-scan calibration edge
+# functions per the Marjo Critical Incident briefs:
+#   - E1 contributed the original 8 (browse-ai-reviews, calibration-psych,
+#     business-identity-lookup, calibration-business-dna, calibration-sync,
+#     deep-web-recon, warm-cognitive-engine, social-enrichment).
+#   - R2A (this PR, 2026-05-04) adds the 4 missed by E1's audit but exercised
+#     in the same website_enrichment asyncio.gather (calibration.py:~2454):
+#       * semrush-domain-intel    — SEMrush organic+paid+backlinks signals
+#       * competitor-monitor      — Perplexity competitor change-detection
+#       * market-analysis-ai      — OpenAI SWOT + Perplexity market intel
+#       * market-signal-scorer    — derived market signal scoring
+#     Total mission set: 12 distinct slugs (13 with calibration_psych alias).
+#     R2A evidence (saved to evidence_r2a/edge-fn-status-evidence.txt):
+#       semrush-domain-intel   503 ×5 / 14d (supplier-key — not bug)
+#       market-signal-scorer   400 ×5 / 14d (caller-contract — fixed at 2487)
+#       market-analysis-ai     400 ×3 / 14d (caller-contract — needs product_or_service)
+#       competitor-monitor     0 errors / 14d (clean)
+#
+# Surfacing behaviour:
+#   - Default (production today): every non-200 from a mission function is
+#     logged at ERROR with structured fields (function, status, code, snippet);
+#     the result still flows into the existing ai_errors collection so frontend
+#     gets the Contract v2 sanitised view and the scan does not halt.
+#   - Strict mode (STRICT_EDGE_ZERO_401=1): _cached_edge raises EdgeFunctionNonOk
+#     after logging, so the scan fails loudly. Useful for staging gates and
+#     post-deploy verification per ops_daily_calibration_check.md.
+MISSION_EDGE_FUNCTIONS_ZERO_401 = {
+    # ── E1 set (original 8 + 1 alias) ──────────────────────────────────────
+    "browse-ai-reviews",
+    "calibration-psych",      # canonical hyphen slug
+    "calibration_psych",      # legacy underscore alias (canonicalised in routes/integrations.py)
+    "business-identity-lookup",
+    "calibration-business-dna",
+    "calibration-sync",
+    "deep-web-recon",
+    "warm-cognitive-engine",
+    "social-enrichment",
+    # ── R2A additions (Marjo Round 2 / 2026-05-04) ─────────────────────────
+    # The 4 fns missed by E1 but present in the website_enrichment fanout.
+    # Same surfacing/strict-mode treatment as the E1 set.
+    "semrush-domain-intel",
+    "competitor-monitor",
+    "market-analysis-ai",
+    "market-signal-scorer",
+}
+
+
+class EdgeFunctionNonOk(RuntimeError):
+    """Raised when STRICT_EDGE_ZERO_401=1 and a mission edge function returns
+    a non-2xx contract envelope. Caller is expected to translate this into a
+    Contract v2 sanitised external response (DATA_UNAVAILABLE) — never expose
+    the underlying status / supplier name / code to the frontend.
+    """
+
+    def __init__(self, function_name: str, status: Any, code: str, error: str):
+        self.function_name = function_name
+        self.status = status
+        self.code = code
+        self.error = error
+        super().__init__(
+            f"edge function {function_name} non-2xx: status={status} code={code}"
+        )
+
+
+def _strict_edge_zero_401_enabled() -> bool:
+    """Return True iff the operator has opted into strict zero-401 enforcement.
+
+    Default is False so this guardrail is purely additive in production until
+    Andreas issues code 13041978 to flip the env switch in Azure App Service.
+    """
+    raw = (os.environ.get("STRICT_EDGE_ZERO_401") or "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _surface_edge_non_200(function_name: str, result: Dict[str, Any]) -> None:
+    """Explicit structured logging for any non-200 from a mission edge function.
+
+    Backend-only logging (per BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2):
+    - Internal log line carries supplier name, status, code, error snippet.
+    - This MUST NEVER be passed verbatim to the frontend; the sanitizer in
+      core/response_sanitizer.py is the single boundary that converts these
+      internal records into the external state enum.
+    """
+    if function_name not in MISSION_EDGE_FUNCTIONS_ZERO_401:
+        return
+    if not isinstance(result, dict):
+        logger.error(
+            "[zero-401 P0] mission edge function %s returned non-dict payload type=%s",
+            function_name,
+            type(result).__name__,
+        )
+        return
+    if not _edge_result_failed(result):
+        return
+    status = result.get("_http_status")
+    code = result.get("code") or "EDGE_FUNCTION_FAILED"
+    error_snippet = str(result.get("error") or result.get("detail") or "")[:240]
+    logger.error(
+        "[zero-401 P0] mission edge function %s returned non-200 — "
+        "status=%s code=%s error=%r",
+        function_name,
+        status,
+        code,
+        error_snippet,
+    )
+
+
 def _get_edge_client() -> httpx.AsyncClient:
     global _edge_client
     if _edge_client is None or _edge_client.is_closed:
@@ -277,22 +417,107 @@ class EdgeCallMode(Enum):
     USER_PROXIED = "user_proxied"
 
 
+def _summarise_edge_request(function_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a sanitised request_summary for enrichment_traces.
+
+    Captures shape (which keys, sizes), NOT raw values. Strips obvious
+    PII / auth tokens so the audit row is safe to store.
+    P0 Marjo E2 / 2026-05-04.
+    """
+    safe = {"edge_function": function_name}
+    if not isinstance(payload, dict):
+        return safe
+    safe["payload_keys"] = sorted([k for k in payload.keys() if k != "auth"])
+    # Capture shape clues (not the raw user_id) for audit drilling.
+    if payload.get("user_id"):
+        safe["has_user_id"] = True
+    if payload.get("tenant_id"):
+        safe["has_tenant_id"] = True
+    if payload.get("website") or payload.get("website_url") or payload.get("domain"):
+        safe["has_target_domain"] = True
+    return safe
+
+
+def _summarise_edge_response(function_name: str, http_status: int, normalised: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a sanitised response_summary for enrichment_traces.
+
+    Counts + flags only — never raw evidence bodies. The CMO audit pane
+    surfaces these counts to prove evidence shape per provider.
+    P0 Marjo E2 / 2026-05-04.
+    """
+    summary: Dict[str, Any] = {
+        "edge_function": function_name,
+        "http_status": http_status,
+        "ok": bool(normalised.get("ok")) if isinstance(normalised, dict) else False,
+    }
+    if not isinstance(normalised, dict):
+        return summary
+    if normalised.get("code"):
+        summary["code"] = str(normalised.get("code"))[:60]
+    # Common evidence-bearing keys — record presence + size, never content.
+    for key in ("results", "competitors", "data", "items", "candidates",
+                "evidence", "swot", "reviews", "themes"):
+        val = normalised.get(key)
+        if isinstance(val, list):
+            summary[f"{key}_count"] = len(val)
+        elif isinstance(val, dict):
+            summary[f"{key}_keys"] = len(val)
+    # Total payload size in chars (cap so we don't blow the row).
+    try:
+        summary["payload_chars"] = min(len(json.dumps(normalised, default=str)), 100_000)
+    except Exception:
+        pass
+    return summary
+
+
 async def _call_edge_function(
     function_name: str,
     payload: Dict[str, Any],
     *,
     mode: EdgeCallMode = EdgeCallMode.USER_PROXIED,
     auth_header: str = "",
+    scan_id: Optional[str] = None,
 ) -> Dict[str, Any]:
+    """Call a Supabase edge function and persist a per-call enrichment_traces row.
+
+    P0 Marjo E2 / 2026-05-04 — every attempt now writes a trace row to
+    public.enrichment_traces so the CMO Report and ops_daily_calibration_check
+    can prove which supplier returned what evidence, by scan_id. Telemetry
+    is fire-and-forget — never breaks the calling path. Cites
+    BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 and zero-401.
+
+    `scan_id` may be passed explicitly OR resolved from the active ContextVar
+    (set in website_enrichment for the URL-scan path).
+    """
     supabase_url = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
     service_role = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or "").strip()
+    # Resolve scan_id + user_id for trace persistence. Both are optional — if
+    # unset, helpers no-op (telemetry never blocks the call path).
+    effective_scan_id = scan_id or get_active_scan_id()
+    effective_user_id = get_active_user_id() or (payload.get("user_id") if isinstance(payload, dict) else None)
+    provider_slug = EDGE_FUNCTION_TO_PROVIDER.get(function_name, "supabase")
+
     if not supabase_url or not service_role:
-        return {
+        result = {
             "ok": False,
             "error": "supabase_not_configured",
             "code": "EDGE_PROXY_UNAVAILABLE",
             "_http_status": 503,
         }
+        if effective_scan_id:
+            await arecord_provider_trace(
+                scan_id=effective_scan_id,
+                provider=provider_slug,
+                edge_function=function_name,
+                user_id=effective_user_id,
+                http_status=503,
+                latency_ms=0,
+                request_summary=_summarise_edge_request(function_name, payload or {}),
+                response_summary=_summarise_edge_response(function_name, 503, result),
+                error="EDGE_PROXY_UNAVAILABLE : supabase env not configured",
+                sanitiser_applied=True,
+            )
+        return result
     endpoint = f"{supabase_url}/functions/v1/{function_name}"
 
     # Incident H contract enforcement — explicit auth mode chooses outbound auth.
@@ -312,40 +537,161 @@ async def _call_edge_function(
         "Content-Type": "application/json",
     }
     client = _get_edge_client()
+
+    def _finalize(result: Dict[str, Any]) -> Dict[str, Any]:
+        # Marjo P0 / E1 (2026-05-04): every exit path of _call_edge_function
+        # routes through here so non-200s from a mission edge function are
+        # explicitly surfaced to backend logs. Per zero-401 standing rule, no
+        # mission function may silently return a failure shape; the operator
+        # must see it. See feedback_zero_401_tolerance.md.
+        _surface_edge_non_200(function_name, result)
+        return result
+
+    request_summary = _summarise_edge_request(function_name, payload or {})
+
     for attempt in range(2):
+        # Per-attempt trace bracket. begin_trace returns a row id we then
+        # update post-call so the audit trail captures both "we tried" and
+        # "here's what came back". If the process crashes mid-call the
+        # started-row stays visible (http_status NULL → "abandoned" in the
+        # CMO audit pane, surfaced after 5min via ops_daily_calibration_check).
+        trace_id = None
+        if effective_scan_id:
+            trace_id = await abegin_trace(
+                scan_id=effective_scan_id,
+                provider=provider_slug,
+                edge_function=function_name,
+                user_id=effective_user_id,
+                attempt=attempt + 1,
+                request_summary=request_summary,
+                metadata={"mode": mode.value if hasattr(mode, "value") else str(mode)},
+            )
+        t_start = _time.perf_counter()
+
         try:
             res = await client.post(endpoint, json=payload or {}, headers=headers)
+            elapsed_ms = int((_time.perf_counter() - t_start) * 1000)
+
             if res.status_code >= 500 and attempt == 0:
+                if trace_id:
+                    await acomplete_trace(
+                        trace_id,
+                        http_status=res.status_code,
+                        latency_ms=elapsed_ms,
+                        response_summary={"http_status": res.status_code, "retry_scheduled": True},
+                        error=f"EDGE_FUNCTION_HTTP_{res.status_code} : retrying",
+                        sanitiser_applied=True,
+                    )
                 await asyncio.sleep(2)
                 continue
+
+            # Some infra/warmup edge functions intentionally return 204 with
+            # no JSON body. Treat this as a healthy success envelope.
+            if res.status_code == 204:
+                normalised = _normalize_edge_result(
+                    function_name,
+                    res.status_code,
+                    {"ok": True, "code": "NO_CONTENT", "status": "ok"},
+                )
+                if trace_id:
+                    await acomplete_trace(
+                        trace_id,
+                        http_status=204,
+                        latency_ms=elapsed_ms,
+                        response_summary=_summarise_edge_response(function_name, 204, normalised),
+                        sanitiser_applied=True,
+                    )
+                return _finalize(normalised)
+
             try:
                 data = res.json()
             except Exception:
                 data = {"raw": (res.text or "")[:1200]}
-            return _normalize_edge_result(function_name, res.status_code, data)
+            normalised = _normalize_edge_result(function_name, res.status_code, data)
+            if trace_id:
+                await acomplete_trace(
+                    trace_id,
+                    http_status=res.status_code,
+                    latency_ms=elapsed_ms,
+                    response_summary=_summarise_edge_response(function_name, res.status_code, normalised),
+                    error=(None if normalised.get("ok") else
+                           f"{normalised.get('code') or 'EDGE_FUNCTION_FAILED'} : "
+                           f"{(normalised.get('error') or '')[:240]}"),
+                    evidence_payload=normalised,
+                    sanitiser_applied=True,
+                )
+            return _finalize(normalised)
+
         except httpx.TimeoutException:
+            elapsed_ms = int((_time.perf_counter() - t_start) * 1000)
             if attempt == 0:
+                if trace_id:
+                    await acomplete_trace(
+                        trace_id,
+                        http_status=None,
+                        latency_ms=elapsed_ms,
+                        response_summary={"timeout": True, "retry_scheduled": True},
+                        error="TIMEOUT : retrying",
+                        sanitiser_applied=True,
+                    )
                 await asyncio.sleep(2)
                 continue
-            return {
+            result = {
                 "ok": False,
                 "error": f"timeout after retry calling {function_name}",
                 "code": "EDGE_FUNCTION_TIMEOUT",
                 "_http_status": 504,
             }
+            if trace_id:
+                await acomplete_trace(
+                    trace_id,
+                    http_status=504,
+                    latency_ms=elapsed_ms,
+                    response_summary=_summarise_edge_response(function_name, 504, result),
+                    error="EDGE_FUNCTION_TIMEOUT : timeout after retry",
+                    sanitiser_applied=True,
+                )
+            return _finalize(result)
         except Exception as e:
-            return {
+            elapsed_ms = int((_time.perf_counter() - t_start) * 1000)
+            result = {
                 "ok": False,
                 "error": str(e)[:220],
                 "code": "EDGE_FUNCTION_UNAVAILABLE",
                 "_http_status": 502,
             }
-    return {
+            if trace_id:
+                await acomplete_trace(
+                    trace_id,
+                    http_status=502,
+                    latency_ms=elapsed_ms,
+                    response_summary=_summarise_edge_response(function_name, 502, result),
+                    error=f"EDGE_FUNCTION_UNAVAILABLE : {str(e)[:240]}",
+                    sanitiser_applied=True,
+                )
+            return _finalize(result)
+
+    result = {
         "ok": False,
         "error": f"exhausted retries for {function_name}",
         "code": "EDGE_FUNCTION_UNAVAILABLE",
         "_http_status": 502,
     }
+    if effective_scan_id:
+        await arecord_provider_trace(
+            scan_id=effective_scan_id,
+            provider=provider_slug,
+            edge_function=function_name,
+            user_id=effective_user_id,
+            http_status=502,
+            latency_ms=0,
+            request_summary=request_summary,
+            response_summary=_summarise_edge_response(function_name, 502, result),
+            error="EDGE_FUNCTION_UNAVAILABLE : exhausted retries",
+            sanitiser_applied=True,
+            attempt=3,
+        )
+    return _finalize(result)
 
 
 def _extract_meta_content(html: str, key: str) -> str:
@@ -375,10 +721,19 @@ def _clean_business_name(candidate: str) -> str:
     value = (candidate or "").strip()
     if not value:
         return ""
+    # If the candidate looks like a hostname, derive a clean brand label
+    # (e.g. www.canva.com -> Canva) and reject generic host-only values.
+    if re.fullmatch(r"[a-z0-9\.-]+", value.lower()):
+        derived = domain_business_label(value)
+        return "" if derived == "Business" else derived
     parts = [p.strip() for p in re.split(r"\||—|-", value) if p.strip()]
     generic_titles = {"business advisory services", "home", "welcome"}
+    generic_tokens = {"www", "app", "portal", "login", "api", "web", "business"}
     for part in parts:
-        if part.lower() not in generic_titles and len(part) > 2:
+        normalized = re.sub(r"[^a-z0-9 ]+", "", part.lower()).strip()
+        if normalized in generic_titles or normalized in generic_tokens:
+            continue
+        if len(part) > 2:
             return part
     return value if value.lower() not in generic_titles else ""
 
@@ -926,7 +1281,18 @@ def _parse_google_reviews(search_result: dict, business_name: str) -> dict:
 
 
 def _parse_glassdoor_reviews(search_result: dict, business_name: str) -> dict:
-    """Extract ratings and review snippets from employer review sites (Glassdoor, Indeed, Seek)."""
+    """DEPRECATED 2026-05-04 (P0 Marjo R2C). Snippet-based Glassdoor/Indeed/Seek
+    parser. Replaced by deep public-page Firecrawl extraction in the
+    `staff-reviews-deep` edge function (see supabase/functions/staff-reviews-deep
+    + _build_staff_review_intelligence).
+
+    Kept until V1-V8 verification is green for two consecutive scans on
+    superadmin + a fresh trial canary, then remove. Target removal: 2026-05-25.
+
+    DO NOT extend. New employer-brand signals belong in staff-reviews-deep.
+
+    Extract ratings and review snippets from employer review sites
+    (Glassdoor, Indeed, Seek)."""
     results = search_result.get("results") or []
     snippets = []
     rating = None
@@ -1238,9 +1604,27 @@ def _derive_staff_action_plan(negative_signals: List[str]) -> List[str]:
     return actions[:4]
 
 
-def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews: dict, lookback_months: int = 12) -> Dict[str, Any]:
+def _build_staff_review_intelligence(
+    glassdoor_reviews: dict,
+    browse_ai_reviews: dict,
+    lookback_months: int = 12,
+    staff_reviews_deep: Optional[dict] = None,
+) -> Dict[str, Any]:
+    """Build the canonical staff_review_intelligence dict surfaced to the
+    frontend / CMO Report.
+
+    Order of preference (2026-05-04 — P0 Marjo R2C):
+      1. NEW: `staff_reviews_deep` payload (Firecrawl + LLM theme extraction
+         across Glassdoor / Indeed / Seek + optional PayScale / Fairwork).
+      2. LEGACY: `browse_ai_reviews.staff_reviews` (Browse.AI-driven scrape).
+      3. LEGACY: `glassdoor_reviews` (snippet-based Serper/SerpAPI parse via
+         the deprecated `_parse_glassdoor_reviews`).
+
+    Backwards-compatible signature: `staff_reviews_deep` is optional.
+    """
     now_utc = datetime.now(timezone.utc)
     cutoff = now_utc - timedelta(days=lookback_months * 30)
+    deep_payload = staff_reviews_deep if isinstance(staff_reviews_deep, dict) else {}
     browse_payload = browse_ai_reviews if isinstance(browse_ai_reviews, dict) else {}
     aggregated = browse_payload.get("aggregated") if isinstance(browse_payload.get("aggregated"), dict) else {}
     staff_reviews = browse_payload.get("staff_reviews") if isinstance(browse_payload.get("staff_reviews"), list) else []
@@ -1253,68 +1637,158 @@ def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews:
     undated_count = 0
     scores: List[float] = []
 
-    for platform_blob in staff_reviews:
-        if not isinstance(platform_blob, dict):
-            continue
-        platform = str(platform_blob.get("platform") or "staff_reviews").strip().lower()
-        rating = platform_blob.get("rating")
-        if isinstance(rating, (int, float)) and 0 < float(rating) <= 5:
-            scores.append(float(rating))
-        review_items = platform_blob.get("reviews") if isinstance(platform_blob.get("reviews"), list) else []
-        platform_last_12 = 0
-        platform_undated = 0
+    # ── PRIORITY 1: deep payload (Firecrawl + LLM themes) ───────────────────
+    deep_used = False
+    deep_aggregation: Dict[str, Any] = {}
+    cross_platform_themes: Dict[str, List[str]] = {"pros": [], "cons": []}
+    employer_brand_health_score: Optional[int] = None
+    trend_30d_vs_90d: Optional[str] = None
+    ceo_approval: Optional[int] = None
+    recommend_to_friend: Optional[int] = None
+    competitor_employer_benchmark: Optional[Dict[str, Any]] = None
 
-        for rv in review_items:
-            if not isinstance(rv, dict):
+    if deep_payload and isinstance(deep_payload.get("platforms"), list) and deep_payload.get("ok") is not False:
+        deep_aggregation = deep_payload.get("aggregation") if isinstance(deep_payload.get("aggregation"), dict) else {}
+        for plat_blob in deep_payload.get("platforms") or []:
+            if not isinstance(plat_blob, dict):
                 continue
-            text = str(rv.get("text") or "").strip()
-            if not text:
+            plat_id = str(plat_blob.get("platform") or "").strip().lower()
+            if not plat_id:
                 continue
-            sentiment = str(rv.get("sentiment") or "").strip().lower()
-            parsed_date = _parse_review_date_to_utc(str(rv.get("date") or ""))
-            if parsed_date:
-                if parsed_date < cutoff:
+            plat_rating = plat_blob.get("overall_rating")
+            if isinstance(plat_rating, (int, float)) and 0 < float(plat_rating) <= 5:
+                scores.append(float(plat_rating))
+            recent = plat_blob.get("recent_reviews") if isinstance(plat_blob.get("recent_reviews"), list) else []
+            plat_last_12 = 0
+            plat_undated = 0
+            for rv in recent:
+                if not isinstance(rv, dict):
                     continue
-                platform_last_12 += 1
-                last_12_months_count += 1
-                label = f"[{platform}] {text[:220]}"
-                evidence.append(f"{label} ({parsed_date.date().isoformat()})")
+                text = str(rv.get("text") or "").strip()
+                if not text:
+                    continue
+                sentiment = str(rv.get("sentiment") or "").strip().lower()
+                parsed_date = _parse_review_date_to_utc(str(rv.get("date_iso") or rv.get("date") or ""))
+                role = str(rv.get("role") or "").strip()
+                role_prefix = f" — {role[:80]}" if role else ""
+                label = f"[{plat_id}{role_prefix}] {text[:240]}"
+                if parsed_date:
+                    if parsed_date < cutoff:
+                        continue
+                    plat_last_12 += 1
+                    last_12_months_count += 1
+                    evidence.append(f"{label} ({parsed_date.date().isoformat()})")
+                else:
+                    plat_undated += 1
+                    undated_count += 1
+                    evidence.append(f"{label} (date not verified)")
                 if sentiment == "negative":
                     negative_signals.append(label)
                 elif sentiment == "positive":
                     positive_signals.append(label)
-            else:
-                platform_undated += 1
-                undated_count += 1
-                label = f"[{platform}] {text[:220]}"
-                evidence.append(f"{label} (date not verified)")
-                if sentiment == "negative":
-                    negative_signals.append(label)
-                elif sentiment == "positive":
-                    positive_signals.append(label)
+            review_count = plat_blob.get("total_review_count")
+            normalized_count = int(review_count) if isinstance(review_count, (int, float)) else len(recent)
+            platform_entry: Dict[str, Any] = {
+                "platform": plat_id,
+                "rating": float(plat_rating) if isinstance(plat_rating, (int, float)) else None,
+                "review_count": max(0, normalized_count),
+                "last_12_months_count": plat_last_12,
+                "undated_count": plat_undated,
+                "url": str(plat_blob.get("url") or ""),
+                "rating_distribution": plat_blob.get("rating_distribution") if isinstance(plat_blob.get("rating_distribution"), dict) else None,
+                "themes": plat_blob.get("themes") if isinstance(plat_blob.get("themes"), dict) else {"pros": [], "cons": []},
+                "ceo_approval": plat_blob.get("ceo_approval") if isinstance(plat_blob.get("ceo_approval"), (int, float)) else None,
+                "recommend_to_friend": plat_blob.get("recommend_to_friend") if isinstance(plat_blob.get("recommend_to_friend"), (int, float)) else None,
+                "state": str(plat_blob.get("state") or "DATA_UNAVAILABLE"),
+            }
+            platforms.append(platform_entry)
+            if plat_id == "glassdoor":
+                if isinstance(plat_blob.get("ceo_approval"), (int, float)):
+                    ceo_approval = int(plat_blob.get("ceo_approval"))
+                if isinstance(plat_blob.get("recommend_to_friend"), (int, float)):
+                    recommend_to_friend = int(plat_blob.get("recommend_to_friend"))
+        # Aggregation values
+        if isinstance(deep_aggregation.get("cross_platform_themes"), dict):
+            xp = deep_aggregation.get("cross_platform_themes") or {}
+            cross_platform_themes = {
+                "pros": [str(x) for x in (xp.get("pros") or [])][:5],
+                "cons": [str(x) for x in (xp.get("cons") or [])][:5],
+            }
+        if isinstance(deep_aggregation.get("employer_brand_health_score"), (int, float)):
+            employer_brand_health_score = int(deep_aggregation.get("employer_brand_health_score"))
+        if isinstance(deep_aggregation.get("trend_30d_vs_90d"), str):
+            trend_30d_vs_90d = deep_aggregation.get("trend_30d_vs_90d")
+        if isinstance(deep_aggregation.get("competitor_employer_benchmark"), dict):
+            competitor_employer_benchmark = deep_aggregation.get("competitor_employer_benchmark")
+        deep_used = True
 
-        review_count = platform_blob.get("review_count")
-        normalized_count = int(review_count) if isinstance(review_count, (int, float)) else len(review_items)
-        platforms.append({
-            "platform": platform,
-            "rating": float(rating) if isinstance(rating, (int, float)) else None,
-            "review_count": max(0, normalized_count),
-            "last_12_months_count": platform_last_12,
-            "undated_count": platform_undated,
-            "url": platform_blob.get("url") or "",
-        })
+    # ── PRIORITY 2: legacy browse_ai_reviews.staff_reviews ─────────────────
+    # Only consult legacy sources when deep payload didn't produce platform
+    # records — keeps the deep extraction's structured fields authoritative
+    # and avoids double-counting reviews / themes.
+    if not deep_used:
+        for platform_blob in staff_reviews:
+            if not isinstance(platform_blob, dict):
+                continue
+            platform = str(platform_blob.get("platform") or "staff_reviews").strip().lower()
+            rating = platform_blob.get("rating")
+            if isinstance(rating, (int, float)) and 0 < float(rating) <= 5:
+                scores.append(float(rating))
+            review_items = platform_blob.get("reviews") if isinstance(platform_blob.get("reviews"), list) else []
+            platform_last_12 = 0
+            platform_undated = 0
 
-    if not positive_signals:
-        positive_signals.extend((aggregated.get("top_staff_positive") or [])[:5])
-    if not negative_signals:
-        negative_signals.extend((aggregated.get("top_staff_negative") or [])[:5])
+            for rv in review_items:
+                if not isinstance(rv, dict):
+                    continue
+                text = str(rv.get("text") or "").strip()
+                if not text:
+                    continue
+                sentiment = str(rv.get("sentiment") or "").strip().lower()
+                parsed_date = _parse_review_date_to_utc(str(rv.get("date") or ""))
+                if parsed_date:
+                    if parsed_date < cutoff:
+                        continue
+                    platform_last_12 += 1
+                    last_12_months_count += 1
+                    label = f"[{platform}] {text[:220]}"
+                    evidence.append(f"{label} ({parsed_date.date().isoformat()})")
+                    if sentiment == "negative":
+                        negative_signals.append(label)
+                    elif sentiment == "positive":
+                        positive_signals.append(label)
+                else:
+                    platform_undated += 1
+                    undated_count += 1
+                    label = f"[{platform}] {text[:220]}"
+                    evidence.append(f"{label} (date not verified)")
+                    if sentiment == "negative":
+                        negative_signals.append(label)
+                    elif sentiment == "positive":
+                        positive_signals.append(label)
 
-    if not positive_signals and isinstance(glassdoor_reviews, dict):
-        positive_signals.extend((glassdoor_reviews.get("positive") or [])[:4])
-    if not negative_signals and isinstance(glassdoor_reviews, dict):
-        negative_signals.extend((glassdoor_reviews.get("negative") or [])[:4])
-    if not evidence and isinstance(glassdoor_reviews, dict):
-        evidence.extend((glassdoor_reviews.get("snippets") or [])[:6])
+            review_count = platform_blob.get("review_count")
+            normalized_count = int(review_count) if isinstance(review_count, (int, float)) else len(review_items)
+            platforms.append({
+                "platform": platform,
+                "rating": float(rating) if isinstance(rating, (int, float)) else None,
+                "review_count": max(0, normalized_count),
+                "last_12_months_count": platform_last_12,
+                "undated_count": platform_undated,
+                "url": platform_blob.get("url") or "",
+            })
+
+        if not positive_signals:
+            positive_signals.extend((aggregated.get("top_staff_positive") or [])[:5])
+        if not negative_signals:
+            negative_signals.extend((aggregated.get("top_staff_negative") or [])[:5])
+
+        if not positive_signals and isinstance(glassdoor_reviews, dict):
+            positive_signals.extend((glassdoor_reviews.get("positive") or [])[:4])
+        if not negative_signals and isinstance(glassdoor_reviews, dict):
+            negative_signals.extend((glassdoor_reviews.get("negative") or [])[:4])
+        if not evidence and isinstance(glassdoor_reviews, dict):
+            evidence.extend((glassdoor_reviews.get("snippets") or [])[:6])
 
     dedup_sources = []
     seen_sources = set()
@@ -1326,6 +1800,8 @@ def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews:
         dedup_sources.append(src)
 
     staff_score = round(sum(scores) / len(scores), 1) if scores else None
+    if staff_score is None and isinstance(deep_aggregation.get("weighted_overall_rating"), (int, float)):
+        staff_score = round(float(deep_aggregation.get("weighted_overall_rating")), 1)
     if staff_score is None and isinstance(aggregated.get("staff_score"), (int, float)):
         staff_score = round(float(aggregated.get("staff_score")), 1)
     if staff_score is None and isinstance(glassdoor_reviews, dict) and isinstance(glassdoor_reviews.get("rating"), (int, float)):
@@ -1334,10 +1810,28 @@ def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews:
     positive_signals = list(dict.fromkeys([str(x).strip() for x in positive_signals if str(x).strip()]))[:6]
     negative_signals = list(dict.fromkeys([str(x).strip() for x in negative_signals if str(x).strip()]))[:6]
     evidence = list(dict.fromkeys([str(x).strip() for x in evidence if str(x).strip()]))[:8]
+
+    # When the deep payload supplied LLM-extracted theme strings, surface
+    # them as positive/negative signals so existing UI surfaces light up
+    # without bespoke wiring (CMO Report's Workplace Intelligence section
+    # also reads `cross_platform_themes` directly).
+    if deep_used and cross_platform_themes:
+        for theme in (cross_platform_themes.get("pros") or []):
+            if theme and theme not in positive_signals:
+                positive_signals.append(theme)
+        for theme in (cross_platform_themes.get("cons") or []):
+            if theme and theme not in negative_signals:
+                negative_signals.append(theme)
+        positive_signals = positive_signals[:8]
+        negative_signals = negative_signals[:8]
+
     action_plan = _derive_staff_action_plan(negative_signals)
 
-    has_data = bool(platforms or positive_signals or negative_signals or evidence or staff_score is not None)
-    return {
+    has_data = bool(
+        platforms or positive_signals or negative_signals or evidence
+        or staff_score is not None or employer_brand_health_score
+    )
+    result = {
         "has_data": has_data,
         "source_truth_only": True,
         "window_months": lookback_months,
@@ -1348,13 +1842,26 @@ def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews:
         "undated_review_count": undated_count,
         "scores_available": bool(staff_score is not None),
         "staff_score": staff_score,
-        "platforms": platforms[:6],
-        "sources": dedup_sources[:6],
+        "platforms": platforms[:8],
+        "sources": dedup_sources[:8],
         "positive_signals": positive_signals,
         "negative_signals": negative_signals,
         "action_plan": action_plan,
         "evidence": evidence,
+        # 2026-05-04 (P0 Marjo R2C) — new deep-extraction fields surfaced for
+        # the CMO Report Workplace Intelligence section. All optional / nullable
+        # for backward compat with consumers that only know the legacy schema.
+        "cross_platform_themes": cross_platform_themes,
+        "trend_30d_vs_90d": trend_30d_vs_90d,
+        "employer_brand_health_score": employer_brand_health_score,
+        "ceo_approval": ceo_approval,
+        "recommend_to_friend": recommend_to_friend,
+        "competitor_employer_benchmark": competitor_employer_benchmark,
+        "deep_extraction_used": deep_used,
+        "weighted_overall_rating": deep_aggregation.get("weighted_overall_rating") if isinstance(deep_aggregation.get("weighted_overall_rating"), (int, float)) else staff_score,
+        "total_reviews_cross_platform": deep_aggregation.get("total_staff_reviews_cross_platform") if isinstance(deep_aggregation.get("total_staff_reviews_cross_platform"), (int, float)) else None,
     }
+    return result
 
 
 def _score_from_signal(signal: Any) -> int:
@@ -2060,11 +2567,20 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
     # user JWT — the backend's get_current_user_from_request above is the single trust gate.
 
     if payload.action == "scan":
+        # P0 Marjo E2 / 2026-05-04: mint a per-scan uuid and bind it to the
+        # current async task so every downstream provider/edge call landing
+        # inside this scan persists a row in public.enrichment_traces tied
+        # to the same scan_id. The ContextVar is per-task, so concurrent
+        # scans for different users do not cross-pollute. Cleared in finally.
+        # Cites BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 + zero-401.
+        scan_id = new_scan_id()
+        _scan_ctx_tokens = set_active_scan(scan_id, user_id)
         try:
             scan_domain = normalize_domain(url)
             if payload.bust_cache:
                 await invalidate_domain_scan(scan_domain)
                 logger.info("[enrichment/website] cache BUSTED for %s (user requested)", scan_domain)
+            logger.info("[enrichment/website] scan_id=%s user=%s domain=%s", scan_id, user_id, scan_domain)
             cached = await get_domain_scan(scan_domain)
             if cached:
                 logger.info("[enrichment/website] cache HIT for %s", scan_domain)
@@ -2118,14 +2634,21 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                                     "computed_at": datetime.now(timezone.utc).isoformat(),
                                 }
                                 cached["digital_footprint"] = cached_fp
-                            get_sb().table("business_dna_enrichment").upsert({
-                                "user_id": user_id,
-                                "business_profile_id": cache_profile_id,
-                                "website_url": url,
-                                "enrichment": cached,
-                                "digital_footprint": cached_fp,
-                                "updated_at": datetime.now(timezone.utc).isoformat(),
-                            }, on_conflict="user_id,business_profile_id").execute()
+                            # P0 Marjo (E5): all writes go through the
+                            # safe_upsert_business_dna chokepoint — validates
+                            # required fields, strips ai_errors, derives
+                            # core_signals, records incident on contract
+                            # violation, never raises. See
+                            # backend/core/business_dna_persistence.py.
+                            safe_upsert_business_dna(
+                                get_sb(),
+                                user_id=user_id,
+                                business_profile_id=cache_profile_id,
+                                website_url=url,
+                                enrichment=cached,
+                                digital_footprint=cached_fp,
+                                source="calibration_scan_cache_hit",
+                            )
                             logger.info("[enrichment/website] cache HIT persisted to business_dna_enrichment for user %s", user_id)
                 except Exception as cache_persist_err:
                     logger.error("[enrichment/website] cache HIT persistence failed: %s", cache_persist_err)
@@ -2161,7 +2684,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             page_title = _extract_title(raw_html)
             meta_description = _extract_meta_content(raw_html, "description") or _extract_meta_content(raw_html, "og:description")
             og_site_name = _extract_meta_content(raw_html, "og:site_name") or _extract_meta_content(raw_html, "twitter:title")
-            business_name_hint = _clean_business_name(og_site_name) or _clean_business_name(page_title) or domain.split(".")[0].replace("-", " ").title()
+            business_name_hint = _clean_business_name(og_site_name) or domain_business_label(domain) or _clean_business_name(page_title)
             service_lines = _extract_service_lines(f"{page_text}\n{crawled_text}")
             competitor_query = f'"{business_name_hint}" competitors australia {page_title or ""}'.strip()
             company_query = f"site:{domain} company profile services about"
@@ -2320,6 +2843,9 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     # that fails our sentinel / meta-gap / competitor filters
                     # reaches the stored enrichment in the first place.
                     parsed = _sanitize_enrichment_payload(parsed)
+                    if isinstance(parsed.get("business_name"), str):
+                        cleaned_name = _clean_business_name(parsed.get("business_name")) or domain_business_label(domain)
+                        parsed["business_name"] = cleaned_name
                     enrichment.update({k: parsed.get(k, enrichment.get(k)) for k in enrichment.keys() if k in parsed})
                     if isinstance(parsed.get("competitors"), list):
                         enrichment["competitors"] = parsed.get("competitors")
@@ -2337,6 +2863,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             # (line ~1979 "unknown — insufficient website data..."). Scrub it
             # and anything else that snuck through before persistence.
             enrichment = _sanitize_enrichment_payload(enrichment)
+            if not _clean_business_name(enrichment.get("business_name", "")):
+                enrichment["business_name"] = domain_business_label(domain)
 
             # deterministic social handle fallback extraction across crawled content + search links.
             social_patterns = {
@@ -2405,9 +2933,78 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 )
                 if isinstance(result, dict) and not _edge_result_failed(result):
                     asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
+                # Marjo P0 / E1 (2026-05-04): opt-in strict zero-401 enforcement.
+                # When STRICT_EDGE_ZERO_401=1 and a mission edge function returns
+                # a non-2xx contract envelope, raise so the scan halts loudly
+                # rather than landing the failure in ai_errors with a cosmetic
+                # "DATA_UNAVAILABLE" sanitised banner. Default off to preserve
+                # current production semantics until Andreas issues 13041978
+                # to flip the env switch.
+                if (
+                    _strict_edge_zero_401_enabled()
+                    and fn_name in MISSION_EDGE_FUNCTIONS_ZERO_401
+                    and isinstance(result, dict)
+                    and _edge_result_failed(result)
+                ):
+                    raise EdgeFunctionNonOk(
+                        function_name=fn_name,
+                        status=result.get("_http_status"),
+                        code=str(result.get("code") or "EDGE_FUNCTION_FAILED"),
+                        error=str(result.get("error") or result.get("detail") or "")[:240],
+                    )
                 return result
 
-            deep_recon, social_enrichment, competitor_monitor, market_analysis, market_scorer, browse_ai_reviews, semrush_intel = await asyncio.gather(
+            # 2026-05-04 (P0 Marjo R2B + R2C): added two deep review edges to the fanout —
+            #   * `customer-reviews-deep` (R2B) — per-platform Firecrawl/Serper across Google
+            #     Maps, Trustpilot, ProductReview.com.au, Yelp, Facebook + LLM Trinity
+            #     sentiment + themes; runs alongside legacy `browse-ai-reviews` during the
+            #     deprecation window so the new per-platform deep extraction can be compared
+            #     against the legacy shallow Google-HTML scraper (browse-ai-reviews is
+            #     removed once V1-V8 verifies green for two consecutive scans).
+            #   * `staff-reviews-deep` (R2C) — replaces snippet-based Glassdoor parsing in
+            #     `_parse_glassdoor_reviews` with deep public-page Firecrawl extraction
+            #     across Glassdoor + Indeed + Seek (+ optional PayScale, Fairwork).
+            #     Backward compat preserved by passing the new payload into
+            #     `_build_staff_review_intelligence` below.
+            # See BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 + feedback_zero_401_tolerance.
+            (
+                warm_cognitive,
+                calibration_business_dna,
+                business_identity_lookup,
+                calibration_sync,
+                deep_recon,
+                social_enrichment,
+                competitor_monitor,
+                market_analysis,
+                market_scorer,
+                browse_ai_reviews,
+                customer_reviews_deep,
+                semrush_intel,
+                staff_reviews_deep,
+            ) = await asyncio.gather(
+                _cached_edge("warm-cognitive-engine", {"user_id": user_id}),
+                _cached_edge(
+                    "calibration-business-dna",
+                    {
+                        "user_id": user_id,
+                        "website_url": url,
+                        "website": url,
+                        "business_name_hint": business_name_hint,
+                        "location_hint": (enrichment.get("location") or enrichment.get("target_market") or "Australia"),
+                        "abn_hint": (abn_candidates[0] if abn_candidates else ""),
+                    },
+                ),
+                _cached_edge(
+                    "business-identity-lookup",
+                    {
+                        "user_id": user_id,
+                        "domain": domain,
+                        "business_name_hint": business_name_hint,
+                        "location_hint": (enrichment.get("location") or enrichment.get("target_market") or "Australia"),
+                        "abn": (abn_candidates[0] if abn_candidates else ""),
+                    },
+                ),
+                _cached_edge("calibration-sync", {"user_id": user_id}),
                 _cached_edge("deep-web-recon", {"user_id": user_id, "website": url}),
                 _cached_edge("social-enrichment", {"user_id": user_id, "website_url": url}),
                 _cached_edge("competitor-monitor", {"user_id": user_id}),
@@ -2424,33 +3021,62 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "domain": domain,
                     "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
                 }),
+                _cached_edge("customer-reviews-deep", {
+                    "user_id": user_id,
+                    "business_name": enrichment.get("business_name", "") or business_name_hint,
+                    "domain": domain,
+                    "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
+                }),
                 _cached_edge("semrush-domain-intel", {"user_id": user_id, "domain": domain, "database": "us"}),
+                _cached_edge("staff-reviews-deep", {
+                    "user_id": user_id,
+                    "business_name": enrichment.get("business_name") or business_name_hint or domain_business_label(domain),
+                    "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
+                }),
                 return_exceptions=True,
             )
+            if isinstance(warm_cognitive, Exception): warm_cognitive = {"error": str(warm_cognitive)}
+            if isinstance(calibration_business_dna, Exception): calibration_business_dna = {"error": str(calibration_business_dna)}
+            if isinstance(business_identity_lookup, Exception): business_identity_lookup = {"error": str(business_identity_lookup)}
+            if isinstance(calibration_sync, Exception): calibration_sync = {"error": str(calibration_sync)}
             if isinstance(deep_recon, Exception): deep_recon = {"error": str(deep_recon)}
             if isinstance(social_enrichment, Exception): social_enrichment = {"error": str(social_enrichment)}
             if isinstance(competitor_monitor, Exception): competitor_monitor = {"error": str(competitor_monitor)}
             if isinstance(market_analysis, Exception): market_analysis = {"error": str(market_analysis)}
             if isinstance(market_scorer, Exception): market_scorer = {"error": str(market_scorer)}
             if isinstance(browse_ai_reviews, Exception): browse_ai_reviews = {"error": str(browse_ai_reviews)}
+            if isinstance(customer_reviews_deep, Exception): customer_reviews_deep = {"error": str(customer_reviews_deep)}
             if isinstance(semrush_intel, Exception): semrush_intel = {"error": str(semrush_intel)}
+            if isinstance(staff_reviews_deep, Exception): staff_reviews_deep = {"error": str(staff_reviews_deep)}
+            if not isinstance(warm_cognitive, dict): warm_cognitive = {"error": f"invalid_payload:{type(warm_cognitive).__name__}"}
+            if not isinstance(calibration_business_dna, dict): calibration_business_dna = {"error": f"invalid_payload:{type(calibration_business_dna).__name__}"}
+            if not isinstance(business_identity_lookup, dict): business_identity_lookup = {"error": f"invalid_payload:{type(business_identity_lookup).__name__}"}
+            if not isinstance(calibration_sync, dict): calibration_sync = {"error": f"invalid_payload:{type(calibration_sync).__name__}"}
             if not isinstance(deep_recon, dict): deep_recon = {"error": f"invalid_payload:{type(deep_recon).__name__}"}
             if not isinstance(social_enrichment, dict): social_enrichment = {"error": f"invalid_payload:{type(social_enrichment).__name__}"}
             if not isinstance(competitor_monitor, dict): competitor_monitor = {"error": f"invalid_payload:{type(competitor_monitor).__name__}"}
             if not isinstance(market_analysis, dict): market_analysis = {"error": f"invalid_payload:{type(market_analysis).__name__}"}
             if not isinstance(market_scorer, dict): market_scorer = {"error": f"invalid_payload:{type(market_scorer).__name__}"}
             if not isinstance(browse_ai_reviews, dict): browse_ai_reviews = {"error": f"invalid_payload:{type(browse_ai_reviews).__name__}"}
+            if not isinstance(customer_reviews_deep, dict): customer_reviews_deep = {"error": f"invalid_payload:{type(customer_reviews_deep).__name__}"}
             if not isinstance(semrush_intel, dict): semrush_intel = {"error": f"invalid_payload:{type(semrush_intel).__name__}"}
+            if not isinstance(staff_reviews_deep, dict): staff_reviews_deep = {"error": f"invalid_payload:{type(staff_reviews_deep).__name__}"}
 
             ai_errors = []
             edge_failures = [
+                ("warm-cognitive-engine", warm_cognitive),
+                ("calibration-business-dna", calibration_business_dna),
+                ("business-identity-lookup", business_identity_lookup),
+                ("calibration-sync", calibration_sync),
                 ("deep-web-recon", deep_recon),
                 ("social-enrichment", social_enrichment),
                 ("competitor-monitor", competitor_monitor),
                 ("market-analysis-ai", market_analysis),
                 ("market-signal-scorer", market_scorer),
                 ("browse-ai-reviews", browse_ai_reviews),
+                ("customer-reviews-deep", customer_reviews_deep),
                 ("semrush-domain-intel", semrush_intel),
+                ("staff-reviews-deep", staff_reviews_deep),
             ]
             for edge_fn_name, edge_result in edge_failures:
                 if _edge_result_failed(edge_result):
@@ -2459,6 +3085,120 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         "error": str((edge_result or {}).get("error") or (edge_result or {}).get("detail") or "edge_function_failed"),
                         "status": (edge_result or {}).get("_http_status"),
                     })
+
+            # Marjo P0 / E1 (2026-05-04): post-gather zero-401 enforcement.
+            # When STRICT_EDGE_ZERO_401=1, any non-2xx contract envelope from a
+            # mission edge function (per MISSION_EDGE_FUNCTIONS_ZERO_401) raises
+            # so the outer scan handler returns a Contract v2 sanitised
+            # DATA_UNAVAILABLE response — never landing in ai_errors with a
+            # cosmetic confidence score (root cause of the 2026-04-23 5%-data
+            # CMO Report incident). Default off; flip in Azure App Service env
+            # only after Andreas issues code 13041978.
+            if _strict_edge_zero_401_enabled():
+                strict_blockers = [
+                    {
+                        "function": fn_name_check,
+                        "status": (res or {}).get("_http_status"),
+                        "code": str((res or {}).get("code") or "EDGE_FUNCTION_FAILED"),
+                    }
+                    for fn_name_check, res in edge_failures
+                    if fn_name_check in MISSION_EDGE_FUNCTIONS_ZERO_401
+                    and _edge_result_failed(res)
+                ]
+                if strict_blockers:
+                    logger.error(
+                        "[zero-401 P0] STRICT mode: %d mission edge function(s) "
+                        "returned non-200 — halting scan: %s",
+                        len(strict_blockers),
+                        strict_blockers,
+                    )
+                    raise EdgeFunctionNonOk(
+                        function_name=strict_blockers[0]["function"],
+                        status=strict_blockers[0]["status"],
+                        code=strict_blockers[0]["code"],
+                        error=f"{len(strict_blockers)} mission edge function(s) failed",
+                    )
+
+            # ─── Marjo P0 / R2A (2026-05-04) — per-edge-fn response summary ──
+            # Internal-only audit metadata for the 4 fns that R2A added to the
+            # mission set (semrush-domain-intel, competitor-monitor,
+            # market-analysis-ai, market-signal-scorer). Captures slug-level
+            # outcome (ok/_http_status/code) so the CMO Report audit endpoint
+            # added by E2 (intelligence_modules.get_cmo_report) can surface
+            # per-provider counts WITHOUT leaking supplier names externally.
+            #
+            # Stays inside the enrichment payload (under "_edge_response_summary"
+            # — leading underscore = internal-only key, stripped by Contract v2
+            # sanitiser at boundary). Persisted to business_dna_enrichment for
+            # historical audit but never echoed to the frontend.
+            #
+            # Per BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 (Hard Rule
+            # 1 — backend is the boundary): supplier names + status codes are
+            # logged here for the daily check (ops_daily_calibration_check.md)
+            # but the external response uses only the allowed state enum
+            # {DATA_AVAILABLE, DATA_UNAVAILABLE, INSUFFICIENT_SIGNAL,
+            #  PROCESSING, DEGRADED}.
+            r2a_response_summary = {}
+            for r2a_fn_name, r2a_fn_result in (
+                ("semrush-domain-intel", semrush_intel),
+                ("competitor-monitor", competitor_monitor),
+                ("market-analysis-ai", market_analysis),
+                ("market-signal-scorer", market_scorer),
+            ):
+                if not isinstance(r2a_fn_result, dict):
+                    r2a_response_summary[r2a_fn_name] = {
+                        "ok": False,
+                        "code": "INVALID_PAYLOAD",
+                        "_http_status": None,
+                    }
+                    continue
+                r2a_failed = _edge_result_failed(r2a_fn_result)
+                r2a_response_summary[r2a_fn_name] = {
+                    "ok": (not r2a_failed),
+                    "_http_status": r2a_fn_result.get("_http_status"),
+                    "code": (
+                        str(r2a_fn_result.get("code") or "EDGE_FUNCTION_FAILED")
+                        if r2a_failed else "OK"
+                    ),
+                    # No supplier names, error strings, or stack traces here.
+                    # Sanitiser-safe internal markers only.
+                }
+            enrichment["_edge_response_summary"] = r2a_response_summary
+
+
+            # Ingest identity/profile fields from dedicated edge outputs only
+            # when they add real signal over baseline scrape extraction.
+            if isinstance(business_identity_lookup, dict) and not _edge_result_failed(business_identity_lookup):
+                if not enrichment.get("abn") and business_identity_lookup.get("abn"):
+                    enrichment["abn"] = str(business_identity_lookup.get("abn"))
+                if not enrichment.get("business_name") and business_identity_lookup.get("legal_name"):
+                    enrichment["business_name"] = str(business_identity_lookup.get("legal_name"))
+                if not enrichment.get("location") and business_identity_lookup.get("address"):
+                    enrichment["location"] = str(business_identity_lookup.get("address"))
+                enrichment["business_identity_lookup"] = {
+                    "status": business_identity_lookup.get("status") or "unknown",
+                    "match_confidence": business_identity_lookup.get("match_confidence"),
+                    "match_reason": business_identity_lookup.get("match_reason"),
+                }
+
+            if isinstance(calibration_business_dna, dict) and not _edge_result_failed(calibration_business_dna):
+                extracted_data = calibration_business_dna.get("extracted_data")
+                if isinstance(extracted_data, dict):
+                    for src_key, target_key in (
+                        ("business_name", "business_name"),
+                        ("industry", "industry"),
+                        ("location", "location"),
+                        ("abn", "abn"),
+                        ("target_market", "target_market"),
+                        ("main_products_services", "main_products_services"),
+                    ):
+                        if not enrichment.get(target_key) and extracted_data.get(src_key):
+                            enrichment[target_key] = extracted_data.get(src_key)
+                enrichment["calibration_business_dna"] = {
+                    "ok": True,
+                    "fields_extracted": calibration_business_dna.get("fields_extracted"),
+                    "generated_at": calibration_business_dna.get("generated_at"),
+                }
 
             edge_meta = {
                 "market_analysis_failed": _edge_result_failed(market_analysis),
@@ -2521,6 +3261,119 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     ),
                 })
 
+            # P0-MARJO-R2B 2026-05-04: ingest customer-reviews-deep payload.
+            # The new edge returns per-platform intel (Google Maps, Trustpilot,
+            # ProductReview, Yelp, Facebook) with LLM-classified sentiment +
+            # corpus-level themes. Stored raw on enrichment["customer_reviews_deep"]
+            # for the CMO Report wiring (sections customer_sentiment /
+            # review_intelligence / review_sources). When present, also
+            # synthesises a browse_ai_reviews-shaped payload so the existing
+            # _build_customer_review_intelligence builder benefits without
+            # contract changes during the deprecation window.
+            # See BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
+            if isinstance(customer_reviews_deep, dict) and customer_reviews_deep.get("ok") and customer_reviews_deep.get("aggregated"):
+                enrichment["customer_reviews_deep"] = customer_reviews_deep
+                deep_platforms = customer_reviews_deep.get("platforms") or []
+                deep_agg = customer_reviews_deep.get("aggregated") or {}
+                # Build a browse_ai_reviews-shaped synthetic payload so the
+                # legacy _build_customer_review_intelligence picks up the
+                # higher-quality deep-extracted reviews.
+                synthesised_customer_reviews: List[Dict[str, Any]] = []
+                synth_top_positive: List[str] = []
+                synth_top_negative: List[str] = []
+                for plat in deep_platforms:
+                    if not isinstance(plat, dict):
+                        continue
+                    if not plat.get("found"):
+                        continue
+                    synth_reviews_list: List[Dict[str, Any]] = []
+                    for rv in (plat.get("recent_reviews") or [])[:10]:
+                        if not isinstance(rv, dict):
+                            continue
+                        text = str(rv.get("text") or "").strip()
+                        if not text:
+                            continue
+                        synth_reviews_list.append({
+                            "text": text,
+                            "rating": rv.get("rating"),
+                            "author": str(rv.get("author_handle") or ""),
+                            "date": str(rv.get("date_iso") or ""),
+                            "sentiment": str(rv.get("sentiment") or "neutral").lower() if rv.get("sentiment") in ("positive", "negative", "neutral") else "neutral",
+                        })
+                        snippet = f"[{plat.get('platform')}] {text[:220]}"
+                        if rv.get("sentiment") == "positive" and len(synth_top_positive) < 8:
+                            synth_top_positive.append(snippet)
+                        elif rv.get("sentiment") == "negative" and len(synth_top_negative) < 8:
+                            synth_top_negative.append(snippet)
+                    synthesised_customer_reviews.append({
+                        "platform": str(plat.get("platform") or ""),
+                        "rating": plat.get("overall_rating"),
+                        "review_count": plat.get("total_review_count"),
+                        "url": plat.get("url") or "",
+                        "reviews": synth_reviews_list,
+                    })
+                deep_themes = deep_agg.get("themes_top") or []
+                deep_synth_browse_payload = {
+                    "ok": True,
+                    "customer_reviews": synthesised_customer_reviews,
+                    "staff_reviews": [],  # R2C handles staff/employer reviews
+                    "aggregated": {
+                        "customer_score": deep_agg.get("weighted_avg_rating"),
+                        "customer_count": deep_agg.get("total_reviews_cross_platform"),
+                        "top_positive": synth_top_positive,
+                        "top_negative": synth_top_negative,
+                        "top_recent": [],  # populated below from dated reviews
+                        "customer_sources": [str(p.get("platform")) for p in deep_platforms if isinstance(p, dict) and p.get("found")],
+                        "customer_action_themes": [str(t.get("theme")) for t in deep_themes if isinstance(t, dict) and t.get("theme")],
+                    },
+                }
+                # Backward-compat: merge with any prior browse_ai_reviews so we
+                # don't drop signal from the legacy edge during the window.
+                prior_browse = enrichment.get("browse_ai_reviews") if isinstance(enrichment.get("browse_ai_reviews"), dict) else {}
+                if prior_browse.get("staff_reviews"):
+                    deep_synth_browse_payload["staff_reviews"] = prior_browse["staff_reviews"]
+                if prior_browse.get("aggregated", {}).get("staff_score") is not None and deep_synth_browse_payload["aggregated"].get("staff_score") is None:
+                    deep_synth_browse_payload["aggregated"]["staff_score"] = prior_browse["aggregated"]["staff_score"]
+                # The legacy builder will use this synthesised payload as its
+                # primary source — superior because per-review sentiment is
+                # LLM-classified, not keyword-bagged, and per-platform ratings
+                # come from real Google Maps/Trustpilot/PR/Yelp scrapes.
+                enrichment["browse_ai_reviews"] = deep_synth_browse_payload
+                # Also populate google_reviews compat shim so downstream
+                # readers of enrichment.google_reviews see the deep signal.
+                gmaps_plat = next((p for p in deep_platforms if isinstance(p, dict) and p.get("platform") == "google_maps"), None)
+                if gmaps_plat and gmaps_plat.get("overall_rating") is not None:
+                    enrichment.setdefault("google_reviews", {})["star_rating"] = gmaps_plat.get("overall_rating")
+                    enrichment["google_reviews"]["has_data"] = True
+                    if gmaps_plat.get("total_review_count") is not None:
+                        enrichment["google_reviews"]["review_count"] = gmaps_plat.get("total_review_count")
+                # CMO Report wiring (sections: customer_sentiment, review_intelligence,
+                # review_sources). Surface per-platform trace-friendly summary so
+                # E6's section_evidence builder can cite per-platform provenance.
+                enrichment["customer_review_intelligence_v2"] = {
+                    "weighted_avg_rating": deep_agg.get("weighted_avg_rating"),
+                    "total_reviews_cross_platform": deep_agg.get("total_reviews_cross_platform"),
+                    "sentiment_distribution": deep_agg.get("sentiment_distribution") or {},
+                    "velocity_total": deep_agg.get("velocity_total") or {},
+                    "themes": deep_themes,
+                    "platforms_found": [
+                        {
+                            "platform": p.get("platform"),
+                            "url": p.get("url"),
+                            "rating": p.get("overall_rating"),
+                            "review_count": p.get("total_review_count"),
+                            "state": p.get("state"),
+                        }
+                        for p in deep_platforms if isinstance(p, dict) and p.get("found")
+                    ],
+                    "review_sources": [
+                        {"platform": p.get("platform"), "url": p.get("url"), "state": p.get("state")}
+                        for p in deep_platforms if isinstance(p, dict)
+                    ],
+                    "has_data": bool(deep_agg.get("has_data")),
+                    "state": deep_agg.get("state") or "INSUFFICIENT_SIGNAL",
+                }
+
             enrichment["customer_review_intelligence"] = _build_customer_review_intelligence(
                 enrichment.get("google_reviews") or {},
                 enrichment.get("review_aggregation") or {},
@@ -2538,10 +3391,18 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "has_data": bool(customer_intel.get("has_data")),
                 })
 
+            # 2026-05-04 (P0 Marjo R2C): pass new staff_reviews_deep payload
+            # alongside legacy sources. _build_staff_review_intelligence prefers
+            # deep when present and falls back to legacy snippet/Browse.AI for
+            # backward compatibility. Deep payload also persisted under
+            # `enrichment.staff_reviews_deep` for forensic / debug surfaces.
+            if isinstance(staff_reviews_deep, dict):
+                enrichment["staff_reviews_deep"] = staff_reviews_deep
             enrichment["staff_review_intelligence"] = _build_staff_review_intelligence(
                 enrichment.get("glassdoor_reviews") or {},
                 enrichment.get("browse_ai_reviews") or {},
                 lookback_months=12,
+                staff_reviews_deep=enrichment.get("staff_reviews_deep") if isinstance(enrichment.get("staff_reviews_deep"), dict) else None,
             )
 
             contact_corpus = "\n".join([
@@ -2667,12 +3528,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         f"{enrichment.get('unique_value_proposition')}."
                     )
 
-            if not enrichment.get("executive_summary"):
-                enrichment["executive_summary"] = (
-                    f"{enrichment.get('business_name') or 'Business'} appears positioned in {enrichment.get('industry') or 'its sector'} with "
-                    f"focus on {enrichment.get('main_products_services') or 'core services'}. "
-                    f"Top competitor pressure: {enrichment.get('competitor_analysis') or 'to be validated through market signals'}."
-                )
+            if isinstance(enrichment.get("executive_summary"), str) and is_placeholder_text(enrichment.get("executive_summary")):
+                enrichment["executive_summary"] = ""
 
             enrichment["analysis_gaps"] = _build_intelligence_gaps(
                 enrichment,
@@ -2730,18 +3587,14 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "status": "strong" if seo_html_hygiene.get("score", 0) >= 75 else "moderate" if seo_html_hygiene.get("score", 0) >= 45 else "weak",
                     "summary": "Website condition assessed from on-page hygiene, trust signals, and social footprint.",
                 }
-            if not isinstance(enrichment.get("swot"), dict) or not enrichment.get("swot"):
-                enrichment["swot"] = swot
-            if not isinstance(enrichment.get("competitor_swot"), list) or not enrichment.get("competitor_swot"):
-                enrichment["competitor_swot"] = competitor_swot
-            if not isinstance(enrichment.get("cmo_priority_actions"), list) or not enrichment.get("cmo_priority_actions"):
-                enrichment["cmo_priority_actions"] = cmo_priority_actions
-            if not enrichment.get("cmo_executive_brief"):
-                enrichment["cmo_executive_brief"] = (
-                    f"{enrichment.get('business_name') or 'Business'} has a {enrichment.get('website_health', {}).get('status', 'mixed')} digital foundation. "
-                    f"Primary opportunity is to tighten positioning for {enrichment.get('target_market') or 'its core market'}, "
-                    f"improve discoverability via SEO, and operationalize proof-led acquisition across owned and paid channels."
-                )
+            if not isinstance(enrichment.get("swot"), dict):
+                enrichment["swot"] = {}
+            if not isinstance(enrichment.get("competitor_swot"), list):
+                enrichment["competitor_swot"] = []
+            if not isinstance(enrichment.get("cmo_priority_actions"), list):
+                enrichment["cmo_priority_actions"] = []
+            if isinstance(enrichment.get("cmo_executive_brief"), str) and is_placeholder_text(enrichment.get("cmo_executive_brief")):
+                enrichment["cmo_executive_brief"] = ""
 
             if isinstance(semrush_intel, dict) and semrush_intel.get("ok"):
                 # Contract v2 / Step 3d: seo_analysis is SEMrush-derived only.
@@ -2813,7 +3666,113 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         "referring_ips": sr_backlinks.get("referring_ips"),
                         "referring_ip_class_c": sr_backlinks.get("referring_ip_class_c"),
                         "authority_score": sr_backlinks.get("authority_score"),
+                        # R2D additions: follow ratio + dofollow/nofollow split.
+                        "follow_links": sr_backlinks.get("follow_links"),
+                        "nofollow_links": sr_backlinks.get("nofollow_links"),
+                        "follow_ratio": sr_backlinks.get("follow_ratio"),
+                        "toxic_backlinks_pct": sr_backlinks.get("toxic_backlinks_pct"),
                     }
+
+                # ─── R2D (2026-05-04): Deep SEMrush intel fields ───────────
+                # Three new sections wired in addition to the existing six:
+                #
+                # 1) keyword_intelligence
+                #    - organic_keywords: full top-100 keyword spectrum (was 20)
+                #    - top_pages: top-20 organic landing pages (NEW endpoint
+                #      domain_organic_pages)
+                #    Used by SWOT (current ranking strengths), Strategic
+                #    Roadmap (target keywords + pages to optimise), CMO
+                #    competitive_position + brand_strength sections.
+                #
+                # 2) backlink_intelligence (alias of backlink_profile)
+                #    Surfaced under the brief's preferred key so consumers
+                #    that follow the R2D contract get the data without
+                #    needing to know the legacy `backlink_profile` name.
+                #
+                # 3) advertising_intelligence
+                #    - ad_history_12m: 12-month domain_adwords_history series
+                #    - budget_posture: classified advertiser cadence
+                #    Used by Competitive Landscape (ad-spend trend) and
+                #    Market Position Score (advertising intensity dimension).
+                sr_keyword_intel = semrush_intel.get("keyword_intelligence")
+                if isinstance(sr_keyword_intel, dict) and (
+                    sr_keyword_intel.get("organic_keywords")
+                    or sr_keyword_intel.get("top_pages")
+                ):
+                    enrichment["keyword_intelligence"] = {
+                        "organic_keywords": sr_keyword_intel.get("organic_keywords") or [],
+                        "organic_keywords_count": sr_keyword_intel.get("organic_keywords_count") or 0,
+                        "top_pages": sr_keyword_intel.get("top_pages") or [],
+                        "top_pages_count": sr_keyword_intel.get("top_pages_count") or 0,
+                    }
+
+                # backlink_intelligence is the brief's preferred key.
+                # Mirror backlink_profile so downstream consumers can use
+                # either name; the sanitizer treats them via the same
+                # SECTION_CRITERIA entry.
+                if "backlink_profile" in enrichment:
+                    enrichment["backlink_intelligence"] = dict(enrichment["backlink_profile"])
+
+                sr_adv_intel = semrush_intel.get("advertising_intelligence")
+                if isinstance(sr_adv_intel, dict) and sr_adv_intel.get("ad_history_12m"):
+                    enrichment["advertising_intelligence"] = {
+                        "ad_history_12m": sr_adv_intel.get("ad_history_12m") or [],
+                        "months_active": sr_adv_intel.get("months_active") or 0,
+                        "mean_monthly_traffic": sr_adv_intel.get("mean_monthly_traffic"),
+                        "max_monthly_traffic": sr_adv_intel.get("max_monthly_traffic"),
+                        "budget_posture": sr_adv_intel.get("budget_posture"),
+                    }
+
+                # R2D detailed_competitors — extended top-10 list with
+                # per-competitor mini-overview (organic_keywords, traffic,
+                # cost, intensity tier). Computed inside the edge fn from
+                # the existing domain_organic_organic call, so no extra
+                # API units consumed.
+                sr_detailed = (sr_comp or {}).get("detailed_competitors") if isinstance(sr_comp, dict) else None
+                if isinstance(sr_detailed, list) and sr_detailed:
+                    # Surface under competitor_analysis.detailed_competitors
+                    # so the existing competitor_analysis section grows
+                    # rather than fragmenting into a new top-level key.
+                    if not isinstance(enrichment.get("competitor_analysis"), dict):
+                        enrichment["competitor_analysis"] = {}
+                    enrichment["competitor_analysis"]["detailed_competitors"] = sr_detailed[:10]
+
+                # R2D telemetry passthrough: stash api_units_used and the
+                # per-call trace array on the audit trail so the super-admin
+                # API providers dashboard can reconcile per-scan cost.
+                enrichment.setdefault("provider_telemetry", {})
+                enrichment["provider_telemetry"]["semrush"] = {
+                    "api_units_used": semrush_intel.get("api_units_used") or 0,
+                    "api_calls_made": semrush_intel.get("api_calls_made") or 0,
+                    "api_calls_ok": semrush_intel.get("api_calls_ok") or 0,
+                    "provider_traces": semrush_intel.get("provider_traces") or [],
+                }
+
+                # Fire-and-forget per-call provider_usage rollup (one
+                # row per SEMrush sub-call from this scan). Failures here
+                # never block enrichment — provider_tracker swallows
+                # exceptions internally.
+                try:
+                    from core.provider_tracker import record_provider_call
+                    units_total = int(semrush_intel.get("api_units_used") or 0)
+                    failure_count = sum(
+                        1 for t in (semrush_intel.get("provider_traces") or [])
+                        if isinstance(t, dict) and not t.get("ok")
+                    )
+                    asyncio.create_task(record_provider_call(
+                        "semrush",
+                        cost_aud_micros=0,  # SEMrush is a flat-fee plan
+                        error=(f"{failure_count}_subcall_failures" if failure_count else None),
+                    ))
+                    logger.info(
+                        "[semrush-r2d] api_units_used=%d calls=%d ok=%d failures=%d",
+                        units_total,
+                        semrush_intel.get("api_calls_made") or 0,
+                        semrush_intel.get("api_calls_ok") or 0,
+                        failure_count,
+                    )
+                except Exception as track_err:
+                    logger.debug("[semrush-r2d] provider_tracker failed: %s", track_err)
 
                 enrichment["semrush_data"] = semrush_intel
 
@@ -2837,8 +3796,12 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 recommended_keywords = [p.strip() for p in re.split(r"[;,]", str(enrichment.get("main_products_services"))) if p.strip()][:6]
             recommended_keywords = list(dict.fromkeys(recommended_keywords))[:10]
 
+            # F15 (2026-05-04): rewrote literal "SEMrush rank ..." to neutral
+            # "Authority rank ..." so the source string is sanitiser-safe even
+            # if response_sanitizer isn't reached on a particular code path
+            # (defense in depth — Contract v2 BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2).
             seo_rank_summary = (
-                f"SEMrush rank {seo_current.get('semrush_rank')}, ~{seo_current.get('organic_keywords') or 0} ranking keywords, "
+                f"Authority rank {seo_current.get('semrush_rank')}, ~{seo_current.get('organic_keywords') or 0} ranking keywords, "
                 f"~{seo_current.get('organic_traffic') or 0} monthly organic visits."
                 if seo_current.get("semrush_rank") or seo_current.get("organic_keywords") or seo_current.get("organic_traffic")
                 else "SEO ranking data not yet captured — enrichment will populate on scan."
@@ -2851,18 +3814,22 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             )
 
             enrichment["recommended_keywords"] = recommended_keywords
-            enrichment["aeo_strategy"] = [
-                "Publish service-page FAQs with concise, answer-first structure and FAQ schema markup.",
-                "Create one evidence-backed answer page per high-intent keyword cluster to improve AI answer engine coverage.",
-                "Use structured headings (problem -> proof -> outcome -> CTA) to improve retrieval and snippet extraction quality.",
-            ]
+            if top_organic_keywords:
+                enrichment["aeo_strategy"] = [
+                    f"Create answer-led content for keyword cluster '{str(top_organic_keywords[0].get('keyword') or '').strip()}' with supporting FAQ schema."
+                ]
+            else:
+                enrichment["aeo_strategy"] = []
             enrichment["seo_rank_summary"] = seo_rank_summary
             enrichment["paid_rank_summary"] = paid_rank_summary
-            enrichment["industry_action_items"] = _build_industry_action_items(
-                str(enrichment.get("industry") or ""),
-                seo_current if isinstance(seo_current, dict) else {},
-                paid_current if isinstance(paid_current, dict) else {},
-            )
+            if seo_current.get("organic_keywords") or paid_current.get("adwords_keywords") is not None:
+                enrichment["industry_action_items"] = _build_industry_action_items(
+                    str(enrichment.get("industry") or ""),
+                    seo_current if isinstance(seo_current, dict) else {},
+                    paid_current if isinstance(paid_current, dict) else {},
+                )
+            else:
+                enrichment["industry_action_items"] = []
             enrichment["competitor_leaders"] = _build_competitor_leaders(enrichment, semrush_intel if isinstance(semrush_intel, dict) else {})
             enrichment["customer_review_highlights"] = _build_customer_review_highlights(
                 enrichment.get("customer_review_intelligence") if isinstance(enrichment.get("customer_review_intelligence"), dict) else {}
@@ -2870,17 +3837,28 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             enrichment["staff_review_highlights"] = _build_staff_review_highlights(
                 enrichment.get("staff_review_intelligence") if isinstance(enrichment.get("staff_review_intelligence"), dict) else {}
             )
-            if not enrichment.get("forensic_memo"):
-                enrichment["forensic_memo"] = (
-                    f"Forensic Marketing Memo: {enrichment.get('business_name') or 'This business'} appears to operate in "
-                    f"{enrichment.get('industry') or 'an undefined category'} and offers {enrichment.get('main_products_services') or 'services not clearly stated'}. "
-                    f"Current SEO position: {seo_rank_summary} Current paid position: {paid_rank_summary} "
-                    f"Priority should focus on keyword-cluster authority, evidence-led conversion assets, and offer-page clarity."
-                )
+            if isinstance(enrichment.get("forensic_memo"), str) and is_placeholder_text(enrichment.get("forensic_memo")):
+                enrichment["forensic_memo"] = ""
 
             try:
                 enrichment.setdefault("sources", {})
                 enrichment["sources"]["edge_tools"] = {
+                    "warm_cognitive_engine": {
+                        "ok": not _edge_result_failed(warm_cognitive),
+                        "status": (warm_cognitive or {}).get("_http_status"),
+                    } if 'warm_cognitive' in locals() else {"ok": False},
+                    "calibration_business_dna": {
+                        "ok": not _edge_result_failed(calibration_business_dna),
+                        "status": (calibration_business_dna or {}).get("_http_status"),
+                    } if 'calibration_business_dna' in locals() else {"ok": False},
+                    "business_identity_lookup": {
+                        "ok": not _edge_result_failed(business_identity_lookup),
+                        "status": (business_identity_lookup or {}).get("_http_status"),
+                    } if 'business_identity_lookup' in locals() else {"ok": False},
+                    "calibration_sync": {
+                        "ok": not _edge_result_failed(calibration_sync),
+                        "status": (calibration_sync or {}).get("_http_status"),
+                    } if 'calibration_sync' in locals() else {"ok": False},
                     "deep_web_recon": {
                         "ok": not _edge_result_failed(deep_recon),
                         "status": (deep_recon or {}).get("_http_status"),
@@ -2905,6 +3883,10 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         "ok": not _edge_result_failed(browse_ai_reviews),
                         "status": (browse_ai_reviews or {}).get("_http_status"),
                     } if 'browse_ai_reviews' in locals() else {"ok": False},
+                    "customer_reviews_deep": {
+                        "ok": not _edge_result_failed(customer_reviews_deep),
+                        "status": (customer_reviews_deep or {}).get("_http_status"),
+                    } if 'customer_reviews_deep' in locals() else {"ok": False},
                     "semrush_domain_intel": {
                         "ok": not _edge_result_failed(semrush_intel),
                         "status": (semrush_intel or {}).get("_http_status"),
@@ -2914,6 +3896,50 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 pass
 
             enrichment["ai_errors"] = ai_errors
+
+            swot_payload = enrichment.get("swot") if isinstance(enrichment.get("swot"), dict) else {}
+            swot_clean = {
+                "strengths": clean_string_list(swot_payload.get("strengths") or []),
+                "weaknesses": clean_string_list(swot_payload.get("weaknesses") or []),
+                "opportunities": clean_string_list(swot_payload.get("opportunities") or []),
+                "threats": clean_string_list(swot_payload.get("threats") or []),
+            }
+            enrichment["swot"] = swot_clean
+            enrichment["cmo_priority_actions"] = clean_string_list(enrichment.get("cmo_priority_actions") or [])
+            enrichment["industry_action_items"] = clean_string_list(enrichment.get("industry_action_items") or [])
+
+            section_states = [
+                classify_section(
+                    has_evidence=bool(enrichment.get("cmo_executive_brief") or enrichment.get("executive_summary")),
+                    has_placeholder=bool(isinstance(enrichment.get("cmo_executive_brief"), str) and is_placeholder_text(enrichment.get("cmo_executive_brief"))),
+                ),
+                classify_section(
+                    has_evidence=len(enrichment.get("competitors") or []) > 0,
+                    degraded=bool(enrichment.get("competitor_analysis")),
+                ),
+                classify_section(
+                    has_evidence=all(len(swot_clean.get(k) or []) > 0 for k in ("strengths", "weaknesses", "opportunities", "threats")),
+                    degraded=any(len(swot_clean.get(k) or []) > 0 for k in ("strengths", "weaknesses", "opportunities", "threats")),
+                ),
+                classify_section(
+                    has_evidence=bool((enrichment.get("customer_review_intelligence") or {}).get("has_data")),
+                    degraded=bool(enrichment.get("review_aggregation")),
+                ),
+                classify_section(
+                    has_evidence=len(enrichment.get("cmo_priority_actions") or []) > 0 and len(enrichment.get("industry_action_items") or []) > 0,
+                    degraded=bool(enrichment.get("cmo_priority_actions") or enrichment.get("industry_action_items")),
+                ),
+            ]
+            report_state = derive_report_state(section_states)
+            enrichment["report_state"] = report_state
+            if report_state == REPORT_STATE_COMPLETE:
+                enrichment["report_state_message"] = "Sections are source-backed."
+            elif report_state == REPORT_STATE_PARTIAL:
+                enrichment["report_state_message"] = "Partial intelligence profile. Some sections are degraded due to missing evidence."
+            elif report_state == REPORT_STATE_INSUFFICIENT:
+                enrichment["report_state_message"] = "Insufficient evidence for a complete CMO report."
+            else:
+                enrichment["report_state_message"] = "Report failed quality gates because required sections lacked evidence."
 
             try:
                 profile = await get_business_profile_supabase(get_sb(), user_id)
@@ -2976,6 +4002,14 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             # still scrubbed before reaching the DB or the response body.
             enrichment = _sanitize_enrichment_payload(enrichment)
 
+            # P0 Marjo E2 / 2026-05-04: stamp scan_id into the enrichment
+            # JSONB so the CMO Report endpoint can look up the per-call
+            # provider chain in public.enrichment_traces. Live alongside
+            # the existing top-level fields — non-breaking for current
+            # response_sanitizer pass-through. The sanitiser strips raw
+            # supplier names; the scan_id itself is a uuid so safe to ship.
+            enrichment["scan_id"] = get_active_scan_id() or enrichment.get("scan_id")
+
             # ═══ PERSIST ENRICHMENT TO business_dna_enrichment ═══
             # Latest-scan-wins upsert keyed on (user_id, business_profile_id). Allows
             # Market & Position / BoardRoom / CMO Report to read Deep Scan output
@@ -3005,15 +4039,28 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                             logger.warning(f"[enrichment/website] Could not auto-create business profile: {profile_create_err}")
 
                     if bde_profile_id:
-                        get_sb().table("business_dna_enrichment").upsert({
-                            "user_id": user_id,
-                            "business_profile_id": bde_profile_id,
-                            "website_url": url,
-                            "enrichment": enrichment,
-                            "digital_footprint": enrichment.get("digital_footprint") or {},
-                            "updated_at": datetime.now(timezone.utc).isoformat(),
-                        }, on_conflict="user_id,business_profile_id").execute()
-                        logger.info(f"[enrichment/website] business_dna_enrichment persisted for user {user_id}")
+                        # P0 Marjo (E5): all writes go through the
+                        # safe_upsert_business_dna chokepoint. Validates
+                        # required fields (business_name / industry /
+                        # core_signals), strips ai_errors, records incident
+                        # row + alert when contract violated.
+                        persistence_report = safe_upsert_business_dna(
+                            get_sb(),
+                            user_id=user_id,
+                            business_profile_id=bde_profile_id,
+                            website_url=url,
+                            enrichment=enrichment,
+                            digital_footprint=enrichment.get("digital_footprint") or {},
+                            source="calibration_scan_fresh",
+                        )
+                        logger.info(
+                            "[enrichment/website] business_dna_enrichment persisted for user %s "
+                            "truth_state=%s missing=%s stripped_ai_errors=%d",
+                            user_id,
+                            persistence_report.get("truth_state"),
+                            persistence_report.get("missing_required"),
+                            persistence_report.get("stripped_ai_errors", 0),
+                        )
 
                         # Mark onboarding complete in strategic_console_state so the
                         # ProtectedRoute "needs calibration" check stops bouncing the
@@ -3054,7 +4101,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
         except Exception as e:
             logger.error(f"[enrichment/website] Scan failed: {e}")
             fallback_domain = normalize_domain(url)
-            fallback_name = fallback_domain.split(".")[0].replace("-", " ").title() if fallback_domain else "Business"
+            fallback_name = domain_business_label(fallback_domain)
             fallback_page_text = str(locals().get("page_text") or "")
             fallback_title = str(locals().get("page_title") or "")
             fallback_description = str(locals().get("meta_description") or "")
@@ -3099,6 +4146,11 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "enrichment": _sanitized["enrichment"],
                 "message": "Deep scan partially unavailable; baseline website extraction returned.",
             }
+        finally:
+            # P0 Marjo E2 / 2026-05-04: release the per-task scan ContextVar
+            # so a subsequent unrelated request on the same async loop slot
+            # does not pick up a stale scan_id when calling provider helpers.
+            clear_active_scan(_scan_ctx_tokens)
 
     elif payload.action == "commit":
         try:

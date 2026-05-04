@@ -8,8 +8,7 @@ What this guards:
     causes Stripe to reject the request.
   - When STRIPE_TAX_ENABLED is truthy, the full tax collection tuple
     (automatic_tax, tax_id_collection, billing_address_collection,
-    customer_update, line_items[0].price_data.tax_behavior=inclusive)
-    must all be set together — they are a coupled set.
+    customer_update) must all be set together — they are a coupled set.
   - The session metadata always tags tax_enabled so downstream tooling
     (reconciliation, accounting exports) can tell tax-inclusive sessions
     apart.
@@ -120,6 +119,19 @@ def _capture_create(module, monkeypatch):
     monkeypatch.setattr(module.stripe.checkout.Session, "create", _fake_create)
     # Governed plan lookup requires DB — force the static fallback.
     monkeypatch.setattr(module, "_resolve_governed_plan", lambda sb, plan_id: None)
+    # Price mapping now resolves via Stripe price lookup. Keep these tests
+    # pure-unit by stubbing the resolver to canonical contract ids.
+    def _fake_resolve_active_monthly_price(plan_id, plan):
+        key = module._canonical_product_key_for_plan(plan_id)
+        return {
+            "id": module.STRIPE_EXPECTED_MONTHLY_PRICE_IDS.get(key, "price_test_fallback"),
+            "product_id": module.STRIPE_PRODUCT_IDS.get(key, "prod_test_fallback"),
+            "amount": int(plan.get("amount") or 0),
+            "currency": str(plan.get("currency") or "aud"),
+            "interval": str(plan.get("interval") or "month"),
+            "active": True,
+        }
+    monkeypatch.setattr(module, "_resolve_active_monthly_price", _fake_resolve_active_monthly_price)
     return captured
 
 
@@ -171,7 +183,8 @@ def test_checkout_omits_tax_params_when_flag_off(stripe_payments_module, monkeyp
     assert "tax_id_collection" not in captured
     assert "billing_address_collection" not in captured
     assert "customer_update" not in captured
-    assert "tax_behavior" not in captured["line_items"][0]["price_data"]
+    assert "price_data" not in captured["line_items"][0]
+    assert captured["line_items"][0]["price"] == "price_1T9wiVRoX8RKDDG5AOSi8Cu6"
     # Metadata still tags the state so accounting tooling can filter.
     assert captured["metadata"]["tax_enabled"] == "0"
 
@@ -190,9 +203,8 @@ def test_checkout_includes_all_tax_params_when_flag_on(stripe_payments_module, m
     assert captured["tax_id_collection"] == {"enabled": True}
     assert captured["billing_address_collection"] == "required"
     assert captured["customer_update"] == {"address": "auto", "name": "auto"}
-    # AU convention — advertised price is GST-inclusive, Stripe must
-    # subtract GST from the displayed amount rather than adding on top.
-    assert captured["line_items"][0]["price_data"]["tax_behavior"] == "inclusive"
+    assert "price_data" not in captured["line_items"][0]
+    assert captured["line_items"][0]["price"] == "price_1T9wiVRoX8RKDDG5AOSi8Cu6"
     assert captured["metadata"]["tax_enabled"] == "1"
 
 
@@ -222,10 +234,9 @@ def test_checkout_metadata_preserves_existing_fields_when_tax_on(stripe_payments
     assert meta["user_id"] == "user-1"
 
 
-def test_checkout_tax_behavior_only_on_line_item_when_enabled(stripe_payments_module, monkeypatch):
-    """Subtle Stripe behaviour: tax_behavior is a PER-PRICE setting, not
-    a session-level one. It must live inside line_items[0].price_data,
-    never at the top level."""
+def test_checkout_uses_canonical_price_reference_when_tax_enabled(stripe_payments_module, monkeypatch):
+    """Stripe tax behaviour is configured on the recurring Price object.
+    Checkout must reference that canonical price id, not inline price_data."""
     monkeypatch.setenv("STRIPE_TAX_ENABLED", "1")
     module = stripe_payments_module
     captured = _capture_create(module, monkeypatch)
@@ -233,7 +244,8 @@ def test_checkout_tax_behavior_only_on_line_item_when_enabled(stripe_payments_mo
     _exercise(module)
 
     assert "tax_behavior" not in captured  # never top-level
-    assert captured["line_items"][0]["price_data"]["tax_behavior"] == "inclusive"
+    assert "price_data" not in captured["line_items"][0]
+    assert captured["line_items"][0]["price"] == "price_1T9wiVRoX8RKDDG5AOSi8Cu6"
 
 
 def test_company_abn_and_legal_name_defaults(stripe_payments_module, monkeypatch):

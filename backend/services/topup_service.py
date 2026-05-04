@@ -1,435 +1,443 @@
-"""
-Auto top-up Stripe charge service.
-
-Per Andreas direction 2026-05-04 (code 13041978):
-- When a paid customer's token balance hits the auto-top-up threshold,
-  this service charges the customer's saved payment method (off_session)
-  for their slider amount and inserts a 'topup' row into usage_ledger.
-- Customer slider: $20-$5000 (2000-500000 cents). Default $50.
-- Monthly cap: customer-set, default $200. Enforced before charge.
-- 24-hour refund window: refund() allows reversal within 24h of charge.
-- Idempotent on stripe_payment_intent_id (UNIQUE on usage_ledger via
-  migration 113).
-
-State enums returned (per Contract v2 — never expose Stripe / supplier names):
-    TOPUP_FIRED          - Stripe charge succeeded, tokens credited
-    TOPUP_DISABLED       - auto_topup_enabled=false, returned to caller
-    SPEND_CAP_HIT        - would exceed monthly_cap_cents, do not charge
-    PAYMENT_REQUIRED     - Stripe charge failed (card declined / no PM)
-    TOPUP_REFUNDED       - refund successful, tokens reversed
-    REFUND_OUTSIDE_WINDOW - refund attempt outside 24h window
-    LITE_PLAN            - Lite plan has no auto top-up (upgrade prompt)
-
-Token-per-dollar rate is per-tier (volume discount baked in via the rate
-sheet in backend/config/pricing.py — landed in PR 3). For PR 2 we use a
-conservative rate that matches the plan's effective rate (Growth: ~14,500
-tokens per dollar at $69/1M effective).
-"""
+"""Top-up orchestration service for manual and request-time auto flows."""
 
 from __future__ import annotations
 
+import hashlib
 import os
-import logging
-from dataclasses import dataclass
-from datetime import datetime, timezone, timedelta
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
 
 import stripe
+from fastapi import HTTPException
 
-logger = logging.getLogger("topup_service")
-
-# Stripe SDK key — set lazily so tests can override. Production sets from env.
-_STRIPE_INITIALISED = False
-
-
-def _ensure_stripe_initialised() -> None:
-    global _STRIPE_INITIALISED
-    if _STRIPE_INITIALISED:
-        return
-    api_key = os.environ.get("STRIPE_API_KEY", "")
-    if api_key:
-        stripe.api_key = api_key
-        _STRIPE_INITIALISED = True
+from config.entitlement_constants import (
+    TOPUP_PRICE_AUD_CENTS,
+    TOPUP_TOKENS,
+    TOPUP_TRIGGER_AUTO_REQUEST_TIME,
+    TOPUP_TRIGGER_MANUAL,
+)
+from services.payment_state_service import apply_failed_or_action_required_outcome
+from services.topup_policy_service import build_eligibility
 
 
-# ─── Constants ──────────────────────────────────────────────
-
-MIN_TOPUP_CENTS = 2000     # $20 — below this, Stripe fixed fees eat margin
-MAX_TOPUP_CENTS = 500000   # $5,000 — single-fire ceiling protects card limits
-DEFAULT_TOPUP_CENTS = 5000 # $50
-DEFAULT_MONTHLY_CAP_CENTS = 20000  # $200
-
-REFUND_WINDOW_HOURS = 24
-
-# Per-tier token-per-dollar rate (preliminary; full table in PR 3 backend/config/pricing.py).
-# Rate = tokens credited per AUD cent of top-up. Higher tier = more tokens per dollar.
-TOKENS_PER_CENT_BY_TIER = {
-    "starter": 145,    # Growth: ~14,500/$1 (= $69/1M effective rate)
-    "pro": 251,        # Pro: ~25,100/$1 (= $40/1M)
-    "business": 572,   # Business: ~57,200/$1 (= $17.50/1M)
-    # Lite excluded — no auto top-up on Lite tier (PRICING_TIERS).
-}
+stripe.api_key = os.environ.get("STRIPE_API_KEY", "")
 
 
-# ─── State enum ─────────────────────────────────────────────
-
-class TopupState:
-    TOPUP_FIRED = "TOPUP_FIRED"
-    TOPUP_DISABLED = "TOPUP_DISABLED"
-    SPEND_CAP_HIT = "SPEND_CAP_HIT"
-    PAYMENT_REQUIRED = "PAYMENT_REQUIRED"
-    TOPUP_REFUNDED = "TOPUP_REFUNDED"
-    REFUND_OUTSIDE_WINDOW = "REFUND_OUTSIDE_WINDOW"
-    LITE_PLAN = "LITE_PLAN"
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
-@dataclass
-class TopupResult:
-    state: str
-    message: str
-    amount_cents: int = 0
-    tokens_added: int = 0
-    stripe_payment_intent_id: Optional[str] = None
-    redirect: Optional[str] = None
+def _safe_ts(raw: Any) -> str:
+    if isinstance(raw, datetime):
+        return raw.astimezone(timezone.utc).isoformat()
+    return datetime.fromisoformat(str(raw).replace("Z", "+00:00")).astimezone(timezone.utc).isoformat()
 
 
-@dataclass
-class RefundResult:
-    state: str
-    message: str
-    amount_cents: int = 0
-    tokens_reversed: int = 0
-
-
-# ─── Pre-flight check ───────────────────────────────────────
-
-def should_fire_topup(user_record: dict) -> tuple[bool, str]:
-    """
-    Determine whether auto top-up may fire for this user.
-
-    Returns (allowed, reason_state). reason_state is one of TopupState values
-    when allowed is False.
-
-    Rules (in order):
-    1. Lite plan: never auto top-up (returns LITE_PLAN). Customer must upgrade.
-    2. auto_topup_enabled must be true.
-    3. topup_consent_at must be set (user opted in).
-    4. Stripe customer + subscription must exist (not cancelled).
-    5. monthly_cap_cents must allow next charge:
-       current_period_topup_cents + topup_amount_cents <= monthly_cap_cents.
-       (monthly_cap_cents = 0 means no cap — always allow.)
-    """
-    tier = (user_record.get("subscription_tier") or "").strip().lower()
-    if tier == "lite":
-        return False, TopupState.LITE_PLAN
-
-    if not bool(user_record.get("auto_topup_enabled", False)):
-        return False, TopupState.TOPUP_DISABLED
-
-    if not user_record.get("topup_consent_at"):
-        return False, TopupState.TOPUP_DISABLED
-
-    if not user_record.get("stripe_customer_id") or not user_record.get("stripe_subscription_id"):
-        return False, TopupState.PAYMENT_REQUIRED
-
-    cap = int(user_record.get("monthly_cap_cents") or 0)
-    if cap > 0:
-        used = int(user_record.get("current_period_topup_cents") or 0)
-        amount = int(user_record.get("topup_amount_cents") or DEFAULT_TOPUP_CENTS)
-        if used + amount > cap:
-            return False, TopupState.SPEND_CAP_HIT
-
-    return True, ""
-
-
-# ─── Token conversion ───────────────────────────────────────
-
-def tokens_for_amount(tier: str, amount_cents: int) -> int:
-    """Convert AUD cents into tokens at the per-tier rate."""
-    tier_norm = (tier or "").strip().lower()
-    if tier_norm in ("foundation", "growth"):
-        tier_norm = "starter"
-    if tier_norm in ("professional",):
-        tier_norm = "pro"
-    rate = TOKENS_PER_CENT_BY_TIER.get(tier_norm, TOKENS_PER_CENT_BY_TIER["starter"])
-    return int(amount_cents * rate)
-
-
-# ─── Fire top-up ────────────────────────────────────────────
-
-def fire_topup(sb, user_record: dict, *, dry_run: bool = False) -> TopupResult:
-    """
-    Charge the customer's saved payment method for topup_amount_cents and
-    insert a 'topup' row into usage_ledger.
-
-    Idempotent: usage_ledger has UNIQUE constraint on stripe_payment_intent_id
-    (migration 113). If the same PI is recorded twice, second insert fails
-    silently — caller should treat as success.
-
-    Args:
-        sb: Supabase admin client.
-        user_record: dict with at minimum: id, stripe_customer_id,
-                     stripe_subscription_id, subscription_tier,
-                     auto_topup_enabled, topup_amount_cents,
-                     monthly_cap_cents, current_period_topup_cents.
-        dry_run: when True, performs all checks but skips Stripe API call
-                 and ledger insert (used in tests).
-    """
-    _ensure_stripe_initialised()
-
-    user_id = user_record.get("id")
-    tier = (user_record.get("subscription_tier") or "starter").strip().lower()
-    amount_cents = int(user_record.get("topup_amount_cents") or DEFAULT_TOPUP_CENTS)
-
-    # Clamp to allowed range (defensive — DB already constrains).
-    amount_cents = max(MIN_TOPUP_CENTS, min(MAX_TOPUP_CENTS, amount_cents))
-
-    allowed, reason = should_fire_topup(user_record)
-    if not allowed:
-        return TopupResult(
-            state=reason,
-            message=_message_for_state(reason),
-            amount_cents=amount_cents,
-            redirect="/subscribe" if reason == TopupState.LITE_PLAN else None,
-        )
-
-    if dry_run:
-        return TopupResult(
-            state=TopupState.TOPUP_FIRED,
-            message="Dry-run: would have charged.",
-            amount_cents=amount_cents,
-            tokens_added=tokens_for_amount(tier, amount_cents),
-            stripe_payment_intent_id="pi_dryrun_test",
-        )
-
-    # ─── Stripe charge (off-session) ──────────────────────
-    customer_id = user_record["stripe_customer_id"]
-    try:
-        intent = stripe.PaymentIntent.create(
-            customer=customer_id,
-            amount=amount_cents,
-            currency="aud",
-            off_session=True,
-            confirm=True,
-            payment_method_types=["card"],
-            description="BIQc auto top-up — token allowance refill",
-            metadata={
-                "biqc_event_type": "auto_topup",
-                "user_id": str(user_id),
-                "tier_at_event": tier,
-                "topup_amount_cents": str(amount_cents),
-            },
-        )
-    except stripe.error.CardError as e:
-        # Decline — flip payment_required, return PAYMENT_REQUIRED
-        logger.warning(
-            "[topup] CardError user=%s code=%s message=%s",
-            user_id, getattr(e, "code", ""), getattr(e, "user_message", str(e))
-        )
-        try:
-            sb.table("users").update({
-                "payment_required": True,
-                "auto_topup_enabled": False,  # disable until customer fixes payment
-            }).eq("id", user_id).execute()
-        except Exception:
-            logger.exception("[topup] failed to flip payment_required after CardError")
-        return TopupResult(
-            state=TopupState.PAYMENT_REQUIRED,
-            message="Your saved payment method couldn't be charged. Update your card to continue.",
-            amount_cents=amount_cents,
-            redirect="/settings/billing",
-        )
-    except stripe.error.StripeError as e:
-        logger.exception("[topup] Stripe error firing top-up user=%s", user_id)
-        return TopupResult(
-            state=TopupState.PAYMENT_REQUIRED,
-            message="Top-up charge couldn't be completed. Please try again or update your billing.",
-            amount_cents=amount_cents,
-            redirect="/settings/billing",
-        )
-
-    # ─── Insert ledger row ────────────────────────────────
-    tokens_added = tokens_for_amount(tier, amount_cents)
-    pi_id = intent["id"]
-
-    try:
-        sb.table("usage_ledger").insert({
-            "user_id": user_id,
-            "kind": "topup",
-            "tokens": tokens_added,
-            "stripe_payment_intent_id": pi_id,
-            "price_aud_cents": amount_cents,
-            "tier_at_event": tier,
-            "metadata": {
-                "biqc_event_type": "auto_topup",
-                "topup_amount_cents": amount_cents,
-                "fired_at": datetime.now(timezone.utc).isoformat(),
-                "request_id": user_record.get("request_id") or pi_id,
-            },
-        }).execute()
-    except Exception as e:
-        # If this is a unique-constraint violation on stripe_payment_intent_id,
-        # the top-up is already recorded — treat as success (webhook replay).
-        if "duplicate key" in str(e).lower() or "unique" in str(e).lower():
-            logger.info("[topup] duplicate PI — webhook replay, treating as success pi=%s", pi_id)
-            return TopupResult(
-                state=TopupState.TOPUP_FIRED,
-                message="Topped up successfully (replay).",
-                amount_cents=amount_cents,
-                tokens_added=tokens_added,
-                stripe_payment_intent_id=pi_id,
-            )
-        # Otherwise — Stripe charged but ledger failed. CRITICAL: do NOT
-        # silently swallow. Log + return PAYMENT_REQUIRED so we don't double-charge.
-        logger.exception("[topup] CRITICAL ledger insert failed after Stripe charge user=%s pi=%s", user_id, pi_id)
-        return TopupResult(
-            state=TopupState.PAYMENT_REQUIRED,
-            message="Charge succeeded but tokens not credited. Support has been notified.",
-            amount_cents=amount_cents,
-            stripe_payment_intent_id=pi_id,
-        )
-
-    # ─── Increment period usage ───────────────────────────
-    try:
-        new_used = int(user_record.get("current_period_topup_cents") or 0) + amount_cents
-        sb.table("users").update({
-            "current_period_topup_cents": new_used,
-        }).eq("id", user_id).execute()
-    except Exception:
-        logger.exception("[topup] failed to increment current_period_topup_cents user=%s", user_id)
-        # Not fatal — cap will be enforced on next call from re-read.
-
-    logger.info(
-        "[topup] FIRED user=%s amount_cents=%d tokens=%d pi=%s tier=%s",
-        user_id, amount_cents, tokens_added, pi_id, tier
+def build_idempotency_key(
+    *,
+    account_id: str,
+    cycle_start: str,
+    cycle_end: str,
+    trigger_type: str,
+    tokens_grant: int,
+    attempt_scope: str,
+) -> str:
+    material = "|".join(
+        [
+            str(account_id),
+            str(cycle_start),
+            str(cycle_end),
+            str(trigger_type),
+            str(tokens_grant),
+            str(attempt_scope),
+        ]
     )
-    return TopupResult(
-        state=TopupState.TOPUP_FIRED,
-        message="Topped up. Continuing where you left off.",
-        amount_cents=amount_cents,
-        tokens_added=tokens_added,
-        stripe_payment_intent_id=pi_id,
+    digest = hashlib.sha256(material.encode("utf-8")).hexdigest()
+    return f"biqc-topup-{digest}"
+
+
+def _find_attempt_by_idempotency(sb, *, idempotency_key: str) -> Optional[Dict[str, Any]]:
+    res = (
+        sb.table("topup_attempts")
+        .select("*")
+        .eq("idempotency_key", idempotency_key)
+        .limit(1)
+        .execute()
+    )
+    rows = (res.data or []) if res is not None else []
+    return (rows[0] or None) if rows else None
+
+
+def get_attempt_by_payment_intent(sb, *, payment_intent_id: str) -> Optional[Dict[str, Any]]:
+    res = (
+        sb.table("topup_attempts")
+        .select("*")
+        .eq("stripe_payment_intent_id", payment_intent_id)
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    rows = (res.data or []) if res is not None else []
+    return (rows[0] or None) if rows else None
+
+
+def mark_attempt_status(
+    sb,
+    *,
+    attempt_id: str,
+    status: str,
+    failure_reason: Optional[str] = None,
+    stripe_invoice_id: Optional[str] = None,
+) -> None:
+    payload: Dict[str, Any] = {"status": status, "updated_at": _now_iso()}
+    if failure_reason is not None:
+        payload["failure_reason"] = failure_reason
+    if stripe_invoice_id:
+        payload["stripe_invoice_id"] = stripe_invoice_id
+    if status == "succeeded":
+        payload["succeeded_at"] = _now_iso()
+    if status in {"failed", "requires_action"}:
+        payload["failed_at"] = _now_iso()
+    sb.table("topup_attempts").update(payload).eq("id", attempt_id).execute()
+
+
+def _find_pending_attempt(
+    sb,
+    *,
+    account_id: str,
+    cycle_start: str,
+    cycle_end: str,
+    trigger_type: str,
+    tokens_grant: int,
+    price_aud_cents: int,
+) -> Optional[Dict[str, Any]]:
+    res = (
+        sb.table("topup_attempts")
+        .select("*")
+        .eq("account_id", account_id)
+        .eq("status", "pending")
+        .eq("trigger_type", trigger_type)
+        .eq("tokens_grant", tokens_grant)
+        .eq("price_aud_cents", price_aud_cents)
+        .gte("cycle_start", cycle_start)
+        .lte("cycle_end", cycle_end)
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    rows = (res.data or []) if res is not None else []
+    return (rows[0] or None) if rows else None
+
+
+def _create_payment_intent(
+    *,
+    account_id: str,
+    user_id: str,
+    stripe_customer_id: str,
+    amount_cents: int,
+    idempotency_key: str,
+    trigger_type: str,
+    tokens_grant: int,
+    cycle_start: str,
+    cycle_end: str,
+    attempt_id: str,
+    threshold_trigger: Optional[float],
+    off_session: bool,
+) -> Any:
+    if not stripe.api_key:
+        raise HTTPException(status_code=503, detail="Billing payment service is not configured")
+    metadata = {
+        "account_id": account_id,
+        "user_id": user_id,
+        "trigger_type": trigger_type,
+        "tokens_grant": str(tokens_grant),
+        "cycle_start": cycle_start,
+        "cycle_end": cycle_end,
+        "topup_attempt_id": attempt_id,
+        "topup_idempotency_key": idempotency_key,
+        "billing_scope": "account",
+    }
+    if threshold_trigger is not None:
+        metadata["threshold_trigger"] = str(threshold_trigger)
+
+    kwargs: Dict[str, Any] = {
+        "amount": int(amount_cents),
+        "currency": "aud",
+        "customer": stripe_customer_id,
+        "metadata": metadata,
+    }
+    if off_session:
+        kwargs["confirm"] = True
+        kwargs["off_session"] = True
+        kwargs["automatic_payment_methods"] = {"enabled": True, "allow_redirects": "never"}
+    else:
+        kwargs["automatic_payment_methods"] = {"enabled": True}
+    return stripe.PaymentIntent.create(idempotency_key=idempotency_key, **kwargs)
+
+
+def _insert_attempt(
+    sb,
+    *,
+    account_id: str,
+    user_id: str,
+    tier: str,
+    status: str,
+    trigger_type: str,
+    threshold_trigger: Optional[float],
+    cycle_start: str,
+    cycle_end: str,
+    tokens_grant: int,
+    price_aud_cents: int,
+    stripe_customer_id: Optional[str],
+    stripe_subscription_id: Optional[str],
+    idempotency_key: str,
+    failure_reason: Optional[str] = None,
+) -> Dict[str, Any]:
+    payload = {
+        "account_id": account_id,
+        "user_id": user_id,
+        "tier": tier,
+        "status": status,
+        "trigger_type": trigger_type,
+        "threshold_trigger": threshold_trigger,
+        "cycle_start": cycle_start,
+        "cycle_end": cycle_end,
+        "tokens_grant": int(tokens_grant),
+        "price_aud_cents": int(price_aud_cents),
+        "currency": "aud",
+        "stripe_customer_id": stripe_customer_id,
+        "stripe_subscription_id": stripe_subscription_id,
+        "idempotency_key": idempotency_key,
+        "failure_reason": failure_reason,
+        "created_at": _now_iso(),
+        "updated_at": _now_iso(),
+    }
+    created = sb.table("topup_attempts").insert(payload).execute()
+    return ((created.data or [{}])[0] if created is not None else {}) or payload
+
+
+def initiate_topup(
+    sb,
+    *,
+    account_id: str,
+    user_id: str,
+    tier: str,
+    cycle_start: datetime,
+    cycle_end: datetime,
+    trigger_type: str,
+    attempt_scope: str,
+    stripe_customer_id: str,
+    stripe_subscription_id: str,
+    threshold_trigger: Optional[float] = None,
+    off_session: bool = False,
+    tokens_grant: int = TOPUP_TOKENS,
+    price_aud_cents: int = TOPUP_PRICE_AUD_CENTS,
+) -> Dict[str, Any]:
+    cycle_start_iso = cycle_start.astimezone(timezone.utc).isoformat()
+    cycle_end_iso = cycle_end.astimezone(timezone.utc).isoformat()
+    idem = build_idempotency_key(
+        account_id=account_id,
+        cycle_start=cycle_start_iso,
+        cycle_end=cycle_end_iso,
+        trigger_type=trigger_type,
+        tokens_grant=tokens_grant,
+        attempt_scope=attempt_scope,
     )
 
+    existing = _find_attempt_by_idempotency(sb, idempotency_key=idem)
+    if existing and str(existing.get("status")).lower() == "pending":
+        return {
+            "attempt": existing,
+            "reused_pending": True,
+            "payment_intent_client_secret": existing.get("payment_intent_client_secret"),
+        }
 
-# ─── Refund ─────────────────────────────────────────────────
+    pending = _find_pending_attempt(
+        sb,
+        account_id=account_id,
+        cycle_start=cycle_start_iso,
+        cycle_end=cycle_end_iso,
+        trigger_type=trigger_type,
+        tokens_grant=tokens_grant,
+        price_aud_cents=price_aud_cents,
+    )
+    if pending:
+        return {
+            "attempt": pending,
+            "reused_pending": True,
+            "payment_intent_client_secret": pending.get("payment_intent_client_secret"),
+        }
 
-def is_refundable(ledger_row: dict) -> bool:
-    """24-hour refund window: only top-ups within last 24h are refundable."""
-    if ledger_row.get("kind") != "topup":
-        return False
-    if (ledger_row.get("metadata") or {}).get("refunded_at"):
-        return False
-    fired_at_str = ledger_row.get("created_at")
-    if not fired_at_str:
-        return False
-    try:
-        fired_at = datetime.fromisoformat(fired_at_str.replace("Z", "+00:00"))
-    except (ValueError, AttributeError):
-        return False
-    return (datetime.now(timezone.utc) - fired_at) <= timedelta(hours=REFUND_WINDOW_HOURS)
-
-
-def refund(sb, ledger_row: dict, *, reason: str = "customer_request") -> RefundResult:
-    """
-    Refund a top-up via Stripe + reverse the tokens via a 'consume' rollback row.
-
-    Refund is allowed only within 24 hours of the original charge. After that,
-    customer must contact support (legal-grade reversal).
-
-    Idempotent: if metadata.refunded_at already set, returns success no-op.
-    """
-    _ensure_stripe_initialised()
-
-    if not is_refundable(ledger_row):
-        return RefundResult(
-            state=TopupState.REFUND_OUTSIDE_WINDOW,
-            message="This top-up is outside the 24-hour refund window. Please contact support.",
-        )
-
-    pi_id = ledger_row.get("stripe_payment_intent_id")
-    user_id = ledger_row.get("user_id")
-    amount_cents = int(ledger_row.get("price_aud_cents") or 0)
-    tokens_to_reverse = int(ledger_row.get("tokens") or 0)
-
-    try:
-        stripe.Refund.create(
-            payment_intent=pi_id,
-            reason="requested_by_customer",
-            metadata={
-                "biqc_event_type": "auto_topup_refund",
-                "user_id": str(user_id),
-                "internal_reason": reason,
-            },
-        )
-    except stripe.error.StripeError as e:
-        logger.exception("[topup] refund failed pi=%s", pi_id)
-        return RefundResult(
-            state=TopupState.PAYMENT_REQUIRED,
-            message="Refund couldn't be processed. Please contact support.",
-        )
-
-    # Mark ledger row as refunded + insert reversing 'consume' row to
-    # reverse the tokens (we don't mutate append-only ledger).
-    try:
-        new_metadata = dict(ledger_row.get("metadata") or {})
-        new_metadata["refunded_at"] = datetime.now(timezone.utc).isoformat()
-        new_metadata["refund_reason"] = reason
-        sb.table("usage_ledger").update({
-            "metadata": new_metadata,
-        }).eq("id", ledger_row["id"]).execute()
-
-        # Reversing consume row — mirrors the refund.
-        sb.table("usage_ledger").insert({
-            "user_id": user_id,
-            "kind": "consume",
-            "tokens": tokens_to_reverse,
-            "input_tokens": tokens_to_reverse,  # accounting only
-            "output_tokens": 0,
-            "model": "internal",
-            "provider": "internal",
-            "feature": "topup_refund_reversal",
-            "action": "refund",
-            "request_id": f"refund_{ledger_row['id']}",
-            "tier_at_event": ledger_row.get("tier_at_event"),
-            "metadata": {
-                "biqc_event_type": "auto_topup_refund_reversal",
-                "refunded_topup_id": str(ledger_row["id"]),
-            },
-        }).execute()
-
-        # Decrement current_period_topup_cents (best-effort).
-        sb.rpc("decrement_period_topup", {"p_user_id": user_id, "p_amount_cents": amount_cents}).execute()
-    except Exception:
-        logger.exception("[topup] post-refund ledger update failed pi=%s — refund DID hit Stripe but ledger may be inconsistent", pi_id)
-        # Stripe refunded, but our ledger state is uncertain. Return success
-        # with caveat — operator must reconcile via Stripe webhook.
-        return RefundResult(
-            state=TopupState.TOPUP_REFUNDED,
-            message="Refund issued. Token balance may take a few minutes to reflect.",
-            amount_cents=amount_cents,
-            tokens_reversed=tokens_to_reverse,
-        )
-
-    logger.info("[topup] REFUNDED pi=%s amount=%d tokens=%d user=%s", pi_id, amount_cents, tokens_to_reverse, user_id)
-    return RefundResult(
-        state=TopupState.TOPUP_REFUNDED,
-        message="Top-up refunded. Tokens have been removed from your balance.",
-        amount_cents=amount_cents,
-        tokens_reversed=tokens_to_reverse,
+    attempt = _insert_attempt(
+        sb,
+        account_id=account_id,
+        user_id=user_id,
+        tier=tier,
+        status="pending",
+        trigger_type=trigger_type,
+        threshold_trigger=threshold_trigger,
+        cycle_start=cycle_start_iso,
+        cycle_end=cycle_end_iso,
+        tokens_grant=tokens_grant,
+        price_aud_cents=price_aud_cents,
+        stripe_customer_id=stripe_customer_id,
+        stripe_subscription_id=stripe_subscription_id,
+        idempotency_key=idem,
     )
 
+    try:
+        pi = _create_payment_intent(
+            account_id=account_id,
+            user_id=user_id,
+            stripe_customer_id=stripe_customer_id,
+            amount_cents=price_aud_cents,
+            idempotency_key=idem,
+            trigger_type=trigger_type,
+            tokens_grant=tokens_grant,
+            cycle_start=cycle_start_iso,
+            cycle_end=cycle_end_iso,
+            attempt_id=str(attempt.get("id")),
+            threshold_trigger=threshold_trigger,
+            off_session=off_session,
+        )
+        next_status = "pending"
+        if str(getattr(pi, "status", "")).lower() == "requires_action":
+            next_status = "requires_action"
+        sb.table("topup_attempts").update(
+            {
+                "stripe_payment_intent_id": getattr(pi, "id", None),
+                "status": next_status,
+                "updated_at": _now_iso(),
+            }
+        ).eq("id", attempt["id"]).execute()
+        attempt["stripe_payment_intent_id"] = getattr(pi, "id", None)
+        attempt["status"] = next_status
+        return {
+            "attempt": attempt,
+            "reused_pending": False,
+            "payment_intent_client_secret": getattr(pi, "client_secret", None),
+            "payment_intent_status": getattr(pi, "status", None),
+        }
+    except stripe.error.CardError as exc:
+        failure_reason = getattr(exc, "code", None) or "card_error"
+        status = "requires_action" if failure_reason in {"authentication_required"} else "failed"
+        sb.table("topup_attempts").update(
+            {
+                "status": status,
+                "failure_reason": failure_reason,
+                "failed_at": _now_iso(),
+                "updated_at": _now_iso(),
+            }
+        ).eq("id", attempt["id"]).execute()
+        attempt["status"] = status
+        attempt["failure_reason"] = failure_reason
+        return {
+            "attempt": attempt,
+            "reused_pending": False,
+            "payment_intent_client_secret": None,
+            "payment_intent_status": status,
+        }
+    except stripe.error.StripeError as exc:
+        sb.table("topup_attempts").update(
+            {
+                "status": "failed",
+                "failure_reason": "stripe_error",
+                "failed_at": _now_iso(),
+                "updated_at": _now_iso(),
+            }
+        ).eq("id", attempt["id"]).execute()
+        raise HTTPException(status_code=502, detail="Top-up payment could not be initiated") from exc
 
-# ─── Internal helpers ───────────────────────────────────────
 
-def _message_for_state(state: str) -> str:
-    """Customer-facing message per state enum (Contract v2: no Stripe / supplier names)."""
-    if state == TopupState.LITE_PLAN:
-        return "Auto top-up isn't available on the Lite plan. Upgrade to Growth to keep working when tokens run out."
-    if state == TopupState.TOPUP_DISABLED:
-        return "Auto top-up is switched off for your account. Enable it in billing settings to keep working when tokens run out."
-    if state == TopupState.SPEND_CAP_HIT:
-        return "You've reached your monthly auto top-up cap. Raise the cap in billing settings or wait until your next billing period."
-    if state == TopupState.PAYMENT_REQUIRED:
-        return "Your saved payment method couldn't be charged. Update billing to continue."
-    return "Auto top-up not available right now. Please try again or contact support."
+def maybe_trigger_request_time_auto_topup(
+    sb,
+    *,
+    user_state: Dict[str, Any],
+    account_policy: Dict[str, Any],
+    consumed: int,
+    topped_up: int,
+    threshold_trigger: Optional[float],
+) -> Dict[str, Any]:
+    """Request-time auto top-up foundation used by metering and billing overview paths."""
+    account_id = user_state.get("account_id")
+    if not account_id:
+        return {"triggered": False, "reason": "missing_account"}
+
+    tier = str((account_policy.get("effective_tier") if account_policy else None) or user_state.get("subscription_tier") or "free")
+    eligibility = build_eligibility(
+        sb,
+        user_state=user_state,
+        account_policy=account_policy or {},
+        account_id=account_id,
+        tier=tier,
+    )
+    if not eligibility.get("eligible"):
+        return {"triggered": False, "reason": "ineligible", "eligibility": eligibility}
+
+    cycle_start = eligibility["cycle_start"]
+    cycle_end = eligibility["cycle_end"]
+    out = initiate_topup(
+        sb,
+        account_id=account_id,
+        user_id=user_state["id"],
+        tier=tier,
+        cycle_start=cycle_start,
+        cycle_end=cycle_end,
+        trigger_type=TOPUP_TRIGGER_AUTO_REQUEST_TIME,
+        attempt_scope=f"threshold:{threshold_trigger if threshold_trigger is not None else 'hard_stop'}",
+        stripe_customer_id=str(user_state.get("stripe_customer_id") or ""),
+        stripe_subscription_id=str(user_state.get("stripe_subscription_id") or ""),
+        threshold_trigger=threshold_trigger,
+        off_session=True,
+    )
+
+    status = str((out.get("attempt") or {}).get("status") or "").lower()
+    if status in {"failed", "requires_action"}:
+        apply_failed_or_action_required_outcome(
+            sb,
+            account_id=account_id,
+            tier=tier,
+            cycle_start=cycle_start.isoformat(),
+            cycle_end=cycle_end.isoformat(),
+            failure_reason=(out.get("attempt") or {}).get("failure_reason"),
+        )
+    return {"triggered": True, "attempt": out.get("attempt"), "result": out}
+
+
+def manual_topup(
+    sb,
+    *,
+    user_state: Dict[str, Any],
+    account_policy: Dict[str, Any],
+) -> Dict[str, Any]:
+    account_id = user_state.get("account_id")
+    if not account_id:
+        raise HTTPException(status_code=409, detail="Account billing scope is not configured")
+    if not user_state.get("stripe_customer_id") or not user_state.get("stripe_subscription_id"):
+        raise HTTPException(status_code=402, detail="Billing linkage is incomplete")
+
+    tier = str((account_policy.get("effective_tier") if account_policy else None) or user_state.get("subscription_tier") or "free")
+    eligibility = build_eligibility(
+        sb,
+        user_state=user_state,
+        account_policy=account_policy or {},
+        account_id=account_id,
+        tier=tier,
+    )
+    if eligibility.get("cap_remaining") is not None and int(eligibility["cap_remaining"]) <= 0:
+        raise HTTPException(status_code=409, detail="Monthly top-up cap reached")
+
+    return initiate_topup(
+        sb,
+        account_id=account_id,
+        user_id=user_state["id"],
+        tier=tier,
+        cycle_start=eligibility["cycle_start"],
+        cycle_end=eligibility["cycle_end"],
+        trigger_type=TOPUP_TRIGGER_MANUAL,
+        attempt_scope="manual",
+        stripe_customer_id=str(user_state.get("stripe_customer_id")),
+        stripe_subscription_id=str(user_state.get("stripe_subscription_id")),
+        off_session=False,
+    )
+

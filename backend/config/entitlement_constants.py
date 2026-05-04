@@ -1,0 +1,86 @@
+"""Canonical BIQc billing and entitlement constants.
+
+PR-2 lock: all top-up, token allowance, cap, and threshold values MUST come
+from this module so backend paths cannot drift from the contract docs.
+"""
+
+from __future__ import annotations
+
+from typing import Dict
+
+# Canonical internal tier keys
+STARTER_TIER = "starter"
+PRO_TIER = "pro"
+BUSINESS_TIER = "business"
+SPECIALIST_TIER = "specialist"
+TRIAL_TIER = "trial"
+FREE_TIER = "free"
+ENTERPRISE_TIER = "enterprise"
+CUSTOM_BUILD_TIER = "custom_build"
+SUPER_ADMIN_TIER = "super_admin"
+
+# Seats (approved contract values)
+STARTER_SEATS = 1
+PRO_SEATS = 5
+BUSINESS_SEATS = 12
+
+# Monthly token allowances (approved contract values)
+STARTER_TOKENS = 1_000_000
+PRO_TOKENS = 5_000_000
+BUSINESS_TOKENS = 20_000_000
+
+# Top-up pack (approved contract values)
+TOPUP_TOKENS = 250_000
+TOPUP_PRICE_AUD_CENTS = 1900
+
+# Per-cycle top-up caps (approved contract values)
+STARTER_TOPUP_CAP = 3
+PRO_TOPUP_CAP = 5
+BUSINESS_TOPUP_CAP = 10
+
+# Usage thresholds (approved contract values)
+WARNING_THRESHOLD = 0.80
+URGENT_WARNING_THRESHOLD = 0.95
+HARD_STOP_THRESHOLD = 1.00
+
+TIER_TOKEN_ALLOWANCES: Dict[str, int] = {
+    STARTER_TIER: STARTER_TOKENS,
+    PRO_TIER: PRO_TOKENS,
+    BUSINESS_TIER: BUSINESS_TOKENS,
+}
+
+TIER_TOPUP_CAPS: Dict[str, int] = {
+    STARTER_TIER: STARTER_TOPUP_CAP,
+    PRO_TIER: PRO_TOPUP_CAP,
+    BUSINESS_TIER: BUSINESS_TOPUP_CAP,
+}
+
+TIER_SEAT_LIMITS: Dict[str, int] = {
+    STARTER_TIER: STARTER_SEATS,
+    PRO_TIER: PRO_SEATS,
+    BUSINESS_TIER: BUSINESS_SEATS,
+}
+
+ACTIVE_SUBSCRIPTION_STATUSES = {"active", "trialing"}
+
+TOPUP_TRIGGER_MANUAL = "manual"
+TOPUP_TRIGGER_AUTO_REQUEST_TIME = "auto_request_time"
+TOPUP_TRIGGERS = {TOPUP_TRIGGER_MANUAL, TOPUP_TRIGGER_AUTO_REQUEST_TIME}
+
+TOPUP_STATUS_PENDING = "pending"
+TOPUP_STATUS_REQUIRES_ACTION = "requires_action"
+TOPUP_STATUS_FAILED = "failed"
+TOPUP_STATUS_SUCCEEDED = "succeeded"
+TOPUP_STATUS_CAP_REACHED = "cap_reached"
+TOPUP_STATUS_BLOCKED = "blocked"
+TOPUP_FINAL_STATUSES = {
+    TOPUP_STATUS_FAILED,
+    TOPUP_STATUS_SUCCEEDED,
+    TOPUP_STATUS_CAP_REACHED,
+    TOPUP_STATUS_BLOCKED,
+}
+
+TOPUP_CONSENT_GRANTED = "granted"
+TOPUP_CONSENT_REVOKED = "revoked"
+TOPUP_CONSENT_ACTIONS = {TOPUP_CONSENT_GRANTED, TOPUP_CONSENT_REVOKED}
+

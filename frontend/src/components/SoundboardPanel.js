@@ -811,17 +811,16 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               width: 26,
               height: 26,
               borderRadius: 8,
-              background: 'linear-gradient(135deg, #E85D00, #E56A08)',
+              background: 'var(--surface, #FFFFFF)',
+              border: '1px solid rgba(10,10,10,0.08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 11,
-              fontWeight: 700,
-              color: '#fff',
+              overflow: 'hidden',
               flexShrink: 0,
             }}
           >
-            B
+            <img src="/biqc-mark.svg" alt="BIQc.ai mark" style={{ width: 16, height: 16 }} />
           </div>
           <span style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', fontWeight: 500, fontFamily: fontFamily.body }}>
             BIQc
@@ -1105,16 +1104,17 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   width: 48,
                   height: 48,
                   borderRadius: 12,
-                  background: 'linear-gradient(135deg, #E85D00, #E56A08)',
+                  background: 'var(--surface, #FFFFFF)',
+                  border: '1px solid rgba(10,10,10,0.08)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: 16,
-                  fontSize: 20,
-                  opacity: 0.7,
+                  opacity: 0.9,
+                  overflow: 'hidden',
                 }}
               >
-                B
+                <img src="/biqc-mark.svg" alt="BIQc.ai mark" style={{ width: 28, height: 28 }} />
               </div>
               <p style={{ fontSize: 22, fontWeight: 600, color: 'var(--ink-display, #0A0A0A)', marginBottom: 8, fontFamily: fontFamily.display, textAlign: 'center' }}>
                 Ask a question that should change a decision.
@@ -1300,17 +1300,16 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                     width: 24,
                     height: 24,
                     borderRadius: 6,
-                    background: 'linear-gradient(135deg, #E85D00, #E56A08)',
+                    background: 'var(--surface, #FFFFFF)',
+                    border: '1px solid rgba(10,10,10,0.08)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: '#fff',
                     flexShrink: 0,
+                    overflow: 'hidden',
                   }}
                 >
-                  B
+                  <img src="/biqc-mark.svg" alt="BIQc.ai mark" style={{ width: 14, height: 14 }} />
                 </div>
                 <span style={{ fontSize: 12, color: 'var(--ink-muted, #737373)', fontWeight: 500 }}>
                   BIQc <span style={{ color: '#E85D00', marginLeft: 8 }}>thinking...</span>

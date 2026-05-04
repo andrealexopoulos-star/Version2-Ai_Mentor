@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase, useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { Input } from '../components/ui/input';
@@ -18,6 +18,7 @@ const MONO    = 'var(--font-mono, '    + fontFamily.mono    + ')';
 const LoginSupabase = () => {
   useForceLightTheme();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signIn, signInWithOAuth, hasSupabaseConfig, authState } = useSupabaseAuth();
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
@@ -39,6 +40,10 @@ const LoginSupabase = () => {
   const recaptchaStrict = String(process.env.REACT_APP_RECAPTCHA_STRICT || '').toLowerCase() === 'true';
   const recaptchaOperational = recaptchaEnabled && !captchaUnavailable;
   const fallbackRequired = (recaptchaEnabled && captchaUnavailable && !recaptchaStrict) || (!recaptchaEnabled && failedAttempts >= 3);
+  const requestedNext = String(searchParams.get('next') || '');
+  const safeNext = requestedNext.startsWith('/') ? requestedNext : '';
+  const defaultPostLogin = authState === AUTH_STATE.NEEDS_CALIBRATION ? '/calibration' : '/advisor';
+  const nextAfterLogin = safeNext || defaultPostLogin;
 
   const buildFallbackChallenge = () => {
     const left = Math.floor(Math.random() * 8) + 2;
@@ -177,7 +182,7 @@ const LoginSupabase = () => {
       setFallbackAnswer('');
       toast.success('Welcome back!');
       try { sessionStorage.setItem('biqc_auth_recent_login', String(Date.now())); } catch {}
-      navigate(authState === AUTH_STATE.NEEDS_CALIBRATION ? '/calibration' : '/advisor', { replace: true });
+      navigate(nextAfterLogin, { replace: true });
     } catch (error) {
       const rawMsg = error.message || '';
       if (rawMsg.includes('Supabase is not configured')) {
@@ -231,6 +236,10 @@ const LoginSupabase = () => {
     }
     setOauthLoading(true);
     try {
+      try {
+        if (safeNext) sessionStorage.setItem('biqc_auth_next', safeNext);
+        else sessionStorage.removeItem('biqc_auth_next');
+      } catch {}
       if (recaptchaOperational) {
         try {
           await apiClient.post('/auth/recaptcha/verify', {

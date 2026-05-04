@@ -1,0 +1,618 @@
+{
+  "scan_state": "DATA_AVAILABLE",
+  "business_name": "Acme Roofing",
+  "synthesis_eligible": true,
+  "available_trace_ids_count": 10,
+  "available_competitor_names_count": 3,
+  "sections": {
+    "chief_marketing_summary": {
+      "prompt_lengths": {
+        "system": 1668,
+        "user": 5748
+      },
+      "synthesis_output": {
+        "summary": "Acme Roofing tracks 1,247 organic keywords driving an estimated 6,800 monthly visits, with the /services page carrying 18% of that organic traffic. Customer reputation is strong \u2014 187 reviews averaging 4.3/5 across google and productreview, dominant theme 'fast service', positive sentiment 78%. The competitive landscape is dominated by roofright.com.au, which outranks Acme on 124 shared commercial keywords with ~3.2x organic traffic. Workplace signals are a quiet asset: employer-brand health score 72/100 with an improving trend \u2014 culture is a credible employer-brand differentiator vs typical trade competitors.",
+        "source_trace_ids": [
+          "kw_trace_42",
+          "rv_trace_g1",
+          "comp_trace_1",
+          "wp_trace_1"
+        ],
+        "signals_cited": [
+          {
+            "signal": "total_organic_keywords",
+            "value": "1247"
+          },
+          {
+            "signal": "weighted_avg_rating",
+            "value": "4.3"
+          },
+          {
+            "signal": "competitor_outrank_count",
+            "value": "124 (roofright.com.au)"
+          },
+          {
+            "signal": "employer_brand_health_score",
+            "value": "72"
+          }
+        ]
+      }
+    },
+    "executive_summary": {
+      "prompt_lengths": {
+        "system": 1634,
+        "user": 6276
+      },
+      "synthesis_output": {
+        "bullets": [
+          {
+            "text": "Tracks 1,247 organic keywords driving ~6,800 monthly visits \u2014 top page /services carries 18% of organic traffic. (Source: keyword_profile)",
+            "source_trace_ids": [
+              "kw_trace_44"
+            ],
+            "dataset": "keyword_profile",
+            "metric_value": "6800"
+          },
+          {
+            "text": "187 customer reviews across google + productreview averaging 4.3/5 with 78% positive sentiment, dominant theme 'fast service'. (Source: review_intelligence)",
+            "source_trace_ids": [
+              "rv_trace_g1",
+              "rv_trace_pr1"
+            ],
+            "dataset": "review_intelligence",
+            "metric_value": "187"
+          },
+          {
+            "text": "Employer-brand health score 72/100 trending improving across seek + indeed; top pros 'flexible hours' + 'training opportunities'. (Source: workplace_intelligence)",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "dataset": "workplace_intelligence",
+            "metric_value": "72"
+          },
+          {
+            "text": "Top competitor roofright.com.au runs 8,400 organic keywords + 56 paid keywords \u2014 outranks on 124 shared keywords with ~3.2x organic traffic. (Source: competitor_intelligence)",
+            "source_trace_ids": [
+              "comp_trace_1"
+            ],
+            "dataset": "competitor_intelligence",
+            "metric_value": "8400"
+          },
+          {
+            "text": "Backlink profile: 4,200 total backlinks across 287 referring domains, follow_ratio 0.78, toxic 4.2% \u2014 moderate authority with low risk. (Source: backlink_intelligence)",
+            "source_trace_ids": [
+              "bl_trace_1"
+            ],
+            "dataset": "backlink_intelligence",
+            "metric_value": "4200"
+          }
+        ]
+      }
+    },
+    "swot": {
+      "prompt_lengths": {
+        "system": 2329,
+        "user": 6413
+      },
+      "raw_synthesis_output": {
+        "strengths": [
+          {
+            "text": "Ranks #5 for 'roof leak detection' (search_volume 880, traffic_pct 22% \u2014 high commercial intent buyer foothold).",
+            "source_trace_ids": [
+              "kw_trace_44"
+            ],
+            "evidence_tag": "keyword",
+            "signal_cited": "roof leak detection"
+          },
+          {
+            "text": "Customer reviews average 4.3/5 across 187 reviews on google + productreview, with 78% positive sentiment and dominant theme 'fast service'.",
+            "source_trace_ids": [
+              "rv_trace_g1",
+              "rv_trace_pr1"
+            ],
+            "evidence_tag": "review_theme",
+            "signal_cited": "fast service"
+          },
+          {
+            "text": "Employer-brand health score 72/100 with trend 'improving' \u2014 culture differentiator vs typical trade competitors.",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "evidence_tag": "staff_theme",
+            "signal_cited": "employer_brand_health_score=72"
+          }
+        ],
+        "weaknesses": [
+          {
+            "text": "Ranks #47 for 'roofing repair sydney' (search_volume 2,400/mo) \u2014 major commercial-intent gap, not capturing local intent traffic.",
+            "source_trace_ids": [
+              "kw_trace_42"
+            ],
+            "evidence_tag": "keyword",
+            "signal_cited": "roofing repair sydney"
+          },
+          {
+            "text": "12% negative sentiment in reviews concentrated around 'communication' theme on productreview (45 review subset).",
+            "source_trace_ids": [
+              "rv_trace_pr1"
+            ],
+            "evidence_tag": "review_theme",
+            "signal_cited": "communication"
+          },
+          {
+            "text": "Staff-review concern theme 'salary below market' surfaces in 2 of 3 cross-platform top cons \u2014 retention risk.",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "evidence_tag": "staff_theme",
+            "signal_cited": "salary below market"
+          }
+        ],
+        "opportunities": [
+          {
+            "text": "Competitor roofright.com.au runs 56 paid keywords; capture share-of-voice on 'emergency roof repair' (search_volume 1,100, our paid rank 2 already).",
+            "source_trace_ids": [
+              "comp_trace_1"
+            ],
+            "evidence_tag": "competitor",
+            "signal_cited": "roofright.com.au paid_keywords=56"
+          },
+          {
+            "text": "sydneyroof.com.au runs zero paid ads (Ad=0) \u2014 open paid-search lane for 'commercial roofing' clusters they organic-rank for.",
+            "source_trace_ids": [
+              "comp_trace_2"
+            ],
+            "evidence_tag": "competitor",
+            "signal_cited": "sydneyroof.com.au Ad=0"
+          },
+          {
+            "text": "Workplace 'flexible hours' + 'training opportunities' top-pros position as employer of choice in trades \u2014 hire-led growth lever.",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "evidence_tag": "staff_theme",
+            "signal_cited": "flexible hours"
+          }
+        ],
+        "threats": [
+          {
+            "text": "roofright.com.au outranks you on 124 shared keywords with ~3.2x your organic traffic (Or=8,400 vs your top 1,247).",
+            "source_trace_ids": [
+              "comp_trace_1"
+            ],
+            "evidence_tag": "competitor",
+            "signal_cited": "roofright.com.au Or=8400 Oc=124"
+          },
+          {
+            "text": "Toxic backlinks at 4.2% of profile \u2014 moderate risk of algorithmic penalty if not disavowed.",
+            "source_trace_ids": [
+              "bl_trace_1"
+            ],
+            "evidence_tag": "metric",
+            "signal_cited": "toxic_backlinks_pct=4.2"
+          },
+          {
+            "text": "Staff-cons theme 'limited advancement' and 'salary below market' indicate churn risk \u2014 competitor-side hiring pressure.",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "evidence_tag": "staff_theme",
+            "signal_cited": "limited advancement"
+          }
+        ]
+      },
+      "post_provenance_filter": {
+        "strengths": [
+          {
+            "text": "Ranks #5 for 'roof leak detection' (search_volume 880, traffic_pct 22% \u2014 high commercial intent buyer foothold).",
+            "source_trace_ids": [
+              "kw_trace_44"
+            ],
+            "evidence_tag": "keyword"
+          },
+          {
+            "text": "Customer reviews average 4.3/5 across 187 reviews on google + productreview, with 78% positive sentiment and dominant theme 'fast service'.",
+            "source_trace_ids": [
+              "rv_trace_g1",
+              "rv_trace_pr1"
+            ],
+            "evidence_tag": "review_theme"
+          },
+          {
+            "text": "Employer-brand health score 72/100 with trend 'improving' \u2014 culture differentiator vs typical trade competitors.",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "evidence_tag": "staff_theme"
+          }
+        ],
+        "weaknesses": [
+          {
+            "text": "Ranks #47 for 'roofing repair sydney' (search_volume 2,400/mo) \u2014 major commercial-intent gap, not capturing local intent traffic.",
+            "source_trace_ids": [
+              "kw_trace_42"
+            ],
+            "evidence_tag": "keyword"
+          },
+          {
+            "text": "12% negative sentiment in reviews concentrated around 'communication' theme on productreview (45 review subset).",
+            "source_trace_ids": [
+              "rv_trace_pr1"
+            ],
+            "evidence_tag": "review_theme"
+          },
+          {
+            "text": "Staff-review concern theme 'salary below market' surfaces in 2 of 3 cross-platform top cons \u2014 retention risk.",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "evidence_tag": "staff_theme"
+          }
+        ],
+        "opportunities": [
+          {
+            "text": "Competitor roofright.com.au runs 56 paid keywords; capture share-of-voice on 'emergency roof repair' (search_volume 1,100, our paid rank 2 already).",
+            "source_trace_ids": [
+              "comp_trace_1"
+            ],
+            "evidence_tag": "competitor"
+          },
+          {
+            "text": "sydneyroof.com.au runs zero paid ads (Ad=0) \u2014 open paid-search lane for 'commercial roofing' clusters they organic-rank for.",
+            "source_trace_ids": [
+              "comp_trace_2"
+            ],
+            "evidence_tag": "competitor"
+          },
+          {
+            "text": "Workplace 'flexible hours' + 'training opportunities' top-pros position as employer of choice in trades \u2014 hire-led growth lever.",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "evidence_tag": "staff_theme"
+          }
+        ],
+        "threats": [
+          {
+            "text": "roofright.com.au outranks you on 124 shared keywords with ~3.2x your organic traffic (Or=8,400 vs your top 1,247).",
+            "source_trace_ids": [
+              "comp_trace_1"
+            ],
+            "evidence_tag": "competitor"
+          },
+          {
+            "text": "Toxic backlinks at 4.2% of profile \u2014 moderate risk of algorithmic penalty if not disavowed.",
+            "source_trace_ids": [
+              "bl_trace_1"
+            ],
+            "evidence_tag": "metric"
+          },
+          {
+            "text": "Staff-cons theme 'limited advancement' and 'salary below market' indicate churn risk \u2014 competitor-side hiring pressure.",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "evidence_tag": "staff_theme"
+          }
+        ]
+      },
+      "items_dropped_count": 0
+    },
+    "strategic_roadmap": {
+      "prompt_lengths": {
+        "system": 2382,
+        "user": 6983
+      },
+      "raw_synthesis_output": {
+        "quick_wins": [
+          {
+            "text": "Optimise /services page (currently 18% of organic traffic, top page) for 'commercial roofing' (rank 12, SV 1,800) \u2014 title + H1 + schema fixes.",
+            "source_trace_ids": [
+              "kw_trace_43"
+            ],
+            "evidence_tag": "keyword",
+            "priority": "critical",
+            "confidence": 0.85
+          },
+          {
+            "text": "Respond publicly to the 12% negative-sentiment reviews on productreview (45 reviews, theme 'communication') \u2014 closes the loop on the dominant negative theme.",
+            "source_trace_ids": [
+              "rv_trace_pr1"
+            ],
+            "evidence_tag": "review_theme",
+            "priority": "critical",
+            "confidence": 0.78
+          },
+          {
+            "text": "Pilot a paid ad on 'roofing repair sydney' (SV 2,400, currently rank 47 organically) \u2014 buy traffic while organic catches up.",
+            "source_trace_ids": [
+              "kw_trace_42"
+            ],
+            "evidence_tag": "keyword",
+            "priority": "high",
+            "confidence": 0.72
+          }
+        ],
+        "priorities": [
+          {
+            "text": "Build out a content cluster around 'roof leak detection' (current rank #5, SV 880, traffic_pct 22%) \u2014 supporting articles to lift cluster traffic 30-50%.",
+            "source_trace_ids": [
+              "kw_trace_44"
+            ],
+            "evidence_tag": "keyword",
+            "priority": "high",
+            "confidence": 0.82
+          },
+          {
+            "text": "Drive review velocity on google (142 \u2192 200) by post-job SMS prompt \u2014 build moat vs roofright.com.au at 0% review velocity advantage to date.",
+            "source_trace_ids": [
+              "rv_trace_g1",
+              "comp_trace_1"
+            ],
+            "evidence_tag": "competitor",
+            "priority": "high",
+            "confidence": 0.7
+          },
+          {
+            "text": "Reallocate paid budget from current 22 keywords ($4,400) toward the open lane sydneyroof.com.au cedes (Ad=0) \u2014 measure CPL by cluster.",
+            "source_trace_ids": [
+              "comp_trace_2"
+            ],
+            "evidence_tag": "competitor",
+            "priority": "medium",
+            "confidence": 0.68
+          }
+        ],
+        "strategic": [
+          {
+            "text": "Close the 6,800 \u2192 22,000 organic_traffic gap vs roofright.com.au by 12-month keyword build-out targeting their 124 shared-keyword overlap.",
+            "source_trace_ids": [
+              "comp_trace_1"
+            ],
+            "evidence_tag": "competitor",
+            "priority": "high",
+            "confidence": 0.75
+          },
+          {
+            "text": "Launch employer-brand campaign tied to 'flexible hours' + 'training' top-pros \u2014 convert 72/100 employer_brand_health_score into hire-rate uplift.",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "evidence_tag": "staff_theme",
+            "priority": "medium",
+            "confidence": 0.65
+          },
+          {
+            "text": "Expand referring_domains (currently 287) to 500+ via 12-month authority play \u2014 close the gap implied by competitive organic_traffic delta.",
+            "source_trace_ids": [
+              "bl_trace_1"
+            ],
+            "evidence_tag": "metric",
+            "priority": "medium",
+            "confidence": 0.62
+          }
+        ]
+      },
+      "post_provenance_filter": {
+        "quick_wins": [
+          {
+            "text": "Optimise /services page (currently 18% of organic traffic, top page) for 'commercial roofing' (rank 12, SV 1,800) \u2014 title + H1 + schema fixes.",
+            "priority": "critical",
+            "evidence_tag": "keyword",
+            "source_trace_ids": [
+              "kw_trace_43"
+            ],
+            "confidence": 0.85
+          },
+          {
+            "text": "Respond publicly to the 12% negative-sentiment reviews on productreview (45 reviews, theme 'communication') \u2014 closes the loop on the dominant negative theme.",
+            "priority": "critical",
+            "evidence_tag": "review_theme",
+            "source_trace_ids": [
+              "rv_trace_pr1"
+            ],
+            "confidence": 0.78
+          },
+          {
+            "text": "Pilot a paid ad on 'roofing repair sydney' (SV 2,400, currently rank 47 organically) \u2014 buy traffic while organic catches up.",
+            "priority": "high",
+            "evidence_tag": "keyword",
+            "source_trace_ids": [
+              "kw_trace_42"
+            ],
+            "confidence": 0.72
+          }
+        ],
+        "priorities": [
+          {
+            "text": "Build out a content cluster around 'roof leak detection' (current rank #5, SV 880, traffic_pct 22%) \u2014 supporting articles to lift cluster traffic 30-50%.",
+            "priority": "high",
+            "evidence_tag": "keyword",
+            "source_trace_ids": [
+              "kw_trace_44"
+            ],
+            "confidence": 0.82
+          },
+          {
+            "text": "Drive review velocity on google (142 \u2192 200) by post-job SMS prompt \u2014 build moat vs roofright.com.au at 0% review velocity advantage to date.",
+            "priority": "high",
+            "evidence_tag": "competitor",
+            "source_trace_ids": [
+              "rv_trace_g1",
+              "comp_trace_1"
+            ],
+            "confidence": 0.7
+          },
+          {
+            "text": "Reallocate paid budget from current 22 keywords ($4,400) toward the open lane sydneyroof.com.au cedes (Ad=0) \u2014 measure CPL by cluster.",
+            "priority": "medium",
+            "evidence_tag": "competitor",
+            "source_trace_ids": [
+              "comp_trace_2"
+            ],
+            "confidence": 0.68
+          }
+        ],
+        "strategic": [
+          {
+            "text": "Close the 6,800 \u2192 22,000 organic_traffic gap vs roofright.com.au by 12-month keyword build-out targeting their 124 shared-keyword overlap.",
+            "priority": "high",
+            "evidence_tag": "competitor",
+            "source_trace_ids": [
+              "comp_trace_1"
+            ],
+            "confidence": 0.75
+          },
+          {
+            "text": "Launch employer-brand campaign tied to 'flexible hours' + 'training' top-pros \u2014 convert 72/100 employer_brand_health_score into hire-rate uplift.",
+            "priority": "medium",
+            "evidence_tag": "staff_theme",
+            "source_trace_ids": [
+              "wp_trace_1"
+            ],
+            "confidence": 0.65
+          },
+          {
+            "text": "Expand referring_domains (currently 287) to 500+ via 12-month authority play \u2014 close the gap implied by competitive organic_traffic delta.",
+            "priority": "medium",
+            "evidence_tag": "metric",
+            "source_trace_ids": [
+              "bl_trace_1"
+            ],
+            "confidence": 0.62
+          }
+        ]
+      },
+      "items_dropped_count": 0
+    },
+    "competitive_landscape": {
+      "prompt_lengths": {
+        "system": 1752,
+        "user": 5022
+      },
+      "synthesis_output": {
+        "competitors": [
+          {
+            "name": "roofright.com.au",
+            "organic_keywords": 8400,
+            "organic_traffic": 22000,
+            "common_keywords_with_you": 124,
+            "paid_keywords": 56,
+            "threat_level": "high",
+            "comparative_positioning": "Outranks Acme on 124 shared commercial keywords with ~3.2x your organic traffic and an active 56-keyword paid programme.",
+            "where_they_outrank_you": [
+              "roofing repair sydney",
+              "metal roof installation"
+            ],
+            "source_trace_ids": [
+              "comp_trace_1"
+            ]
+          },
+          {
+            "name": "sydneyroof.com.au",
+            "organic_keywords": 5200,
+            "organic_traffic": 12000,
+            "common_keywords_with_you": 78,
+            "paid_keywords": 0,
+            "threat_level": "medium",
+            "comparative_positioning": "Outranks on 78 shared keywords with ~1.8x organic traffic but runs zero paid ads \u2014 leaves an open paid-search lane.",
+            "where_they_outrank_you": [
+              "tile roof repair"
+            ],
+            "source_trace_ids": [
+              "comp_trace_2"
+            ]
+          },
+          {
+            "name": "topnotchroofing.com.au",
+            "organic_keywords": 3100,
+            "organic_traffic": 8200,
+            "common_keywords_with_you": 45,
+            "paid_keywords": 22,
+            "threat_level": "medium",
+            "comparative_positioning": "Mid-tier organic footprint (~1.2x your traffic) with active paid; competes on the same commercial-intent cluster.",
+            "where_they_outrank_you": [
+              "commercial roofing"
+            ],
+            "source_trace_ids": [
+              "comp_trace_3"
+            ]
+          }
+        ]
+      }
+    },
+    "review_intelligence": {
+      "prompt_lengths": {
+        "system": 1799,
+        "user": 3868
+      },
+      "synthesis_output": {
+        "customer_sentiment": {
+          "weighted_avg_rating": 4.3,
+          "total_reviews": 187,
+          "per_platform": [
+            {
+              "platform": "google",
+              "rating": 4.5,
+              "count": 142
+            },
+            {
+              "platform": "productreview",
+              "rating": 4.0,
+              "count": 45
+            }
+          ],
+          "top_themes": [
+            {
+              "theme": "fast service",
+              "mentions": 47,
+              "sentiment_pct": 89,
+              "example_quote": "Got my roof repair done in 2 days, great work."
+            },
+            {
+              "theme": "fair pricing",
+              "mentions": 31,
+              "sentiment_pct": 81,
+              "example_quote": "Fair price, professional team \u2014 would use again."
+            },
+            {
+              "theme": "communication",
+              "mentions": 14,
+              "sentiment_pct": 56,
+              "example_quote": "Communication could be quicker but quality is solid."
+            }
+          ]
+        },
+        "workplace_intelligence": {
+          "employer_brand_health_score": 72,
+          "weighted_overall_rating": 4.1,
+          "trend": "improving",
+          "top_pros": [
+            {
+              "theme": "flexible hours"
+            },
+            {
+              "theme": "good team culture"
+            },
+            {
+              "theme": "training opportunities"
+            }
+          ],
+          "top_cons": [
+            {
+              "theme": "salary below market"
+            },
+            {
+              "theme": "limited advancement"
+            }
+          ]
+        },
+        "source_trace_ids": [
+          "rv_trace_g1",
+          "rv_trace_pr1",
+          "wp_trace_1"
+        ]
+      }
+    }
+  }
+}

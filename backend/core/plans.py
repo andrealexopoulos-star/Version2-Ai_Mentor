@@ -15,6 +15,13 @@ import logging
 import os
 from typing import Literal
 
+from config.entitlement_constants import (
+    BUSINESS_TOKENS,
+    PRO_TOKENS,
+    STARTER_TOKENS,
+    TOPUP_PRICE_AUD_CENTS as CANONICAL_TOPUP_PRICE_AUD_CENTS,
+    TOPUP_TOKENS as CANONICAL_TOPUP_TOKENS,
+)
 from middleware.token_metering import MODEL_PRICING  # noqa: F401 — single source of truth
 
 logger = logging.getLogger(__name__)
@@ -26,16 +33,16 @@ logger.info("[plans] USD_TO_AUD=%.4f pricing_version=%s", USD_TO_AUD, PRICING_VE
 TIER_ALLOCATIONS: dict[str, int] = {
     "trial":        250_000,
     "free":         225_000,
-    "starter":      1_000_000,   # "Growth" plan in marketing
-    "pro":          5_000_000,
-    "business":     20_000_000,
-    "enterprise":   20_000_000,
-    "custom_build": 20_000_000,
+    "starter":      STARTER_TOKENS,   # "Growth" plan in marketing
+    "pro":          PRO_TOKENS,
+    "business":     BUSINESS_TOKENS,
+    "enterprise":   BUSINESS_TOKENS,
+    "custom_build": BUSINESS_TOKENS,
     "super_admin":  -1,          # unmetered
 }
 
-TOPUP_TOKENS: int = 500_000
-TOPUP_PRICE_AUD_CENTS: int = 2900
+TOPUP_TOKENS: int = CANONICAL_TOPUP_TOKENS
+TOPUP_PRICE_AUD_CENTS: int = CANONICAL_TOPUP_PRICE_AUD_CENTS
 DEFAULT_AUTO_TOPUP_ENABLED: bool = True
 
 

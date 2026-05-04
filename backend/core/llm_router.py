@@ -5,9 +5,70 @@ import asyncio
 import contextvars
 import os
 import logging
+import time as _trace_time
 import httpx
 
 logger = logging.getLogger(__name__)
+
+
+# ─── Provider trace bracket (P0 Marjo E2 / 2026-05-04) ───────────────────
+# Each provider call below (_openai_chat / _anthropic_chat / _gemini_chat)
+# is bracketed with begin_trace + complete_trace so a per-call row lands
+# in public.enrichment_traces. Telemetry is fire-and-forget — never breaks
+# the call. Resolved scan_id comes from the calibration ContextVar; outside
+# the scan path the trace is a no-op. Cites BIQc_PLATFORM_CONTRACT_SECURE
+# _NO_SILENT_FAILURE_v2 + zero-401.
+
+async def _trace_llm_begin(provider: str, model: str, system_message: str, user_message: str) -> tuple:
+    """Open a trace for an upcoming LLM call. Returns (trace_id, t_start) tuple
+    or (None, t_start) if no active scan / tracer unavailable."""
+    t0 = _trace_time.perf_counter()
+    try:
+        from core.enrichment_trace import (
+            get_active_scan_id, get_active_user_id, abegin_trace,
+        )
+        sid = get_active_scan_id()
+        if not sid:
+            return (None, t0)
+        trace_id = await abegin_trace(
+            scan_id=sid,
+            provider=provider,
+            user_id=get_active_user_id(),
+            request_summary={
+                "model": str(model)[:80],
+                "system_chars": len(system_message or ""),
+                "user_chars": len(user_message or ""),
+            },
+        )
+        return (trace_id, t0)
+    except Exception as exc:
+        logger.debug("[LLM Router] _trace_llm_begin failed: %s", exc)
+        return (None, t0)
+
+
+async def _trace_llm_complete(trace_id, t_start, http_status: int, content: str, usage: dict, error: str | None) -> None:
+    """Close a trace opened by _trace_llm_begin. Always safe."""
+    if not trace_id:
+        return
+    try:
+        from core.enrichment_trace import acomplete_trace
+        elapsed_ms = int((_trace_time.perf_counter() - t_start) * 1000)
+        await acomplete_trace(
+            trace_id,
+            http_status=http_status,
+            latency_ms=elapsed_ms,
+            response_summary={
+                "ok": http_status == 200 and not error,
+                "completion_chars": len(content or ""),
+                "prompt_tokens": (usage or {}).get("prompt_tokens", 0),
+                "completion_tokens": (usage or {}).get("completion_tokens", 0),
+                "total_tokens": (usage or {}).get("total_tokens", 0),
+            },
+            error=error,
+            sanitiser_applied=True,
+        )
+    except Exception as exc:
+        logger.debug("[LLM Router] _trace_llm_complete failed: %s", exc)
 
 # Token metering — lazy import to avoid circular deps at module load
 _token_metering = None
@@ -211,12 +272,34 @@ async def _record_usage(
         logger.debug("[LLM Router] sb unavailable, skipping usage emit: %s", exc)
         return
 
+    account_id = None
+    try:
+        row = (
+            sb.table("users")
+            .select("account_id")
+            .eq("id", user_id)
+            .maybe_single()
+            .execute()
+        )
+        account_id = (row.data or {}).get("account_id") if row is not None else None
+    except Exception as exc:
+        logger.debug("[LLM Router] account scope lookup failed for %s: %s", str(user_id)[:8], exc)
+
     # 1) Legacy metering (SOT during PR1, sync)
     legacy_ok = False
     metering_fn = _get_metering()
     if metering_fn is not None:
         try:
-            metering_fn(sb, user_id, model, input_tokens, output_tokens, feature=feature, tier=tier)
+            metering_fn(
+                sb,
+                user_id,
+                model,
+                input_tokens,
+                output_tokens,
+                feature=feature,
+                tier=tier,
+                account_id=account_id,
+            )
             legacy_ok = True
         except Exception as exc:
             logger.debug("[LLM Router] legacy metering failed (non-fatal): %s", exc)
@@ -227,6 +310,7 @@ async def _record_usage(
         await emit_consume(
             sb,
             user_id=user_id,
+            account_id=account_id,
             model=model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
@@ -246,6 +330,96 @@ async def _record_usage(
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+
+
+# ── ADR-049 — Trinity quorum observability ────────────────────────────────
+# Every llm_trinity_chat invocation emits a structured trace describing which
+# providers participated, which produced output, and which one synthesized.
+# This closes the Contract v2 ambiguity surface flagged in PR #449
+# ("configured in other functions, not proven in scan path"): the scan path
+# DOES wire Anthropic + Gemini through llm_trinity_chat, but a silent
+# collapse to single-provider when keys are missing was previously invisible.
+#
+# Quorum states (INTERNAL only — never surface raw to frontend):
+#   FULL_QUORUM      = 3 providers participated
+#   PARTIAL_QUORUM   = 2 providers participated
+#   SINGLE_PROVIDER  = 1 provider — Contract v2 maps this to external DEGRADED
+#   FAILED           = 0 providers — exception propagates
+#
+# See docs/adr/049-anthropic-gemini-scan-path.md for the full design.
+
+QUORUM_FULL = "FULL_QUORUM"
+QUORUM_PARTIAL = "PARTIAL_QUORUM"
+QUORUM_SINGLE = "SINGLE_PROVIDER"
+QUORUM_FAILED = "FAILED"
+
+
+def _classify_quorum_state(succeeded_count: int) -> str:
+    """Map provider success-count to a Contract v2 internal quorum enum."""
+    if succeeded_count >= 3:
+        return QUORUM_FULL
+    if succeeded_count == 2:
+        return QUORUM_PARTIAL
+    if succeeded_count == 1:
+        return QUORUM_SINGLE
+    return QUORUM_FAILED
+
+
+def _emit_trinity_trace(
+    *,
+    requested: list,
+    succeeded: list,
+    failed: list,
+    synthesis_provider: str | None,
+    quorum_state: str,
+    user_id: str | None,
+    feature: str = "trinity_synthesis",
+) -> None:
+    """Internal-only structured log of Trinity provider participation.
+
+    Designed so a downstream parser (or the future enrichment_traces table
+    from agent E2) can lift the fields directly. INTERNAL by Contract v2 —
+    contains supplier names, must never reach a frontend response.
+    """
+    safe_user = str(user_id or "")[:8]
+    logger.info(
+        "[Trinity Trace] user=%s feature=%s quorum=%s requested=%s succeeded=%s failed_count=%d synth=%s",
+        safe_user,
+        feature,
+        quorum_state,
+        list(requested),
+        list(succeeded),
+        len(failed),
+        synthesis_provider or "none",
+    )
+    # Surface each individual provider failure at WARNING so the
+    # daily health check (ops_daily_health_check_procedure.md) can
+    # alert on a key getting silently revoked / a provider 5xx-storm.
+    for entry in failed:
+        try:
+            label = entry.get("provider", "unknown")
+            reason = entry.get("reason", "unknown")
+            logger.warning(
+                "[Trinity Trace] provider_failed user=%s feature=%s provider=%s reason=%s",
+                safe_user,
+                feature,
+                label,
+                str(reason)[:240],
+            )
+        except Exception:
+            # Never let trace emission throw — caller already has the response.
+            continue
+
+
+def _quorum_capability_from_keys() -> str:
+    """What quorum state CAN this deployment achieve given its env vars?
+
+    Reflects the ceiling, not the per-call result. Used by get_router_config
+    so the daily health check can detect a deployment-state regression
+    (e.g. a key getting unset and dropping the ceiling from FULL to SINGLE).
+    """
+    available = sum(1 for k in (OPENAI_API_KEY, GOOGLE_API_KEY, ANTHROPIC_API_KEY) if k)
+    return _classify_quorum_state(available)
 
 OPENAI_MODEL_NORMAL = os.environ.get("OPENAI_MODEL_NORMAL", "gpt-5.3")
 OPENAI_MODEL_DEEP = os.environ.get("OPENAI_MODEL_DEEP", "gpt-5.4")
@@ -300,15 +474,30 @@ async def _openai_chat(*, model: str, system_message: str, user_message: str, me
             formatted.append({"role": role, "content": content})
     formatted.append({"role": "user", "content": user_message})
 
-    async with httpx.AsyncClient(timeout=float(timeout)) as client:
-        resp = await client.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json={"model": model, "messages": formatted, "temperature": temperature, "max_tokens": max_tokens},
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]["content"], data.get("usage", {})
+    # P0 Marjo E2 / 2026-05-04: per-scan trace.
+    trace_id, t_start = await _trace_llm_begin("openai", model, system_message, user_message)
+    try:
+        async with httpx.AsyncClient(timeout=float(timeout)) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={"model": model, "messages": formatted, "temperature": temperature, "max_tokens": max_tokens},
+            )
+            http_status = resp.status_code
+            resp.raise_for_status()
+            data = resp.json()
+            content = data["choices"][0]["message"]["content"]
+            usage = data.get("usage", {})
+            await _trace_llm_complete(trace_id, t_start, http_status, content, usage, None)
+            return content, usage
+    except httpx.HTTPStatusError as exc:
+        await _trace_llm_complete(trace_id, t_start, exc.response.status_code, "", {},
+                                  f"PROVIDER_HTTP_{exc.response.status_code} : openai upstream error")
+        raise
+    except Exception as exc:
+        await _trace_llm_complete(trace_id, t_start, 502, "", {},
+                                  f"PROVIDER_NETWORK_ERROR : {str(exc)[:200]}")
+        raise
 
 
 async def _gemini_chat(*, model: str, system_message: str, user_message: str, messages: list | None, temperature: float, max_tokens: int, timeout: float, api_key: str) -> tuple[str, dict]:
@@ -321,19 +510,32 @@ async def _gemini_chat(*, model: str, system_message: str, user_message: str, me
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": float(temperature), "maxOutputTokens": int(max_tokens)},
     }
-    async with httpx.AsyncClient(timeout=float(timeout)) as client:
-        resp = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
-        resp.raise_for_status()
-        data = resp.json()
-        text = (((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or [{}])[0].get("text", "")
-        # Extract usage metadata from Gemini response
-        usage_meta = data.get("usageMetadata") or {}
-        usage = {
-            "prompt_tokens": usage_meta.get("promptTokenCount", 0),
-            "completion_tokens": usage_meta.get("candidatesTokenCount", 0),
-            "total_tokens": usage_meta.get("totalTokenCount", 0),
-        }
-        return text, usage
+    # P0 Marjo E2 / 2026-05-04: per-scan trace.
+    trace_id, t_start = await _trace_llm_begin("gemini", model, system_message, user_message)
+    try:
+        async with httpx.AsyncClient(timeout=float(timeout)) as client:
+            resp = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
+            http_status = resp.status_code
+            resp.raise_for_status()
+            data = resp.json()
+            text = (((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or [{}])[0].get("text", "")
+            # Extract usage metadata from Gemini response
+            usage_meta = data.get("usageMetadata") or {}
+            usage = {
+                "prompt_tokens": usage_meta.get("promptTokenCount", 0),
+                "completion_tokens": usage_meta.get("candidatesTokenCount", 0),
+                "total_tokens": usage_meta.get("totalTokenCount", 0),
+            }
+            await _trace_llm_complete(trace_id, t_start, http_status, text, usage, None)
+            return text, usage
+    except httpx.HTTPStatusError as exc:
+        await _trace_llm_complete(trace_id, t_start, exc.response.status_code, "", {},
+                                  f"PROVIDER_HTTP_{exc.response.status_code} : gemini upstream error")
+        raise
+    except Exception as exc:
+        await _trace_llm_complete(trace_id, t_start, 502, "", {},
+                                  f"PROVIDER_NETWORK_ERROR : {str(exc)[:200]}")
+        raise
 
 
 async def _anthropic_chat(*, model: str, system_message: str, user_message: str, messages: list | None, temperature: float, max_tokens: int, timeout: float, api_key: str) -> tuple[str, dict]:
@@ -354,30 +556,43 @@ async def _anthropic_chat(*, model: str, system_message: str, user_message: str,
         "system": system_message,
         "messages": conversation,
     }
-    async with httpx.AsyncClient(timeout=float(timeout)) as client:
-        resp = await client.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            },
-            json=payload,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        content = data.get("content") or []
-        text = ""
-        if content and isinstance(content[0], dict):
-            text = content[0].get("text", "")
-        # Extract usage from Anthropic response
-        usage_raw = data.get("usage") or {}
-        usage = {
-            "prompt_tokens": usage_raw.get("input_tokens", 0),
-            "completion_tokens": usage_raw.get("output_tokens", 0),
-            "total_tokens": usage_raw.get("input_tokens", 0) + usage_raw.get("output_tokens", 0),
-        }
-        return text, usage
+    # P0 Marjo E2 / 2026-05-04: per-scan trace.
+    trace_id, t_start = await _trace_llm_begin("anthropic", model, system_message, user_message)
+    try:
+        async with httpx.AsyncClient(timeout=float(timeout)) as client:
+            resp = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json=payload,
+            )
+            http_status = resp.status_code
+            resp.raise_for_status()
+            data = resp.json()
+            content = data.get("content") or []
+            text = ""
+            if content and isinstance(content[0], dict):
+                text = content[0].get("text", "")
+            # Extract usage from Anthropic response
+            usage_raw = data.get("usage") or {}
+            usage = {
+                "prompt_tokens": usage_raw.get("input_tokens", 0),
+                "completion_tokens": usage_raw.get("output_tokens", 0),
+                "total_tokens": usage_raw.get("input_tokens", 0) + usage_raw.get("output_tokens", 0),
+            }
+            await _trace_llm_complete(trace_id, t_start, http_status, text, usage, None)
+            return text, usage
+    except httpx.HTTPStatusError as exc:
+        await _trace_llm_complete(trace_id, t_start, exc.response.status_code, "", {},
+                                  f"PROVIDER_HTTP_{exc.response.status_code} : anthropic upstream error")
+        raise
+    except Exception as exc:
+        await _trace_llm_complete(trace_id, t_start, 502, "", {},
+                                  f"PROVIDER_NETWORK_ERROR : {str(exc)[:200]}")
+        raise
 
 
 async def llm_chat(
@@ -535,9 +750,13 @@ async def llm_trinity_chat(
 
     raw_results = await asyncio.gather(*tasks, return_exceptions=True)
     candidates = []
+    # ADR-049 — track per-provider outcomes for the quorum trace
+    succeeded_labels: list = []
+    failed_entries: list = []
     for label, model_name, result in zip(labels, models_used, raw_results):
         if isinstance(result, Exception):
             logger.warning(f"[Trinity] {label} candidate failed: {result}")
+            failed_entries.append({"provider": label, "reason": str(result)[:240]})
             continue
         # All providers now return (text, usage) tuples
         if isinstance(result, tuple):
@@ -547,10 +766,38 @@ async def llm_trinity_chat(
             text = result
         if text:
             candidates.append((label, str(text).strip()))
+            succeeded_labels.append(label)
+        else:
+            failed_entries.append({"provider": label, "reason": "empty_response"})
 
     if not candidates:
+        # Emit FAILED trace before raising so we can see the wreckage.
+        _emit_trinity_trace(
+            requested=labels,
+            succeeded=succeeded_labels,
+            failed=failed_entries,
+            synthesis_provider=None,
+            quorum_state=QUORUM_FAILED,
+            user_id=user_id,
+            feature="trinity_failed",
+        )
         raise RuntimeError("Trinity failed across all providers")
+
+    quorum_state = _classify_quorum_state(len(succeeded_labels))
+
     if len(candidates) == 1:
+        # SINGLE_PROVIDER path — Contract v2 maps this to external DEGRADED
+        # for any caller that surfaces Trinity-quality signals. We still
+        # return the response (no silent failure), but we log the truth.
+        _emit_trinity_trace(
+            requested=labels,
+            succeeded=succeeded_labels,
+            failed=failed_entries,
+            synthesis_provider=succeeded_labels[0] if succeeded_labels else None,
+            quorum_state=quorum_state,
+            user_id=user_id,
+            feature="trinity_single_provider",
+        )
         return candidates[0][1]
 
     synthesis_system = (
@@ -567,6 +814,7 @@ async def llm_trinity_chat(
     # Fallbacks to OpenAI/Gemini only engage if ANTHROPIC_API_KEY is absent or
     # the Opus call itself errors at the transport layer (network/5xx) — in
     # that degraded case we prefer a response over a hard failure.
+    # ADR-049 — annotate the eventual synthesis provider into the trace.
     if ANTHROPIC_API_KEY:
         try:
             content, usage = await _anthropic_chat(
@@ -580,9 +828,19 @@ async def llm_trinity_chat(
                 api_key=ANTHROPIC_API_KEY,
             )
             await _record_usage(user_id, ANTHROPIC_MODEL_OPUS, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
+            _emit_trinity_trace(
+                requested=labels,
+                succeeded=succeeded_labels,
+                failed=failed_entries,
+                synthesis_provider="anthropic",
+                quorum_state=quorum_state,
+                user_id=user_id,
+                feature="trinity_synthesis",
+            )
             return content
         except Exception as exc:
             logger.warning(f"[Trinity] flagship Opus synthesis failed, falling back: {exc}")
+            failed_entries.append({"provider": "anthropic_synthesis", "reason": str(exc)[:240]})
 
     if OPENAI_API_KEY:
         fused, usage = await _openai_chat(
@@ -596,6 +854,15 @@ async def llm_trinity_chat(
             api_key=OPENAI_API_KEY,
         )
         await _record_usage(user_id, OPENAI_MODEL_DEEP, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
+        _emit_trinity_trace(
+            requested=labels,
+            succeeded=succeeded_labels,
+            failed=failed_entries,
+            synthesis_provider="openai",
+            quorum_state=quorum_state,
+            user_id=user_id,
+            feature="trinity_synthesis",
+        )
         return fused
 
     content, usage = await _gemini_chat(
@@ -609,6 +876,224 @@ async def llm_trinity_chat(
         api_key=GOOGLE_API_KEY,
     )
     await _record_usage(user_id, GEMINI_MODEL_PRO, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
+    _emit_trinity_trace(
+        requested=labels,
+        succeeded=succeeded_labels,
+        failed=failed_entries,
+        synthesis_provider="google",
+        quorum_state=quorum_state,
+        user_id=user_id,
+        feature="trinity_synthesis",
+    )
+    return content
+
+
+async def llm_trinity_synthesis(
+    system_message: str,
+    user_message: str,
+    *,
+    messages: list = None,
+    temperature: float = 0.35,
+    max_tokens: int = 2400,
+    timeout: float = 90,
+    user_id: str = None,
+    tier: str = None,
+    json_only: bool = True,
+) -> str:
+    """CMO-section synthesis variant of the Trinity quorum.
+
+    Identical fan-out shape to `llm_trinity_chat` (3 providers in parallel,
+    flagship Opus does the synthesis leg) but tuned for the R2E synthesis
+    prompts in `core/synthesis_prompts.py`:
+
+      - lower default temperature (0.35) for evidence-backed JSON output
+      - larger max_tokens (2400) so a full SWOT or roadmap fits
+      - longer timeout (90s) — synthesis prompts are larger than
+        boardroom-style queries because they carry the STRUCTURED INPUT
+        block; flagship Opus needs a touch more wall-clock.
+      - `json_only=True` adds an explicit instruction to the synthesis-leg
+        system message, which materially improves the rate of clean JSON
+        responses (vs the chat synthesis path which expects narrative).
+
+    Falls back to OpenAI / Gemini for the synthesis leg only if the
+    flagship Opus call errors at the transport layer (network/5xx). If a
+    Trinity provider is missing entirely, the call still proceeds with
+    whatever providers are configured (matches `llm_trinity_chat` behavior).
+
+    Returns: the synthesised text (best-effort JSON when json_only=True).
+
+    NOTE: this helper is async. The caller is responsible for parsing the
+    JSON return via `core.synthesis_prompts.parse_synthesis_json`. We do
+    not parse here so the helper stays a pure transport.
+    """
+    sentinel = await _check_llm_pause_and_maybe_sentinel()
+    if sentinel is not None:
+        return sentinel["content"]
+
+    await _check_budget_or_raise(user_id, tier)
+
+    tasks = []
+    labels = []
+    models_used = []
+
+    if OPENAI_API_KEY:
+        labels.append("openai")
+        models_used.append(OPENAI_MODEL_DEEP)
+        tasks.append(_openai_chat(
+            model=OPENAI_MODEL_DEEP,
+            system_message=system_message,
+            user_message=user_message,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            api_key=OPENAI_API_KEY,
+        ))
+    if GOOGLE_API_KEY:
+        labels.append("google")
+        models_used.append(GEMINI_MODEL_PRO)
+        tasks.append(_gemini_chat(
+            model=GEMINI_MODEL_PRO,
+            system_message=system_message,
+            user_message=user_message,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            api_key=GOOGLE_API_KEY,
+        ))
+    if ANTHROPIC_API_KEY:
+        labels.append("anthropic")
+        models_used.append(ANTHROPIC_MODEL_OPUS)
+        tasks.append(_anthropic_chat(
+            model=ANTHROPIC_MODEL_OPUS,
+            system_message=system_message,
+            user_message=user_message,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            api_key=ANTHROPIC_API_KEY,
+        ))
+
+    if not tasks:
+        raise ValueError("No LLM provider keys configured for Trinity synthesis")
+
+    raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+    candidates = []
+    for label, model_name, result in zip(labels, models_used, raw_results):
+        if isinstance(result, Exception):
+            logger.warning(f"[Trinity Synthesis] {label} candidate failed: {result}")
+            continue
+        if isinstance(result, tuple):
+            text, usage = result
+            await _record_usage(
+                user_id, model_name,
+                usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0),
+                feature="trinity_synthesis_candidate",
+                tier=tier,
+                action="trinity_synthesis_candidate",
+                tier_at_event=tier,
+            )
+        else:
+            text = result
+        if text:
+            candidates.append((label, str(text).strip()))
+
+    if not candidates:
+        raise RuntimeError("Trinity synthesis failed across all providers")
+    if len(candidates) == 1:
+        return candidates[0][1]
+
+    # Synthesis-leg system message. The CMO synthesis path is JSON-only
+    # by default (the section prompts in synthesis_prompts.py all specify
+    # an OUTPUT CONTRACT JSON schema). Explicitly reinforcing JSON-only
+    # at the synthesis leg materially reduces the chat-style preamble
+    # that downstream parse_synthesis_json then has to strip.
+    synthesis_system_lines = [
+        "You are BIQc Trinity Fusion (CMO Synthesis). Merge the candidate "
+        "JSON analyses below into ONE evidence-backed JSON output that "
+        "satisfies the OUTPUT CONTRACT visible in the user message.",
+        "Pick items that cite real signals from the structured input. "
+        "Drop any item that does not cite a signal — do not patch it with "
+        "a generic phrase. If candidates conflict on a number, prefer the "
+        "value that appears in MORE candidate outputs (quorum), or the most "
+        "specific candidate. Never invent a signal that no candidate produced.",
+        "Do not mention model names, provider details, supplier names, "
+        "API keys, or internal architecture. Customer-facing language only.",
+    ]
+    if json_only:
+        synthesis_system_lines.append(
+            "RETURN VALID JSON ONLY — no prose preamble, no markdown code "
+            "fences, no chat-style commentary. The first character of your "
+            "response must be `{` and the last character must be `}`."
+        )
+    synthesis_system = " ".join(synthesis_system_lines)
+    synthesis_user = "\n\n".join([f"[{label}]\n{text[:3000]}" for label, text in candidates])
+
+    if ANTHROPIC_API_KEY:
+        try:
+            content, usage = await _anthropic_chat(
+                model=ANTHROPIC_MODEL_OPUS,
+                system_message=synthesis_system,
+                user_message=synthesis_user,
+                messages=None,
+                temperature=0.3,
+                max_tokens=max_tokens,
+                timeout=timeout,
+                api_key=ANTHROPIC_API_KEY,
+            )
+            await _record_usage(
+                user_id, ANTHROPIC_MODEL_OPUS,
+                usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0),
+                feature="trinity_synthesis_fusion",
+                tier=tier,
+                action="trinity_synthesis_fusion",
+                tier_at_event=tier,
+            )
+            return content
+        except Exception as exc:
+            logger.warning(f"[Trinity Synthesis] flagship Opus fusion failed, falling back: {exc}")
+
+    if OPENAI_API_KEY:
+        fused, usage = await _openai_chat(
+            model=OPENAI_MODEL_DEEP,
+            system_message=synthesis_system,
+            user_message=synthesis_user,
+            messages=None,
+            temperature=0.3,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            api_key=OPENAI_API_KEY,
+        )
+        await _record_usage(
+            user_id, OPENAI_MODEL_DEEP,
+            usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0),
+            feature="trinity_synthesis_fusion",
+            tier=tier,
+            action="trinity_synthesis_fusion",
+            tier_at_event=tier,
+        )
+        return fused
+
+    content, usage = await _gemini_chat(
+        model=GEMINI_MODEL_PRO,
+        system_message=synthesis_system,
+        user_message=synthesis_user,
+        messages=None,
+        temperature=0.3,
+        max_tokens=max_tokens,
+        timeout=timeout,
+        api_key=GOOGLE_API_KEY,
+    )
+    await _record_usage(
+        user_id, GEMINI_MODEL_PRO,
+        usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0),
+        feature="trinity_synthesis_fusion",
+        tier=tier,
+        action="trinity_synthesis_fusion",
+        tier_at_event=tier,
+    )
     return content
 
 
@@ -762,12 +1247,24 @@ async def llm_realtime_negotiate(sdp_offer: str, api_key: str = None) -> str:
 
 
 def get_router_config() -> dict:
-    """Return route table + provider state for health checks."""
+    """Return route table + provider state for health checks.
+
+    `quorum_capability` (ADR-049) reports the quorum ceiling this deployment
+    can reach. Daily health check (ops_daily_health_check_procedure.md) should
+    P0-flag any drop below the policy floor. Anchors for review:
+      - FULL_QUORUM    → all 3 providers reachable; no action.
+      - PARTIAL_QUORUM → one key missing; recoverable but Trinity-grade
+                          synthesis is degraded. Investigate within 24h.
+      - SINGLE_PROVIDER → Trinity collapsed; Contract v2 maps to DEGRADED for
+                          any frontend label that says "Trinity". P0.
+      - FAILED         → no key set; scan synthesis offline. P0.
+    """
     return {
         "providers": {
             "openai": bool(OPENAI_API_KEY),
             "google": bool(GOOGLE_API_KEY),
             "anthropic": bool(ANTHROPIC_API_KEY),
         },
+        "quorum_capability": _quorum_capability_from_keys(),
         "routes": {name: {"model": cfg["model"], "timeout": cfg["timeout"]} for name, cfg in ROUTE_TABLE.items()},
     }

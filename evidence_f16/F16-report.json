@@ -1,0 +1,74 @@
+{
+  "task": "fix/p0-marjo-f16-r2e-thin-detection",
+  "branch_off": "fix/p0-marjo-r2e-synthesis-prompts",
+  "branch": "fix/p0-marjo-f16-r2e-thin-detection",
+  "worktree": "/tmp/biqc-marjo-f16",
+  "context": {
+    "rr2e_high_blocker": "R2E synthesis NEVER fires in practice because legacy Marketing-101 template builders fill enrichment.swot with bare strings. _section_is_thin(swot, min_items=1) returns False because each bucket has >=1 string, even when those strings are pure Marketing-101 fluff.",
+    "fix_summary": "Patched _section_is_thin so (a) anti-template strings are excluded from effective_count when computing bucket fullness; (b) all-bare-strings buckets are treated as thin regardless of count (R2E synthesis always emits provenance dicts; only legacy template builders emit bare strings). Together these ensure synthesis fires when the buckets are full of fluff, while leaving alone any bucket that already has provenance-bearing items."
+  },
+  "hotfix_applied": {
+    "files_modified": [
+      "backend/routes/intelligence_modules.py",
+      "backend/core/synthesis_prompts.py"
+    ],
+    "files_added": [
+      "backend/tests/test_section_is_thin_anti_template.py",
+      "evidence_f16/F16-report.json"
+    ],
+    "primary_changes": [
+      "_section_is_thin (intelligence_modules.py): anti-template + bare-string awareness; new _list_is_thin helper computes effective_count by excluding (i) string items matching is_anti_template_phrase and (ii) dicts with no provenance; treats all-bare-strings lists as thin via belt-and-braces.",
+      "Empty string / anti-template-phrase string also classified as thin (defence-in-depth for executive_summary slot).",
+      "_synthesis_enabled_for_request (intelligence_modules.py): added debug log line `[cmo-synthesis-gate] enabled=... env_raw=...` for A/B observability without changing default (kept ON per R2E intent).",
+      "_structured_input_block (synthesis_prompts.py): when JSON payload exceeds 12000 chars, embed explicit `WARNING: input truncated to 12000 chars due to size limit. Some signal may not be reflected — only cite from what is shown above; do not invent content for missing keys.` line in the prompt so the LLM knows."
+    ],
+    "diff_stat": {
+      "backend/core/synthesis_prompts.py": "+18 -3",
+      "backend/routes/intelligence_modules.py": "+117 -7"
+    }
+  },
+  "tests_added": {
+    "file": "backend/tests/test_section_is_thin_anti_template.py",
+    "tests": [
+      "test_section_with_legacy_marketing_101_strings_treated_thin",
+      "test_section_with_anti_template_strings_only_treated_thin",
+      "test_section_with_real_provenance_items_NOT_thin",
+      "test_mixed_section_anti_template_dropped_real_kept_thin_calculation_correct",
+      "test_empty_section_thin",
+      "test_section_with_strings_but_real_content_handled"
+    ],
+    "all_pass": true,
+    "regression_suite_pass": "104/104 across test_synthesis_prompts.py + test_section_is_thin_anti_template.py + test_response_sanitizer.py + test_contract_v2_enrichment_response.py + test_cmo_truth_state_machine.py + test_cmo_pdf_entitlement.py"
+  },
+  "frontend_consumer_grep_result": {
+    "command": "grep -rln 'swot_v2\\|roadmap_v2' /tmp/biqc-marjo-f16/frontend/ /tmp/biqc-marjo-f16/",
+    "result": "Only /tmp/biqc-marjo-f16/backend/routes/intelligence_modules.py contains these keys. NO frontend consumer found.",
+    "impact": "The R2E enriched-with-provenance shape (response['swot_v2'], response['roadmap_v2']) is currently DISCARDED by the frontend. R2E does also gap-fill the legacy `response['swot']` and `response['roadmap']` shapes (intelligence_modules.py loop at lines 1228-1232 + 1277-1280), so the user DOES see the synthesis content via the legacy keys. However the per-item provenance metadata (source_trace_ids, evidence_tag) is lost on the way to the UI.",
+    "recommendation": "Document as F17 follow-up: frontend SWOTPanel + RoadmapPanel should prefer `swot_v2` / `roadmap_v2` when present and render provenance chips next to each item. F16 does NOT block on this — the R2E content reaches the user via the legacy shape; only the provenance display is missing."
+  },
+  "env_flag_decision": {
+    "var": "CMO_SYNTHESIS_ENRICHMENT_ENABLED",
+    "default_kept": "1 (ON)",
+    "rationale": "R2E is the world-class output path Andreas wants in production. F16 fixes the gate that was preventing it from firing. Toggling default to OFF would defeat the whole F16 hotfix purpose. Observability added: debug log `[cmo-synthesis-gate] enabled=... env_raw=...` on every request so an A/B comparison can be done by setting the env var to 0 in a canary deploy and grepping the gate marker. Per-section fire markers already exist via the `[cmo-synthesis] {section} skipped: ...` warning logs (line 1158, 1193, 1234, 1283 etc).",
+    "follow_up": "If superadmin-scoped A/B is needed (e.g. flip per-tenant), F18 task can wrap _synthesis_enabled_for_request in a feature_flags lookup keyed on user_id. Out of scope for F16 — env-flag + log markers are sufficient for blast-radius observability today."
+  },
+  "rr2e_medium_concerns_addressed": {
+    "env_flag_default": "Kept default ON; added gate-state log line for A/B observability.",
+    "frontend_v2_consumer": "Confirmed missing. Recommended F17 follow-up. Not blocking F16 because legacy shape still receives synthesis content via gap-fill loop.",
+    "12000_char_truncation_warning": "Implemented. Embedded explicit truncation warning in prompt when input exceeds 12K chars."
+  },
+  "test_isolation_note": "The new test file installs the same fastapi / fastapi.responses / supabase_client / intelligence_spine / routes.auth stubs as test_intelligence_modules_hardening.py, plus extras for fastapi.Header (otherwise routes.intelligence_modules collection fails) and fastapi.responses.{Response,PlainTextResponse,StreamingResponse,HTMLResponse,RedirectResponse} (otherwise sibling test_cmo_pdf_entitlement.py fails when collected after this file due to cached partial stub). All stubs check `if name in sys.modules` first, so they coexist with conftest's per-file isolation logic.",
+  "preexisting_test_collection_error_unaffected_by_f16": "test_intelligence_modules_hardening.py fails to collect due to its own stub being incomplete (missing fastapi.Header) — this fails on the unmodified R2E base branch too, confirmed via `cd /private/tmp/biqc-marjo-r2e && python3 -m pytest backend/tests/test_intelligence_modules_hardening.py`. NOT introduced by F16 and OUT OF SCOPE for this PR.",
+  "authority_compliance": {
+    "branch_off_r2e": "yes — branched off fix/p0-marjo-r2e-synthesis-prompts (HEAD 20239658)",
+    "commit": "yes (per instructions)",
+    "push": "NO (per instructions)",
+    "modify_intelligence_modules": "yes",
+    "modify_synthesis_prompts": "yes (truncation warning only)",
+    "touch_billing_marketing_tier_flip": "NO",
+    "spawn_sub_agents": "NO"
+  },
+  "ready_for_peer_review": true,
+  "ready_for_peer_review_notes": "F16 hotfix is minimal, testable, and ships behind the same env flag as R2E. The thinness check now correctly identifies fluff-filled buckets so synthesis fires; the all-bare-strings belt-and-braces rule is conservative and additive (it only ever increases the set of sections eligible for enrichment, never decreases it). Regression suite (104 tests across 6 files) is green. Pre-existing collection-time stub mismatch in test_intelligence_modules_hardening.py is documented as out-of-scope. Recommend RR2F reviewer focuses on: (1) whether the all-bare-strings rule is too aggressive for sections that legitimately ship as bare strings in legacy responses (we believe NOT — the gap-fill loop preserves them on synthesis failure), (2) whether the new _list_is_thin helper handles competitor-list shape correctly (verified via reading the call site and tracing `competitors=[{name:..., domain:...}, ...]` through the function — non-text dicts are counted as effective).",
+  "commit_planned_message": "fix(p0-marjo-f16): _section_is_thin treats anti-template strings as thin so R2E synthesis fires when needed — closes RR2E HIGH blocker — code 13041978 required to push"
+}

@@ -8,7 +8,7 @@ import { fontFamily } from '../design-system/tokens';
  * Three cards: Growth ($69), Pro ($199), Business ($349) — all AUD/mo.
  * Growth is default + tagged "Most Popular" per the /pricing page Trust Layer.
  *
- * Clicking a card calls onChange with the plan id ("starter" | "professional" |
+ * Clicking a card calls onChange with the plan id ("starter" | "pro" |
  * "business"). Uses radio-style single-select with visible selection ring.
  */
 
@@ -33,17 +33,17 @@ const PLANS = [
     name: 'Growth',
     price: '$69',
     period: 'AUD/mo',
-    tagline: 'All BIQc core intelligence with solo-operator capacity.',
-    features: ['1 seat', '1M tokens/month', '90-day sync history'],
+    tagline: 'For solo operators and early-stage teams.',
+    features: ['1 user included', '1,000,000 AI tokens / month per account', 'Recent data sync history'],
     highlight: true,
   },
   {
-    id: 'professional',
+    id: 'pro',
     name: 'Pro',
     price: '$199',
     period: 'AUD/mo',
-    tagline: 'All BIQc core intelligence with operator-team capacity.',
-    features: ['Up to 5 seats', '5M tokens/month', '12-month sync history'],
+    tagline: 'For teams running weekly intelligence workflows.',
+    features: ['Up to 5 users included', '5,000,000 AI tokens / month per account', 'Extended data sync history'],
     highlight: false,
   },
   {
@@ -51,8 +51,8 @@ const PLANS = [
     name: 'Business',
     price: '$349',
     period: 'AUD/mo',
-    tagline: 'All BIQc core intelligence with team-scale capacity.',
-    features: ['Up to 12 seats', '20M tokens/month', '24-month sync history'],
+    tagline: 'For established teams needing deeper monthly capacity.',
+    features: ['Up to 12 users included', '20,000,000 AI tokens / month per account', 'Advanced data sync history'],
     highlight: false,
   },
 ];

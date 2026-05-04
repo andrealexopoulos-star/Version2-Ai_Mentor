@@ -27,8 +27,8 @@ const LoadingScreen = () => {
         @keyframes biqcBar{0%{width:0}100%{width:100%}}
       `}</style>
       <div className="text-center space-y-6">
-        <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#E85D00', animation: 'biqcPulse 2s ease-in-out infinite' }}>
-          <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-mono)" }}>B</span>
+        <div style={{ animation: 'biqcPulse 2s ease-in-out infinite' }}>
+          <img src="/biqc-horizontal-light.svg" alt="BIQc.ai" style={{ width: 122, height: 'auto', margin: '0 auto' }} />
         </div>
         <div style={{ animation: 'biqcFade 0.8s ease-out' }}>
           <p className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: "var(--font-display)" }}>
@@ -211,7 +211,8 @@ export default function ProtectedRoute({ children, adminOnly }) {
     if ((hasStoredAuth && Date.now() - authGraceStart < 20000) || (recentLoginTs && Date.now() - recentLoginTs < 20000)) {
       return <LoadingScreen />;
     }
-    return <Navigate to="/login-supabase" replace />;
+    const nextPath = `${location.pathname || '/'}${location.search || ''}${location.hash || ''}`;
+    return <Navigate to={`/login-supabase?next=${encodeURIComponent(nextPath)}`} replace />;
   }
 
   // Error → show error screen
@@ -220,6 +221,11 @@ export default function ProtectedRoute({ children, adminOnly }) {
   }
 
   // ── Subscription gate — runs FIRST, before NEEDS_CALIBRATION ──
+  // Route priority state machine (P0 signup stability):
+  // 1) unauthenticated -> /login-supabase?next=...
+  // 2) signed in + subscription incomplete -> /complete-signup -> /subscribe
+  // 3) signed in + subscription active/trialing + calibration incomplete -> onboarding/calibration routes
+  // 4) signed in + subscription active/trialing + calibration complete -> app routes
   // Andreas 2026-04-20: closing /complete-signup mid-flow then signing
   // back in let the user slide into /calibration because the
   // NEEDS_CALIBRATION branch below allows it. This gate runs ahead of
@@ -228,7 +234,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
   //
   // /complete-signup itself and admin paths are exempt (they're the
   // destination / they bypass all product gating).
-  const GATE_EXEMPT_PATHS = ['/complete-signup', '/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
+  const GATE_EXEMPT_PATHS = ['/complete-signup', '/subscribe', '/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
   const isGateExemptPath = GATE_EXEMPT_PATHS.some(p => location.pathname.startsWith(p));
   if (!isGateExemptPath && (user || session)) {
     if (!subscriptionChecked) {
@@ -255,7 +261,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
       '/calibration', '/market/calibration', '/settings',
       '/onboarding', '/onboarding-decision', '/profile-import',
       '/admin', '/support-admin', '/observability', '/admin/prompt-lab',
-      '/complete-signup',
+      '/complete-signup', '/subscribe',
       '/connect-email', '/soundboard', '/advisor', '/cmo-report',
     ];
     if (allowedPaths.some(p => location.pathname.startsWith(p))) {
