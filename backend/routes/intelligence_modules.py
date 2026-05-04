@@ -36,11 +36,15 @@ from cmo_truth import (
     estimate_confidence,
     is_placeholder_text,
 )
+# P0 Marjo E2 / 2026-05-04 — provider trace audit pane.
+from core.enrichment_trace import fetch_scan_provider_chain
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 from routes.auth import get_current_user
+# P0 Marjo E2 / 2026-05-04 — superadmin-only audit endpoint for raw provider traces.
+from routes.deps import get_super_admin
 
 _TRUTH_GATEWAY_CONTRACT_VERSION = "truth-gateway-v1"
 
@@ -1245,6 +1249,31 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     response["confidence"] = confidence if confidence > 0 else evidence_confidence
     response["data_points"] = f"{real_points} evidence points"
 
+    # 7b) P0 Marjo E2 / 2026-05-04 — provider chain audit summary.
+    #     Attach a SANITISED summary of which providers ran for the scan
+    #     that produced this enrichment (counts only — no supplier names,
+    #     no error strings, no edge_function names). Drives the user-visible
+    #     "X data sources contributed" badge without leaking the engine
+    #     under BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
+    #     Raw rows live behind /intelligence/cmo-report/audit (superadmin).
+    try:
+        scan_id_for_audit = enrichment.get("scan_id") if isinstance(enrichment, dict) else None
+        if scan_id_for_audit:
+            chain = fetch_scan_provider_chain(scan_id_for_audit, sb=sb)
+            response["provider_chain_summary"] = {
+                # Counts only. No supplier names. No error text. Numeric.
+                "trace_count": chain.get("trace_count", 0),
+                "ok_count": chain.get("ok_count", 0),
+                "fail_count": chain.get("fail_count", 0),
+                "abandoned_count": chain.get("abandoned_count", 0),
+                "distinct_providers": len(chain.get("providers") or []),
+                # Internal-only — keeps the scan_id discoverable by audit
+                # endpoints that the frontend can call. Not a supplier name.
+                "scan_id": chain.get("scan_id"),
+            }
+    except Exception as audit_err:
+        logger.debug(f"[cmo-report] provider_chain_summary skipped: {audit_err}")
+
     # 8) Contract v2 / Step 3c (2026-04-23): scrub internal keys at any depth
     #    before returning. Strips ai_errors, sources.edge_tools, _http_status,
     #    correlation, raw_overview, source:"semrush" sub-tags, auth-path
@@ -1287,6 +1316,128 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
                 response[f"{_key}_message"] = sanitized_val.get("message")
 
     return scrub_response_for_external(response)
+
+
+# ═══════════════════════════════════════════════════════════════
+# P0 Marjo E2 / 2026-05-04 — provider-trace audit endpoints
+# ═══════════════════════════════════════════════════════════════
+#
+# Two endpoints:
+#
+#   GET /intelligence/cmo-report/audit
+#     Owner-readable. Returns the SANITISED chain summary for the latest
+#     scan tied to the user's most recent business_dna_enrichment row.
+#     Counts only — no supplier names, no error strings. Drives the
+#     in-app "diagnostics" tab a paying user can open to confirm "we
+#     called X providers for your scan, Y succeeded, Z failed".
+#
+#   GET /intelligence/cmo-report/audit/{scan_id}/raw
+#     Superadmin-only. Returns the FULL row set for the named scan,
+#     including provider slugs, edge_function names, error strings.
+#     Backstops the daily ops_daily_calibration_check + Andreas's
+#     post-incident forensic drill. Strictly behind get_super_admin
+#     to keep the engine details inside the trust boundary per
+#     BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
+
+@router.get("/intelligence/cmo-report/audit")
+async def get_cmo_report_audit_summary(current_user: dict = Depends(get_current_user)):
+    """Owner-readable per-scan audit summary — sanitised counts only."""
+    user_id = current_user["id"]
+    sb = init_supabase()
+
+    # Latest enrichment row → latest scan_id.
+    scan_id_for_audit = None
+    try:
+        enr_result = (
+            sb.table("business_dna_enrichment")
+              .select("enrichment, created_at, updated_at")
+              .eq("user_id", user_id)
+              .order("created_at", desc=True)
+              .limit(1)
+              .maybe_single()
+              .execute()
+        )
+        row = enr_result.data if enr_result and enr_result.data else None
+        if row and isinstance(row, dict):
+            enrichment = row.get("enrichment") or {}
+            if isinstance(enrichment, dict):
+                scan_id_for_audit = enrichment.get("scan_id")
+    except Exception as exc:
+        logger.debug(f"[cmo-report/audit] enrichment lookup skipped: {exc}")
+
+    if not scan_id_for_audit:
+        return scrub_response_for_external({
+            "scan_id": None,
+            "trace_count": 0,
+            "ok_count": 0,
+            "fail_count": 0,
+            "abandoned_count": 0,
+            "distinct_providers": 0,
+            "state": ExternalState.INSUFFICIENT_SIGNAL.value,
+            "state_message": "No scan diagnostics available yet.",
+        })
+
+    try:
+        chain = fetch_scan_provider_chain(scan_id_for_audit, sb=sb)
+    except Exception as exc:
+        logger.warning(f"[cmo-report/audit] fetch_scan_provider_chain failed: {exc}")
+        return scrub_response_for_external({
+            "scan_id": scan_id_for_audit,
+            "trace_count": 0,
+            "ok_count": 0,
+            "fail_count": 0,
+            "abandoned_count": 0,
+            "distinct_providers": 0,
+            "state": ExternalState.DEGRADED.value,
+            "state_message": "Scan diagnostics temporarily unavailable.",
+        })
+
+    # Sanitised payload — counts only. Supplier names DO NOT appear here.
+    return scrub_response_for_external({
+        "scan_id": chain.get("scan_id"),
+        "trace_count": chain.get("trace_count", 0),
+        "ok_count": chain.get("ok_count", 0),
+        "fail_count": chain.get("fail_count", 0),
+        "abandoned_count": chain.get("abandoned_count", 0),
+        "distinct_providers": len(chain.get("providers") or []),
+        "state": (
+            ExternalState.DATA_AVAILABLE.value
+            if chain.get("ok_count", 0) > 0 and chain.get("fail_count", 0) == 0
+            else ExternalState.DEGRADED.value
+            if chain.get("ok_count", 0) > 0
+            else ExternalState.INSUFFICIENT_SIGNAL.value
+        ),
+        "state_message": (
+            f"Scan reached {chain.get('ok_count', 0)} of "
+            f"{max(chain.get('trace_count', 0), 1)} configured intelligence sources."
+        ),
+    })
+
+
+@router.get("/intelligence/cmo-report/audit/{scan_id}/raw")
+async def get_cmo_report_audit_raw(scan_id: str, admin: dict = Depends(get_super_admin)):
+    """Superadmin-only — full per-call rows for a scan including supplier
+    slugs and error strings. Used by the daily ops calibration check and
+    forensic drill. Never reachable by a regular user."""
+    sb = init_supabase()
+    try:
+        chain = fetch_scan_provider_chain(scan_id, sb=sb)
+    except Exception as exc:
+        logger.error(f"[cmo-report/audit/raw] failed for scan_id={scan_id}: {exc}")
+        raise HTTPException(500, "audit lookup failed")
+
+    # Raw rows surface supplier names + error strings. Allowed here because
+    # this endpoint is gated on get_super_admin. NOT scrubbed.
+    return {
+        "scan_id": chain.get("scan_id"),
+        "trace_count": chain.get("trace_count", 0),
+        "ok_count": chain.get("ok_count", 0),
+        "fail_count": chain.get("fail_count", 0),
+        "abandoned_count": chain.get("abandoned_count", 0),
+        "unsanitised_count": chain.get("unsanitised_count", 0),
+        "providers": chain.get("providers") or [],
+        "rows": chain.get("rows") or [],
+    }
 
 
 # ═══════════════════════════════════════════════════════════════

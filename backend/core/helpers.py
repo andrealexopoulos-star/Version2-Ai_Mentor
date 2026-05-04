@@ -76,21 +76,85 @@ def compute_missing_profile_fields(profile_patch: Dict[str, Any]) -> List[str]:
 # ==================== SEARCH ====================
 
 async def serper_search(query: str, gl: str = "au", hl: str = "en", num: int = 5) -> Dict[str, Any]:
-    """Return {results: [...], error: str|None}. Uses Serper.dev Google Web Search."""
+    """Return {results: [...], error: str|None}. Uses Serper.dev Google Web Search.
+
+    P0 Marjo E2 / 2026-05-04: writes a per-call row to public.enrichment_traces
+    when called inside an active scan (scan_id ContextVar set in
+    routes.calibration.website_enrichment). Telemetry is fire-and-forget —
+    a tracer failure never affects the search result. Cites
+    BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 + zero-401.
+    """
+    # Resolve active scan context. None outside the scan path → no trace.
+    try:
+        from core.enrichment_trace import (
+            get_active_scan_id, get_active_user_id, arecord_provider_trace,
+        )
+        _scan_id = get_active_scan_id()
+        _user_id = get_active_user_id()
+    except Exception:
+        _scan_id = None
+        _user_id = None
+
+    request_summary = {
+        "provider_url": "google.serper.dev/search",
+        "query_chars": len(query or ""),
+        "gl": gl, "hl": hl, "num": num,
+    }
+    import time as _t
+    _t0 = _t.perf_counter()
+
     if not SERPER_API_KEY:
-        return {"results": [], "error": "SERPER_API_KEY not configured"}
+        result = {"results": [], "error": "SERPER_API_KEY not configured"}
+        if _scan_id:
+            await arecord_provider_trace(
+                scan_id=_scan_id, provider="serper", user_id=_user_id,
+                http_status=503,
+                latency_ms=int((_t.perf_counter() - _t0) * 1000),
+                request_summary=request_summary,
+                response_summary={"ok": False, "code": "PROVIDER_KEY_MISSING"},
+                error="PROVIDER_KEY_MISSING : SERPER_API_KEY not configured",
+                sanitiser_applied=True,
+            )
+        return result
     url = "https://google.serper.dev/search"
     payload = {"q": query, "gl": gl, "hl": hl, "num": num}
     headers = {"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"}
-    async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-        resp = await client.post(url, json=payload, headers=headers)
-        data = {}
-        try:
-            data = resp.json()
-        except Exception:
+    http_status = None
+    error_text = None
+    try:
+        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+            resp = await client.post(url, json=payload, headers=headers)
+            http_status = resp.status_code
             data = {}
-        if resp.status_code != 200:
-            return {"results": [], "error": data.get("message") or data.get("error") or f"Serper HTTP {resp.status_code}"}
+            try:
+                data = resp.json()
+            except Exception:
+                data = {}
+            if resp.status_code != 200:
+                error_text = data.get("message") or data.get("error") or f"Serper HTTP {resp.status_code}"
+                if _scan_id:
+                    await arecord_provider_trace(
+                        scan_id=_scan_id, provider="serper", user_id=_user_id,
+                        http_status=http_status,
+                        latency_ms=int((_t.perf_counter() - _t0) * 1000),
+                        request_summary=request_summary,
+                        response_summary={"ok": False, "code": "PROVIDER_HTTP_ERROR"},
+                        error=f"PROVIDER_HTTP_{http_status} : {str(error_text)[:200]}",
+                        sanitiser_applied=True,
+                    )
+                return {"results": [], "error": error_text}
+    except Exception as exc:
+        if _scan_id:
+            await arecord_provider_trace(
+                scan_id=_scan_id, provider="serper", user_id=_user_id,
+                http_status=502,
+                latency_ms=int((_t.perf_counter() - _t0) * 1000),
+                request_summary=request_summary,
+                response_summary={"ok": False, "code": "PROVIDER_NETWORK_ERROR"},
+                error=f"PROVIDER_NETWORK_ERROR : {str(exc)[:200]}",
+                sanitiser_applied=True,
+            )
+        return {"results": [], "error": str(exc)[:200]}
     organic = data.get("organic") or []
     results = []
     for i, r in enumerate(organic[:num], start=1):
@@ -100,6 +164,16 @@ async def serper_search(query: str, gl: str = "au", hl: str = "en", num: int = 5
             "snippet": r.get("snippet"),
             "position": r.get("position") or i,
         })
+    if _scan_id:
+        await arecord_provider_trace(
+            scan_id=_scan_id, provider="serper", user_id=_user_id,
+            http_status=200,
+            latency_ms=int((_t.perf_counter() - _t0) * 1000),
+            request_summary=request_summary,
+            response_summary={"ok": True, "results_count": len(results)},
+            evidence_payload={"organic_count": len(organic), "results_count": len(results)},
+            sanitiser_applied=True,
+        )
     return {"results": results, "error": None}
 
 

@@ -26,6 +26,18 @@ from scan_cache import (
 from core.llm_router import llm_trinity_chat
 from core.helpers import serper_search, scrape_url_text
 from core.response_sanitizer import sanitize_enrichment_for_external
+from core.enrichment_trace import (
+    new_scan_id,
+    set_active_scan,
+    clear_active_scan,
+    get_active_scan_id,
+    get_active_user_id,
+    abegin_trace,
+    acomplete_trace,
+    arecord_provider_trace,
+    EDGE_FUNCTION_TO_PROVIDER,
+)
+import time as _time
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, logger, cognitive_core, check_rate_limit,
@@ -287,22 +299,107 @@ class EdgeCallMode(Enum):
     USER_PROXIED = "user_proxied"
 
 
+def _summarise_edge_request(function_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a sanitised request_summary for enrichment_traces.
+
+    Captures shape (which keys, sizes), NOT raw values. Strips obvious
+    PII / auth tokens so the audit row is safe to store.
+    P0 Marjo E2 / 2026-05-04.
+    """
+    safe = {"edge_function": function_name}
+    if not isinstance(payload, dict):
+        return safe
+    safe["payload_keys"] = sorted([k for k in payload.keys() if k != "auth"])
+    # Capture shape clues (not the raw user_id) for audit drilling.
+    if payload.get("user_id"):
+        safe["has_user_id"] = True
+    if payload.get("tenant_id"):
+        safe["has_tenant_id"] = True
+    if payload.get("website") or payload.get("website_url") or payload.get("domain"):
+        safe["has_target_domain"] = True
+    return safe
+
+
+def _summarise_edge_response(function_name: str, http_status: int, normalised: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a sanitised response_summary for enrichment_traces.
+
+    Counts + flags only — never raw evidence bodies. The CMO audit pane
+    surfaces these counts to prove evidence shape per provider.
+    P0 Marjo E2 / 2026-05-04.
+    """
+    summary: Dict[str, Any] = {
+        "edge_function": function_name,
+        "http_status": http_status,
+        "ok": bool(normalised.get("ok")) if isinstance(normalised, dict) else False,
+    }
+    if not isinstance(normalised, dict):
+        return summary
+    if normalised.get("code"):
+        summary["code"] = str(normalised.get("code"))[:60]
+    # Common evidence-bearing keys — record presence + size, never content.
+    for key in ("results", "competitors", "data", "items", "candidates",
+                "evidence", "swot", "reviews", "themes"):
+        val = normalised.get(key)
+        if isinstance(val, list):
+            summary[f"{key}_count"] = len(val)
+        elif isinstance(val, dict):
+            summary[f"{key}_keys"] = len(val)
+    # Total payload size in chars (cap so we don't blow the row).
+    try:
+        summary["payload_chars"] = min(len(json.dumps(normalised, default=str)), 100_000)
+    except Exception:
+        pass
+    return summary
+
+
 async def _call_edge_function(
     function_name: str,
     payload: Dict[str, Any],
     *,
     mode: EdgeCallMode = EdgeCallMode.USER_PROXIED,
     auth_header: str = "",
+    scan_id: Optional[str] = None,
 ) -> Dict[str, Any]:
+    """Call a Supabase edge function and persist a per-call enrichment_traces row.
+
+    P0 Marjo E2 / 2026-05-04 — every attempt now writes a trace row to
+    public.enrichment_traces so the CMO Report and ops_daily_calibration_check
+    can prove which supplier returned what evidence, by scan_id. Telemetry
+    is fire-and-forget — never breaks the calling path. Cites
+    BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 and zero-401.
+
+    `scan_id` may be passed explicitly OR resolved from the active ContextVar
+    (set in website_enrichment for the URL-scan path).
+    """
     supabase_url = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
     service_role = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or "").strip()
+    # Resolve scan_id + user_id for trace persistence. Both are optional — if
+    # unset, helpers no-op (telemetry never blocks the call path).
+    effective_scan_id = scan_id or get_active_scan_id()
+    effective_user_id = get_active_user_id() or (payload.get("user_id") if isinstance(payload, dict) else None)
+    provider_slug = EDGE_FUNCTION_TO_PROVIDER.get(function_name, "supabase")
+
     if not supabase_url or not service_role:
-        return {
+        result = {
             "ok": False,
             "error": "supabase_not_configured",
             "code": "EDGE_PROXY_UNAVAILABLE",
             "_http_status": 503,
         }
+        if effective_scan_id:
+            await arecord_provider_trace(
+                scan_id=effective_scan_id,
+                provider=provider_slug,
+                edge_function=function_name,
+                user_id=effective_user_id,
+                http_status=503,
+                latency_ms=0,
+                request_summary=_summarise_edge_request(function_name, payload or {}),
+                response_summary=_summarise_edge_response(function_name, 503, result),
+                error="EDGE_PROXY_UNAVAILABLE : supabase env not configured",
+                sanitiser_applied=True,
+            )
+        return result
     endpoint = f"{supabase_url}/functions/v1/{function_name}"
 
     # Incident H contract enforcement — explicit auth mode chooses outbound auth.
@@ -322,48 +419,151 @@ async def _call_edge_function(
         "Content-Type": "application/json",
     }
     client = _get_edge_client()
+    request_summary = _summarise_edge_request(function_name, payload or {})
+
     for attempt in range(2):
+        # Per-attempt trace bracket. begin_trace returns a row id we then
+        # update post-call so the audit trail captures both "we tried" and
+        # "here's what came back". If the process crashes mid-call the
+        # started-row stays visible (http_status NULL → "abandoned" in the
+        # CMO audit pane, surfaced after 5min via ops_daily_calibration_check).
+        trace_id = None
+        if effective_scan_id:
+            trace_id = await abegin_trace(
+                scan_id=effective_scan_id,
+                provider=provider_slug,
+                edge_function=function_name,
+                user_id=effective_user_id,
+                attempt=attempt + 1,
+                request_summary=request_summary,
+                metadata={"mode": mode.value if hasattr(mode, "value") else str(mode)},
+            )
+        t_start = _time.perf_counter()
+
         try:
             res = await client.post(endpoint, json=payload or {}, headers=headers)
+            elapsed_ms = int((_time.perf_counter() - t_start) * 1000)
+
             if res.status_code >= 500 and attempt == 0:
+                if trace_id:
+                    await acomplete_trace(
+                        trace_id,
+                        http_status=res.status_code,
+                        latency_ms=elapsed_ms,
+                        response_summary={"http_status": res.status_code, "retry_scheduled": True},
+                        error=f"EDGE_FUNCTION_HTTP_{res.status_code} : retrying",
+                        sanitiser_applied=True,
+                    )
                 await asyncio.sleep(2)
                 continue
+
             # Some infra/warmup edge functions intentionally return 204 with
             # no JSON body. Treat this as a healthy success envelope.
             if res.status_code == 204:
-                return _normalize_edge_result(
+                normalised = _normalize_edge_result(
                     function_name,
                     res.status_code,
                     {"ok": True, "code": "NO_CONTENT", "status": "ok"},
                 )
+                if trace_id:
+                    await acomplete_trace(
+                        trace_id,
+                        http_status=204,
+                        latency_ms=elapsed_ms,
+                        response_summary=_summarise_edge_response(function_name, 204, normalised),
+                        sanitiser_applied=True,
+                    )
+                return normalised
+
             try:
                 data = res.json()
             except Exception:
                 data = {"raw": (res.text or "")[:1200]}
-            return _normalize_edge_result(function_name, res.status_code, data)
+            normalised = _normalize_edge_result(function_name, res.status_code, data)
+            if trace_id:
+                await acomplete_trace(
+                    trace_id,
+                    http_status=res.status_code,
+                    latency_ms=elapsed_ms,
+                    response_summary=_summarise_edge_response(function_name, res.status_code, normalised),
+                    error=(None if normalised.get("ok") else
+                           f"{normalised.get('code') or 'EDGE_FUNCTION_FAILED'} : "
+                           f"{(normalised.get('error') or '')[:240]}"),
+                    evidence_payload=normalised,
+                    sanitiser_applied=True,
+                )
+            return normalised
+
         except httpx.TimeoutException:
+            elapsed_ms = int((_time.perf_counter() - t_start) * 1000)
             if attempt == 0:
+                if trace_id:
+                    await acomplete_trace(
+                        trace_id,
+                        http_status=None,
+                        latency_ms=elapsed_ms,
+                        response_summary={"timeout": True, "retry_scheduled": True},
+                        error="TIMEOUT : retrying",
+                        sanitiser_applied=True,
+                    )
                 await asyncio.sleep(2)
                 continue
-            return {
+            result = {
                 "ok": False,
                 "error": f"timeout after retry calling {function_name}",
                 "code": "EDGE_FUNCTION_TIMEOUT",
                 "_http_status": 504,
             }
+            if trace_id:
+                await acomplete_trace(
+                    trace_id,
+                    http_status=504,
+                    latency_ms=elapsed_ms,
+                    response_summary=_summarise_edge_response(function_name, 504, result),
+                    error="EDGE_FUNCTION_TIMEOUT : timeout after retry",
+                    sanitiser_applied=True,
+                )
+            return result
         except Exception as e:
-            return {
+            elapsed_ms = int((_time.perf_counter() - t_start) * 1000)
+            result = {
                 "ok": False,
                 "error": str(e)[:220],
                 "code": "EDGE_FUNCTION_UNAVAILABLE",
                 "_http_status": 502,
             }
-    return {
+            if trace_id:
+                await acomplete_trace(
+                    trace_id,
+                    http_status=502,
+                    latency_ms=elapsed_ms,
+                    response_summary=_summarise_edge_response(function_name, 502, result),
+                    error=f"EDGE_FUNCTION_UNAVAILABLE : {str(e)[:240]}",
+                    sanitiser_applied=True,
+                )
+            return result
+
+    result = {
         "ok": False,
         "error": f"exhausted retries for {function_name}",
         "code": "EDGE_FUNCTION_UNAVAILABLE",
         "_http_status": 502,
     }
+    if effective_scan_id:
+        await arecord_provider_trace(
+            scan_id=effective_scan_id,
+            provider=provider_slug,
+            edge_function=function_name,
+            user_id=effective_user_id,
+            http_status=502,
+            latency_ms=0,
+            request_summary=request_summary,
+            response_summary=_summarise_edge_response(function_name, 502, result),
+            error="EDGE_FUNCTION_UNAVAILABLE : exhausted retries",
+            sanitiser_applied=True,
+            attempt=3,
+        )
+    return result
 
 
 def _extract_meta_content(html: str, key: str) -> str:
@@ -2087,11 +2287,20 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
     # user JWT — the backend's get_current_user_from_request above is the single trust gate.
 
     if payload.action == "scan":
+        # P0 Marjo E2 / 2026-05-04: mint a per-scan uuid and bind it to the
+        # current async task so every downstream provider/edge call landing
+        # inside this scan persists a row in public.enrichment_traces tied
+        # to the same scan_id. The ContextVar is per-task, so concurrent
+        # scans for different users do not cross-pollute. Cleared in finally.
+        # Cites BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 + zero-401.
+        scan_id = new_scan_id()
+        _scan_ctx_tokens = set_active_scan(scan_id, user_id)
         try:
             scan_domain = normalize_domain(url)
             if payload.bust_cache:
                 await invalidate_domain_scan(scan_domain)
                 logger.info("[enrichment/website] cache BUSTED for %s (user requested)", scan_domain)
+            logger.info("[enrichment/website] scan_id=%s user=%s domain=%s", scan_id, user_id, scan_domain)
             cached = await get_domain_scan(scan_domain)
             if cached:
                 logger.info("[enrichment/website] cache HIT for %s", scan_domain)
@@ -3140,6 +3349,14 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             # still scrubbed before reaching the DB or the response body.
             enrichment = _sanitize_enrichment_payload(enrichment)
 
+            # P0 Marjo E2 / 2026-05-04: stamp scan_id into the enrichment
+            # JSONB so the CMO Report endpoint can look up the per-call
+            # provider chain in public.enrichment_traces. Live alongside
+            # the existing top-level fields — non-breaking for current
+            # response_sanitizer pass-through. The sanitiser strips raw
+            # supplier names; the scan_id itself is a uuid so safe to ship.
+            enrichment["scan_id"] = get_active_scan_id() or enrichment.get("scan_id")
+
             # ═══ PERSIST ENRICHMENT TO business_dna_enrichment ═══
             # Latest-scan-wins upsert keyed on (user_id, business_profile_id). Allows
             # Market & Position / BoardRoom / CMO Report to read Deep Scan output
@@ -3263,6 +3480,11 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "enrichment": _sanitized["enrichment"],
                 "message": "Deep scan partially unavailable; baseline website extraction returned.",
             }
+        finally:
+            # P0 Marjo E2 / 2026-05-04: release the per-task scan ContextVar
+            # so a subsequent unrelated request on the same async loop slot
+            # does not pick up a stale scan_id when calling provider helpers.
+            clear_active_scan(_scan_ctx_tokens)
 
     elif payload.action == "commit":
         try:
