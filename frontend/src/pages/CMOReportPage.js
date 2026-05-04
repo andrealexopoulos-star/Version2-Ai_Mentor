@@ -286,6 +286,33 @@ function CMOReportPageInner() {
   // indicates the report is not fully built yet — nicer than 8 empty panels.
   const _topState = String(data.state || '').toUpperCase();
   const isCalibrating = ['PROCESSING', 'DATA_UNAVAILABLE', 'DEGRADED', 'INSUFFICIENT_SIGNAL'].includes(_topState);
+  const reportState = String(data.report_state || '').toUpperCase();
+  const truthState = {
+    COMPLETE_SOURCE_BACKED: {
+      label: 'Complete Source-Backed',
+      toneBg: 'var(--positive-wash)',
+      toneColor: 'var(--positive)',
+      message: data.state_message || 'All required sections are source-backed.',
+    },
+    PARTIAL_DEGRADED: {
+      label: 'Partial Intelligence Profile',
+      toneBg: 'var(--warning-wash)',
+      toneColor: 'var(--warning)',
+      message: data.state_message || 'Some sections are degraded due to missing evidence.',
+    },
+    INSUFFICIENT_EVIDENCE: {
+      label: 'Insufficient Evidence',
+      toneBg: 'var(--warning-wash)',
+      toneColor: 'var(--warning)',
+      message: data.state_message || 'Not enough verified evidence is available for a complete report.',
+    },
+    FAILED: {
+      label: 'Report Failed Quality Gate',
+      toneBg: 'var(--danger-wash)',
+      toneColor: 'var(--danger)',
+      message: data.state_message || 'The report failed quality checks due to placeholder or invalid sections.',
+    },
+  }[reportState];
 
   // Gauge math: circumference of r=70 circle = 2*PI*70 ~= 440
   const gaugeCirc = 440;
@@ -341,6 +368,21 @@ function CMOReportPageInner() {
         {/* ═══════════════════════════════════════════════════
             1. REPORT HEADER
             ═══════════════════════════════════════════════════ */}
+        {(isCalibrating || truthState) && (
+          <div style={{
+            marginBottom: 16,
+            padding: '12px 16px',
+            borderRadius: 'var(--r-lg)',
+            border: `1px solid ${V.border}`,
+            background: truthState?.toneBg || V.sunken,
+            color: truthState?.toneColor || V.inkSecondary,
+            fontSize: 13,
+            lineHeight: 1.5,
+          }}>
+            <strong>{truthState?.label || 'Report still calibrating'}:</strong>{' '}
+            {truthState?.message || data.state_message || 'We are still gathering verified evidence for this report.'}
+          </div>
+        )}
         <header style={{
           background: V.surface, border: `1px solid ${V.border}`, borderRadius: 'var(--r-xl)',
           padding: '32px 32px 24px', marginBottom: 24, position: 'relative', overflow: 'hidden',
@@ -532,10 +574,10 @@ function CMOReportPageInner() {
         <div style={{ marginBottom: 32 }}>
           <SectionHead icon={<Target size={18} />} iconBg={V.positiveWash} iconColor={V.positive} title="SWOT Analysis" />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-            <SwotCard type="strength"    label="Strengths"     icon={<CheckCircle2 size={16} />} items={swot.strengths.length  ? swot.strengths  : ['No data available yet']} />
-            <SwotCard type="weakness"    label="Weaknesses"    icon={<AlertTriangle size={16} />} items={swot.weaknesses.length ? swot.weaknesses : ['No data available yet']} />
-            <SwotCard type="opportunity" label="Opportunities" icon={<PlusCircle size={16} />}    items={swot.opportunities.length ? swot.opportunities : ['No data available yet']} />
-            <SwotCard type="threat"      label="Threats"       icon={<AlertTriangle size={16} />} items={swot.threats.length    ? swot.threats    : ['No data available yet']} />
+            <SwotCard type="strength"    label="Strengths"     icon={<CheckCircle2 size={16} />} items={swot.strengths.length  ? swot.strengths  : ['Insufficient evidence for strengths.']} />
+            <SwotCard type="weakness"    label="Weaknesses"    icon={<AlertTriangle size={16} />} items={swot.weaknesses.length ? swot.weaknesses : ['Insufficient evidence for weaknesses.']} />
+            <SwotCard type="opportunity" label="Opportunities" icon={<PlusCircle size={16} />}    items={swot.opportunities.length ? swot.opportunities : ['Insufficient evidence for opportunities.']} />
+            <SwotCard type="threat"      label="Threats"       icon={<AlertTriangle size={16} />} items={swot.threats.length    ? swot.threats    : ['Insufficient evidence for threats.']} />
           </div>
         </div>
 
@@ -654,7 +696,7 @@ function CMOReportPageInner() {
                 </div>
                 {/* Items */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-                  {(col.items.length ? col.items : [{ text: 'No recommendations yet', priority: 'medium' }]).map((item, i) => {
+                  {(col.items.length ? col.items : [{ text: 'Insufficient evidence for recommendations in this horizon.', priority: 'medium' }]).map((item, i) => {
                     const text = typeof item === 'string' ? item : item.text;
                     const priority = typeof item === 'string' ? 'medium' : (item.priority || 'medium');
                     return (

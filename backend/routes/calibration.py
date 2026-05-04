@@ -37,6 +37,16 @@ from supabase_intelligence_helpers import get_business_profile_supabase
 from regeneration_governance import request_regeneration, record_regeneration_response
 from fact_resolution import resolve_facts, build_known_facts_prompt
 from domain_labels import domain_business_label
+from cmo_truth import (
+    REPORT_STATE_COMPLETE,
+    REPORT_STATE_FAILED,
+    REPORT_STATE_INSUFFICIENT,
+    REPORT_STATE_PARTIAL,
+    clean_string_list,
+    classify_section,
+    derive_report_state,
+    is_placeholder_text,
+)
 
 router = APIRouter()
 
@@ -2681,12 +2691,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         f"{enrichment.get('unique_value_proposition')}."
                     )
 
-            if not enrichment.get("executive_summary"):
-                enrichment["executive_summary"] = (
-                    f"{enrichment.get('business_name') or 'Business'} appears positioned in {enrichment.get('industry') or 'its sector'} with "
-                    f"focus on {enrichment.get('main_products_services') or 'core services'}. "
-                    f"Top competitor pressure: {enrichment.get('competitor_analysis') or 'to be validated through market signals'}."
-                )
+            if isinstance(enrichment.get("executive_summary"), str) and is_placeholder_text(enrichment.get("executive_summary")):
+                enrichment["executive_summary"] = ""
 
             enrichment["analysis_gaps"] = _build_intelligence_gaps(
                 enrichment,
@@ -2744,18 +2750,14 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "status": "strong" if seo_html_hygiene.get("score", 0) >= 75 else "moderate" if seo_html_hygiene.get("score", 0) >= 45 else "weak",
                     "summary": "Website condition assessed from on-page hygiene, trust signals, and social footprint.",
                 }
-            if not isinstance(enrichment.get("swot"), dict) or not enrichment.get("swot"):
-                enrichment["swot"] = swot
-            if not isinstance(enrichment.get("competitor_swot"), list) or not enrichment.get("competitor_swot"):
-                enrichment["competitor_swot"] = competitor_swot
-            if not isinstance(enrichment.get("cmo_priority_actions"), list) or not enrichment.get("cmo_priority_actions"):
-                enrichment["cmo_priority_actions"] = cmo_priority_actions
-            if not enrichment.get("cmo_executive_brief"):
-                enrichment["cmo_executive_brief"] = (
-                    f"{enrichment.get('business_name') or 'Business'} has a {enrichment.get('website_health', {}).get('status', 'mixed')} digital foundation. "
-                    f"Primary opportunity is to tighten positioning for {enrichment.get('target_market') or 'its core market'}, "
-                    f"improve discoverability via SEO, and operationalize proof-led acquisition across owned and paid channels."
-                )
+            if not isinstance(enrichment.get("swot"), dict):
+                enrichment["swot"] = {}
+            if not isinstance(enrichment.get("competitor_swot"), list):
+                enrichment["competitor_swot"] = []
+            if not isinstance(enrichment.get("cmo_priority_actions"), list):
+                enrichment["cmo_priority_actions"] = []
+            if isinstance(enrichment.get("cmo_executive_brief"), str) and is_placeholder_text(enrichment.get("cmo_executive_brief")):
+                enrichment["cmo_executive_brief"] = ""
 
             if isinstance(semrush_intel, dict) and semrush_intel.get("ok"):
                 # Contract v2 / Step 3d: seo_analysis is SEMrush-derived only.
@@ -2865,18 +2867,22 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             )
 
             enrichment["recommended_keywords"] = recommended_keywords
-            enrichment["aeo_strategy"] = [
-                "Publish service-page FAQs with concise, answer-first structure and FAQ schema markup.",
-                "Create one evidence-backed answer page per high-intent keyword cluster to improve AI answer engine coverage.",
-                "Use structured headings (problem -> proof -> outcome -> CTA) to improve retrieval and snippet extraction quality.",
-            ]
+            if top_organic_keywords:
+                enrichment["aeo_strategy"] = [
+                    f"Create answer-led content for keyword cluster '{str(top_organic_keywords[0].get('keyword') or '').strip()}' with supporting FAQ schema."
+                ]
+            else:
+                enrichment["aeo_strategy"] = []
             enrichment["seo_rank_summary"] = seo_rank_summary
             enrichment["paid_rank_summary"] = paid_rank_summary
-            enrichment["industry_action_items"] = _build_industry_action_items(
-                str(enrichment.get("industry") or ""),
-                seo_current if isinstance(seo_current, dict) else {},
-                paid_current if isinstance(paid_current, dict) else {},
-            )
+            if seo_current.get("organic_keywords") or paid_current.get("adwords_keywords") is not None:
+                enrichment["industry_action_items"] = _build_industry_action_items(
+                    str(enrichment.get("industry") or ""),
+                    seo_current if isinstance(seo_current, dict) else {},
+                    paid_current if isinstance(paid_current, dict) else {},
+                )
+            else:
+                enrichment["industry_action_items"] = []
             enrichment["competitor_leaders"] = _build_competitor_leaders(enrichment, semrush_intel if isinstance(semrush_intel, dict) else {})
             enrichment["customer_review_highlights"] = _build_customer_review_highlights(
                 enrichment.get("customer_review_intelligence") if isinstance(enrichment.get("customer_review_intelligence"), dict) else {}
@@ -2884,13 +2890,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             enrichment["staff_review_highlights"] = _build_staff_review_highlights(
                 enrichment.get("staff_review_intelligence") if isinstance(enrichment.get("staff_review_intelligence"), dict) else {}
             )
-            if not enrichment.get("forensic_memo"):
-                enrichment["forensic_memo"] = (
-                    f"Forensic Marketing Memo: {enrichment.get('business_name') or 'This business'} appears to operate in "
-                    f"{enrichment.get('industry') or 'an undefined category'} and offers {enrichment.get('main_products_services') or 'services not clearly stated'}. "
-                    f"Current SEO position: {seo_rank_summary} Current paid position: {paid_rank_summary} "
-                    f"Priority should focus on keyword-cluster authority, evidence-led conversion assets, and offer-page clarity."
-                )
+            if isinstance(enrichment.get("forensic_memo"), str) and is_placeholder_text(enrichment.get("forensic_memo")):
+                enrichment["forensic_memo"] = ""
 
             try:
                 enrichment.setdefault("sources", {})
@@ -2928,6 +2929,50 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 pass
 
             enrichment["ai_errors"] = ai_errors
+
+            swot_payload = enrichment.get("swot") if isinstance(enrichment.get("swot"), dict) else {}
+            swot_clean = {
+                "strengths": clean_string_list(swot_payload.get("strengths") or []),
+                "weaknesses": clean_string_list(swot_payload.get("weaknesses") or []),
+                "opportunities": clean_string_list(swot_payload.get("opportunities") or []),
+                "threats": clean_string_list(swot_payload.get("threats") or []),
+            }
+            enrichment["swot"] = swot_clean
+            enrichment["cmo_priority_actions"] = clean_string_list(enrichment.get("cmo_priority_actions") or [])
+            enrichment["industry_action_items"] = clean_string_list(enrichment.get("industry_action_items") or [])
+
+            section_states = [
+                classify_section(
+                    has_evidence=bool(enrichment.get("cmo_executive_brief") or enrichment.get("executive_summary")),
+                    has_placeholder=bool(isinstance(enrichment.get("cmo_executive_brief"), str) and is_placeholder_text(enrichment.get("cmo_executive_brief"))),
+                ),
+                classify_section(
+                    has_evidence=len(enrichment.get("competitors") or []) > 0,
+                    degraded=bool(enrichment.get("competitor_analysis")),
+                ),
+                classify_section(
+                    has_evidence=all(len(swot_clean.get(k) or []) > 0 for k in ("strengths", "weaknesses", "opportunities", "threats")),
+                    degraded=any(len(swot_clean.get(k) or []) > 0 for k in ("strengths", "weaknesses", "opportunities", "threats")),
+                ),
+                classify_section(
+                    has_evidence=bool((enrichment.get("customer_review_intelligence") or {}).get("has_data")),
+                    degraded=bool(enrichment.get("review_aggregation")),
+                ),
+                classify_section(
+                    has_evidence=len(enrichment.get("cmo_priority_actions") or []) > 0 and len(enrichment.get("industry_action_items") or []) > 0,
+                    degraded=bool(enrichment.get("cmo_priority_actions") or enrichment.get("industry_action_items")),
+                ),
+            ]
+            report_state = derive_report_state(section_states)
+            enrichment["report_state"] = report_state
+            if report_state == REPORT_STATE_COMPLETE:
+                enrichment["report_state_message"] = "Sections are source-backed."
+            elif report_state == REPORT_STATE_PARTIAL:
+                enrichment["report_state_message"] = "Partial intelligence profile. Some sections are degraded due to missing evidence."
+            elif report_state == REPORT_STATE_INSUFFICIENT:
+                enrichment["report_state_message"] = "Insufficient evidence for a complete CMO report."
+            else:
+                enrichment["report_state_message"] = "Report failed quality gates because required sections lacked evidence."
 
             try:
                 profile = await get_business_profile_supabase(get_sb(), user_id)

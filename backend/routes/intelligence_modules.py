@@ -20,6 +20,22 @@ from core.response_sanitizer import (
     sanitize_enrichment_for_external,
     ExternalState,
 )
+from cmo_truth import (
+    REPORT_STATE_COMPLETE,
+    REPORT_STATE_FAILED,
+    REPORT_STATE_INSUFFICIENT,
+    REPORT_STATE_PARTIAL,
+    SECTION_DEGRADED,
+    SECTION_ERROR,
+    SECTION_INSUFFICIENT,
+    SECTION_PLACEHOLDER,
+    SECTION_SOURCE_BACKED,
+    clean_string_list,
+    classify_section,
+    derive_report_state,
+    estimate_confidence,
+    is_placeholder_text,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -857,6 +873,26 @@ def _shape_roadmap_from_enrichment(enr: Dict[str, Any]) -> Dict[str, List[Any]]:
     return {"quick_wins": quick_wins, "priorities": priorities, "strategic": strategic}
 
 
+def _count_real_data_points(report_payload: Dict[str, Any]) -> int:
+    points = 0
+    points += len(report_payload.get("competitors") or [])
+    points += sum(
+        len((report_payload.get("swot") or {}).get(bucket) or [])
+        for bucket in ("strengths", "weaknesses", "opportunities", "threats")
+    )
+    points += len((report_payload.get("roadmap") or {}).get("quick_wins") or [])
+    points += len((report_payload.get("roadmap") or {}).get("priorities") or [])
+    points += len((report_payload.get("roadmap") or {}).get("strategic") or [])
+    points += len((report_payload.get("review_themes") or {}).get("positive") or [])
+    points += len((report_payload.get("review_themes") or {}).get("negative") or [])
+    points += len(report_payload.get("review_excerpts") or [])
+    if (report_payload.get("reviews") or {}).get("count", 0) > 0:
+        points += 1
+    if report_payload.get("executive_summary"):
+        points += 1
+    return points
+
+
 def _shape_reviews_from_enrichment(enr: Dict[str, Any]) -> Dict[str, Any]:
     """Extract the aggregate rating + sentiment split the frontend renders."""
     agg = enr.get("review_aggregation") if isinstance(enr.get("review_aggregation"), dict) else {}
@@ -1034,6 +1070,8 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         or enrichment.get("forensic_memo")
         or None
     )
+    if isinstance(exec_summary, str) and is_placeholder_text(exec_summary):
+        exec_summary = None
 
     generated_at = enrichment_created_at or datetime.now(timezone.utc).isoformat()
     try:
@@ -1041,15 +1079,28 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     except Exception:
         generated_dt = datetime.now(timezone.utc)
 
-    # Confidence: prefer enrichment.confidence (can be string or numeric).
+    # Confidence is evidence-derived only. String tiers ("high/medium/low")
+    # are not treated as numeric confidence in customer-facing output.
     conf_raw = enrichment.get("confidence")
     if isinstance(conf_raw, (int, float)):
         confidence = _coerce_score(conf_raw)
-    elif isinstance(conf_raw, str):
-        conf_map = {"high": 85, "medium": 60, "low": 35}
-        confidence = conf_map.get(conf_raw.strip().lower(), 0)
     else:
         confidence = 0
+
+    raw_swot = enrichment.get("swot") if isinstance(enrichment.get("swot"), dict) else {}
+    swot = {
+        "strengths": clean_string_list(raw_swot.get("strengths") or []),
+        "weaknesses": clean_string_list(raw_swot.get("weaknesses") or []),
+        "opportunities": clean_string_list(raw_swot.get("opportunities") or []),
+        "threats": clean_string_list(raw_swot.get("threats") or []),
+    }
+
+    roadmap = _shape_roadmap_from_enrichment(enrichment)
+    roadmap = {
+        "quick_wins": [item for item in roadmap.get("quick_wins") or [] if not is_placeholder_text(str(item.get("text") or ""))],
+        "priorities": [item for item in roadmap.get("priorities") or [] if not is_placeholder_text(str(item.get("text") or ""))],
+        "strategic": [item for item in roadmap.get("strategic") or [] if not is_placeholder_text(str(item.get("text") or ""))],
+    }
 
     response: Dict[str, Any] = {
         "company_name": company_from_enrichment,
@@ -1059,9 +1110,7 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         "market_position": _derive_market_position_from_enrichment(enrichment),
         "competitors": _shape_competitors_from_enrichment(enrichment),
         "position_dots": [],  # calibration does not compute x/y yet
-        "swot": enrichment.get("swot") if isinstance(enrichment.get("swot"), dict) else {
-            "strengths": [], "weaknesses": [], "opportunities": [], "threats": []
-        },
+        "swot": swot,
         "reviews": _shape_reviews_from_enrichment(enrichment),
         "review_themes": {
             "positive": (enrichment.get("customer_review_highlights", {}).get("positive_themes") or [])
@@ -1070,7 +1119,7 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
                 if isinstance(enrichment.get("customer_review_highlights"), dict) else [],
         },
         "review_excerpts": enrichment.get("review_excerpts") or [],
-        "roadmap": _shape_roadmap_from_enrichment(enrichment),
+        "roadmap": roadmap,
         "geographic": {
             "established": enrichment.get("established_regions") or [],
             "growth": enrichment.get("growth_regions") or [],
@@ -1086,7 +1135,7 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         # Header meta fields.
         "engine": "BIQc Intelligence Engine",
         "scan_source": enrichment.get("website_url") or "Deep calibration scan",
-        "data_points": enrichment.get("data_points") or f"{sum(1 for v in enrichment.values() if v)} signals",
+        "data_points": "--",
         "state": "ready",
     }
 
@@ -1118,14 +1167,76 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     #    sentinels or meta-gap bullets, strip them before returning.
     response = _apply_render_time_filters(response)
 
-    # 7) Contract v2 / Step 3c (2026-04-23): scrub internal keys at any depth
+    # 7) Evidence inventory + report state (zero-fake-data gate).
+    competitor_status = classify_section(
+        has_evidence=len(response.get("competitors") or []) > 0,
+        degraded=bool((enrichment.get("competitors") or [])),
+    )
+    swot_status = classify_section(
+        has_evidence=all(len((response.get("swot") or {}).get(bucket) or []) > 0 for bucket in ("strengths", "weaknesses", "opportunities", "threats")),
+        degraded=any(len((response.get("swot") or {}).get(bucket) or []) > 0 for bucket in ("strengths", "weaknesses", "opportunities", "threats")),
+        has_placeholder=any(is_placeholder_text(item) for bucket in ("strengths", "weaknesses", "opportunities", "threats") for item in ((enrichment.get("swot") or {}).get(bucket) or [])),
+    )
+    review_status = classify_section(
+        has_evidence=(response.get("reviews") or {}).get("count", 0) > 0 or len(response.get("review_excerpts") or []) > 0,
+        degraded=bool((enrichment.get("customer_review_intelligence") or {}).get("has_data")),
+    )
+    roadmap_status = classify_section(
+        has_evidence=all(len((response.get("roadmap") or {}).get(col) or []) > 0 for col in ("quick_wins", "priorities", "strategic")),
+        degraded=any(len((response.get("roadmap") or {}).get(col) or []) > 0 for col in ("quick_wins", "priorities", "strategic")),
+        has_placeholder=any(
+            is_placeholder_text(str(item.get("text") or ""))
+            for col in ("quick_wins", "priorities", "strategic")
+            for item in ((enrichment.get("roadmap") or {}).get(col) or [])
+            if isinstance(item, dict)
+        ),
+    )
+    market_position_status = classify_section(
+        has_evidence=(response.get("market_position") or {}).get("overall", 0) > 0,
+        degraded=bool((response.get("market_position") or {}).get("brand", 0) or (response.get("market_position") or {}).get("digital", 0)),
+    )
+    exec_status = classify_section(
+        has_evidence=bool(response.get("executive_summary")),
+        has_placeholder=bool(isinstance(enrichment.get("cmo_executive_brief"), str) and is_placeholder_text(enrichment.get("cmo_executive_brief"))),
+    )
+
+    section_inventory = {
+        "Chief Marketing Summary": {"status": exec_status},
+        "Executive Summary": {"status": exec_status},
+        "Market Position Score": {"status": market_position_status},
+        "Competitive Landscape": {"status": competitor_status},
+        "SWOT": {"status": swot_status},
+        "Review Intelligence": {"status": review_status},
+        "Strategic Roadmap": {"status": roadmap_status},
+    }
+    response["section_inventory"] = section_inventory
+
+    report_state = derive_report_state([v["status"] for v in section_inventory.values()])
+    if report_state == REPORT_STATE_COMPLETE:
+        response["state"] = ExternalState.DATA_AVAILABLE.value
+        response["state_message"] = "Report sections are source-backed."
+    elif report_state == REPORT_STATE_PARTIAL:
+        response["state"] = ExternalState.DEGRADED.value
+        response["state_message"] = "Partial intelligence profile: some sections are degraded due to missing evidence."
+    elif report_state == REPORT_STATE_INSUFFICIENT:
+        response["state"] = ExternalState.INSUFFICIENT_SIGNAL.value
+        response["state_message"] = "Insufficient evidence to generate a complete CMO report."
+    else:
+        response["state"] = ExternalState.DEGRADED.value
+        response["state_message"] = "Report failed zero-fake-data checks due to placeholder or invalid sections."
+    response["report_state"] = report_state
+
+    evidence_confidence = estimate_confidence([v["status"] for v in section_inventory.values()])
+    response["confidence"] = confidence if confidence > 0 else evidence_confidence
+    response["data_points"] = f"{_count_real_data_points(response)} evidence points"
+
+    # 8) Contract v2 / Step 3c (2026-04-23): scrub internal keys at any depth
     #    before returning. Strips ai_errors, sources.edge_tools, _http_status,
     #    correlation, raw_overview, source:"semrush" sub-tags, auth-path
     #    markers — anything that would leak supplier or internal identity.
     #    Also annotate the top-level state from the sanitizer's derivation
     #    so the frontend can render confidence-aware UI.
     _sanitized_envelope = sanitize_enrichment_for_external(enrichment)
-    response["state"] = _sanitized_envelope["state"]
     # 2026-04-23 P0 (Andreas CTO): the CMO route has ALREADY shaped
     # `swot`, `market_position`, etc. into the frontend contract
     # (numeric dials + 4 named string lists). We must NOT overwrite those
