@@ -1157,7 +1157,7 @@ const ForensicCalibration = () => {
     PIPELINE_STEPS.forEach(ps => { ps.doneText = null; });
 
     try {
-      const res = await apiClient.post('/enrichment/website', { url: fullUrl, action: 'scan' }, { timeout: 120000 });
+      const res = await apiClient.post('/enrichment/website', { url: fullUrl, action: 'scan', bust_cache: true }, { timeout: 120000 });
       animatePipeline(res.data);
     } catch (err) {
       /* Enrichment failed — surface the error to the user. NEVER silently fall back
