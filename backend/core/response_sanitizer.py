@@ -298,6 +298,9 @@ _INTERNAL_KEYS: Tuple[str, ...] = (
     "source_fn",         # internal edge-function slug per field
     "data_sources",      # internal list of edge-tool names
     "deep_scan_sources", # nested internal provenance
+    # Marjo R2A (2026-05-04) — per-edge-fn audit metadata for the 4 missed
+    # scan-fanout fns. Carries internal slug/status/code; never exposed.
+    "_edge_response_summary",
 )
 
 
