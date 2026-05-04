@@ -19,6 +19,7 @@ jobs:
       BIQC_QA_EMAIL: ${{ secrets.BIQC_QA_EMAIL }}
       BIQC_QA_PASSWORD: ${{ secrets.BIQC_QA_PASSWORD }}
       BIQC_QA_USER_ID: ${{ secrets.BIQC_QA_USER_ID }}
+      # Optional: if omitted, account_id is discovered post-login in Playwright.
       BIQC_QA_ACCOUNT_ID: ${{ secrets.BIQC_QA_ACCOUNT_ID }}
       BIQC_QA_RESET_URL: ${{ secrets.BIQC_QA_RESET_URL }}
       BIQC_QA_RESET_TOKEN: ${{ secrets.BIQC_QA_RESET_TOKEN }}
@@ -37,7 +38,7 @@ jobs:
         shell: bash
         run: |
           missing=0
-          for var in BIQC_QA_EMAIL BIQC_QA_PASSWORD BIQC_QA_USER_ID BIQC_QA_ACCOUNT_ID; do
+          for var in BIQC_QA_EMAIL BIQC_QA_PASSWORD BIQC_QA_USER_ID; do
             if [ -z "${!var}" ]; then
               echo "::error::Missing required secret: $var"
               missing=1
@@ -59,6 +60,10 @@ jobs:
         shell: bash
         run: |
           if [ -n "$BIQC_QA_RESET_URL" ] && [ -n "$BIQC_QA_RESET_TOKEN" ]; then
+            if [ -z "$BIQC_QA_ACCOUNT_ID" ]; then
+              echo "::warning::Skipping reset: BIQC_QA_ACCOUNT_ID not provided. Account ID will be discovered after login during smoke run."
+              exit 0
+            fi
             status=$(curl -sS -o /tmp/reset-response.json -w "%{http_code}" \
               -X POST "$BIQC_QA_RESET_URL" \
               -H "Authorization: Bearer $BIQC_QA_RESET_TOKEN" \

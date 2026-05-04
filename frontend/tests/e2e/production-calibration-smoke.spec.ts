@@ -4,6 +4,11 @@ import path from 'path';
 
 type StepResult = { name: string; status: 'pass' | 'fail' | 'blocked' | 'unverified'; detail?: string };
 
+type AccountResolution = {
+  accountId: string | null;
+  source: 'secret' | 'api_me' | 'api_profile' | 'api_billing' | 'local_storage' | 'unresolved';
+};
+
 const SHOTS = [
   '01-login-page.png',
   '02-login-success.png',
@@ -31,6 +36,7 @@ const SHOTS = [
 test('production calibration smoke', async ({ page, context, baseURL }) => {
   const email = process.env.BIQC_QA_EMAIL;
   const password = process.env.BIQC_QA_PASSWORD;
+  const secretAccountId = process.env.BIQC_QA_ACCOUNT_ID || '';
   test.skip(!email || !password, 'QA credentials are required');
 
   const resultDir = path.join(process.cwd(), 'test-results');
@@ -45,6 +51,69 @@ test('production calibration smoke', async ({ page, context, baseURL }) => {
   let signalsResult: 'pass' | 'fail' | 'blocked' | 'unverified' = 'unverified';
   let cmoResult: 'pass' | 'fail' | 'blocked' | 'unverified' = 'unverified';
   let pdfResult: 'pass' | 'fail' | 'blocked' | 'unverified' = 'unverified';
+  let accountResolution: AccountResolution = { accountId: null, source: 'unresolved' };
+
+  const redactAccountId = (value: string | null): string | null => {
+    if (!value) return null;
+    if (value.length <= 8) return `${value.slice(0, 2)}***`;
+    return `${value.slice(0, 4)}***${value.slice(-2)}`;
+  };
+
+  const resolveAccountId = async (): Promise<AccountResolution> => {
+    if (secretAccountId) {
+      return { accountId: secretAccountId, source: 'secret' };
+    }
+
+    const apiResolution = await page.evaluate(async () => {
+      const extract = (obj: any): string | null => {
+        if (!obj || typeof obj !== 'object') return null;
+        if (typeof obj.account_id === 'string' && obj.account_id.trim()) return obj.account_id.trim();
+        if (typeof obj.accountId === 'string' && obj.accountId.trim()) return obj.accountId.trim();
+        for (const value of Object.values(obj)) {
+          if (value && typeof value === 'object') {
+            const nested = extract(value);
+            if (nested) return nested;
+          }
+        }
+        return null;
+      };
+
+      const probes: Array<{ path: string; source: 'api_me' | 'api_profile' | 'api_billing' }> = [
+        { path: '/api/auth/supabase/me', source: 'api_me' },
+        { path: '/api/profile', source: 'api_profile' },
+        { path: '/api/profile/context', source: 'api_profile' },
+        { path: '/api/billing/overview', source: 'api_billing' },
+      ];
+
+      for (const probe of probes) {
+        try {
+          const res = await fetch(probe.path, { credentials: 'include' });
+          if (!res.ok) continue;
+          const json = await res.json();
+          const accountId = extract(json);
+          if (accountId) return { accountId, source: probe.source };
+        } catch {
+          // Continue to next probe
+        }
+      }
+
+      try {
+        const candidates = [
+          localStorage.getItem('account_id'),
+          localStorage.getItem('accountId'),
+          sessionStorage.getItem('account_id'),
+          sessionStorage.getItem('accountId'),
+        ].filter(Boolean) as string[];
+        if (candidates.length > 0) return { accountId: candidates[0], source: 'local_storage' as const };
+      } catch {
+        // Ignore storage lookup failures
+      }
+
+      return { accountId: null, source: 'unresolved' as const };
+    });
+
+    return apiResolution;
+  };
 
   const shot = async (name: string) => {
     await page.screenshot({ path: path.join(screenshotDir, name), fullPage: true });
@@ -61,6 +130,15 @@ test('production calibration smoke', async ({ page, context, baseURL }) => {
     await page.waitForLoadState('networkidle');
     await shot(SHOTS[1]);
     steps.push({ name: 'login', status: 'pass' });
+
+    accountResolution = await resolveAccountId();
+    if (!accountResolution.accountId) {
+      const message = 'QA account_id could not be resolved after login';
+      steps.push({ name: 'account_id_resolution', status: 'fail', detail: message });
+      testError = new Error(message);
+      throw testError;
+    }
+    steps.push({ name: 'account_id_resolution', status: 'pass', detail: `source=${accountResolution.source}` });
 
     await page.goto(`${baseURL}/onboarding-decision`, { waitUntil: 'domcontentloaded' });
     await shot(SHOTS[2]);
@@ -132,7 +210,8 @@ test('production calibration smoke', async ({ page, context, baseURL }) => {
     base_url: baseURL,
     commit_sha: process.env.GITHUB_SHA || null,
     qa_user: email ? `${email.split('@')[0]}@***` : 'unknown',
-    account_id: 'redacted',
+    account_id: redactAccountId(accountResolution.accountId),
+    account_id_source: accountResolution.source,
     steps,
     route: page.url(),
     detect_result: detectResult,
