@@ -28,13 +28,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth, enforceUserOwnership } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { recordUsage, recordUsageSonar } from "../_shared/metering.ts";
+// Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+// Replace hardcoded "gpt-5.3" (unreleased preview → silent 400) with env-driven resolver.
+import { resolveOpenAINormalModel } from "../_shared/model_validator.ts";
 
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const COMPETITOR_MONITOR_BATCH_SECRET = Deno.env.get("COMPETITOR_MONITOR_BATCH_SECRET") || "";
-const COMPETITOR_MODEL = "gpt-5.3";
+const COMPETITOR_MODEL = resolveOpenAINormalModel();
 
 interface CompetitorSignal {
   name: string;

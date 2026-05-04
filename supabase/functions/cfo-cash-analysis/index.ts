@@ -31,12 +31,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
 import { recordUsage } from "../_shared/metering.ts";
+// Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+// Replace hardcoded "gpt-5.3" (unreleased preview → silent 400) with env-driven resolver.
+import { resolveOpenAINormalModel } from "../_shared/model_validator.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const CFO_MODEL = "gpt-5.3";
+const CFO_MODEL = resolveOpenAINormalModel();
 
 interface FinancialAlert {
   type: string;
