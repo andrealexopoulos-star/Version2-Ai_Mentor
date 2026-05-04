@@ -2591,12 +2591,19 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
                 return result
 
-            # 2026-05-04 (P0 Marjo R2C): added 8th calibration edge —
-            # `staff-reviews-deep` — replacing snippet-based Glassdoor parsing
-            # in `_parse_glassdoor_reviews` with deep public-page Firecrawl
-            # extraction across Glassdoor + Indeed + Seek (+ optional PayScale,
-            # Fairwork). Backward compat preserved by passing the new payload
-            # into _build_staff_review_intelligence below.
+            # 2026-05-04 (P0 Marjo R2B + R2C): added two deep review edges to the fanout —
+            #   * `customer-reviews-deep` (R2B) — per-platform Firecrawl/Serper across Google
+            #     Maps, Trustpilot, ProductReview.com.au, Yelp, Facebook + LLM Trinity
+            #     sentiment + themes; runs alongside legacy `browse-ai-reviews` during the
+            #     deprecation window so the new per-platform deep extraction can be compared
+            #     against the legacy shallow Google-HTML scraper (browse-ai-reviews is
+            #     removed once V1-V8 verifies green for two consecutive scans).
+            #   * `staff-reviews-deep` (R2C) — replaces snippet-based Glassdoor parsing in
+            #     `_parse_glassdoor_reviews` with deep public-page Firecrawl extraction
+            #     across Glassdoor + Indeed + Seek (+ optional PayScale, Fairwork).
+            #     Backward compat preserved by passing the new payload into
+            #     `_build_staff_review_intelligence` below.
+            # See BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 + feedback_zero_401_tolerance.
             (
                 warm_cognitive,
                 calibration_business_dna,
@@ -2608,6 +2615,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 market_analysis,
                 market_scorer,
                 browse_ai_reviews,
+                customer_reviews_deep,
                 semrush_intel,
                 staff_reviews_deep,
             ) = await asyncio.gather(
@@ -2650,6 +2658,12 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "domain": domain,
                     "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
                 }),
+                _cached_edge("customer-reviews-deep", {
+                    "user_id": user_id,
+                    "business_name": enrichment.get("business_name", "") or business_name_hint,
+                    "domain": domain,
+                    "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
+                }),
                 _cached_edge("semrush-domain-intel", {"user_id": user_id, "domain": domain, "database": "us"}),
                 _cached_edge("staff-reviews-deep", {
                     "user_id": user_id,
@@ -2668,6 +2682,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if isinstance(market_analysis, Exception): market_analysis = {"error": str(market_analysis)}
             if isinstance(market_scorer, Exception): market_scorer = {"error": str(market_scorer)}
             if isinstance(browse_ai_reviews, Exception): browse_ai_reviews = {"error": str(browse_ai_reviews)}
+            if isinstance(customer_reviews_deep, Exception): customer_reviews_deep = {"error": str(customer_reviews_deep)}
             if isinstance(semrush_intel, Exception): semrush_intel = {"error": str(semrush_intel)}
             if isinstance(staff_reviews_deep, Exception): staff_reviews_deep = {"error": str(staff_reviews_deep)}
             if not isinstance(warm_cognitive, dict): warm_cognitive = {"error": f"invalid_payload:{type(warm_cognitive).__name__}"}
@@ -2680,6 +2695,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if not isinstance(market_analysis, dict): market_analysis = {"error": f"invalid_payload:{type(market_analysis).__name__}"}
             if not isinstance(market_scorer, dict): market_scorer = {"error": f"invalid_payload:{type(market_scorer).__name__}"}
             if not isinstance(browse_ai_reviews, dict): browse_ai_reviews = {"error": f"invalid_payload:{type(browse_ai_reviews).__name__}"}
+            if not isinstance(customer_reviews_deep, dict): customer_reviews_deep = {"error": f"invalid_payload:{type(customer_reviews_deep).__name__}"}
             if not isinstance(semrush_intel, dict): semrush_intel = {"error": f"invalid_payload:{type(semrush_intel).__name__}"}
             if not isinstance(staff_reviews_deep, dict): staff_reviews_deep = {"error": f"invalid_payload:{type(staff_reviews_deep).__name__}"}
 
@@ -2695,6 +2711,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 ("market-analysis-ai", market_analysis),
                 ("market-signal-scorer", market_scorer),
                 ("browse-ai-reviews", browse_ai_reviews),
+                ("customer-reviews-deep", customer_reviews_deep),
                 ("semrush-domain-intel", semrush_intel),
                 ("staff-reviews-deep", staff_reviews_deep),
             ]
@@ -2800,6 +2817,119 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         or agg.get("top_recent")
                     ),
                 })
+
+            # P0-MARJO-R2B 2026-05-04: ingest customer-reviews-deep payload.
+            # The new edge returns per-platform intel (Google Maps, Trustpilot,
+            # ProductReview, Yelp, Facebook) with LLM-classified sentiment +
+            # corpus-level themes. Stored raw on enrichment["customer_reviews_deep"]
+            # for the CMO Report wiring (sections customer_sentiment /
+            # review_intelligence / review_sources). When present, also
+            # synthesises a browse_ai_reviews-shaped payload so the existing
+            # _build_customer_review_intelligence builder benefits without
+            # contract changes during the deprecation window.
+            # See BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
+            if isinstance(customer_reviews_deep, dict) and customer_reviews_deep.get("ok") and customer_reviews_deep.get("aggregated"):
+                enrichment["customer_reviews_deep"] = customer_reviews_deep
+                deep_platforms = customer_reviews_deep.get("platforms") or []
+                deep_agg = customer_reviews_deep.get("aggregated") or {}
+                # Build a browse_ai_reviews-shaped synthetic payload so the
+                # legacy _build_customer_review_intelligence picks up the
+                # higher-quality deep-extracted reviews.
+                synthesised_customer_reviews: List[Dict[str, Any]] = []
+                synth_top_positive: List[str] = []
+                synth_top_negative: List[str] = []
+                for plat in deep_platforms:
+                    if not isinstance(plat, dict):
+                        continue
+                    if not plat.get("found"):
+                        continue
+                    synth_reviews_list: List[Dict[str, Any]] = []
+                    for rv in (plat.get("recent_reviews") or [])[:10]:
+                        if not isinstance(rv, dict):
+                            continue
+                        text = str(rv.get("text") or "").strip()
+                        if not text:
+                            continue
+                        synth_reviews_list.append({
+                            "text": text,
+                            "rating": rv.get("rating"),
+                            "author": str(rv.get("author_handle") or ""),
+                            "date": str(rv.get("date_iso") or ""),
+                            "sentiment": str(rv.get("sentiment") or "neutral").lower() if rv.get("sentiment") in ("positive", "negative", "neutral") else "neutral",
+                        })
+                        snippet = f"[{plat.get('platform')}] {text[:220]}"
+                        if rv.get("sentiment") == "positive" and len(synth_top_positive) < 8:
+                            synth_top_positive.append(snippet)
+                        elif rv.get("sentiment") == "negative" and len(synth_top_negative) < 8:
+                            synth_top_negative.append(snippet)
+                    synthesised_customer_reviews.append({
+                        "platform": str(plat.get("platform") or ""),
+                        "rating": plat.get("overall_rating"),
+                        "review_count": plat.get("total_review_count"),
+                        "url": plat.get("url") or "",
+                        "reviews": synth_reviews_list,
+                    })
+                deep_themes = deep_agg.get("themes_top") or []
+                deep_synth_browse_payload = {
+                    "ok": True,
+                    "customer_reviews": synthesised_customer_reviews,
+                    "staff_reviews": [],  # R2C handles staff/employer reviews
+                    "aggregated": {
+                        "customer_score": deep_agg.get("weighted_avg_rating"),
+                        "customer_count": deep_agg.get("total_reviews_cross_platform"),
+                        "top_positive": synth_top_positive,
+                        "top_negative": synth_top_negative,
+                        "top_recent": [],  # populated below from dated reviews
+                        "customer_sources": [str(p.get("platform")) for p in deep_platforms if isinstance(p, dict) and p.get("found")],
+                        "customer_action_themes": [str(t.get("theme")) for t in deep_themes if isinstance(t, dict) and t.get("theme")],
+                    },
+                }
+                # Backward-compat: merge with any prior browse_ai_reviews so we
+                # don't drop signal from the legacy edge during the window.
+                prior_browse = enrichment.get("browse_ai_reviews") if isinstance(enrichment.get("browse_ai_reviews"), dict) else {}
+                if prior_browse.get("staff_reviews"):
+                    deep_synth_browse_payload["staff_reviews"] = prior_browse["staff_reviews"]
+                if prior_browse.get("aggregated", {}).get("staff_score") is not None and deep_synth_browse_payload["aggregated"].get("staff_score") is None:
+                    deep_synth_browse_payload["aggregated"]["staff_score"] = prior_browse["aggregated"]["staff_score"]
+                # The legacy builder will use this synthesised payload as its
+                # primary source — superior because per-review sentiment is
+                # LLM-classified, not keyword-bagged, and per-platform ratings
+                # come from real Google Maps/Trustpilot/PR/Yelp scrapes.
+                enrichment["browse_ai_reviews"] = deep_synth_browse_payload
+                # Also populate google_reviews compat shim so downstream
+                # readers of enrichment.google_reviews see the deep signal.
+                gmaps_plat = next((p for p in deep_platforms if isinstance(p, dict) and p.get("platform") == "google_maps"), None)
+                if gmaps_plat and gmaps_plat.get("overall_rating") is not None:
+                    enrichment.setdefault("google_reviews", {})["star_rating"] = gmaps_plat.get("overall_rating")
+                    enrichment["google_reviews"]["has_data"] = True
+                    if gmaps_plat.get("total_review_count") is not None:
+                        enrichment["google_reviews"]["review_count"] = gmaps_plat.get("total_review_count")
+                # CMO Report wiring (sections: customer_sentiment, review_intelligence,
+                # review_sources). Surface per-platform trace-friendly summary so
+                # E6's section_evidence builder can cite per-platform provenance.
+                enrichment["customer_review_intelligence_v2"] = {
+                    "weighted_avg_rating": deep_agg.get("weighted_avg_rating"),
+                    "total_reviews_cross_platform": deep_agg.get("total_reviews_cross_platform"),
+                    "sentiment_distribution": deep_agg.get("sentiment_distribution") or {},
+                    "velocity_total": deep_agg.get("velocity_total") or {},
+                    "themes": deep_themes,
+                    "platforms_found": [
+                        {
+                            "platform": p.get("platform"),
+                            "url": p.get("url"),
+                            "rating": p.get("overall_rating"),
+                            "review_count": p.get("total_review_count"),
+                            "state": p.get("state"),
+                        }
+                        for p in deep_platforms if isinstance(p, dict) and p.get("found")
+                    ],
+                    "review_sources": [
+                        {"platform": p.get("platform"), "url": p.get("url"), "state": p.get("state")}
+                        for p in deep_platforms if isinstance(p, dict)
+                    ],
+                    "has_data": bool(deep_agg.get("has_data")),
+                    "state": deep_agg.get("state") or "INSUFFICIENT_SIGNAL",
+                }
 
             enrichment["customer_review_intelligence"] = _build_customer_review_intelligence(
                 enrichment.get("google_reviews") or {},
@@ -3200,6 +3330,10 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         "ok": not _edge_result_failed(browse_ai_reviews),
                         "status": (browse_ai_reviews or {}).get("_http_status"),
                     } if 'browse_ai_reviews' in locals() else {"ok": False},
+                    "customer_reviews_deep": {
+                        "ok": not _edge_result_failed(customer_reviews_deep),
+                        "status": (customer_reviews_deep or {}).get("_http_status"),
+                    } if 'customer_reviews_deep' in locals() else {"ok": False},
                     "semrush_domain_intel": {
                         "ok": not _edge_result_failed(semrush_intel),
                         "status": (semrush_intel or {}).get("_http_status"),

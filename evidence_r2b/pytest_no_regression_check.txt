@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /private/tmp/biqc-marjo-r2b
+plugins: anyio-4.12.1
+collected 64 items
+
+backend/tests/test_calibration_edge_health_contract.py ..                [  3%]
+backend/tests/test_calibration_edge_normalization.py ........            [ 15%]
+backend/tests/test_response_sanitizer.py ............................... [ 64%]
+.......................                                                  [100%]
+
+============================== 64 passed in 0.08s ==============================
