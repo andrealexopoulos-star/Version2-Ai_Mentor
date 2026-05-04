@@ -44,12 +44,16 @@ def _install_stub_modules() -> None:
     if "supabase_client" not in sys.modules:
         sb_stub = types.ModuleType("supabase_client")
 
-        # The helper does `from supabase_client import get_supabase_client`
-        # inside a function. Default behaviour for a test that hasn't injected
-        # an sb is to return None (the helpers must no-op gracefully).
+        # The helper does `from supabase_client import init_supabase`
+        # inside _get_sb_client. Default behaviour for a test that
+        # hasn't injected an sb is to return None (the helpers must
+        # no-op gracefully).
         def _none_client():
             return None
 
+        sb_stub.init_supabase = _none_client
+        # Keep the legacy export for any other module that still
+        # imports it during the same test run — anon-key client tests.
         sb_stub.get_supabase_client = _none_client
         sys.modules["supabase_client"] = sb_stub
 
@@ -273,11 +277,42 @@ def test_empty_scan_id_is_noop():
 
 def test_helper_returns_none_when_sb_unavailable():
     from core.enrichment_trace import record_provider_trace, complete_trace
-    # No sb passed and the stub get_supabase_client returns None → no raise.
+    # No sb passed and the stub init_supabase returns None → no raise.
     result = record_provider_trace(scan_id=SCAN_ID, provider="openai", http_status=200)
     assert result is None
     # complete_trace with a None trace_id returns False.
     assert complete_trace(None, http_status=200) is False
+
+
+def test_get_sb_client_uses_service_role_init_supabase_path():
+    """Regression guard for the 2026-05-04 CMO blank-cards bug.
+
+    The trace writer MUST resolve its Supabase client via init_supabase()
+    (service-role admin) — NOT get_supabase_client() (anon, RLS-bound).
+    Anon-key writes can't bypass RLS and the table's only policy is
+    SELECT-for-owner; using the wrong client => every trace insert
+    silently fails => enrichment_traces stays empty => CMO provenance
+    filter blanks every populated card.
+
+    Cites: BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2,
+           feedback_zero_401_tolerance.md.
+    """
+    import inspect
+
+    from core import enrichment_trace as et
+
+    src = inspect.getsource(et._get_sb_client)
+    assert "init_supabase" in src, (
+        "_get_sb_client must call init_supabase() (service-role); "
+        f"current source:\n{src}"
+    )
+    # If get_supabase_client appears it must be inside a docstring/comment
+    # explaining the prior bug, never as a live call. Easy heuristic: a
+    # live call would be `from supabase_client import get_supabase_client`.
+    assert "from supabase_client import get_supabase_client" not in src, (
+        "_get_sb_client must NOT import get_supabase_client (anon-key); "
+        f"current source:\n{src}"
+    )
 
 
 # ─── 7. Async wrappers persist exactly one row each ─────────────────────
