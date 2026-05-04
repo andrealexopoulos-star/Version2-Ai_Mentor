@@ -52,6 +52,9 @@ from integration_status_cache import (
 from tier_resolver import resolve_tier
 
 router = APIRouter()
+AUTH_EXPIRED_MESSAGE = "Connection authorisation has expired. Please reconnect."
+SERVICE_UNAVAILABLE_MESSAGE = "Connection service is temporarily unavailable."
+GENERIC_SERVICE_ERROR_MESSAGE = "Connection service error. Please try again or contact support."
 EDGE_PROXY_ALLOWLIST = {
     "biqc-insights-cognitive",
     "calibration-psych",
@@ -194,6 +197,41 @@ def _safe_parse_dt(value: Optional[str]) -> Optional[datetime]:
         return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except Exception:
         return None
+
+
+def _safe_drive_error_message(raw_error: Any) -> str:
+    text = str(raw_error or "").lower()
+    if any(k in text for k in ("expired", "unauthor", "token", "oauth", "reconnect", "revoked")):
+        return AUTH_EXPIRED_MESSAGE
+    if any(k in text for k in ("timeout", "temporarily unavailable", "service unavailable", "dns", "network", "connection reset")):
+        return SERVICE_UNAVAILABLE_MESSAGE
+    return GENERIC_SERVICE_ERROR_MESSAGE
+
+
+def _drive_status_fields(row: Dict[str, Any]) -> Dict[str, Any]:
+    status_raw = str(row.get("status") or "active").strip().lower()
+    sync_raw = str(row.get("sync_status") or "").strip().lower()
+    error_raw = row.get("error_message")
+    status_tokens = {status_raw, sync_raw}
+    reconnect_required = any(s in {"needs_reconnect", "token_expired", "expired", "revoked"} for s in status_tokens) or bool(error_raw)
+
+    if reconnect_required:
+        status = "needs_reconnect"
+    elif any(s in {"failed", "error", "degraded"} for s in status_tokens):
+        status = "failed"
+    elif any(s in {"syncing", "queued", "in_progress", "processing"} for s in status_tokens):
+        status = "syncing"
+    elif status_raw in {"waiting_for_scope"}:
+        status = "waiting_for_scope"
+    else:
+        status = "connected"
+
+    return {
+        "status": status,
+        "sync_status": sync_raw or status_raw,
+        "reconnect_required": reconnect_required,
+        "error_message": _safe_drive_error_message(error_raw) if (error_raw or reconnect_required) else None,
+    }
 
 
 class EdgeProxyRequest(BaseModel):
@@ -2942,7 +2980,12 @@ async def google_drive_callback(
             )
             
             if response.status_code != 200:
-                raise HTTPException(status_code=response.status_code, detail=response.text)
+                logger.warning(
+                    "[google-drive/callback] token exchange failed status=%s body=%s",
+                    response.status_code,
+                    (response.text or "")[:300],
+                )
+                raise HTTPException(status_code=503, detail=SERVICE_UNAVAILABLE_MESSAGE)
             
             data = response.json()
             account_token = data.get("account_token")
@@ -2986,20 +3029,20 @@ async def google_drive_callback(
                     "job_type": "drive-sync",
                     "job_id": queued.get("job_id"),
                     "success": True,
-                    "message": "Google Drive connected successfully. Initial sync queued.",
-                    "provider": "Google Drive"
+                    "message": "Source connected successfully. Initial sync queued.",
                 }
 
             await sync_google_drive_files(user_id, account_id, account_token)
             return {
                 "success": True,
-                "message": "Google Drive connected successfully",
-                "provider": "Google Drive"
+                "message": "Source connected successfully",
             }
             
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"❌ Google Drive callback error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=503, detail=SERVICE_UNAVAILABLE_MESSAGE)
 
 
 async def sync_google_drive_files(user_id: str, account_id: str, account_token: str):
@@ -3008,21 +3051,77 @@ async def sync_google_drive_files(user_id: str, account_id: str, account_token: 
     100% PostgreSQL storage
     """
     from merge_client import get_merge_client
-    from supabase_drive_helpers import store_drive_files_batch, update_merge_integration_sync
+    from supabase_drive_helpers import (
+        store_drive_files_batch,
+        update_merge_integration_sync,
+        get_drive_scope_policy,
+    )
     
     try:
         logger.info(f"🔄 Starting Google Drive sync for account {account_id}")
-        
+        now_iso = datetime.now(timezone.utc).isoformat()
+        sb = get_sb()
         merge_client = get_merge_client()
-        
+        scope_policy = await get_drive_scope_policy(sb, user_id)
+        allow_all = bool(scope_policy.get("allow_all_files")) if scope_policy else False
+        selected_folders = list(scope_policy.get("folder_ids") or []) if scope_policy else []
+        include_types = {str(t).strip().lower() for t in (scope_policy.get("file_type_includes") or [])}
+        exclude_types = {str(t).strip().lower() for t in (scope_policy.get("file_type_excludes") or [])}
+
+        if not allow_all and not selected_folders:
+            await update_merge_integration_sync(
+                sb,
+                account_token,
+                {
+                    "status": "waiting_for_scope",
+                    "sync_status": "waiting_for_scope",
+                    "error_message": "Choose folders to start.",
+                    "last_attempt_at": now_iso,
+                    "sync_stats": {"last_sync_success": False, "scope_required": True},
+                },
+            )
+            logger.info("[google-drive/sync] scope not configured for user=%s; deferring sync", user_id)
+            return
+
+        await update_merge_integration_sync(
+            sb,
+            account_token,
+            {
+                "status": "syncing",
+                "sync_status": "syncing",
+                "error_message": None,
+                "last_attempt_at": now_iso,
+            },
+        )
+
         # Fetch files from Merge API
         files_response = await merge_client.get_files(account_token)
         files = files_response.get("results", [])
+
+        if selected_folders:
+            selected = {str(folder_id) for folder_id in selected_folders}
+            files = [f for f in files if str(f.get("folder") or "") in selected]
+        if include_types:
+            files = [f for f in files if str(f.get("mime_type") or f.get("file_type") or "").lower() in include_types]
+        if exclude_types:
+            files = [f for f in files if str(f.get("mime_type") or f.get("file_type") or "").lower() not in exclude_types]
         
         logger.info(f"📥 Fetched {len(files)} files from Google Drive")
         
         if not files:
             logger.info("ℹ️ No files found")
+            await update_merge_integration_sync(
+                sb,
+                account_token,
+                {
+                    "status": "connected",
+                    "sync_status": "active",
+                    "error_message": None,
+                    "last_sync_at": now_iso,
+                    "last_attempt_at": now_iso,
+                    "sync_stats": {"files_synced": 0, "last_sync_success": True},
+                },
+            )
             return
         
         # Transform files for Supabase storage
@@ -3047,22 +3146,37 @@ async def sync_google_drive_files(user_id: str, account_id: str, account_token: 
             supabase_files.append(file_data)
         
         # Batch insert to Supabase
-        stored_count = await store_drive_files_batch(get_sb(), supabase_files)
+        stored_count = await store_drive_files_batch(sb, supabase_files)
         
         logger.info(f"✅ Stored {stored_count} Google Drive files in Supabase")
         
         # Update integration sync status
         await update_merge_integration_sync(
-            supabase_admin,
+            sb,
             account_token,
             {
                 "last_sync_at": datetime.now(timezone.utc).isoformat(),
-                "sync_stats": {"files_synced": stored_count, "last_sync_success": True}
+                "last_attempt_at": datetime.now(timezone.utc).isoformat(),
+                "status": "connected",
+                "sync_status": "active",
+                "error_message": None,
+                "sync_stats": {"files_synced": stored_count, "last_sync_success": True},
             }
         )
         
     except Exception as e:
         logger.error(f"❌ Google Drive sync failed: {e}")
+        await update_merge_integration_sync(
+            get_sb(),
+            account_token,
+            {
+                "status": "failed",
+                "sync_status": "failed",
+                "error_message": _safe_drive_error_message(e),
+                "last_attempt_at": datetime.now(timezone.utc).isoformat(),
+                "sync_stats": {"last_sync_success": False, "last_error": _safe_drive_error_message(e)},
+            },
+        )
 
 
 @router.get("/integrations/google-drive/files")
@@ -3086,6 +3200,44 @@ async def get_google_drive_files(
     }
 
 
+@router.get("/integrations/google-drive/scope")
+async def get_google_drive_scope(current_user: dict = Depends(get_current_user)):
+    from supabase_drive_helpers import get_drive_scope_policy
+
+    policy = await get_drive_scope_policy(get_sb(), current_user["id"])
+    return {
+        "configured": bool(policy),
+        "allow_all_files": bool((policy or {}).get("allow_all_files")),
+        "folder_ids": (policy or {}).get("folder_ids") or [],
+        "file_type_includes": (policy or {}).get("file_type_includes") or [],
+        "file_type_excludes": (policy or {}).get("file_type_excludes") or [],
+    }
+
+
+class DriveScopeRequest(BaseModel):
+    allow_all_files: bool = False
+    folder_ids: List[str] = []
+    file_type_includes: List[str] = []
+    file_type_excludes: List[str] = []
+
+
+@router.post("/integrations/google-drive/scope")
+async def set_google_drive_scope(payload: DriveScopeRequest, current_user: dict = Depends(get_current_user)):
+    from supabase_drive_helpers import upsert_drive_scope_policy
+
+    user_id = current_user["id"]
+    await upsert_drive_scope_policy(
+        get_sb(),
+        user_id=user_id,
+        allow_all_files=bool(payload.allow_all_files),
+        folder_ids=[str(i).strip() for i in (payload.folder_ids or []) if str(i).strip()],
+        file_type_includes=[str(i).strip().lower() for i in (payload.file_type_includes or []) if str(i).strip()],
+        file_type_excludes=[str(i).strip().lower() for i in (payload.file_type_excludes or []) if str(i).strip()],
+    )
+    await invalidate_cached_integration_status(user_id)
+    return {"ok": True}
+
+
 @router.post("/integrations/google-drive/sync")
 async def trigger_google_drive_sync(current_user: dict = Depends(get_current_user)):
     """
@@ -3106,7 +3258,7 @@ async def trigger_google_drive_sync(current_user: dict = Depends(get_current_use
     
     # Get Google Drive integration
     integrations = await get_user_merge_integrations(
-        supabase_admin,
+        get_sb(),
         user_id,
         integration_category="file_storage"
     )
@@ -3117,7 +3269,7 @@ async def trigger_google_drive_sync(current_user: dict = Depends(get_current_use
     )
     
     if not drive_integration:
-        raise HTTPException(status_code=404, detail="Google Drive not connected")
+        raise HTTPException(status_code=404, detail=AUTH_EXPIRED_MESSAGE)
     
     account_token = drive_integration["account_token"]
     
@@ -3171,29 +3323,51 @@ async def google_drive_status(current_user: dict = Depends(get_current_user)):
             "connected": False,
             "files_count": 0,
             "status": "unavailable",
+            "sync_status": "unavailable",
+            "last_sync_at": None,
+            "connected_at": None,
+            "account_label": None,
+            "reconnect_required": False,
+            "error_message": SERVICE_UNAVAILABLE_MESSAGE,
         }
     
-    drive_integration = next(
-        (i for i in integrations if i.get("integration_slug") == "google_drive"),
-        None
-    )
+    drive_candidates = [i for i in integrations if i.get("integration_slug") == "google_drive"]
+    drive_integration = sorted(
+        drive_candidates,
+        key=lambda row: str(row.get("connected_at") or row.get("last_sync_at") or ""),
+        reverse=True,
+    )[0] if drive_candidates else None
     
     if not drive_integration:
         return {
             "connected": False,
-            "files_count": 0
+            "files_count": 0,
+            "status": "not_connected",
+            "sync_status": "not_connected",
+            "last_sync_at": None,
+            "connected_at": None,
+            "account_label": None,
+            "reconnect_required": False,
+            "error_message": None,
         }
     
     # Count files
     files_count = await count_user_drive_files(get_sb(), user_id)
     
+    status_payload = _drive_status_fields(drive_integration)
+    account_label = drive_integration.get("end_user_email") or drive_integration.get("integration_name") or "Connected account"
+
     return {
         "connected": True,
         "integration_name": drive_integration.get("integration_name", "Google Drive"),
+        "account_label": account_label,
         "connected_at": drive_integration.get("connected_at"),
         "last_sync_at": drive_integration.get("last_sync_at"),
         "files_count": files_count,
-        "status": drive_integration.get("status", "active")
+        "status": status_payload["status"],
+        "sync_status": status_payload["sync_status"],
+        "reconnect_required": status_payload["reconnect_required"],
+        "error_message": status_payload["error_message"],
     }
 
 
@@ -3202,22 +3376,47 @@ async def google_drive_disconnect(current_user: dict = Depends(get_current_user)
     """Disconnect Google Drive integration and remove stored tokens/files."""
     user_id = current_user["id"]
     try:
-        # Remove integration record
-        get_sb().table("integration_accounts").delete().eq(
-            "user_id", user_id
-        ).eq("integration_slug", "google_drive").execute()
+        sb = get_sb()
+        drive_rows = (
+            sb.table("merge_integrations")
+            .select("id, account_id, account_token")
+            .eq("user_id", user_id)
+            .eq("integration_category", "file_storage")
+            .eq("integration_slug", "google_drive")
+            .execute()
+            .data
+            or []
+        )
 
-        # Remove synced files
-        get_sb().table("data_files").delete().eq(
-            "user_id", user_id
-        ).eq("source", "google_drive").execute()
+        account_ids = {str(r.get("account_id")) for r in drive_rows if r.get("account_id")}
+        account_tokens = {str(r.get("account_token")) for r in drive_rows if r.get("account_token")}
 
-        logger.info(f"[google-drive/disconnect] Disconnected for {user_id}")
+        if drive_rows:
+            sb.table("merge_integrations").delete().eq("user_id", user_id).eq("integration_category", "file_storage").eq("integration_slug", "google_drive").execute()
+
+        file_query = sb.table("google_drive_files").delete().eq("user_id", user_id)
+        if account_ids:
+            file_query = file_query.in_("account_id", list(account_ids))
+        file_query.execute()
+
+        # Remove scope policy after disconnect.
+        try:
+            sb.table("drive_scope_policy").delete().eq("user_id", user_id).execute()
+        except Exception:
+            pass
+
+        logger.info(
+            "[google-drive/disconnect] user=%s integrations_removed=%s files_query_account_ids=%s tokens_found=%s",
+            user_id,
+            len(drive_rows),
+            len(account_ids),
+            len(account_tokens),
+        )
         await invalidate_cached_integration_status(user_id)
-        return {"ok": True, "message": "Google Drive disconnected successfully"}
+        return {"ok": True, "message": "Source disconnected."}
     except Exception as e:
         logger.error(f"[google-drive/disconnect] Error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to disconnect Google Drive")
+        raise HTTPException(status_code=503, detail=GENERIC_SERVICE_ERROR_MESSAGE)
 
 
 
@@ -3278,7 +3477,16 @@ async def get_channel_status(current_user: dict = Depends(get_current_user)):
     # Check Google Drive
     drive_connected = False
     try:
-        drive_res = get_sb().table("integration_accounts").select("id").eq("user_id", user_id).eq("integration_slug", "google_drive").limit(1).execute()
+        drive_res = (
+            get_sb()
+            .table("merge_integrations")
+            .select("id")
+            .eq("user_id", user_id)
+            .eq("integration_category", "file_storage")
+            .eq("integration_slug", "google_drive")
+            .limit(1)
+            .execute()
+        )
         drive_data = drive_res.data if drive_res else None
         if drive_data and len(drive_data) > 0:
             drive_connected = True

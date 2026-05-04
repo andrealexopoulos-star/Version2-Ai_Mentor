@@ -247,7 +247,6 @@ const IntegrationStep = ({ connectedList, onConnected, onDone, mergeLinkToken, s
   const { open: openMergeModal, isReady: mergeReady } = useMergeLink({
     linkToken: mergeLinkToken || '',
     onSuccess: async (public_token, metadata) => {
-      const provider = metadata?.integration?.name || 'Integration';
       const category = metadata?.integration?.categories?.[0] || selectedCategory?.id || 'crm';
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -258,12 +257,12 @@ const IntegrationStep = ({ connectedList, onConnected, onDone, mergeLinkToken, s
           body: new URLSearchParams({ public_token, category }),
         });
         if (res.ok) {
-          toast.success(`${provider} connected!`);
-          onConnected(provider);
+          toast.success('Source connected.');
+          onConnected(selectedCategory?.label || 'Connected source');
         } else {
-          toast.error(`Failed to connect ${provider}`);
+          toast.error('Connection service error. Please try again or contact support.');
         }
-      } catch { toast.error('Connection failed'); }
+      } catch { toast.error('Connection service error. Please try again or contact support.'); }
       setMergeLinkToken('');
       setOpeningMerge(false);
       setPendingOpen(false);
@@ -310,6 +309,9 @@ const IntegrationStep = ({ connectedList, onConnected, onDone, mergeLinkToken, s
         </h2>
         <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
           Select a category to connect your systems.
+        </p>
+        <p className="text-xs mt-1" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
+          File Storage connects first; document analysis starts after source scope is selected.
         </p>
         {connectedList.length > 0 && (
           <div className="flex flex-wrap justify-center gap-2 mt-2">
