@@ -491,6 +491,15 @@ def test_edge_function_file_exists_and_has_required_extractors() -> None:
         "FIRECRAWL_API_KEY",
         "SERPER_API_KEY",
         "OPENAI_API_KEY",
+        # P0 Marjo F14 (2026-05-04): Trinity quorum wiring — staff
+        # sentiment + themes are critical for "world-class" employer-brand
+        # intelligence. Single-LLM = single point of failure.
+        "ANTHROPIC_API_KEY",
+        "GOOGLE_API_KEY",
+        "callOpenAI",
+        "callAnthropic",
+        "callGemini",
+        "trinityQuorum",
     ]:
         assert required in src, f"Edge function missing required symbol: {required}"
 
@@ -551,3 +560,110 @@ def test_edge_function_handles_missing_firecrawl_with_external_state() -> None:
     # And deriveStateFromIntel must exist and map to DATA_UNAVAILABLE
     assert "deriveStateFromIntel" in src
     assert '"DATA_UNAVAILABLE"' in src
+
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Tests — Trinity quorum (P0 Marjo F14 2026-05-04)
+# ────────────────────────────────────────────────────────────────────────
+#
+# Verifies the wiring R-R2C flagged: ANTHROPIC_API_KEY + GOOGLE_API_KEY
+# were imported but never used (only OpenAI was actually called). F14
+# replaces the single-OpenAI llmJsonExtract path with a Promise.allSettled
+# Trinity quorum that runs all 3 providers in parallel and returns the
+# first non-empty fulfilled response — OpenAI primary by iteration order.
+
+def test_trinity_quorum_calls_all_three_providers_in_parallel() -> None:
+    """trinityQuorum must invoke OpenAI, Anthropic, and Gemini in parallel
+    via Promise.allSettled — no provider can block the others, and
+    individual provider failures cannot zero-out the whole call (resilience
+    is the entire point of the quorum vs single-LLM fragility)."""
+    src = EDGE_FUNCTION_SOURCE.read_text(encoding="utf-8")
+    assert "async function trinityQuorum" in src, \
+        "trinityQuorum function missing — Trinity wiring not applied"
+    # Promise.allSettled is the parallel-with-graceful-degradation primitive
+    assert "Promise.allSettled" in src, \
+        "trinityQuorum must use Promise.allSettled, not Promise.all (which fails fast)"
+    # All three provider call sites must appear inside the quorum
+    quorum_block = src[src.index("async function trinityQuorum"):]
+    quorum_end = quorum_block.find("\n}\n", 100)
+    quorum_section = quorum_block[: quorum_end + 2] if quorum_end > 0 else quorum_block[:3000]
+    assert "callOpenAI(" in quorum_section, "trinityQuorum must invoke callOpenAI"
+    assert "callAnthropic(" in quorum_section, "trinityQuorum must invoke callAnthropic"
+    assert "callGemini(" in quorum_section, "trinityQuorum must invoke callGemini"
+
+
+def test_trinity_quorum_returns_first_non_empty_response_in_priority_order() -> None:
+    """Iteration order must be OpenAI → Anthropic → Gemini so OpenAI
+    remains the de-facto primary when healthy. The first successful
+    fulfilled provider with non-empty text wins."""
+    src = EDGE_FUNCTION_SOURCE.read_text(encoding="utf-8")
+    # The ordered-array iteration is the exact mechanism that enforces
+    # OpenAI priority — assert its presence and the openai-first ordering.
+    assert 'provider: "openai"' in src, "Trinity ordered list missing openai entry"
+    assert 'provider: "anthropic"' in src, "Trinity ordered list missing anthropic entry"
+    assert 'provider: "gemini"' in src, "Trinity ordered list missing gemini entry"
+    # OpenAI must come first in the iteration order
+    openai_pos = src.index('provider: "openai"')
+    anthropic_pos = src.index('provider: "anthropic"')
+    gemini_pos = src.index('provider: "gemini"')
+    assert openai_pos < anthropic_pos < gemini_pos, \
+        "Trinity provider iteration order must be OpenAI → Anthropic → Gemini"
+
+
+def test_trinity_quorum_records_total_failure_when_all_three_fail() -> None:
+    """When all 3 providers fail, ai_errors must contain
+    `llm_trinity_total_failure` (zero-401 + zero-silent-failure rule —
+    callers downgrade to INSUFFICIENT_SIGNAL via deriveStateFromIntel,
+    never silently return empty themes/sentiment as if successful)."""
+    src = EDGE_FUNCTION_SOURCE.read_text(encoding="utf-8")
+    assert "llm_trinity_total_failure" in src, \
+        "trinityQuorum must record total-failure marker for Contract v2 boundary"
+
+
+def test_anthropic_and_gemini_imports_are_actually_wired_not_dead_code() -> None:
+    """R-R2C P0: ANTHROPIC_API_KEY + GOOGLE_API_KEY were dead imports in
+    the original R2C edge fn (read at lines 45-46, never referenced
+    anywhere else). F14 wires them into Trinity. This test guards against
+    regression — if either becomes dead again, the test fails."""
+    src = EDGE_FUNCTION_SOURCE.read_text(encoding="utf-8")
+    # Each key must appear in BOTH the constant declaration AND inside a
+    # provider-call function body (callAnthropic / callGemini).
+    assert "ANTHROPIC_API_KEY" in src
+    assert "GOOGLE_API_KEY" in src
+    # Find callAnthropic body — must reference ANTHROPIC_API_KEY
+    callAnthropic_idx = src.find("async function callAnthropic")
+    assert callAnthropic_idx > 0, "callAnthropic function missing"
+    callAnthropic_body = src[callAnthropic_idx : callAnthropic_idx + 2000]
+    assert "ANTHROPIC_API_KEY" in callAnthropic_body, \
+        "ANTHROPIC_API_KEY is dead — not actually used inside callAnthropic"
+    assert "api.anthropic.com" in callAnthropic_body, \
+        "callAnthropic doesn't actually hit the Anthropic API endpoint"
+    # Find callGemini body — must reference GOOGLE_API_KEY
+    callGemini_idx = src.find("async function callGemini")
+    assert callGemini_idx > 0, "callGemini function missing"
+    callGemini_body = src[callGemini_idx : callGemini_idx + 2000]
+    assert "GOOGLE_API_KEY" in callGemini_body, \
+        "GOOGLE_API_KEY is dead — not actually used inside callGemini"
+    assert "generativelanguage.googleapis.com" in callGemini_body, \
+        "callGemini doesn't actually hit the Gemini API endpoint"
+
+
+def test_llm_json_extract_uses_trinity_quorum_not_direct_openai_only() -> None:
+    """llmJsonExtract is the wrapper consumed by classifySentimentBatch +
+    extractThemesAcrossPlatforms + extractPerPlatformThemes. It MUST go
+    through trinityQuorum, not direct fetch to OpenAI — otherwise the
+    Trinity fallback is bypassed for the calls that matter (sentiment +
+    themes are precisely the LLM workloads R2C ships)."""
+    src = EDGE_FUNCTION_SOURCE.read_text(encoding="utf-8")
+    fn_start = src.find("async function llmJsonExtract")
+    assert fn_start > 0, "llmJsonExtract missing"
+    # Find function body — naive but works: from the function header
+    # through the next top-level `async function` declaration.
+    next_fn = src.find("\nasync function ", fn_start + 30)
+    fn_body = src[fn_start : next_fn if next_fn > 0 else fn_start + 3000]
+    assert "trinityQuorum(" in fn_body, \
+        "llmJsonExtract must delegate to trinityQuorum (single-OpenAI path is the dead-code regression)"
+    # And it should NOT directly fetch OpenAI here — that bypass would defeat the point
+    assert "api.openai.com" not in fn_body, \
+        "llmJsonExtract must not directly hit OpenAI — Trinity quorum is the only LLM entry point now"

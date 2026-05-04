@@ -1664,6 +1664,7 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         has_evidence=bool(adv_intel.get("ad_history_12m")),
     )
 
+
     section_inventory = {
         "Chief Marketing Summary": {"status": exec_status},
         "Executive Summary": {"status": exec_status},

@@ -2953,21 +2953,19 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     )
                 return result
 
-            # P0-MARJO-R2B 2026-05-04: customer-reviews-deep added to fanout
-            # alongside browse-ai-reviews. Both run during the deprecation
-            # window (R2B + R2C land + V1-V8 verifies green) so the new
-            # per-platform deep extraction (Google Maps via Serper, Trustpilot
-            # / ProductReview / Yelp / Facebook via Firecrawl, LLM Trinity
-            # sentiment + themes) can be compared against the legacy shallow
-            # Google-HTML scraper. Once verified, browse-ai-reviews is removed.
-            # See BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
-            #
-            # 2026-05-04 (P0 Marjo R2C): added 8th calibration edge —
-            # `staff-reviews-deep` — replacing snippet-based Glassdoor parsing
-            # in `_parse_glassdoor_reviews` with deep public-page Firecrawl
-            # extraction across Glassdoor + Indeed + Seek (+ optional PayScale,
-            # Fairwork). Backward compat preserved by passing the new payload
-            # into _build_staff_review_intelligence below.
+            # 2026-05-04 (P0 Marjo R2B + R2C): added two deep review edges to the fanout —
+            #   * `customer-reviews-deep` (R2B) — per-platform Firecrawl/Serper across Google
+            #     Maps, Trustpilot, ProductReview.com.au, Yelp, Facebook + LLM Trinity
+            #     sentiment + themes; runs alongside legacy `browse-ai-reviews` during the
+            #     deprecation window so the new per-platform deep extraction can be compared
+            #     against the legacy shallow Google-HTML scraper (browse-ai-reviews is
+            #     removed once V1-V8 verifies green for two consecutive scans).
+            #   * `staff-reviews-deep` (R2C) — replaces snippet-based Glassdoor parsing in
+            #     `_parse_glassdoor_reviews` with deep public-page Firecrawl extraction
+            #     across Glassdoor + Indeed + Seek (+ optional PayScale, Fairwork).
+            #     Backward compat preserved by passing the new payload into
+            #     `_build_staff_review_intelligence` below.
+            # See BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 + feedback_zero_401_tolerance.
             (
                 warm_cognitive,
                 calibration_business_dna,

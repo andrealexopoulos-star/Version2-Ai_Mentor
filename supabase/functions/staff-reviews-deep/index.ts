@@ -46,6 +46,9 @@ const ANTHROPIC_API_KEY = (Deno.env.get("ANTHROPIC_API_KEY") || "").trim();
 const GOOGLE_API_KEY = (Deno.env.get("GOOGLE_API_KEY") || "").trim();
 
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") || "gpt-4o";
+const ANTHROPIC_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-6";
+const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-3-pro-preview";
+const LLM_TIMEOUT_MS = 35000;
 
 // ───────────────────────────────────────────────────────────────────────────
 // Types
@@ -603,22 +606,44 @@ function extractSeekMarkdown(md: string): {
   return out;
 }
 
+// LLM sentiment + theme extraction — Trinity quorum (P0 Marjo F14)
 // ───────────────────────────────────────────────────────────────────────────
-// LLM sentiment + theme extraction (Trinity-anchored — OpenAI primary)
+//
+// 2026-05-04: replaced single-provider OpenAI call with the same
+// Promise.allSettled Trinity-quorum pattern R2B's customer-reviews-deep uses
+// (supabase/functions/customer-reviews-deep/index.ts:865-1015). Single LLM
+// = single point of failure; staff sentiment + themes are critical for the
+// "world-class employer brand intelligence" claim, so OpenAI degrading at
+// 4am AEST cannot zero out an entire scan.
+//
+// Behaviour:
+//   * All 3 providers (OpenAI, Anthropic, Gemini) are called in parallel
+//     via Promise.allSettled — none can stall the others.
+//   * Result iteration order is OpenAI → Anthropic → Gemini, so OpenAI
+//     remains de-facto primary (its result is consumed first when valid).
+//   * First non-empty fulfilled result wins; the others are best-effort
+//     and their errors are sanitised into ai_errors[] internally.
+//   * If all 3 fail, ai_errors gets `llm_trinity_total_failure` and the
+//     callers (classifySentimentBatch, extractThemesAcrossPlatforms,
+//     extractPerPlatformThemes) cope by returning their `null` / empty
+//     fallback shape — zero-401 + Contract v2 preserved (no leak, no
+//     silent success, the cross-platform aggregation downgrades to
+//     INSUFFICIENT_SIGNAL via deriveStateFromIntel).
+//
+// Strict no-supplier-leak: ai_errors strings remain opaque codes like
+// `llm_openai_unconfigured` / `llm_anthropic_http_429` / `llm_gemini_exception_…`.
+// They are NEVER surfaced externally (see test_no_supplier_leak_in_errors_contract_v2
+// which asserts the calibration boundary strips them before the frontend).
 // ───────────────────────────────────────────────────────────────────────────
 
-async function llmJsonExtract(
+async function callOpenAI(
   systemPrompt: string,
   userPrompt: string,
-  aiErrors: string[],
-  userId?: string,
-  feature = "staff_reviews_deep",
-): Promise<any | null> {
-  if (!OPENAI_API_KEY) {
-    aiErrors.push("ai_provider_unavailable");
-    return null;
-  }
+): Promise<{ ok: boolean; text: string; error?: string; tokens?: { input: number; output: number; cached: number } }> {
+  if (!OPENAI_API_KEY) return { ok: false, text: "", error: "openai_unconfigured" };
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -633,39 +658,196 @@ async function llmJsonExtract(
         ],
         temperature: 0.2,
         max_tokens: 2400,
-        response_format: { type: "json_object" },
-      }),
+      signal: controller.signal,
     });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      aiErrors.push(`ai_http_${res.status}_${txt.slice(0, 60)}`);
-      return null;
-    }
+    clearTimeout(timer);
+    if (!res.ok) return { ok: false, text: "", error: `openai_http_${res.status}` };
     const data = await res.json();
     const usage = data.usage || {};
-    if (userId) {
-      recordUsage({
-        userId,
-        model: OPENAI_MODEL,
-        inputTokens: usage.prompt_tokens || 0,
-        outputTokens: usage.completion_tokens || 0,
-        cachedInputTokens: usage.prompt_tokens_details?.cached_tokens || 0,
-        feature,
-        action: feature,
-      });
+    return {
+      ok: true,
+      text: String(data?.choices?.[0]?.message?.content || ""),
+      tokens: {
+        input: usage.prompt_tokens || 0,
+        output: usage.completion_tokens || 0,
+        cached: usage.prompt_tokens_details?.cached_tokens || 0,
+      },
+    };
+  } catch (e) {
+    return { ok: false, text: "", error: `openai_exception_${String(e).slice(0, 60)}` };
+  }
+}
+
+async function callAnthropic(
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<{ ok: boolean; text: string; error?: string; tokens?: { input: number; output: number; cached: number } }> {
+  if (!ANTHROPIC_API_KEY) return { ok: false, text: "", error: "anthropic_unconfigured" };
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+        max_tokens: 2400,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return { ok: false, text: "", error: `anthropic_http_${res.status}` };
+    const data = await res.json();
+    const usage = data?.usage || {};
+    return {
+      ok: true,
+      text: String(data?.content?.[0]?.text || ""),
+      tokens: {
+        input: usage.input_tokens || 0,
+        output: usage.output_tokens || 0,
+        cached: usage.cache_read_input_tokens || 0,
+      },
+    };
+  } catch (e) {
+    return { ok: false, text: "", error: `anthropic_exception_${String(e).slice(0, 60)}` };
+  }
+}
+
+async function callGemini(
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<{ ok: boolean; text: string; error?: string; tokens?: { input: number; output: number; cached: number } }> {
+  if (!GOOGLE_API_KEY) return { ok: false, text: "", error: "gemini_unconfigured" };
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+    const url =
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GOOGLE_API_KEY}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+        generationConfig: { maxOutputTokens: 2400, temperature: 0.2 },
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return { ok: false, text: "", error: `gemini_http_${res.status}` };
+    const data = await res.json();
+    const usage = data?.usageMetadata || {};
+    return {
+      ok: true,
+      text: String(data?.candidates?.[0]?.content?.parts?.[0]?.text || ""),
+      tokens: {
+        input: usage.promptTokenCount || 0,
+        output: usage.candidatesTokenCount || 0,
+        cached: usage.cachedContentTokenCount || 0,
+      },
+    };
+  } catch (e) {
+    return { ok: false, text: "", error: `gemini_exception_${String(e).slice(0, 60)}` };
+  }
+}
+
+// Trinity quorum: try all 3 providers in parallel, return first non-empty.
+// Iteration order is OpenAI → Anthropic → Gemini so OpenAI remains primary
+// when healthy (its result is consumed first). Returns the raw text plus
+// which provider+model produced it (for usage_ledger metering).
+async function trinityQuorum(
+  systemPrompt: string,
+  userPrompt: string,
+  aiErrors: string[],
+): Promise<{
+  text: string;
+  provider: "openai" | "anthropic" | "gemini" | null;
+  model: string | null;
+  tokens: { input: number; output: number; cached: number };
+}> {
+  const [oa, an, gm] = await Promise.allSettled([
+    callOpenAI(systemPrompt, userPrompt),
+    callAnthropic(systemPrompt, userPrompt),
+    callGemini(systemPrompt, userPrompt),
+  ]);
+  const ordered: Array<{
+    res: PromiseSettledResult<{ ok: boolean; text: string; error?: string; tokens?: { input: number; output: number; cached: number } }>;
+    provider: "openai" | "anthropic" | "gemini";
+    model: string;
+  }> = [
+    { res: oa, provider: "openai", model: OPENAI_MODEL },
+    { res: an, provider: "anthropic", model: ANTHROPIC_MODEL },
+    { res: gm, provider: "gemini", model: GEMINI_MODEL },
+  ];
+  // First pass — accept any successful non-empty text in priority order.
+  for (const item of ordered) {
+    if (item.res.status !== "fulfilled") continue;
+    const v = item.res.value;
+    if (v.ok && v.text && v.text.trim()) {
+      return {
+        text: v.text,
+        provider: item.provider,
+        model: item.model,
+        tokens: v.tokens || { input: 0, output: 0, cached: 0 },
+      };
     }
-    let raw = String(data.choices?.[0]?.message?.content || "").trim();
-    if (raw.startsWith("```")) {
-      raw = raw.replace(/^```[^\n]*\n?/, "").replace(/```\s*$/, "").trim();
+  }
+  // No success — record sanitised provider errors for internal diagnostics
+  // (these never reach the external response per Contract v2; the
+  // calibration boundary strips ai_errors before frontend exposure).
+  for (const item of ordered) {
+    if (item.res.status === "rejected") {
+      aiErrors.push(`llm_${item.provider}_rejected`);
+    } else if (!item.res.value.ok) {
+      aiErrors.push(`llm_${item.provider}_${item.res.value.error || "unknown"}`);
+    } else {
+      aiErrors.push(`llm_${item.provider}_empty_response`);
     }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      aiErrors.push("ai_parse_error");
-      return null;
-    }
-  } catch (err) {
-    aiErrors.push(`ai_error_${String(err).slice(0, 60)}`);
+  }
+  aiErrors.push("llm_trinity_total_failure");
+  return { text: "", provider: null, model: null, tokens: { input: 0, output: 0, cached: 0 } };
+}
+
+async function llmJsonExtract(
+  systemPrompt: string,
+  userPrompt: string,
+  aiErrors: string[],
+  userId?: string,
+  feature = "staff_reviews_deep",
+): Promise<any | null> {
+  // P0 Marjo F14 (2026-05-04): Trinity quorum — all 3 providers tried in
+  // parallel; first non-empty wins (OpenAI primary by iteration order).
+  const { text, provider, model, tokens } = await trinityQuorum(systemPrompt, userPrompt, aiErrors);
+  if (!text) return null;
+
+  // Provider trace via usage_ledger — same wiring as the single-provider
+  // path used to do, but now records which provider actually answered so
+  // ops can see Trinity health (recordUsage tolerates absent provider).
+  if (userId && model) {
+    recordUsage({
+      userId,
+      model,
+      inputTokens: tokens.input,
+      outputTokens: tokens.output,
+      cachedInputTokens: tokens.cached,
+      feature,
+      action: provider ? `${feature}_${provider}` : feature,
+    });
+  }
+
+  let raw = text.trim();
+  if (raw.startsWith("```")) {
+    raw = raw.replace(/^```[^\n]*\n?/, "").replace(/```\s*$/, "").trim();
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    aiErrors.push("ai_parse_error");
     return null;
   }
 }
