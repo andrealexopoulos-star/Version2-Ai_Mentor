@@ -23,7 +23,7 @@ import os
 import types
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pytest
 
@@ -95,9 +95,18 @@ def _load_symbols():
             status_code = 200
         return status_code >= 400 or result.get("ok") is False
 
+    # P0 Marjo E2 (2026-05-04) — supply no-op trace shims so the AST loader
+    # exercises the same control flow as production without writing rows.
+    async def _noop_async(*args, **kwargs):
+        return None
+
+    def _noop(*args, **kwargs):
+        return None
+
     namespace: Dict[str, Any] = {
         "Any": Any,
         "Dict": Dict,
+        "Optional": Optional,
         "Enum": Enum,
         "os": os,
         "asyncio": asyncio,
@@ -106,6 +115,19 @@ def _load_symbols():
         "_normalize_edge_result": lambda fn, status, data: {"ok": status == 200, **data},
         "_edge_result_failed": _edge_result_failed_stub,
         "logger": _NoopLogger(),
+        # E2 trace helpers — no-op so trace rows aren't written from tests.
+        "abegin_trace": _noop_async,
+        "acomplete_trace": _noop_async,
+        "arecord_provider_trace": _noop_async,
+        "get_active_scan_id": _noop,
+        "get_active_user_id": _noop,
+        "EDGE_FUNCTION_TO_PROVIDER": {},
+        "_summarise_edge_request": lambda fn, payload: {"edge_function": fn},
+        "_summarise_edge_response": lambda fn, status, normalised: {
+            "edge_function": fn, "http_status": status,
+        },
+        "_time": __import__("time"),
+        "json": __import__("json"),
     }
     exec(compile(module, str(CALIBRATION_SOURCE), "exec"), namespace)
     return namespace

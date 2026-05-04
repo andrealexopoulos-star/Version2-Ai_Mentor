@@ -3,7 +3,7 @@ import asyncio
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import types
 
 
@@ -54,9 +54,21 @@ def _load_edge_helpers():
         def debug(self, *args, **kwargs):
             pass
 
+    # P0 Marjo E2 (2026-05-04): _call_edge_function now records per-attempt
+    # provider traces via abegin_trace / acomplete_trace / arecord_provider_trace
+    # plus a ContextVar-backed get_active_scan_id. Supply harmless no-op shims so
+    # this AST-extracted test fixture stays HTTP-less and trace-table-less while
+    # exercising the same control-flow as production.
+    async def _noop_async(*args, **kwargs):
+        return None
+
+    def _noop(*args, **kwargs):
+        return None
+
     namespace = {
         "Any": Any,
         "Dict": Dict,
+        "Optional": Optional,
         "Enum": Enum,
         "os": os,
         "asyncio": asyncio,
@@ -64,6 +76,19 @@ def _load_edge_helpers():
         # _surface_edge_non_200 references logger.error — supply a no-op so
         # this test loader stays HTTP-less and silent.
         "logger": _NoopLogger(),
+        # E2 trace helpers — no-op so trace rows aren't written from tests.
+        "abegin_trace": _noop_async,
+        "acomplete_trace": _noop_async,
+        "arecord_provider_trace": _noop_async,
+        "get_active_scan_id": _noop,
+        "get_active_user_id": _noop,
+        "EDGE_FUNCTION_TO_PROVIDER": {},
+        "_summarise_edge_request": lambda fn, payload: {"edge_function": fn},
+        "_summarise_edge_response": lambda fn, status, normalised: {
+            "edge_function": fn, "http_status": status,
+        },
+        "_time": __import__("time"),
+        "json": __import__("json"),
     }
     exec(compile(module, str(CALIBRATION_SOURCE), "exec"), namespace)
     return namespace

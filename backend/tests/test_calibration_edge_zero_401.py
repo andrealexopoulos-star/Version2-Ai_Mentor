@@ -172,9 +172,20 @@ def _load_symbols(http_status_to_return: int = 200,
         def debug(self, *args, **kwargs):
             pass
 
+    # P0 Marjo E2 (2026-05-04) — supply no-op shims for the trace helpers
+    # so this AST loader stays trace-table-less while exercising the same
+    # control flow as production. Real production wires these to
+    # core.enrichment_trace.
+    async def _noop_async(*args, **kwargs):
+        return None
+
+    def _noop(*args, **kwargs):
+        return None
+
     namespace: Dict[str, Any] = {
         "Any": Any,
         "Dict": Dict,
+        "Optional": Optional,
         "Enum": Enum,
         "RuntimeError": RuntimeError,
         "os": os,
@@ -184,6 +195,19 @@ def _load_symbols(http_status_to_return: int = 200,
         "_get_edge_client": _get_edge_client_stub,
         "_normalize_edge_result": _normalize_edge_result_stub,
         "_edge_result_failed": _edge_result_failed_stub,
+        # E2 trace helpers — no-op so trace rows aren't written from tests.
+        "abegin_trace": _noop_async,
+        "acomplete_trace": _noop_async,
+        "arecord_provider_trace": _noop_async,
+        "get_active_scan_id": _noop,
+        "get_active_user_id": _noop,
+        "EDGE_FUNCTION_TO_PROVIDER": {},
+        "_summarise_edge_request": lambda fn, payload: {"edge_function": fn},
+        "_summarise_edge_response": lambda fn, status, normalised: {
+            "edge_function": fn, "http_status": status,
+        },
+        "_time": __import__("time"),
+        "json": __import__("json"),
     }
     exec(compile(module, str(CALIBRATION_SOURCE), "exec"), namespace)
     namespace["_captured_logs"] = captured_logs
