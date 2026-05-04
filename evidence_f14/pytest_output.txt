@@ -1,0 +1,38 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0 -- /Library/Developer/CommandLineTools/usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /private/tmp/biqc-marjo-f14
+plugins: anyio-4.12.1
+collecting ... collected 29 items
+
+backend/tests/test_perimeter_complete_for_new_edge_fns.py::test_calibration_scan_fanout_includes_both_f14_edge_fns PASSED [  3%]
+backend/tests/test_perimeter_complete_for_new_edge_fns.py::test_health_contract_covers_all_scan_fanout_edge_fns PASSED [  6%]
+backend/tests/test_perimeter_complete_for_new_edge_fns.py::test_supabase_deploy_workflow_smokes_all_scan_fanout_edge_fns PASSED [ 10%]
+backend/tests/test_perimeter_complete_for_new_edge_fns.py::test_main_deploy_workflow_smokes_all_scan_fanout_edge_fns PASSED [ 13%]
+backend/tests/test_perimeter_complete_for_new_edge_fns.py::test_forensic_gate_probes_both_f14_edge_fns PASSED [ 17%]
+backend/tests/test_perimeter_complete_for_new_edge_fns.py::test_response_sanitizer_bans_both_f14_edge_fn_slugs_externally PASSED [ 20%]
+backend/tests/test_perimeter_complete_for_new_edge_fns.py::test_no_edge_fn_in_scan_path_lacks_perimeter_coverage_anywhere PASSED [ 24%]
+backend/tests/test_calibration_edge_health_contract.py::test_calibration_edge_sources_expose_get_health_contract PASSED [ 27%]
+backend/tests/test_calibration_edge_health_contract.py::test_supabase_functions_workflow_smokes_calibration_health_contract PASSED [ 31%]
+backend/tests/test_staff_reviews_deep.py::test_per_platform_schema_extraction_via_deep_payload PASSED [ 34%]
+backend/tests/test_staff_reviews_deep.py::test_llm_theme_extraction_pros_cons_separated_into_buckets PASSED [ 37%]
+backend/tests/test_staff_reviews_deep.py::test_cross_platform_weighted_rating_arithmetic PASSED [ 41%]
+backend/tests/test_staff_reviews_deep.py::test_employer_brand_health_score_bounds_and_propagation PASSED [ 44%]
+backend/tests/test_staff_reviews_deep.py::test_serpapi_eid_lookup_fallback_documented_for_python_consumers PASSED [ 48%]
+backend/tests/test_staff_reviews_deep.py::test_no_supplier_leak_in_errors_contract_v2 PASSED [ 51%]
+backend/tests/test_staff_reviews_deep.py::test_provider_traces_per_platform_persisted_via_calibration_wiring PASSED [ 55%]
+backend/tests/test_staff_reviews_deep.py::test_legacy_browse_ai_path_still_works_when_no_deep_payload PASSED [ 58%]
+backend/tests/test_staff_reviews_deep.py::test_legacy_glassdoor_snippet_fallback_when_only_serper_results PASSED [ 62%]
+backend/tests/test_staff_reviews_deep.py::test_action_plan_derived_from_deep_negative_themes PASSED [ 65%]
+backend/tests/test_staff_reviews_deep.py::test_edge_function_file_exists_and_has_required_extractors PASSED [ 68%]
+backend/tests/test_staff_reviews_deep.py::test_edge_function_external_state_enum_only_uses_contract_v2_values PASSED [ 72%]
+backend/tests/test_staff_reviews_deep.py::test_edge_function_has_no_hardcoded_supplier_names_in_external_paths PASSED [ 75%]
+backend/tests/test_staff_reviews_deep.py::test_edge_function_has_unauth_path_returning_401 PASSED [ 79%]
+backend/tests/test_staff_reviews_deep.py::test_edge_function_handles_missing_firecrawl_with_external_state PASSED [ 82%]
+backend/tests/test_staff_reviews_deep.py::test_trinity_quorum_calls_all_three_providers_in_parallel PASSED [ 86%]
+backend/tests/test_staff_reviews_deep.py::test_trinity_quorum_returns_first_non_empty_response_in_priority_order PASSED [ 89%]
+backend/tests/test_staff_reviews_deep.py::test_trinity_quorum_records_total_failure_when_all_three_fail PASSED [ 93%]
+backend/tests/test_staff_reviews_deep.py::test_anthropic_and_gemini_imports_are_actually_wired_not_dead_code PASSED [ 96%]
+backend/tests/test_staff_reviews_deep.py::test_llm_json_extract_uses_trinity_quorum_not_direct_openai_only PASSED [100%]
+
+============================== 29 passed in 0.07s ==============================

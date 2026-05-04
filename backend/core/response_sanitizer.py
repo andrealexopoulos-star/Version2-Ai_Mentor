@@ -151,6 +151,13 @@ BANNED_INTERNAL_TOKENS: Tuple[str, ...] = (
     "semrush-domain-intel",
     "social-enrichment",
     "competitor-monitor",
+    # P0 Marjo F14 (2026-05-04): the two new deep-extraction edge fns
+    # (R2B + R2C) — their slugs must be banned from external responses
+    # too, same as the legacy edge fn slugs above. Otherwise a leaked
+    # backend log line could surface the new internal architecture
+    # (Firecrawl per-platform pipeline) to a customer.
+    "customer-reviews-deep",
+    "staff-reviews-deep",
     "user_jwt_rejected",
     "service_role_exact",
     "service_role_jwt",

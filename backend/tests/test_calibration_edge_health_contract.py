@@ -52,6 +52,20 @@ HEALTH_CONTRACT_TARGETS = [
         "supabase/functions/competitor-monitor/index.ts",
         "competitor-monitor",
     ),
+    # P0 Marjo F14 (2026-05-04) — close perimeter gap for the two new
+    # deep-extraction edge functions added by R2B + R2C. Both ARE in the
+    # calibration scan fanout (asyncio.gather in calibration.py:~2655) and
+    # therefore MUST appear in the health contract per
+    # feedback_zero_401_tolerance.md (no edge fn in scan path may silently
+    # 401 in prod) and BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
+    (
+        "supabase/functions/customer-reviews-deep/index.ts",
+        "customer-reviews-deep",
+    ),
+    (
+        "supabase/functions/staff-reviews-deep/index.ts",
+        "staff-reviews-deep",
+    ),
 ]
 
 
