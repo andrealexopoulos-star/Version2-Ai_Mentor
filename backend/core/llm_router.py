@@ -815,17 +815,29 @@ async def llm_trinity_chat(
     # the Opus call itself errors at the transport layer (network/5xx) — in
     # that degraded case we prefer a response over a hard failure.
     # ADR-049 — annotate the eventual synthesis provider into the trace.
+    #
+    # 2026-05-04 Marjo / 13041978 — bound the Opus synthesis with asyncio.wait_for
+    # so a slow Opus response (legitimately 30-45s on long inputs) does not
+    # blow the 120s frontend scan budget. A timeout here counts as a transport-
+    # layer error per the directive's explicit fallback clause: "Opus call itself
+    # errors at the transport layer ... we prefer a response over a hard failure."
+    # Total Trinity worst case after this bound: candidates 45s + synthesis 22s
+    # + OpenAI fallback 5s = ~72s, leaving headroom for the edge fanout (~20s).
+    SYNTHESIS_OPUS_DEADLINE_S = float(os.environ.get("TRINITY_SYNTHESIS_OPUS_DEADLINE_S", "22"))
     if ANTHROPIC_API_KEY:
         try:
-            content, usage = await _anthropic_chat(
-                model=ANTHROPIC_MODEL_OPUS,
-                system_message=synthesis_system,
-                user_message=synthesis_user,
-                messages=None,
-                temperature=0.35,
-                max_tokens=max_tokens,
-                timeout=timeout,
-                api_key=ANTHROPIC_API_KEY,
+            content, usage = await asyncio.wait_for(
+                _anthropic_chat(
+                    model=ANTHROPIC_MODEL_OPUS,
+                    system_message=synthesis_system,
+                    user_message=synthesis_user,
+                    messages=None,
+                    temperature=0.35,
+                    max_tokens=max_tokens,
+                    timeout=timeout,
+                    api_key=ANTHROPIC_API_KEY,
+                ),
+                timeout=SYNTHESIS_OPUS_DEADLINE_S,
             )
             await _record_usage(user_id, ANTHROPIC_MODEL_OPUS, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), feature="trinity_synthesis", tier=tier, action="trinity_synthesis", tier_at_event=tier)
             _emit_trinity_trace(
@@ -838,6 +850,9 @@ async def llm_trinity_chat(
                 feature="trinity_synthesis",
             )
             return content
+        except asyncio.TimeoutError:
+            logger.warning(f"[Trinity] flagship Opus synthesis exceeded {SYNTHESIS_OPUS_DEADLINE_S}s deadline, falling back to fast synthesis")
+            failed_entries.append({"provider": "anthropic_synthesis", "reason": f"deadline_exceeded:{SYNTHESIS_OPUS_DEADLINE_S}s"})
         except Exception as exc:
             logger.warning(f"[Trinity] flagship Opus synthesis failed, falling back: {exc}")
             failed_entries.append({"provider": "anthropic_synthesis", "reason": str(exc)[:240]})
