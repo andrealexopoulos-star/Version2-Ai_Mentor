@@ -196,14 +196,27 @@ _edge_client: Optional[httpx.AsyncClient] = None
 #   "There MUST Never be a 401. There must be a legitimate 200 at all times on
 #    every single enrichment and part of the scan process. ZERO fall-backs."
 #
-# Anti-pattern this guards against: a non-200 from one of the 8 mission edge
+# Anti-pattern this guards against: a non-200 from one of the mission edge
 # functions silently lands in business_dna_enrichment.enrichment.ai_errors and
 # the user sees a confident-looking 75/100 score derived from 35% of inputs.
 #
-# This module-level set captures the canonical 8 URL-scan calibration edge
-# functions per the Marjo Critical Incident E1 brief. The wider scan also calls
-# competitor-monitor / market-analysis-ai / market-signal-scorer / semrush-
-# domain-intel; those are tracked independently by E2 / dedicated agents.
+# This module-level set captures the canonical URL-scan calibration edge
+# functions per the Marjo Critical Incident briefs:
+#   - E1 contributed the original 8 (browse-ai-reviews, calibration-psych,
+#     business-identity-lookup, calibration-business-dna, calibration-sync,
+#     deep-web-recon, warm-cognitive-engine, social-enrichment).
+#   - R2A (this PR, 2026-05-04) adds the 4 missed by E1's audit but exercised
+#     in the same website_enrichment asyncio.gather (calibration.py:~2454):
+#       * semrush-domain-intel    — SEMrush organic+paid+backlinks signals
+#       * competitor-monitor      — Perplexity competitor change-detection
+#       * market-analysis-ai      — OpenAI SWOT + Perplexity market intel
+#       * market-signal-scorer    — derived market signal scoring
+#     Total mission set: 12 distinct slugs (13 with calibration_psych alias).
+#     R2A evidence (saved to evidence_r2a/edge-fn-status-evidence.txt):
+#       semrush-domain-intel   503 ×5 / 14d (supplier-key — not bug)
+#       market-signal-scorer   400 ×5 / 14d (caller-contract — fixed at 2487)
+#       market-analysis-ai     400 ×3 / 14d (caller-contract — needs product_or_service)
+#       competitor-monitor     0 errors / 14d (clean)
 #
 # Surfacing behaviour:
 #   - Default (production today): every non-200 from a mission function is
@@ -214,6 +227,7 @@ _edge_client: Optional[httpx.AsyncClient] = None
 #     after logging, so the scan fails loudly. Useful for staging gates and
 #     post-deploy verification per ops_daily_calibration_check.md.
 MISSION_EDGE_FUNCTIONS_ZERO_401 = {
+    # ── E1 set (original 8 + 1 alias) ──────────────────────────────────────
     "browse-ai-reviews",
     "calibration-psych",      # canonical hyphen slug
     "calibration_psych",      # legacy underscore alias (canonicalised in routes/integrations.py)
@@ -223,6 +237,13 @@ MISSION_EDGE_FUNCTIONS_ZERO_401 = {
     "deep-web-recon",
     "warm-cognitive-engine",
     "social-enrichment",
+    # ── R2A additions (Marjo Round 2 / 2026-05-04) ─────────────────────────
+    # The 4 fns missed by E1 but present in the website_enrichment fanout.
+    # Same surfacing/strict-mode treatment as the E1 set.
+    "semrush-domain-intel",
+    "competitor-monitor",
+    "market-analysis-ai",
+    "market-signal-scorer",
 }
 
 
@@ -2697,6 +2718,52 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         code=strict_blockers[0]["code"],
                         error=f"{len(strict_blockers)} mission edge function(s) failed",
                     )
+
+            # ─── Marjo P0 / R2A (2026-05-04) — per-edge-fn response summary ──
+            # Internal-only audit metadata for the 4 fns that R2A added to the
+            # mission set (semrush-domain-intel, competitor-monitor,
+            # market-analysis-ai, market-signal-scorer). Captures slug-level
+            # outcome (ok/_http_status/code) so the CMO Report audit endpoint
+            # added by E2 (intelligence_modules.get_cmo_report) can surface
+            # per-provider counts WITHOUT leaking supplier names externally.
+            #
+            # Stays inside the enrichment payload (under "_edge_response_summary"
+            # — leading underscore = internal-only key, stripped by Contract v2
+            # sanitiser at boundary). Persisted to business_dna_enrichment for
+            # historical audit but never echoed to the frontend.
+            #
+            # Per BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 (Hard Rule
+            # 1 — backend is the boundary): supplier names + status codes are
+            # logged here for the daily check (ops_daily_calibration_check.md)
+            # but the external response uses only the allowed state enum
+            # {DATA_AVAILABLE, DATA_UNAVAILABLE, INSUFFICIENT_SIGNAL,
+            #  PROCESSING, DEGRADED}.
+            r2a_response_summary = {}
+            for r2a_fn_name, r2a_fn_result in (
+                ("semrush-domain-intel", semrush_intel),
+                ("competitor-monitor", competitor_monitor),
+                ("market-analysis-ai", market_analysis),
+                ("market-signal-scorer", market_scorer),
+            ):
+                if not isinstance(r2a_fn_result, dict):
+                    r2a_response_summary[r2a_fn_name] = {
+                        "ok": False,
+                        "code": "INVALID_PAYLOAD",
+                        "_http_status": None,
+                    }
+                    continue
+                r2a_failed = _edge_result_failed(r2a_fn_result)
+                r2a_response_summary[r2a_fn_name] = {
+                    "ok": (not r2a_failed),
+                    "_http_status": r2a_fn_result.get("_http_status"),
+                    "code": (
+                        str(r2a_fn_result.get("code") or "EDGE_FUNCTION_FAILED")
+                        if r2a_failed else "OK"
+                    ),
+                    # No supplier names, error strings, or stack traces here.
+                    # Sanitiser-safe internal markers only.
+                }
+            enrichment["_edge_response_summary"] = r2a_response_summary
 
             # Ingest identity/profile fields from dedicated edge outputs only
             # when they add real signal over baseline scrape extraction.
