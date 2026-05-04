@@ -1917,6 +1917,50 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         "strategic": [item for item in roadmap.get("strategic") or [] if not is_placeholder_text(str(item.get("text") or ""))],
     }
 
+    # Phase 1.X CMO Report mapping hard-fix (2026-05-05 code 13041978):
+    # Andreas hard-fail report: CMO Report showed 0/100 + INSUFFICIENT_SIGNAL
+    # despite real BDE data (Smsglobal scan: cmo_executive_brief had real
+    # narrative, competitor_analysis had real narrative paragraph naming
+    # Burst SMS / MessageMedia / Twilio / ClickSend, cmo_priority_actions
+    # had 4 real items). Bug: code at line 1968 called .get() on a STRING
+    # competitor_analysis (calibration synthesis writes it as narrative
+    # paragraph) which silently returned None → frontend showed "No
+    # competitive data available". Plus exec_summary check ignored real
+    # content in cmo_executive_brief when executive_summary was "" empty.
+    #
+    # FIX: surface narrative competitor_analysis as competitor_landscape_narrative
+    # field; safely handle both string and dict shapes; ensure exec_summary
+    # falls through correctly even when one of the 3 candidate fields is "".
+
+    # Safely interpret competitor_analysis whether dict (semrush-domain-intel
+    # output shape) or string (calibration synthesis narrative form).
+    raw_competitor_analysis = enrichment.get("competitor_analysis")
+    competitor_analysis_obj: Dict[str, Any] = {}
+    competitor_landscape_narrative: Optional[str] = None
+    if isinstance(raw_competitor_analysis, dict):
+        competitor_analysis_obj = raw_competitor_analysis
+    elif isinstance(raw_competitor_analysis, str) and raw_competitor_analysis.strip():
+        # narrative paragraph form — surface as text rather than dropping
+        if not is_placeholder_text(raw_competitor_analysis):
+            competitor_landscape_narrative = raw_competitor_analysis.strip()
+
+    # If exec_summary fell to None because executive_summary was "" empty
+    # but cmo_executive_brief had content, the priority chain above already
+    # handles it. But guard against priority chain returning empty string.
+    if isinstance(exec_summary, str) and not exec_summary.strip():
+        # try fallback chain again, picking first non-empty non-placeholder
+        for candidate in (
+            enrichment.get("cmo_executive_brief"),
+            enrichment.get("executive_summary"),
+            enrichment.get("forensic_memo"),
+            competitor_landscape_narrative,
+        ):
+            if isinstance(candidate, str) and candidate.strip() and not is_placeholder_text(candidate):
+                exec_summary = candidate.strip()
+                break
+        else:
+            exec_summary = None
+
     response: Dict[str, Any] = {
         "company_name": company_from_enrichment,
         "report_date": generated_dt.strftime("%d/%m/%Y"),
@@ -1924,6 +1968,7 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         "executive_summary": exec_summary,
         "market_position": _derive_market_position_from_enrichment(enrichment),
         "competitors": _shape_competitors_from_enrichment(enrichment),
+        "competitor_landscape_narrative": competitor_landscape_narrative,
         "position_dots": [],  # calibration does not compute x/y yet
         "swot": swot,
         "reviews": _shape_reviews_from_enrichment(enrichment),
@@ -1964,10 +2009,9 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         # detailed_competitors is also exposed under competitor_analysis;
         # surface a top-level alias so frontend roadmap components don't
         # need to drill into competitor_analysis.detailed_competitors.
-        "detailed_competitors": (
-            (enrichment.get("competitor_analysis") or {}).get("detailed_competitors")
-            or []
-        ),
+        # Phase 1.X (2026-05-05 code 13041978): use competitor_analysis_obj
+        # (always dict) instead of raw .get() which fails on string form.
+        "detailed_competitors": competitor_analysis_obj.get("detailed_competitors") or [],
         "paid_competitor_analysis": enrichment.get("paid_competitor_analysis") or {},
         # Header meta fields.
         "engine": "BIQc Intelligence Engine",
@@ -2025,13 +2069,28 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         logger.debug(f"[cmo-report] synthesis enrichment skipped (non-fatal): {syn_err}")
 
     # 7) Evidence inventory + report state (zero-fake-data gate).
+    # Phase 1.X (2026-05-05 code 13041978): competitor_status now ALSO accepts
+    # narrative competitor_landscape_narrative as DATA_AVAILABLE — calibration
+    # synthesis writes competitor_analysis as paragraph form, which is real
+    # data, not absence. Same logic for SWOT — DATA_AVAILABLE when at least
+    # 2 of the 4 buckets have content (was: required all 4); DEGRADED when
+    # only 1 has content; otherwise INSUFFICIENT_SIGNAL.
+    has_competitor_evidence = (
+        len(response.get("competitors") or []) > 0
+        or bool(response.get("competitor_landscape_narrative"))
+        or len(response.get("detailed_competitors") or []) > 0
+    )
     competitor_status = classify_section(
-        has_evidence=len(response.get("competitors") or []) > 0,
-        degraded=bool((enrichment.get("competitors") or [])),
+        has_evidence=has_competitor_evidence,
+        degraded=bool((enrichment.get("competitors") or [])) or bool(competitor_landscape_narrative),
+    )
+    swot_buckets_with_content = sum(
+        1 for bucket in ("strengths", "weaknesses", "opportunities", "threats")
+        if len((response.get("swot") or {}).get(bucket) or []) > 0
     )
     swot_status = classify_section(
-        has_evidence=all(len((response.get("swot") or {}).get(bucket) or []) > 0 for bucket in ("strengths", "weaknesses", "opportunities", "threats")),
-        degraded=any(len((response.get("swot") or {}).get(bucket) or []) > 0 for bucket in ("strengths", "weaknesses", "opportunities", "threats")),
+        has_evidence=swot_buckets_with_content >= 2,  # at least half the SWOT populated
+        degraded=swot_buckets_with_content >= 1,
         has_placeholder=any(is_placeholder_text(item) for bucket in ("strengths", "weaknesses", "opportunities", "threats") for item in ((enrichment.get("swot") or {}).get(bucket) or [])),
     )
     review_status = classify_section(
