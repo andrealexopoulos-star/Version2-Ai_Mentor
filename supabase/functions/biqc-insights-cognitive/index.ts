@@ -10,14 +10,22 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { recordUsage, recordUsageSonar } from "../_shared/metering.ts";
 import { verifyAuth } from "../_shared/auth.ts";
+// Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+// Pull the canonical Gemini resolver so we stop hardcoding the unreleased
+// "gemini-3.1-pro-preview" name (root cause of the smsglobal.com Gemini 400).
+import { resolveGeminiProModel, SAFE_OPENAI_NORMAL } from "../_shared/model_validator.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
-// Use the most powerful available model
-const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL_COGNITIVE") || "o3";
+// Use the most powerful available model.
+// Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+// Honour OPENAI_MODEL_COGNITIVE when set (canonical: o3 for reasoning) but
+// fall back to SAFE_OPENAI_NORMAL ("gpt-4o") instead of bare "o3" so a
+// missing env var does not 400 on unsupported reasoning-model parameters.
+const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL_COGNITIVE") || SAFE_OPENAI_NORMAL;
 
 // ─── Merge.dev ───
 async function fetchMerge(token: string, endpoint: string, limit = 20) {
@@ -480,9 +488,26 @@ serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "biqc-insights-cognitive",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   try {
-    // Warmup ping — no auth required, return immediately
-    const rawBody = await req.text();
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Body parse only meaningful when caller actually sent one — req.text() on
+    // a no-body request returns "" which then JSON-parses to {} (already safe).
+    // The downstream service_role/user-JWT branching already trusts AuthResult.
+    const rawBody = req.method === "POST" ? await req.text() : "";
     let body: any = {};
     try { body = JSON.parse(rawBody); } catch {}
 
@@ -494,13 +519,12 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Resolve the target user. When invoked via the backend proxy
-    // (integrations.py:/edge/functions/{name}), auth is service_role and the
-    // proxy has already injected a trusted user_id into the request body
-    // after verifying the caller's Supabase JWT. Trust that value.
-    //
-    // For direct user-JWT invocations (batch_precompute cron, testing), fall
-    // back to getUser(token) so nothing regresses.
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Resolve the target user. service_role callers (cron + backend proxy)
+    // must inject user_id into the body. user-JWT callers get auth.userId
+    // directly from verifyAuth — the prior supabase.auth.getUser(token) call
+    // was a redundant second-validation that 401d on legitimate users when the
+    // service-role/user-JWT key formats diverged across environments.
     let user: { id: string; email?: string };
     if (auth.isServiceRole) {
       const bodyUserId = typeof body?.user_id === "string" ? body.user_id : null;
@@ -513,20 +537,12 @@ serve(async (req) => {
       // batch_precompute iterates its own user list below — a placeholder id is safe.
       user = { id: bodyUserId || "service_role" };
     } else {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
-        return new Response(JSON.stringify({ error: "No auth" }), {
-          status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-        });
-      }
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user: jwtUser }, error: authError } = await supabase.auth.getUser(token);
-      if (authError || !jwtUser) {
+      if (!auth.userId) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
         });
       }
-      user = { id: jwtUser.id, email: jwtUser.email || undefined };
+      user = { id: auth.userId, email: auth.user?.email };
     }
 
     // PRECOMPUTE MODE — generate snapshots for all active users (called by pg_cron)
@@ -756,9 +772,12 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
     // GPT-5.2: Deep structured analysis, financial logic, risk propagation
     // Gemini 2.5 Pro: Market context, competitive intelligence, external factors
 
-    // Step 1: Gemini 2.5 Pro for market intelligence layer (run in parallel)
+    // Step 1: Gemini for market intelligence layer (run in parallel)
+    // Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+    // Resolve via env-driven helper instead of hardcoding "gemini-3.1-pro-preview"
+    // (unreleased — was causing Gemini 400s in production scans).
     const GOOGLE_API_KEY_DIRECT = Deno.env.get("GOOGLE_API_KEY") || "";
-    const geminiModelName = "gemini-3.1-pro-preview".replace("-preview", "");
+    const geminiModelName = resolveGeminiProModel();
     const marketIntelPromise = fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${geminiModelName}:generateContent?key=${GOOGLE_API_KEY_DIRECT}`,
       {

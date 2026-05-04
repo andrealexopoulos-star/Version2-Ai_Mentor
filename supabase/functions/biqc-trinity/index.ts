@@ -16,6 +16,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { recordUsage } from "../_shared/metering.ts";
+// Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+// Pull canonical model resolvers so trinity stops referencing unreleased
+// preview names (gpt-5.2 / claude-opus-4-6 / gemini-3.1-pro-preview) that
+// were producing silent 400s on the smsglobal.com scan path.
+import {
+  resolveOpenAINormalModel,
+  resolveAnthropicOpusModel,
+  resolveGeminiProModel,
+  resolveOpenAIDeepModel,
+} from "../_shared/model_validator.ts";
 
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -162,8 +172,25 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "biqc-trinity",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   const adminSb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
+  // Phase 1.X auth-symmetry note (2026-05-05 code 13041978):
+  // Already trusts AuthResult via auth.userId — only added the GET reachability
+  // probe above. POST body parse stays as-is.
   const userId = auth.userId || "";
   let body: any;
   try { body = await req.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: corsHeaders(req) }); }
@@ -187,12 +214,15 @@ Deno.serve(async (req) => {
 
   try {
     // ── Run all three models in PARALLEL ────────────────────────────────────────
-    console.log("[TRINITY] Dispatching to GPT-5.2, Claude Opus 4.6, Gemini 2.5 Pro in parallel...");
-
-    const GPT_MODEL = "gpt-5.2";
-    const CLAUDE_MODEL = "claude-opus-4-6";
-    const GEMINI_MODEL = "gemini-3.1-pro-preview";
-    const SYNTH_MODEL = "o3-pro";
+    // Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+    // Resolve the live OpenAI / Anthropic / Google models from env (with safe
+    // production-available fallbacks). NEVER hardcode preview-tier names — that
+    // was the smsglobal.com 400-cascade root cause.
+    const GPT_MODEL = resolveOpenAINormalModel();
+    const CLAUDE_MODEL = resolveAnthropicOpusModel();
+    const GEMINI_MODEL = resolveGeminiProModel();
+    const SYNTH_MODEL = resolveOpenAIDeepModel();
+    console.log(`[TRINITY] Dispatching to ${GPT_MODEL} / ${CLAUDE_MODEL} / ${GEMINI_MODEL} (synth: ${SYNTH_MODEL}) in parallel...`);
 
     const [gptResult, claudeResult, geminiResult] = await Promise.allSettled([
       callModel("openai", GPT_MODEL, GPT_SYSTEM(business_context), message, 0.3),
@@ -237,16 +267,20 @@ Deno.serve(async (req) => {
     const parallelMs = Date.now() - startTime;
     console.log(`[TRINITY] All three responded in ${parallelMs}ms`);
 
-    // ── Synthesize with o3-pro ───────────────────────────────────────────────────
+    // ── Synthesize with the configured deep-tier OpenAI model ─────────────────
+    // Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+    // Provider labels are intentionally generic in the synthesis prompt — Andreas
+    // BIQc Platform Contract v2 forbids exposing supplier names in user-facing
+    // text and the labels here can drift back into responses. Keep them neutral.
     const synthesisPrompt = `QUERY: "${message}"
 
-FINANCIAL ANALYSIS (GPT-5.2):
+FINANCIAL ANALYSIS:
 ${gptAnalysis}
 
-STRATEGIC RECOMMENDATION (Claude Opus 4.6):
+STRATEGIC RECOMMENDATION:
 ${claudeAnalysis}
 
-MARKET INTELLIGENCE (Gemini 2.5 Pro):
+MARKET INTELLIGENCE:
 ${geminiAnalysis}
 
 Business context available:
@@ -271,7 +305,10 @@ Now synthesize these three perspectives into one cohesive, authoritative executi
     // ── Save to canonical conversation + message tables ─────────────────────────
     const nowIso = new Date().toISOString();
     const conversationId = conversation_id || crypto.randomUUID();
-    const modelUsed = "trinity/gpt-5.2+claude-opus-4-6+gemini-2.5-pro+o3-pro";
+    // Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+    // Reflect the actual env-resolved models in the audit string instead of a
+    // hardcoded preview list (was misleading observability when env was honoured).
+    const modelUsed = `trinity/${GPT_MODEL}+${CLAUDE_MODEL}+${GEMINI_MODEL}+${SYNTH_MODEL}`;
 
     const convoPayload = {
       id: conversationId,

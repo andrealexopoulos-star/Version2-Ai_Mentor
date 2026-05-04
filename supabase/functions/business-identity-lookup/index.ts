@@ -119,23 +119,42 @@ serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check". Without
+  // this guard, a GET hits req.json() below and 500s with "Unexpected end of JSON
+  // input". Convention matches other functions in the codebase.
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "business-identity-lookup",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   try {
-    // Auth check
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "No auth" }), {
+    // Phase 1.7d hard-fix (RC-2 / 2026-05-05 code 13041978):
+    // Previous implementation re-validated the bearer token via supabase.auth.getUser()
+    // which only accepts USER JWTs and 401s on service_role tokens (which the backend
+    // sends in BACKEND_ORCHESTRATED mode). Result: 100% of fresh-paying-user
+    // calibration scans hit 401 here, captured in business_dna_enrichment.ai_errors.
+    //
+    // FIX: trust verifyAuth's already-validated AuthResult. Service-role callers pass
+    // through; user-JWT callers get their user identity from auth.user.
+    if (!auth.ok) {
+      // Already returned 401 above; this is a defensive guard.
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
+    // For audit symmetry: a non-service-role caller's user identity is auth.user.
+    // service_role callers don't have a per-user identity here — the function
+    // operates on body.domain/body.abn rather than auth.user.id, so this is fine.
 
     const body = await req.json();
     const { domain, business_name_hint, location_hint, abn } = body;

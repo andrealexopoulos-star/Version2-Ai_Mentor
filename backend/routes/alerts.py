@@ -117,15 +117,34 @@ def _seed_welcome_market_alert_if_needed(sb, user_id: str) -> None:
 
 # ─── GET /alerts/active — used by useAlerts hook ─────────────────────────────
 
+# Phase 1.X UX integrity hard-fix (2026-05-05 code 13041978):
+# alerts_queue stores both USER-FACING signal alerts AND INTERNAL operational
+# diagnostics (persistence_incident, schema_violation, queue_drain_failure etc).
+# Pre-fix /alerts/active returned EVERYTHING which surfaced internal diagnostics
+# to users as empty "New signal" banners with no context — confirmed UX integrity
+# breach (Andreas screenshots 2026-05-05). Internal types must never reach users.
+INTERNAL_ONLY_ALERT_TYPES = frozenset({
+    "persistence_incident",        # business_dna_persistence audit trail
+    "schema_violation",            # DB integrity violation
+    "queue_drain_failure",         # intelligence_queue worker failure
+    "edge_function_failure",       # supplier-side outage diagnostic
+    "billing_reconcile_drift",     # Stripe vs DB reconciliation drift
+    "ops_diagnostic",               # generic ops-side internal flag
+})
+
+
 @router.get("/alerts/active")
 async def list_active_alerts(current_user: dict = Depends(get_current_user)):
-    """Return all undismissed, unviewed alerts for the current user, priority-ordered.
+    """Return all undismissed, unviewed USER-FACING alerts for the current user, priority-ordered.
 
     Marks them as `delivered_at = now()` on first pull so we track delivery latency
     (Phase 6.14 learning signal: how fast after emit did the user see it?).
 
     Also opportunistically seeds the Phase 6.6 welcome-market alert on first
     post-calibration call. Idempotent.
+
+    Internal-diagnostic types (persistence_incident, schema_violation, etc) are
+    EXCLUDED — they live in alerts_queue for ops audit but never reach users.
     """
     sb = get_supabase_admin()
     user_id = current_user['id']
@@ -135,7 +154,9 @@ async def list_active_alerts(current_user: dict = Depends(get_current_user)):
     # the newly seeded alert appears in the same response.
     _seed_welcome_market_alert_if_needed(sb, user_id)
 
-    # Fetch active alerts
+    # Fetch active alerts — user-facing types only.
+    # Use NOT IN via Supabase's neq chain (PostgREST doesn't have NOT IN literal)
+    # — pull all then filter in Python to keep query simple + auditable.
     res = sb.table('alerts_queue') \
         .select('id, type, source, target_page, payload, priority, weight, created_at, delivered_at') \
         .eq('user_id', user_id) \
@@ -145,7 +166,12 @@ async def list_active_alerts(current_user: dict = Depends(get_current_user)):
         .order('created_at', desc=True) \
         .execute()
 
-    alerts = res.data or []
+    raw_alerts = res.data or []
+    # Phase 1.X UX hard-fix: filter out internal-diagnostic types
+    alerts = [a for a in raw_alerts if a.get('type') not in INTERNAL_ONLY_ALERT_TYPES]
+    if len(alerts) != len(raw_alerts):
+        suppressed = len(raw_alerts) - len(alerts)
+        logger.info(f"[alerts] suppressed {suppressed} internal-diagnostic alert(s) for user={user_id}")
 
     # Mark freshly-pulled alerts as delivered (first time shown)
     undelivered_ids = [a['id'] for a in alerts if a.get('delivered_at') is None]

@@ -14,6 +14,22 @@ serve(async (req: Request): Promise<Response> => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  // Reachability ping = GET with NO ?provider param. Functional GET callers
+  // include ?provider=gmail|outlook and continue past this gate.
+  if (req.method === "GET" && !new URL(req.url).searchParams.get("provider")) {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "integration-status",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   try {
     const url = new URL(req.url);
     const provider = url.searchParams.get("provider");
@@ -24,8 +40,14 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const body = await req.json().catch(() => ({}));
-    const userId = auth.isServiceRole ? String(body.user_id || "").trim() : auth.userId;
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Body parse only meaningful when client sends one. GET with provider param
+    // never has a body, so don't fail-400 on unparseable empty body.
+    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    const userIdFromQuery = url.searchParams.get("user_id");
+    const userId = auth.isServiceRole
+      ? String(body.user_id || userIdFromQuery || "").trim()
+      : auth.userId;
     if (!userId) {
       return new Response(JSON.stringify({ ok: false, error: "user_id required for service role calls" }), {
         status: 400,

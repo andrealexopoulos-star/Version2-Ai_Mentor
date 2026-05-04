@@ -24,11 +24,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
 import { recordUsage } from "../_shared/metering.ts";
+// Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+// Replace hardcoded "gpt-5.3" (unreleased preview → silent 400) with the
+// env-driven normal-tier resolver + safe production fallback.
+import { resolveOpenAINormalModel } from "../_shared/model_validator.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SOP_MODEL = "gpt-5.3";
+const SOP_MODEL = resolveOpenAINormalModel();
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   sop: `You are BIQc's SOP Generator — a senior operations consultant who creates clear, practical Standard Operating Procedures for Australian SMBs.
@@ -104,20 +108,35 @@ serve(async (req) => {
     });
   }
 
-  try {
-    // Authenticate user
-    const authHeader = req.headers.get("Authorization") || "";
-    const token = authHeader.replace("Bearer ", "");
-    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "sop-generator",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
 
-    const { data: { user }, error: authError } = await sb.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+  try {
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Replaced redundant sb.auth.getUser(token) with AuthResult-trust pattern.
+    // service_role callers must supply user_id in body; user-JWT path uses auth.userId.
+    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const body = await req.json().catch(() => ({}));
+    const targetUserId: string | null = auth.isServiceRole
+      ? (typeof body.user_id === "string" && body.user_id.trim() ? body.user_id.trim() : null)
+      : (auth.userId || null);
+    if (!targetUserId) {
+      return new Response(JSON.stringify({ error: "user_id required for service_role; or invalid user session" }), {
+        status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
-
-    const body = await req.json();
+    const user = { id: targetUserId };
     const genType = body.type || "sop";
     const prompt = body.prompt || "";
     const additionalContext = body.context || "";

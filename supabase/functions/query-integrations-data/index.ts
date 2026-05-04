@@ -19,12 +19,18 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { verifyAuth } from "../_shared/auth.ts";
 import { recordUsage } from "../_shared/metering.ts";
+// Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+// "gpt-4o-mini" was already a real production model — but route through
+// the env-resolver (with mini fallback) so an env override here behaves the
+// same as the rest of the BIQc edge fleet and the model-health-check probe
+// validates a SINGLE canonical surface.
+import { resolveOpenAIMiniModel } from "../_shared/model_validator.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
-const QUERY_MODEL = "gpt-4o-mini";
+const QUERY_MODEL = resolveOpenAIMiniModel();
 
 async function fetchMerge(token: string, endpoint: string, limit = 50) {
   if (!MERGE_API_KEY || !token || token === "connected") return [];
@@ -84,24 +90,35 @@ serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "query-integrations-data",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
-
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Replaced redundant supabase.auth.getUser(token) with AuthResult-trust.
+    // service_role callers must supply user_id in body; user-JWT path uses auth.userId.
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+    const body = await req.json().catch(() => ({}));
+    const targetUserId: string | null = auth.isServiceRole
+      ? (typeof body.user_id === "string" && body.user_id.trim() ? body.user_id.trim() : null)
+      : (auth.userId || null);
+    if (!targetUserId) {
+      return new Response(JSON.stringify({ error: "user_id required for service_role; or invalid user session" }), {
+        status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
-
-    const body = await req.json();
+    const user = { id: targetUserId };
     const query = body.query || "";
     if (!query) {
       return new Response(JSON.stringify({ error: "No query provided" }), {

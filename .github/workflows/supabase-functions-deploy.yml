@@ -269,6 +269,20 @@ jobs:
             staff-reviews-deep
           )
 
+          # Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+          # Append the LLM-bound functions touched by the model-name remediation.
+          # These each expose the standard {ok,function,reachable,generated_at}
+          # health contract on GET so the existing JSON-key validator below
+          # confirms the deploy actually rolled them out.
+          FUNCTIONS+=(
+            biqc-trinity
+            biqc-insights-cognitive
+            boardroom-diagnosis
+            sop-generator
+            strategic-console-ai
+            query-integrations-data
+          )
+
           for fn in "${FUNCTIONS[@]}"; do
             body_file="/tmp/${fn}-health.json"
             http_code=$(curl --silent --show-error --output "$body_file" --write-out "%{http_code}" \
@@ -329,3 +343,68 @@ jobs:
               raise SystemExit(1)
           PY
           done
+
+      - name: Model-name validation gate (LOUD)
+        # Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+        # Hits supabase/functions/v1/model-health-check which probes EACH of the
+        # 3 LLM providers (OpenAI / Anthropic / Google) with a 1-token request
+        # against the configured model name. If ANY provider returns non-200 the
+        # response status is 503 and this step fails the deploy LOUDLY — the
+        # whole point is to stop silent 400s like the smsglobal.com incident
+        # from ever reaching customers again. Not warn-only.
+        if: steps.detect_changes.outputs.has_changes == 'true'
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF != '' && secrets.SUPABASE_PROJECT_REF || 'vwwandhoydemcybltoxz' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          EDGE_BASE="https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1"
+          EDGE_AUTH_KEY="${SUPABASE_SERVICE_ROLE_KEY:-${SUPABASE_SERVICE_ROLE:-${REACT_APP_SUPABASE_ANON_KEY:-}}}"
+
+          if [ -z "${EDGE_AUTH_KEY:-}" ]; then
+            echo "FATAL: missing edge auth key for model-health-check probe."
+            exit 1
+          fi
+
+          body_file=/tmp/model-health-check.json
+          http_code=$(curl --silent --show-error --output "$body_file" --write-out "%{http_code}" \
+            -H "Authorization: Bearer ${EDGE_AUTH_KEY}" \
+            -H "apikey: ${EDGE_AUTH_KEY}" \
+            "${EDGE_BASE}/model-health-check")
+
+          echo "model-health-check HTTP ${http_code}"
+          cat "$body_file" || true
+          echo
+
+          if [ "$http_code" != "200" ]; then
+            echo "FATAL: model-health-check did not return 200 — at least one"
+            echo "configured LLM model name is rejected by its provider."
+            echo "Set OPENAI_MODEL_NORMAL / ANTHROPIC_MODEL_OPUS / GEMINI_MODEL_PRO"
+            echo "to a real production-available model and redeploy."
+            exit 1
+          fi
+
+          python3 - "$body_file" <<'PY'
+          import json, sys
+          payload = json.loads(open(sys.argv[1]).read() or "{}")
+          if payload.get("ok") is not True:
+              print("FATAL: model-health-check ok flag is not true")
+              sys.exit(1)
+          results = payload.get("results") or []
+          if not isinstance(results, list) or not results:
+              print("FATAL: model-health-check returned no provider results")
+              sys.exit(1)
+          providers = {r.get("provider") for r in results if isinstance(r, dict)}
+          required = {"openai", "anthropic", "google"}
+          missing = required - providers
+          if missing:
+              print(f"FATAL: model-health-check missing providers: {sorted(missing)}")
+              sys.exit(1)
+          for r in results:
+              if not r.get("ok"):
+                  print(f"FATAL: provider {r.get('provider')} model {r.get('model')} failed: {r.get('error')}")
+                  sys.exit(1)
+          print("model-health-check passed for all 3 providers.")
+          PY

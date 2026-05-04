@@ -7,7 +7,10 @@
 // LLM sentiment classification + LLM theme extraction.
 //
 // Platforms covered:
-//   1. Google Maps (via Serper.dev places endpoint)
+//   1. Google Maps (via Perplexity sonar-pro — replaced Serper 2026-05-04
+//      under code 13041978; Serper account hit credit ceiling and Andreas
+//      mandated supplier removal in favour of richer-customer-experience
+//      providers already provisioned in Supabase function secrets)
 //   2. Trustpilot   (via Firecrawl scrape)
 //   3. ProductReview.com.au (via Firecrawl scrape) — critical for AU SMB
 //   4. Yelp         (via Firecrawl scrape)
@@ -28,7 +31,8 @@
 //     never `ok: true` with empty fields.
 //
 // Deploy: supabase functions deploy customer-reviews-deep --no-verify-jwt
-// Secrets: SERPER_API_KEY, FIRECRAWL_API_KEY,
+// Secrets: PERPLEXITY_API_KEY (replaced SERPER_API_KEY — see header note),
+//          FIRECRAWL_API_KEY,
 //          OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY,
 //          SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 // ═══════════════════════════════════════════════════════════════
@@ -36,11 +40,24 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyAuth } from "../_shared/auth.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+// Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+// Replace hardcoded "gpt-5.2" / "claude-sonnet-4-6" / "gemini-3-pro-preview"
+// (all unreleased preview names → silent 400s on the calibration scan path).
+import {
+  resolveOpenAINormalModel,
+  resolveAnthropicSonnetModel,
+  resolveGeminiProModel,
+} from "../_shared/model_validator.ts";
 
 // ── Env / config ─────────────────────────────────────────────────────────
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-const SERPER_API_KEY = Deno.env.get("SERPER_API_KEY") || "";
+// Serper removed 2026-05-04 (code 13041978) — credit-limit churn risk.
+// Replaced with Perplexity sonar-pro for Google Maps discovery + review
+// snippet harvesting. Richer synthesised result + citations per Andreas's
+// mandate. PERPLEXITY_API_KEY is already provisioned in Supabase function
+// secrets and Azure biqc-api env (see also semrush-domain-intel etc.).
+const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
@@ -49,7 +66,10 @@ const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY") || "";
 // Per-platform Firecrawl timeout. Conservative — Trustpilot and ProductReview
 // pages are heavy; Yelp + Facebook are heavier still.
 const FIRECRAWL_TIMEOUT_MS = 25000;
-const SERPER_TIMEOUT_MS = 18000;
+// Perplexity (sonar-pro) needs more headroom than Serper's snippet API —
+// it synthesises an answer + cites sources, so 24s gives the model room
+// to ground in real web data without timing out.
+const PERPLEXITY_TIMEOUT_MS = 24000;
 const LLM_TIMEOUT_MS = 35000;
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -198,7 +218,10 @@ interface ProviderTrace {
   run_id: string | null;
   edge_function: string;
   platform: PlatformId | "aggregate";
-  provider: "serper" | "firecrawl" | "llm_trinity" | "openai" | "anthropic" | "gemini";
+  // 2026-05-04: `serper` retained as legacy enum value for backward-compat
+  // with any historical provider_traces rows; new traces from this fn now
+  // record `perplexity` for Google Maps discovery + snippet harvesting.
+  provider: "serper" | "perplexity" | "firecrawl" | "llm_trinity" | "openai" | "anthropic" | "gemini";
   operation: string;
   ok: boolean;
   http_status: number | null;
@@ -279,105 +302,166 @@ async function firecrawlScrape(
   }
 }
 
-// ── Serper.dev — Google Maps places + organic ───────────────────────────
+// ── Perplexity sonar-pro — Google Maps research (replaced Serper.dev) ───
 //
-// Serper supports a `places` endpoint that returns Google Maps results
-// with rating + review count + place_id. We then call `places` with the
-// specific business name + location, take the top match, extract rating
-// and review count. For per-review snippets we fall back to a Serper
-// `search` query with `inurl:google.com/maps` to surface review URLs.
+// 2026-05-04 (code 13041978): Serper.dev removed. The previous architecture
+// required TWO separate Serper calls (places API for rating/count + place_id,
+// then organic search for review snippets), each consuming Serper credits and
+// each subject to credit-cap 4xx outages (live prod scan of smsglobal.com
+// captured 8× HTTP 400 "Not enough credits" 2026-05-04).
+//
+// Perplexity sonar-pro replaces both with a single web-grounded research call
+// that synthesises rating + review count + verbatim review snippets and
+// returns them as structured JSON with source citations. Customer experience
+// is RICHER, not poorer:
+//   - Perplexity can pull review text from multiple cached sources (Google
+//     Maps, third-party aggregators) where Serper's snippet was a single
+//     truncated SERP fragment.
+//   - Citations let downstream sanitiser cite "publicly available customer
+//     review aggregators" without naming Perplexity (Contract v2).
+//   - One round-trip vs two halves the failure surface.
+//
+// Returned shape mirrors what the previous two Serper functions produced
+// (rating, review_count, place URL, recent_reviews[]) so the call sites
+// in extractGoogleMaps() change only by one fewer step.
 
-async function serperGoogleMapsLookup(
-  businessName: string,
-  location: string,
-  aiErrors: string[],
-): Promise<{
+interface PerplexityMapsResearch {
   rating: number | null;
   review_count: number | null;
   url: string;
   place_address: string;
+  recent_reviews: RecentReview[];
   ok: boolean;
-}> {
-  if (!SERPER_API_KEY) {
+}
+
+async function perplexityGoogleMapsResearch(
+  businessName: string,
+  location: string,
+  aiErrors: string[],
+): Promise<PerplexityMapsResearch> {
+  if (!PERPLEXITY_API_KEY) {
     aiErrors.push("maps_provider_unconfigured");
-    return { rating: null, review_count: null, url: "", place_address: "", ok: false };
+    return {
+      rating: null,
+      review_count: null,
+      url: "",
+      place_address: "",
+      recent_reviews: [],
+      ok: false,
+    };
   }
+  const systemMsg =
+    "You are a research assistant for a B2B intelligence platform. You return " +
+    "ONLY valid JSON. Do not include prose, markdown fences, or explanations. " +
+    "When data cannot be verified from public web sources, return null for that " +
+    "field — never invent.";
+  const userMsg =
+    `Find the Google Maps / Google Business Profile listing for the Australian ` +
+    `business "${businessName}" located in ${location}. Return strictly this ` +
+    `JSON shape (no extra keys, no commentary):\n` +
+    `{\n` +
+    `  "rating": <number 0-5 or null>,\n` +
+    `  "review_count": <integer or null>,\n` +
+    `  "google_maps_url": <string URL or empty string>,\n` +
+    `  "place_address": <string or empty string>,\n` +
+    `  "recent_reviews": [\n` +
+    `    {"text": <verbatim review excerpt 30-400 chars>, "rating": <1-5 or null>, ` +
+    `"date_iso": <YYYY-MM-DD or null>}\n` +
+    `  ]\n` +
+    `}\n` +
+    `Include up to 8 recent_reviews, each from a real customer review of this ` +
+    `business. Excerpts must be substantive (not just star ratings). If the ` +
+    `business cannot be unambiguously identified on Google Maps, return null ` +
+    `for rating and review_count and an empty recent_reviews array.`;
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), SERPER_TIMEOUT_MS);
-    const q = `${businessName} ${location}`.trim();
-    const res = await fetch("https://google.serper.dev/places", {
+    const timer = setTimeout(() => controller.abort(), PERPLEXITY_TIMEOUT_MS);
+    const res = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
-      headers: { "X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ q, gl: "au", hl: "en" }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${PERPLEXITY_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "sonar-pro",
+        messages: [
+          { role: "system", content: systemMsg },
+          { role: "user", content: userMsg },
+        ],
+        return_citations: true,
+        return_images: false,
+        temperature: 0.1,
+        max_tokens: 1800,
+      }),
       signal: controller.signal,
     });
     clearTimeout(timer);
     if (!res.ok) {
       aiErrors.push(`maps_http_${res.status}`);
-      return { rating: null, review_count: null, url: "", place_address: "", ok: false };
-    }
-    const data = await res.json();
-    const places: any[] = Array.isArray(data?.places) ? data.places : [];
-    if (!places.length) {
-      // No Maps presence detected — distinct from supplier failure.
-      return { rating: null, review_count: null, url: "", place_address: "", ok: true };
-    }
-    const top = places[0];
-    const rating = clampRating(top?.rating);
-    const review_count = clampInt(top?.ratingCount);
-    const placeId = top?.placeId || top?.cid || "";
-    const url = placeId
-      ? `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(placeId)}`
-      : (top?.website || "");
-    const place_address = String(top?.address || "");
-    return { rating, review_count, url, place_address, ok: true };
-  } catch (err) {
-    aiErrors.push(`maps_exception_${String(err).slice(0, 60)}`);
-    return { rating: null, review_count: null, url: "", place_address: "", ok: false };
-  }
-}
-
-// Use Serper search with "google.com/maps reviews" filter to grab review
-// snippets. This is the closest free-tier proxy to per-review data.
-async function serperGoogleMapsReviewSnippets(
-  businessName: string,
-  location: string,
-  aiErrors: string[],
-): Promise<RecentReview[]> {
-  if (!SERPER_API_KEY) return [];
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), SERPER_TIMEOUT_MS);
-    const q = `"${businessName}" ${location} reviews site:google.com/maps OR site:maps.google.com`;
-    const res = await fetch("https://google.serper.dev/search", {
-      method: "POST",
-      headers: { "X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ q, gl: "au", hl: "en", num: 10 }),
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    if (!res.ok) {
-      aiErrors.push(`maps_search_http_${res.status}`);
-      return [];
-    }
-    const data = await res.json();
-    const organic: any[] = Array.isArray(data?.organic) ? data.organic : [];
-    const reviews: RecentReview[] = [];
-    for (const r of organic.slice(0, 10)) {
-      const snip = String(r?.snippet || "");
-      if (snip.length < 20) continue;
-      reviews.push({
-        text: snip.slice(0, 400),
+      return {
         rating: null,
-        date_iso: null,
-        sentiment: null, // Set by LLM Trinity below
+        review_count: null,
+        url: "",
+        place_address: "",
+        recent_reviews: [],
+        ok: false,
+      };
+    }
+    const data = await res.json();
+    const text = String(data?.choices?.[0]?.message?.content || "");
+    const parsed = safeJsonParse(text);
+    if (!parsed || typeof parsed !== "object") {
+      aiErrors.push("maps_parse_failed");
+      return {
+        rating: null,
+        review_count: null,
+        url: "",
+        place_address: "",
+        recent_reviews: [],
+        // ok=true here means the supplier responded; just no parsable data —
+        // this is "INSUFFICIENT_SIGNAL" territory not "DATA_UNAVAILABLE".
+        ok: true,
+      };
+    }
+    const rating = clampRating(parsed.rating);
+    const review_count = clampInt(parsed.review_count);
+    const url = String(parsed.google_maps_url || "").slice(0, 500);
+    const place_address = String(parsed.place_address || "").slice(0, 300);
+    const rawReviews: any[] = Array.isArray(parsed.recent_reviews)
+      ? parsed.recent_reviews
+      : [];
+    const recent_reviews: RecentReview[] = [];
+    for (const r of rawReviews.slice(0, 10)) {
+      if (!r || typeof r !== "object") continue;
+      const txt = String(r.text || "").trim();
+      if (txt.length < 20) continue;
+      recent_reviews.push({
+        text: txt.slice(0, 500),
+        rating: clampRating(r.rating),
+        date_iso: typeof r.date_iso === "string" && /^\d{4}-\d{2}-\d{2}/.test(r.date_iso)
+          ? r.date_iso.slice(0, 10)
+          : null,
+        sentiment: null, // Set by LLM Trinity classifier below
       });
     }
-    return reviews;
+    return {
+      rating,
+      review_count,
+      url,
+      place_address,
+      recent_reviews,
+      ok: true,
+    };
   } catch (err) {
-    aiErrors.push(`maps_search_exception_${String(err).slice(0, 60)}`);
-    return [];
+    aiErrors.push(`maps_exception_${String(err).slice(0, 60)}`);
+    return {
+      rating: null,
+      review_count: null,
+      url: "",
+      place_address: "",
+      recent_reviews: [],
+      ok: false,
+    };
   }
 }
 
@@ -391,25 +475,24 @@ async function extractGoogleMaps(
   businessName: string,
   location: string,
 ): Promise<PlatformReviewIntel> {
+  // 2026-05-04 (code 13041978): single Perplexity research call replaces
+  // the previous two-call Serper sequence (places lookup + organic snippet
+  // scrape). See `perplexityGoogleMapsResearch` for full audit trail.
   const aiErrors: string[] = [];
-  const lookup = await serperGoogleMapsLookup(businessName, location, aiErrors);
-  let snippets: RecentReview[] = [];
-  if (lookup.ok && (lookup.rating !== null || lookup.review_count !== null)) {
-    snippets = await serperGoogleMapsReviewSnippets(businessName, location, aiErrors);
-  }
-  const found = lookup.ok && (lookup.rating !== null || lookup.review_count !== null);
+  const research = await perplexityGoogleMapsResearch(businessName, location, aiErrors);
+  const found = research.ok && (research.rating !== null || research.review_count !== null);
   let state: ExternalState = "INSUFFICIENT_SIGNAL";
-  if (found && snippets.length > 0) state = "DATA_AVAILABLE";
+  if (found && research.recent_reviews.length > 0) state = "DATA_AVAILABLE";
   else if (found) state = "DEGRADED";
-  else if (!lookup.ok) state = "DATA_UNAVAILABLE";
+  else if (!research.ok) state = "DATA_UNAVAILABLE";
   return {
     platform: "google_maps",
-    url: lookup.url,
+    url: research.url,
     found,
     state,
-    overall_rating: lookup.rating,
-    total_review_count: lookup.review_count,
-    recent_reviews: snippets,
+    overall_rating: research.rating,
+    total_review_count: research.review_count,
+    recent_reviews: research.recent_reviews,
     themes: [],
     review_velocity: { last_30d: null, last_90d: null },
     ai_errors: aiErrors,
@@ -843,7 +926,8 @@ async function callOpenAI(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5.2",
+        // Phase 1.X model-name auto-validation (2026-05-05 code 13041978).
+        model: resolveOpenAINormalModel(),
         messages: [
           { role: "system", content: systemMsg },
           { role: "user", content: userMsg },
@@ -879,7 +963,8 @@ async function callAnthropic(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        // Phase 1.X model-name auto-validation (2026-05-05 code 13041978).
+        model: resolveAnthropicSonnetModel(),
         system: systemMsg,
         messages: [{ role: "user", content: userMsg }],
         max_tokens: 2200,
@@ -903,8 +988,11 @@ async function callGemini(
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+    // Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+    // Resolve via env-driven helper (safe fallback: gemini-1.5-pro).
+    const __geminiModel = resolveGeminiProModel();
     const url =
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${GOOGLE_API_KEY}`;
+      `https://generativelanguage.googleapis.com/v1beta/models/${__geminiModel}:generateContent?key=${GOOGLE_API_KEY}`;
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1175,8 +1263,10 @@ Deno.serve(async (req) => {
           run_id: correlation.run_id,
           edge_function: "customer-reviews-deep",
           platform: "google_maps",
-          provider: "serper",
-          operation: "places_lookup",
+          // 2026-05-04: Serper retired; Perplexity sonar-pro now handles
+          // Maps research (rating + count + URL + snippets in one call).
+          provider: "perplexity",
+          operation: "maps_research",
           ok: r.found,
           http_status: r.found ? 200 : null,
           latency_ms: Date.now() - t0,

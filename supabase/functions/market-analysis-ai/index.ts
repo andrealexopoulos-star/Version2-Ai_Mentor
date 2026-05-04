@@ -186,12 +186,37 @@ serve(async (req) => {
     // Stable shape preserved: downstream code uses `user.id`.
     const user = { id: userId };
 
-    const product_or_service = body.product_or_service || "";
+    let product_or_service = body.product_or_service || "";
     const region = body.region || "Australia";
     const specific_question = body.specific_question || "";
 
+    // Phase 1.7e self-heal (2026-05-05 code 13041978):
+    // Backend caller in routes/calibration.py builds the enrichment dict BEFORE
+    // the asyncio.gather runs, so it cannot pass main_products_services that
+    // calibration-business-dna writes IN PARALLEL. Result: 50% of paying-trial
+    // scans hit 400 "product_or_service is required" and silently degrade.
+    //
+    // FIX: when payload product_or_service is empty, look it up from
+    // business_profiles for this user. We need the BP row anyway (line 203
+    // below) — moving the read up costs us nothing. Falls through to honest
+    // 400 only if BP also has no main_products_services set, which is a real
+    // profile-completeness gap (UI should prompt the user to fill it in).
+    const { data: bp } = await supabase.from("business_profiles").select("*").eq("user_id", user.id).maybeSingle();
+    if (!product_or_service && bp) {
+      product_or_service =
+        bp.main_products_services ||
+        bp.products_services ||
+        bp.unique_value_proposition ||
+        "";
+    }
+
     if (!product_or_service) {
-      return new Response(JSON.stringify({ ok: false, error: "product_or_service is required" }), {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: "product_or_service is required",
+        code: "PROFILE_INCOMPLETE",
+        hint: "Set main_products_services in business_profiles or pass product_or_service in payload",
+      }), {
         status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
@@ -199,15 +224,13 @@ serve(async (req) => {
     const ctx: Record<string, any> = {};
     const sources: string[] = [];
 
-    // Business profile
-    const { data: bp } = await supabase.from("business_profiles").select("*").eq("user_id", user.id).maybeSingle();
+    // Business profile already fetched above for self-heal lookup
     if (bp) {
       delete bp.id; delete bp.created_at; delete bp.updated_at;
       delete bp.profile_data; delete bp.intelligence_configuration;
       ctx.business = bp;
       sources.push("business_profile");
     }
-
     // CRM
     const { data: integrations } = await supabase.from("integration_accounts")
       .select("provider, category, account_token").eq("user_id", user.id);

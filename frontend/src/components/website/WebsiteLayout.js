@@ -55,6 +55,11 @@ const WebsiteNav = () => {
           >
             Talk to a Local Specialist
           </Link>
+          {/* 2026-05-04: Start Trial CTA restored per Andreas direction (code 13041978).
+              WIP previously removed it; reverted to maintain conversion funnel. */}
+          <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--ink-inverse)] transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }} data-testid="nav-start-trial">
+            Start Free Trial
+          </Link>
           {/* Mobile: Login text + hamburger */}
           <Link to="/login-supabase" className="md:hidden text-xs text-[var(--ink-secondary)] hover:text-[var(--ink-display)]" style={{ fontFamily: fontFamily.body }} data-testid="nav-mobile-login">Login</Link>
           <button
@@ -84,6 +89,8 @@ const WebsiteNav = () => {
             >
               Talk to a Local Specialist
             </Link>
+            {/* 2026-05-04: Start Trial CTA restored on mobile per Andreas direction (code 13041978). */}
+            <Link to="/register-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[var(--ink-inverse)] font-semibold" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)' }} data-testid="nav-mobile-start-trial">Start Free Trial</Link>
           </div>
         </div>
       )}

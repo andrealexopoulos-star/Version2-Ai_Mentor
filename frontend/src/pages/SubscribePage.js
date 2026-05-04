@@ -6,7 +6,6 @@ import { apiClient } from '../lib/api';
 import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle, Sparkles, ChevronDown, Minus } from 'lucide-react';
 import { PRICING_TIERS } from '../config/pricingTiers';
 import { FOUNDATION_FEATURES, WAITLIST_FEATURES } from '../config/launchConfig';
-import { canonicalCheckoutPlanId, hasActiveSubscription } from '../lib/subscriptionUi';
 import { toast } from 'sonner';
 
 
@@ -20,7 +19,11 @@ const FEATURE_LABELS = {
 };
 
 // Checkout-visible plans: paid tiers that can be self-served.
-const PLANS = PRICING_TIERS.filter((t) => ['starter', 'pro', 'business'].includes(t.id));
+// 2026-05-04: 'lite' added at $14 entry tier per code 13041978.
+// 'enterprise' is intentionally NOT in this list — Enterprise is not self-serve;
+// instead the page renders a 5th "Still Unsure? Speak with a local specialist"
+// CTA card after the 4 self-serve cards (see render below).
+const PLANS = PRICING_TIERS.filter((t) => ['lite', 'starter', 'pro', 'business'].includes(t.id));
 
 const SubscribePage = () => {
   const { user, refreshSession } = useSupabaseAuth();
@@ -33,7 +36,8 @@ const SubscribePage = () => {
   const section = searchParams.get('section') || '';
   const featureLabel = FEATURE_LABELS[from] || (from ? from.replace(/\//g, '').replace(/-/g, ' ') : '');
   const currentTier = resolveTier(user);
-  const foundationUnlocked = ['starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin'].includes(currentTier);
+  // Lite gets foundation unlocked too (paid tier).
+  const foundationUnlocked = ['lite', 'starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin'].includes(currentTier);
   const groupedWaitlist = useMemo(() => {
     const map = new Map();
     WAITLIST_FEATURES.forEach((feature) => {
@@ -46,17 +50,6 @@ const SubscribePage = () => {
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
   const [loading, setLoading] = useState(null);
-  const [checkoutError, setCheckoutError] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState(
-    canonicalCheckoutPlanId(searchParams.get('plan') || 'starter')
-  );
-
-  useEffect(() => {
-    const requestedPlan = canonicalCheckoutPlanId(searchParams.get('plan') || 'starter');
-    if (PLANS.some((p) => p.id === requestedPlan)) {
-      setSelectedPlan(requestedPlan);
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     refreshSessionRef.current = refreshSession;
@@ -123,34 +116,23 @@ const SubscribePage = () => {
     }
   }, [sessionId, status, pollPaymentStatus]);
 
-  const handleUpgrade = async () => {
-    if (!user) {
-      navigate(`/login-supabase?next=${encodeURIComponent(`/subscribe?plan=${selectedPlan}`)}`);
-      return;
-    }
-    const canonicalPackageId = canonicalCheckoutPlanId(selectedPlan);
-    setCheckoutError('');
-    setLoading(canonicalPackageId);
+  const handleUpgrade = async (packageId) => {
+    setLoading(packageId);
     try {
       const origin = window.location.origin;
-      const res = await apiClient.post('/payments/checkout', { package_id: canonicalPackageId, origin_url: origin });
+      const res = await apiClient.post('/payments/checkout', { package_id: packageId, origin_url: origin });
       if (res.data?.url) {
         window.location.href = res.data.url;
         return;
       }
-      setCheckoutError('Checkout did not return a secure payment link. Please try again or speak with a BIQc Specialist.');
       toast.error('Checkout is unavailable right now. Please try again.');
     } catch (err) {
       console.error('Checkout error:', err);
-      const detail = err?.response?.data?.detail;
-      setCheckoutError(detail || 'Checkout failed before redirect. Please try again or speak with a BIQc Specialist.');
-      toast.error(detail || 'Checkout failed. Please try again.');
+      toast.error('Checkout failed. Please try again.');
     } finally {
       setLoading(null);
     }
   };
-
-  const isSubscribedUser = hasActiveSubscription(user);
 
   return (
     <div className="min-h-screen flex flex-col items-center px-6 py-12 max-w-4xl mx-auto" style={{ background: 'var(--canvas-app, var(--surface))' }} data-testid="subscribe-page">
@@ -173,16 +155,6 @@ const SubscribePage = () => {
         </div>
       )}
 
-      {checkoutError && (
-        <div className="w-full max-w-xl mb-6 p-4 rounded-xl" style={{
-          background: 'var(--danger-wash)',
-          border: '1px solid var(--danger)',
-          borderRadius: 'var(--r-lg)',
-        }} data-testid="subscribe-checkout-error">
-          <p className="text-sm" style={{ color: 'var(--danger)', fontFamily: 'var(--font-ui)' }}>{checkoutError}</p>
-        </div>
-      )}
-
       <div className="text-center mb-10 max-w-xl">
         <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)', letterSpacing: 'var(--ls-caps, 0.08em)', fontWeight: 600 }}>
           — Choose your plan
@@ -191,14 +163,7 @@ const SubscribePage = () => {
           One platform, <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>three ways in</em>.
         </h1>
         {featureLabel && <p className="text-xs mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)' }}>{featureLabel} requires a paid plan</p>}
-        {isSubscribedUser && (
-          <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
-            Current plan: <strong style={{ color: 'var(--ink-display)', textTransform: 'capitalize' }}>{currentTier}</strong>
-          </p>
-        )}
-        <p className="mt-1 text-xs" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
-          Same core intelligence in every paid plan. Choose based on users and monthly AI capacity.
-        </p>
+        <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>Current plan: <strong style={{ color: 'var(--ink-display)', textTransform: 'capitalize' }}>{currentTier}</strong></p>
         <p className="mt-2 text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
           Transparent billing: shown amount is charged exactly as displayed. No hidden fees.
         </p>
@@ -215,42 +180,19 @@ const SubscribePage = () => {
         </div>
       </div>
 
-      <div className="w-full max-w-3xl mb-6 p-4" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--elev-1)' }}>
-        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Top-up launch hold</p>
-        <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
-          Informational only: planned top-up is 250,000 AI tokens for $19 AUD. Live top-up purchase is currently disabled.
-        </p>
-        <button
-          type="button"
-          disabled
-          className="mt-3 px-4 py-2 text-xs font-semibold"
-          style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', color: 'var(--ink-muted)', background: 'var(--surface-sunken)' }}
-        >
-          Top-up unavailable at this stage
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 max-w-4xl w-full mb-8 md:grid-cols-3" style={{ alignItems: 'start' }}>
+      <div className="grid grid-cols-1 gap-6 max-w-6xl w-full mb-8 md:grid-cols-2 lg:grid-cols-5" style={{ alignItems: 'start' }}>
         {PLANS.map(plan => {
-          const isCurrent = isSubscribedUser && plan.id === currentTier;
+          const isCurrent = plan.id === currentTier;
           const isPopular = plan.recommended;
-          const isSelected = plan.id === selectedPlan;
           return (
-            <div
-              key={plan.id}
-              className="relative flex flex-col"
-              style={{
+            <div key={plan.id} className="relative flex flex-col" style={{
               background: 'var(--surface)',
-              border: isSelected ? '1px solid var(--lava)' : isCurrent ? '1px solid var(--lava)' : isPopular ? '1px solid var(--ink-display)' : '1px solid var(--border)',
+              border: isCurrent ? '1px solid var(--lava)' : isPopular ? '1px solid var(--ink-display)' : '1px solid var(--border)',
               borderRadius: 'var(--r-2xl)',
               padding: 'var(--sp-8, 32px)',
-              boxShadow: isSelected ? '0 0 0 1px var(--lava), var(--elev-3)' : isCurrent ? '0 0 0 1px var(--lava), var(--elev-2)' : isPopular ? '0 0 0 1px var(--ink-display), var(--elev-3)' : 'var(--elev-1)',
+              boxShadow: isCurrent ? '0 0 0 1px var(--lava), var(--elev-2)' : isPopular ? '0 0 0 1px var(--ink-display), var(--elev-3)' : 'var(--elev-1)',
               transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-              cursor: isCurrent ? 'default' : 'pointer',
-            }}
-              data-testid={`plan-${plan.id}`}
-              onClick={() => { if (!isCurrent && !loading) setSelectedPlan(plan.id); }}
-            >
+            }} data-testid={`plan-${plan.id}`}>
               {isCurrent && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full whitespace-nowrap" style={{ background: 'var(--lava-wash)', color: 'var(--lava-deep, var(--lava))', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Current plan</span>
               )}
@@ -267,17 +209,17 @@ const SubscribePage = () => {
               {isCurrent ? (
                 <div className="w-full py-3.5 text-center text-sm font-semibold" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border-strong, var(--border))', color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', marginBottom: 'var(--sp-6, 24px)', cursor: 'default' }}>Current Plan</div>
               ) : (
-                <button onClick={(event) => { event.stopPropagation(); setSelectedPlan(plan.id); }} disabled={loading === plan.id}
+                <button onClick={() => handleUpgrade(plan.id)} disabled={loading === plan.id}
                   className="w-full py-3.5 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
                   style={{
                     borderRadius: 'var(--r-lg)',
-                    background: isSelected ? 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF7A1A))' : isPopular ? 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF7A1A))' : 'var(--ink-display, #0A0A0A)',
+                    background: isPopular ? 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF7A1A))' : 'var(--ink-display, #0A0A0A)',
                     border: '1px solid transparent',
                     marginBottom: 'var(--sp-6, 24px)',
                     fontFamily: 'var(--font-ui)',
                     transition: 'all 0.15s ease',
                   }} data-testid={`upgrade-${plan.id}`}>
-                  {isSelected ? 'Selected plan' : 'Select plan'}
+                  {loading === plan.id ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</> : <>Upgrade <ArrowRight className="w-4 h-4" /></>}
                 </button>
               )}
               <div style={{ height: 1, background: 'var(--border)', marginBottom: 'var(--sp-5, 20px)' }} />
@@ -293,41 +235,56 @@ const SubscribePage = () => {
             </div>
           );
         })}
-      </div>
-      <div className="w-full max-w-3xl mb-8">
-        <button
-          type="button"
-          className="w-full py-3.5 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
-          style={{
-            borderRadius: 'var(--r-lg)',
-            background: 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF7A1A))',
-            border: '1px solid transparent',
-            fontFamily: 'var(--font-ui)',
-          }}
-          onClick={handleUpgrade}
-          disabled={Boolean(loading) || (isSubscribedUser && selectedPlan === currentTier)}
-          data-testid="subscribe-checkout-cta"
-        >
-          {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</> : <>Continue to secure checkout <ArrowRight className="w-4 h-4" /></>}
-        </button>
+
+        {/* 5th card: sales-handoff CTA for prospects who don't fit a self-serve plan.
+            Per Andreas direction 2026-05-04 (code 13041978) — replaces the prior
+            Enterprise self-serve card. Enterprise pricing is contact-sales only. */}
+        <div className="relative flex flex-col" style={{
+          background: 'var(--surface)',
+          border: '1px dashed var(--border-strong, var(--border))',
+          borderRadius: 'var(--r-2xl)',
+          padding: 'var(--sp-8, 32px)',
+          boxShadow: 'var(--elev-1)',
+          transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+        }} data-testid="plan-specialist-cta">
+          <h3 className="text-[28px] font-semibold mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', lineHeight: 1.1 }}>Still Unsure?</h3>
+          <p className="text-sm mb-6" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', lineHeight: 1.5, minHeight: 44 }}>Talk to a local specialist about your team, integrations, and the right plan.</p>
+          <div className="flex items-baseline gap-2 mb-1">
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '28px', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--ink-display)' }}>Talk to us</span>
+          </div>
+          <div className="mb-6" style={{ minHeight: 18 }} />
+          <Link to="/speak-with-local-specialist" className="w-full py-3.5 text-sm font-semibold flex items-center justify-center gap-2"
+            style={{
+              borderRadius: 'var(--r-lg)',
+              color: 'var(--ink-display, #0A0A0A)',
+              background: 'transparent',
+              border: '1px solid var(--ink-display, #0A0A0A)',
+              marginBottom: 'var(--sp-6, 24px)',
+              fontFamily: 'var(--font-ui)',
+              transition: 'all 0.15s ease',
+              textDecoration: 'none',
+            }} data-testid="upgrade-specialist">
+            Speak with a Local Specialist <ArrowRight className="w-4 h-4" />
+          </Link>
+          <div style={{ height: 1, background: 'var(--border)', marginBottom: 'var(--sp-5, 20px)' }} />
+          <p className="text-[11px] font-semibold uppercase mb-4" style={{ letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Best for</p>
+          <div className="flex flex-col gap-3 flex-1">
+            {[
+              'Larger teams or multi-entity setups',
+              'Custom integrations or SSO',
+              'Procurement, security, or DPA review',
+              'Tailored onboarding and rollout',
+            ].map(f => (
+              <div key={f} className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--ink-muted)' }} />
+                <span className="text-sm" style={{ color: 'var(--ink)', fontFamily: 'var(--font-ui)', lineHeight: 1.4 }}>{f}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="w-full max-w-4xl mb-8 p-5" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--elev-1)' }}>
-        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Specialist support</p>
-        <div className="mt-2 mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
-            Need rollout guidance before checkout? Book a call with a BIQc Specialist.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/speak-with-local-specialist')}
-            className="px-4 py-2 text-sm font-semibold text-white"
-            style={{ background: 'var(--lava)', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-lg)' }}
-            data-testid="subscribe-specialist-cta"
-          >
-            Book a call with a BIQc Specialist
-          </button>
-        </div>
         <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Custom Build</p>
         <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
@@ -451,17 +408,44 @@ const SubscribePage = () => {
 };
 
 /* ── Feature Comparison Table ─────────────────────────────────────────────── */
+// 2026-05-04: Lite column added per code 13041978.
 const COMPARISON_DATA = [
-  { category: 'Capacity', features: [
-    { name: 'Users included', growth: '1', pro: 'Up to 5', business: 'Up to 12' },
-    { name: 'Monthly AI tokens', growth: '1,000,000', pro: '5,000,000', business: '20,000,000' },
-    { name: 'Data sync history', growth: 'Recent', pro: 'Extended', business: 'Advanced' },
-    { name: 'Core BIQc intelligence', growth: true, pro: true, business: true },
+  { category: 'Core platform', features: [
+    { name: 'Advisor (daily brief)', lite: false, growth: true, pro: true, business: true },
+    { name: 'Email inbox + priority scoring', lite: false, growth: true, pro: true, business: true },
+    { name: 'Calendar intelligence', lite: false, growth: true, pro: true, business: true },
+    { name: 'Alert centre', lite: false, growth: true, pro: true, business: true },
+    { name: 'Ask BIQc queries', lite: '150K tokens', growth: '1M tokens', pro: '5M tokens', business: '20M tokens' },
+    { name: 'Market position', lite: false, growth: true, pro: true, business: true },
+    { name: 'Business DNA', lite: false, growth: true, pro: true, business: true },
+    { name: 'Supported integrations', lite: '1', growth: 'Unlimited', pro: 'Unlimited', business: 'Unlimited' },
   ]},
-  { category: 'Support and rollout', features: [
-    { name: 'Support level', growth: 'Email', pro: 'Priority', business: 'Priority' },
-    { name: 'Local specialist guidance', growth: false, pro: true, business: true },
-    { name: 'Integrations', growth: 'Included', pro: 'Included', business: 'Included' },
+  { category: 'Growth intelligence', features: [
+    { name: 'Market & Business Forensic Snapshot', lite: false, growth: true, pro: true, business: true },
+    { name: 'Intelligence Spine', lite: false, growth: true, pro: true, business: true },
+    { name: 'Revenue analytics', lite: false, growth: true, pro: true, business: true },
+    { name: 'Operations metrics', lite: false, growth: true, pro: true, business: true },
+    { name: 'Reports', lite: false, growth: true, pro: true, business: true },
+    { name: 'Decision tracker', lite: false, growth: true, pro: true, business: true },
+    { name: 'SOP generator', lite: false, growth: true, pro: true, business: true },
+    { name: 'Marketing automation', lite: false, growth: true, pro: true, business: true },
+    { name: 'Marketing intelligence', lite: false, growth: true, pro: true, business: true },
+    { name: 'Exposure scan', lite: false, growth: true, pro: true, business: true },
+  ]},
+  { category: 'Pro intelligence', features: [
+    { name: 'Risk matrix', lite: false, growth: false, pro: true, business: true },
+    { name: 'Compliance tracking', lite: false, growth: false, pro: true, business: true },
+    { name: 'Cross-domain signals', lite: false, growth: false, pro: true, business: true },
+    { name: 'Watchtower', lite: false, growth: false, pro: true, business: true },
+    { name: 'Document library', lite: false, growth: false, pro: true, business: true },
+    { name: 'Intel centre', lite: false, growth: false, pro: true, business: true },
+    { name: 'Audit log', lite: false, growth: false, pro: true, business: true },
+  ]},
+  { category: 'Support', features: [
+    { name: 'Community', lite: true, growth: true, pro: true, business: true },
+    { name: 'Self-serve docs', lite: true, growth: true, pro: true, business: true },
+    { name: 'Email support', lite: false, growth: true, pro: true, business: true },
+    { name: 'Priority support', lite: false, growth: false, pro: true, business: true },
   ]},
 ];
 
@@ -481,8 +465,9 @@ const FeatureComparisonTable = () => (
         <thead>
           <tr style={{ background: 'var(--surface-sunken)' }}>
             <th className="text-left px-5 py-4 text-[11px] font-semibold uppercase" style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps, 0.08em)', fontFamily: 'var(--font-mono)' }}>Feature</th>
-            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'white', background: 'var(--surface-sunken, #F5F5F5)', fontFamily: 'var(--font-ui)' }}>Growth $69</th>
-            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Pro $199</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Lite $14</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Growth $69</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'white', background: 'var(--surface-sunken, #F5F5F5)', fontFamily: 'var(--font-ui)' }}>Pro $199</th>
             <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Business $349</th>
           </tr>
         </thead>
@@ -490,7 +475,7 @@ const FeatureComparisonTable = () => (
           {COMPARISON_DATA.map(section => (
             <React.Fragment key={section.category}>
               <tr style={{ background: 'var(--surface-sunken)' }}>
-                <td colSpan={4} className="px-4 py-3 text-[11px] font-semibold uppercase"
+                <td colSpan={5} className="px-4 py-3 text-[11px] font-semibold uppercase"
                   style={{ color: 'var(--ink-muted)', borderBottom: '1px solid var(--border)', letterSpacing: 'var(--ls-caps, 0.08em)', fontFamily: 'var(--font-mono)' }}>
                   {section.category}
                 </td>
@@ -498,6 +483,7 @@ const FeatureComparisonTable = () => (
               {section.features.map(f => (
                 <tr key={f.name} className="hover:bg-white/[0.02]">
                   <td className="px-4 py-3 font-medium" style={{ color: 'var(--ink-secondary)', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-ui)' }}>{f.name}</td>
+                  <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.lite} /></td>
                   <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.growth} /></td>
                   <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.pro} /></td>
                   <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.business} /></td>
@@ -515,7 +501,8 @@ const FeatureComparisonTable = () => (
 const FAQ_ITEMS = [
   { q: 'What happens when my 14-day trial ends?', a: 'You\'ll be charged for the plan you selected at signup (Growth $69 by default) and your full platform access continues uninterrupted. No charges happen before day 14. You can downgrade, upgrade, or cancel at any time from Settings → Billing. If you cancel during the trial you are never charged.' },
   { q: 'Can I switch plans later?', a: 'Absolutely. Upgrade or downgrade at any time from Settings → Billing. When you upgrade, you get instant access to all features in your new tier. When you downgrade, you keep access until the end of your current billing period.' },
-  { q: 'How do integrations work across tiers?', a: 'Growth, Pro, and Business all include core BIQc integrations. Higher plans are designed for larger teams and deeper monthly AI capacity.' },
+  { q: 'What happens when I hit my AI allowance?', a: 'AI usage is capped by your plan allowance. You can continue by upgrading or by requesting an approved top-up; BIQc does not silently continue paid overage usage.' },
+  { q: 'How do integrations work across tiers?', a: 'All paid plans can connect supported integrations. Capacity is controlled by token allowance, sync history, and storage/refresh behaviour rather than plan-specific connector lockouts.' },
   { q: 'Is my data secure?', a: 'Yes. All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We never use your data for AI model training. You retain full ownership and can export or delete everything at any time. We\'re SOC 2 compliant and GDPR/APPs aligned.' },
   { q: 'Do you offer discounts for annual billing?', a: 'Yes — save 20% with annual billing. Growth drops from $69/month to $55/month ($660/year). Pro drops from $199/month to $159/month ($1,908/year). All annual plans include priority onboarding.' },
   { q: 'What payment methods do you accept?', a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex) via Stripe. For Enterprise plans, we also offer invoice billing with NET 30 terms. All prices are in AUD.' },

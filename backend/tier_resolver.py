@@ -20,11 +20,13 @@ logger = logging.getLogger(__name__)
 # ═══ SUPER ADMIN — IMMUTABLE, EMAIL-BASED ═══
 SUPER_ADMIN_EMAIL = MASTER_ADMIN_EMAIL
 
-# ═══ TIER DEFINITIONS — free + 3 paid + custom build + super_admin ═══
-TIERS = ['free', 'starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin']
+# ═══ TIER DEFINITIONS — free + 4 paid (lite + starter + pro + business) + custom + super_admin ═══
+# Phase 1.9 (2026-05-05 code 13041978): 'lite' added — $14/mo entry-level paid tier.
+TIERS = ['free', 'lite', 'starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin']
 
 BRAIN_METRIC_LIMITS = {
     'free': 10,
+    'lite': 25,           # Between free (10) and starter (50)
     'starter': 50,
     'pro': 75,
     'business': 100,
@@ -57,7 +59,7 @@ ROUTE_ACCESS = {
     # Everything else lifts to 'starter'. See routeAccessConfig.js —
     # parity enforced by scripts/feature_tier_parity_gate.py.
     '/settings': 'free',             # Account settings (cancel/manage)
-    '/calibration': 'free',          # Onboarding calibration
+    '/calibration': 'starter',       # Paid/trialing only
     '/onboarding': 'free',
     '/onboarding-decision': 'free',
     '/profile-import': 'free',
@@ -71,7 +73,7 @@ ROUTE_ACCESS = {
     '/advisor': 'starter',
     '/market': 'starter',
     '/business-profile': 'starter',
-    '/integrations': 'free',
+    '/integrations': 'starter',
     '/connect-email': 'starter',
     '/data-health': 'starter',
     '/competitive-benchmark': 'starter',
@@ -129,41 +131,41 @@ ROUTE_ACCESS = {
 # API route prefix → minimum tier
 API_ACCESS = {
     # FREE
-    '/snapshot/latest': 'free',
-    '/business-profile': 'free',
-    '/integrations': 'free',
-    '/intelligence/integration-status': 'free',
-    '/intelligence/completeness': 'free',
-    '/intelligence/readiness': 'free',
-    '/calibration': 'free',
+    '/snapshot/latest': 'starter',
+    '/business-profile': 'starter',
+    '/integrations': 'starter',
+    '/intelligence/integration-status': 'starter',
+    '/intelligence/completeness': 'starter',
+    '/intelligence/readiness': 'starter',
+    '/calibration': 'starter',
     '/onboarding': 'free',
     '/auth': 'free',
     '/health': 'free',
     '/warmup': 'free',
     '/ingestion': 'free',           # Gated by counter, not tier
     '/forensic': 'starter',
-    '/market-intelligence': 'free',
-    '/brain/priorities': 'free',
-    '/brain/metrics': 'free',
+    '/market-intelligence': 'starter',
+    '/brain/priorities': 'starter',
+    '/brain/metrics': 'starter',
     '/brain/concerns': 'starter',
 
     # PAID
     '/revenue': 'starter',
-    '/snapshot/generate': 'free',    # Gated by counter (3/month)
+    '/snapshot/generate': 'starter',
     '/intelligence/workforce': 'starter',
     '/intelligence/scenarios': 'starter',
     '/intelligence/scores': 'starter',
     '/intelligence/concentration': 'starter',
     '/intelligence/contradictions': 'starter',
-    '/intelligence/pressure': 'free',
-    '/intelligence/freshness': 'free',
+    '/intelligence/pressure': 'starter',
+    '/intelligence/freshness': 'starter',
     '/intelligence/silence': 'starter',
     '/intelligence/escalations': 'starter',
-    '/intelligence/watchtower': 'free',
+    '/intelligence/watchtower': 'starter',
     '/intelligence/summary': 'starter',
     '/intelligence/governance-summary': 'starter',
     '/reports': 'starter',
-    '/soundboard': 'free',
+    '/soundboard': 'starter',
     '/boardroom': 'starter',
     '/strategic-console': 'starter',
     '/generate': 'starter',
@@ -171,12 +173,12 @@ API_ACCESS = {
     '/advisory': 'starter',
     '/watchtower': 'starter',
     '/emission': 'starter',
-    '/email/priority-inbox': 'free',
-    '/email/analyze': 'free',
-    '/email/suggest': 'free',
-    '/notifications/alerts': 'free',
-    '/outlook': 'free',
-    '/workflows': 'free',
+    '/email/priority-inbox': 'starter',
+    '/email/analyze': 'starter',
+    '/email/suggest': 'starter',
+    '/notifications/alerts': 'starter',
+    '/outlook': 'starter',
+    '/workflows': 'starter',
     '/decisions': 'starter',
     '/marketing-automation': 'starter',
     '/exposure': 'starter',
@@ -210,8 +212,21 @@ def resolve_tier(user: dict) -> str:
     if role in {'superadmin', 'super_admin'}:
         return 'super_admin'
 
+    # Commercial gate: paid app access requires an active/trialing Stripe
+    # subscription with both customer + subscription ids linked.
+    status = (user.get('subscription_status') or '').lower().strip()
+    inactive_statuses = {'past_due', 'canceled', 'cancelled', 'incomplete', 'incomplete_expired', 'unpaid'}
+    if status in inactive_statuses:
+        return 'free'
+    if status not in {'active', 'trialing'}:
+        return 'free'
+    if not (user.get('stripe_customer_id') and user.get('stripe_subscription_id')):
+        return 'free'
+
     # Database tier
     db_tier = (user.get('subscription_tier') or 'free').lower().strip()
+    if db_tier == 'trial':
+        return 'starter'
     if db_tier in {'foundation', 'growth', 'starter'}:
         return 'starter'
     if db_tier in {'professional', 'pro'}:
@@ -229,7 +244,12 @@ def resolve_tier(user: dict) -> str:
 
 
 def tier_rank(tier: str) -> int:
-    """Numeric rank for tier comparison with legacy aliases mapped safely."""
+    """Numeric rank for tier comparison with legacy aliases mapped safely.
+
+    Phase 1.9 (2026-05-05 code 13041978): 'lite' added at rank 1 same as
+    starter — both are paid entry-level so route access matches; token
+    allocation differs (lite=150K, starter=1M).
+    """
     if tier == 'super_admin':
         return 99
     if tier in ('custom_build', 'custom'):
@@ -240,7 +260,7 @@ def tier_rank(tier: str) -> int:
         return 3
     if tier in ('pro', 'professional'):
         return 2
-    if tier in ('starter', 'foundation', 'growth'):
+    if tier in ('lite', 'starter', 'foundation', 'growth'):
         return 1
     return 0
 

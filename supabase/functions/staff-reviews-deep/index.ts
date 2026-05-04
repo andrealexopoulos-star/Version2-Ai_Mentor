@@ -19,16 +19,20 @@
 //   - trend_30d_vs_90d (improving|stable|declining|insufficient_data)
 //   - employer_brand_health_score (0-100)
 //
-// Discovery: when slugs/EIDs not provided, derive via Serper.dev Google search
-// (already wired in BIQc — same key as backend/core/helpers.py).
+// Discovery: when slugs/EIDs not provided, derive via Perplexity sonar-pro
+// (web-grounded LLM that returns synthesised JSON + citations). Replaced
+// Serper.dev 2026-05-04 under code 13041978 — Serper account hit its credit
+// ceiling and Andreas mandated supplier removal in favour of richer
+// providers already provisioned in Supabase function secrets.
 //
 // Contract v2 sanitised:
-//   - external response NEVER names suppliers (Firecrawl / OpenAI / Serper)
+//   - external response NEVER names suppliers (Firecrawl / OpenAI / Perplexity)
 //   - external errors map to {DATA_AVAILABLE,DATA_UNAVAILABLE,INSUFFICIENT_SIGNAL,
 //     PROCESSING,DEGRADED}; full internal detail kept in ai_errors[]
 //
 // Andreas constraint: NO new keys / accounts. Re-uses FIRECRAWL_API_KEY,
-// SERPER_API_KEY, OPENAI_API_KEY (Trinity-anchored).
+// PERPLEXITY_API_KEY (replaced SERPER_API_KEY 2026-05-04), OPENAI_API_KEY
+// (Trinity-anchored).
 //
 // Deploy: supabase functions deploy staff-reviews-deep --no-verify-jwt
 // ═══════════════════════════════════════════════════════════════════════════
@@ -40,14 +44,23 @@ import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 import { recordUsage } from "../_shared/metering.ts";
 
 const FIRECRAWL_API_KEY = (Deno.env.get("FIRECRAWL_API_KEY") || "").trim();
-const SERPER_API_KEY = (Deno.env.get("SERPER_API_KEY") || "").trim();
+// Serper removed 2026-05-04 (code 13041978) — credit-limit churn risk
+// observed in prod (live scan smsglobal.com, 8× HTTP 400 "Not enough credits"
+// in enrichment_traces). Perplexity sonar-pro replaces URL discovery: it
+// returns a structured JSON URL + citations from a web-grounded synthesis
+// rather than a SERP-organic snippet, which gives richer customer experience
+// (more reliable URL resolution + verifiable sources).
+const PERPLEXITY_API_KEY = (Deno.env.get("PERPLEXITY_API_KEY") || "").trim();
 const OPENAI_API_KEY = (Deno.env.get("OPENAI_API_KEY") || "").trim();
 const ANTHROPIC_API_KEY = (Deno.env.get("ANTHROPIC_API_KEY") || "").trim();
 const GOOGLE_API_KEY = (Deno.env.get("GOOGLE_API_KEY") || "").trim();
 
+// Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+// Fallbacks rotated to safe production-available names — "claude-sonnet-4-6"
+// and "gemini-3-pro-preview" were unreleased and producing silent 400s.
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") || "gpt-4o";
-const ANTHROPIC_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-6";
-const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-3-pro-preview";
+const ANTHROPIC_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-3-5-sonnet-20241022";
+const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-1.5-pro";
 const LLM_TIMEOUT_MS = 35000;
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -218,8 +231,24 @@ async function firecrawlScrape(
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Serper.dev (Google search) — used to discover slugs/EIDs when not provided.
+// Perplexity sonar-pro (web search via grounded LLM) — replaces Serper.dev
+// for URL discovery. 2026-05-04, code 13041978.
+//
+// Why Perplexity for this fn: every prior Serper call here was a `site:X "Y"`
+// query whose only output we used was the first matching `link` regex on a
+// known URL pattern (Glassdoor /Reviews/-E\d+\.htm, Indeed /cmp/.../reviews,
+// etc.). Perplexity sonar-pro answers exactly that question — "find the URL
+// of business X on site Y" — with synthesised JSON + citations, more
+// reliably than a SERP-organic regex match. Title/snippet aren't used by
+// downstream callers, so we only need to fill `link`.
+//
+// Contract preserved: returns `SerperResult[]` (legacy type name kept to
+// avoid touching the four call sites in discoverPlatformUrls — same shape,
+// new supplier under the hood). Title/snippet fields are intentionally left
+// empty since callers only consume `link`.
 // ───────────────────────────────────────────────────────────────────────────
+
+const PERPLEXITY_DISCOVERY_TIMEOUT_MS = 22000;
 
 interface SerperResult {
   title: string;
@@ -232,30 +261,107 @@ async function serperSearch(
   aiErrors: string[],
   num = 5,
 ): Promise<SerperResult[]> {
-  if (!SERPER_API_KEY) {
+  // Function name retained for surgical-diff minimisation; supplier under
+  // the hood is now Perplexity (see header note).
+  if (!PERPLEXITY_API_KEY) {
     aiErrors.push("search_provider_unavailable");
     return [];
   }
+  // Tease the original query into a targeted Perplexity prompt. Most calls
+  // here are of the form `site:DOMAIN "Business Name" reviews`. We extract
+  // the site filter + the quoted business name to build a research question.
+  const siteMatch = query.match(/site:(\S+)/i);
+  const quotedMatch = query.match(/"([^"]+)"/);
+  const targetSite = siteMatch ? siteMatch[1].trim() : "";
+  const targetBusiness = quotedMatch ? quotedMatch[1].trim() : query.trim();
+  const systemMsg =
+    "You are a research assistant. Return ONLY valid JSON. No prose, no " +
+    "markdown fences. When a URL cannot be confidently identified from " +
+    "public web sources, return an empty array — never invent URLs.";
+  const userMsg = targetSite
+    ? `Find URLs on the domain "${targetSite}" that correspond to the ` +
+      `Australian business "${targetBusiness}". Specifically, the company ` +
+      `reviews / employer page (not job postings or general search). ` +
+      `Return strictly this JSON: ` +
+      `{"results": [{"link": <full URL string>, "title": <page title>}]}. ` +
+      `Up to ${num} results, ranked by relevance. Each link MUST be a full ` +
+      `https URL on ${targetSite}. If you cannot confidently identify any, ` +
+      `return {"results": []}.`
+    : `Search the public web for: ${query}. Return strictly this JSON: ` +
+      `{"results": [{"link": <full URL>, "title": <page title>}]} with up ` +
+      `to ${num} results. If nothing matches, return {"results": []}.`;
   try {
-    const res = await fetch("https://google.serper.dev/search", {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PERPLEXITY_DISCOVERY_TIMEOUT_MS);
+    const res = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
       headers: {
-        "X-API-KEY": SERPER_API_KEY,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${PERPLEXITY_API_KEY}`,
       },
-      body: JSON.stringify({ q: query, gl: "au", hl: "en", num }),
+      body: JSON.stringify({
+        model: "sonar-pro",
+        messages: [
+          { role: "system", content: systemMsg },
+          { role: "user", content: userMsg },
+        ],
+        return_citations: true,
+        return_images: false,
+        temperature: 0.1,
+        max_tokens: 800,
+      }),
+      signal: controller.signal,
     });
+    clearTimeout(timer);
     if (!res.ok) {
       aiErrors.push(`search_http_${res.status}`);
       return [];
     }
     const data = await res.json();
-    const organic: SerperResult[] = (data?.organic || []).map((r: any) => ({
-      title: String(r?.title || ""),
-      link: String(r?.link || ""),
-      snippet: String(r?.snippet || ""),
-    }));
-    return organic;
+    const text = String(data?.choices?.[0]?.message?.content || "");
+    let raw = text.trim();
+    if (raw.startsWith("```")) {
+      raw = raw.replace(/^```[^\n]*\n?/, "").replace(/```\s*$/, "").trim();
+    }
+    let parsed: any = null;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      // Try to extract first JSON object substring
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) {
+        try { parsed = JSON.parse(m[0]); } catch { parsed = null; }
+      }
+    }
+    if (!parsed || typeof parsed !== "object") {
+      aiErrors.push("search_parse_failed");
+      return [];
+    }
+    const arr: any[] = Array.isArray(parsed.results) ? parsed.results : [];
+    // Also fold in raw citations as a safety net — Perplexity often returns
+    // these even when the JSON `results` field is sparse.
+    const citations: string[] = Array.isArray(data?.citations) ? data.citations : [];
+    const results: SerperResult[] = [];
+    for (const r of arr.slice(0, num)) {
+      if (!r || typeof r !== "object") continue;
+      const link = String(r.link || r.url || "").trim();
+      if (!link.startsWith("http")) continue;
+      results.push({
+        title: String(r.title || "").slice(0, 200),
+        link,
+        snippet: "",
+      });
+    }
+    if (results.length === 0 && citations.length > 0) {
+      // Fallback: surface raw citations so the caller's regex matchers can
+      // still find a candidate URL even when the model returned thin JSON.
+      for (const c of citations.slice(0, num)) {
+        const link = String(c || "").trim();
+        if (!link.startsWith("http")) continue;
+        results.push({ title: "", link, snippet: "" });
+      }
+    }
+    return results;
   } catch (err) {
     aiErrors.push(`search_error_${String(err).slice(0, 60)}`);
     return [];
@@ -291,7 +397,7 @@ async function discoverPlatformUrls(
     fairwork_url: null,
   };
 
-  // Glassdoor: prefer hint EID, else SerpAPI/Serper lookup
+  // Glassdoor: prefer hint EID, else web research (Perplexity sonar-pro)
   if (hints.glassdoor_eid) {
     const slug = slugifyName(businessName);
     targets.glassdoor_url = `https://www.glassdoor.com.au/Reviews/${slug}-Reviews-E${hints.glassdoor_eid}.htm`;
@@ -316,7 +422,7 @@ async function discoverPlatformUrls(
     }
   }
 
-  // Indeed: prefer hint slug, else SerpAPI/Serper lookup
+  // Indeed: prefer hint slug, else web research (Perplexity sonar-pro)
   if (hints.indeed_slug) {
     targets.indeed_url = `https://au.indeed.com/cmp/${hints.indeed_slug}/reviews`;
   } else {
@@ -357,7 +463,7 @@ async function discoverPlatformUrls(
     }
   }
 
-  // Optional bonus: PayScale + Fairwork — only when SerpAPI returns
+  // Optional bonus: PayScale + Fairwork — only when web research returns
   const psResults = await serperSearch(
     `site:payscale.com "${businessName}" reviews`,
     aiErrors,
@@ -658,6 +764,7 @@ async function callOpenAI(
         ],
         temperature: 0.2,
         max_tokens: 2400,
+      }),
       signal: controller.signal,
     });
     clearTimeout(timer);

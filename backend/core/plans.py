@@ -17,6 +17,7 @@ from typing import Literal
 
 from config.entitlement_constants import (
     BUSINESS_TOKENS,
+    LITE_TOKENS,
     PRO_TOKENS,
     STARTER_TOKENS,
     TOPUP_PRICE_AUD_CENTS as CANONICAL_TOPUP_PRICE_AUD_CENTS,
@@ -30,9 +31,13 @@ USD_TO_AUD: float = float(os.environ.get("AUD_USD_RATE", "1.52"))
 PRICING_VERSION: str = "v1"
 logger.info("[plans] USD_TO_AUD=%.4f pricing_version=%s", USD_TO_AUD, PRICING_VERSION)
 
+# Phase 1.9 (2026-05-05 code 13041978): Lite tier wired into TIER_ALLOCATIONS.
+# Was missing — Lite buyers via Stripe back-door fell through to free=225K
+# despite paying $14/mo. Now properly allocated to LITE_TOKENS=150K.
 TIER_ALLOCATIONS: dict[str, int] = {
     "trial":        250_000,
     "free":         225_000,
+    "lite":         LITE_TOKENS,      # "BIQc Lite" $14/mo (prod_URgYIlMeF24vrN)
     "starter":      STARTER_TOKENS,   # "Growth" plan in marketing
     "pro":          PRO_TOKENS,
     "business":     BUSINESS_TOKENS,

@@ -7,7 +7,13 @@ import { recordUsage, recordUsageSonar } from "../_shared/metering.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY") || "";
-const PERPLEXITY_KEY = Deno.env.get("Perplexity_API") || "";
+// Phase 1.X env-var canonicalisation (2026-05-05 code 13041978):
+// Was Deno.env.get("Perplexity_API") — mixed-case typo. Canonical name is
+// PERPLEXITY_API_KEY (matches every other edge function + biqc-api Azure env).
+// Mixed-case duplicate was purged from Supabase function secrets during the
+// supplier-name sweep — without this fix the snapshot context silently
+// degrades (empty key → no Perplexity recon → snapshot missing market intel).
+const PERPLEXITY_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
 const MERGE_CACHE_HOURS = 6;
 const SNAPSHOT_MODEL = "gpt-4o-mini";
@@ -92,7 +98,26 @@ serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  // Reachability probe = bare GET. Functional callers always POST with body.
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "intelligence-snapshot",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   try {
+    // Phase 1.X auth-symmetry note (2026-05-05 code 13041978):
+    // This function already trusts AuthResult — the prior 400-on-GET was caused
+    // by no GET reachability handler above. service_role callers must inject
+    // user_id; user-JWT callers come straight from auth.userId/auth.user.id.
     const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
     const authUserId = auth.user?.id || auth.userId || "";
     const userId = auth.isServiceRole ? String((body as any)?.user_id || "") : authUserId;

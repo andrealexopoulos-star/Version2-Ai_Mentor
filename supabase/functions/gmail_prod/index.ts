@@ -80,10 +80,27 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  // GET = reachability probe. The function's normal status-check flow uses POST.
+  if (req.method === "GET" && !new URL(req.url).searchParams.get("provider")) {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "gmail_prod",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   const adminSb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   try {
-    const body = await req.json().catch(() => ({}));
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Body parse only meaningful on POST; GET/no-body callers must not 400 here.
+    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
     const action = body.action;
     const url    = new URL(req.url);
 

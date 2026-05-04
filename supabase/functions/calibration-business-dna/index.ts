@@ -353,9 +353,15 @@ serve(async (req) => {
       /* invalid JWT — fall through */
     }
 
+    // Phase 1.7c hard-fix (RC-2 / 2026-05-05 code 13041978):
+    // Switched 4 sites from `token === SUPABASE_SERVICE_ROLE_KEY` (exact-string
+    // compare against env, fragile across legacy/sb_secret_ key divergence)
+    // to `auth.isServiceRole` (already validated by verifyAuth via Path-1 OR
+    // Path-1b JWT decode). Closes the 401 Unauthorized on calibration scans
+    // for fresh paying users captured in business_dna_enrichment.ai_errors.
     if (!user) {
       const qaBypassHeader = (req.headers.get("X-QA-Bypass") || "").trim();
-      const usingServiceRoleToken = token.length > 0 && token === SUPABASE_SERVICE_ROLE_KEY;
+      const usingServiceRoleToken = auth.isServiceRole === true;
       const qaBypassValid =
         QA_BYPASS_AUTH && QA_BYPASS_SECRET.length > 0 && qaBypassHeader === QA_BYPASS_SECRET;
       if (qaBypassValid && usingServiceRoleToken && QA_BYPASS_USER_ID) {
@@ -367,9 +373,9 @@ serve(async (req) => {
 
     if (!user) {
       const bodyUserId = body.user_id || body.tenant_id || "";
-      if (bodyUserId && token === SUPABASE_SERVICE_ROLE_KEY) {
+      if (bodyUserId && auth.isServiceRole) {
         user = { id: String(bodyUserId) };
-      } else if (token === SUPABASE_SERVICE_ROLE_KEY) {
+      } else if (auth.isServiceRole) {
         // Service-role invocation with no body.user_id — attribute LLM cost
         // to the BIQc internal sentinel so usage_ledger's uuid + FK contract
         // holds. Previously this used the literal "service-role-scan" which

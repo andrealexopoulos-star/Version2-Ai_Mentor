@@ -16,7 +16,18 @@ const DISPLAY = 'var(--font-marketing-display, ' + fontFamily.display + ')';
 const UI = 'var(--font-marketing-ui, ' + fontFamily.body + ')';
 const MONO = 'var(--font-mono, ' + fontFamily.mono + ')';
 
+// 2026-05-04: Lite tier ($14) added per code 13041978.
+// Capacity caps aligned with backend tier_resolver: Lite 1/150K, Growth 1/1M, Pro 5/5M, Business 12/20M.
 const PLANS = [
+  {
+    id: 'lite',
+    name: 'Lite',
+    price: '$14',
+    period: 'AUD/mo',
+    tagline: 'Try BIQc with one connected account. Self-serve, no commitment.',
+    features: ['1 seat', '150K tokens/month', '14-day sync history'],
+    highlight: false,
+  },
   {
     id: 'starter',
     name: 'Growth',

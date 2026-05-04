@@ -233,7 +233,7 @@ def _normalize_subscription_tier(tier: str | None) -> str:
     # CC captured at signup via PR #330 Stripe Setup Intent). During the trial
     # users get full Growth / Starter access; backend rate limits mirror that.
     # Legacy 'free' strings on pre-rename rows keep working as the gated bucket.
-    tier_value = (tier or "trial").lower().strip()
+    tier_value = (tier or "free").lower().strip()
     if tier_value in ("superadmin", "super_admin"):
         return "super_admin"
     if tier_value in ("custom", "custom_build"):
@@ -427,14 +427,15 @@ def _apply_trial_context(user_data: dict, sb) -> dict:
     user_id = payload.get("id")
 
     # Phase 6.11 — subscription gate. If Stripe reports the subscription
-    # unhealthy (past_due / canceled / incomplete), effective_tier is
-    # demoted to 'free' regardless of what subscription_tier says. This
-    # catches eventual-consistency windows where the webhook hasn't yet
-    # downgraded the tier column. Reverse-trial (trial_expires_at) users
-    # are still honored — those are grant-based, not Stripe-based.
+    # unhealthy (past_due / canceled / incomplete) OR if billing linkage
+    # is missing, effective_tier is demoted to 'free' regardless of what
+    # subscription_tier says.
     INACTIVE_STATUSES = {"past_due", "canceled", "cancelled", "incomplete", "incomplete_expired", "unpaid"}
     sub_status = (payload.get("subscription_status") or "").strip().lower()
     subscription_inactive = sub_status in INACTIVE_STATUSES
+    billing_active = sub_status in {"active", "trialing"}
+    has_customer = bool((payload.get("stripe_customer_id") or "").strip())
+    has_subscription = bool((payload.get("stripe_subscription_id") or "").strip())
 
     # Super-admin bypass must consider role + email, not just
     # subscription_tier — an admin account whose stored tier is non-'super_admin'
@@ -447,7 +448,7 @@ def _apply_trial_context(user_data: dict, sb) -> dict:
         or (MASTER_ADMIN_EMAIL and email == MASTER_ADMIN_EMAIL.lower())
         or (payload.get("subscription_tier") or "").strip().lower() == "super_admin"
     )
-    should_demote = subscription_inactive and not is_super_admin
+    should_demote = (subscription_inactive or (not billing_active) or (not has_customer) or (not has_subscription)) and not is_super_admin
 
     if not user_id or sb is None:
         base_tier = payload.get("subscription_tier", "free")
@@ -455,21 +456,9 @@ def _apply_trial_context(user_data: dict, sb) -> dict:
         payload["on_trial"] = False
         return payload
 
-    trial_expires_at = payload.get("trial_expires_at")
-    trial_tier = payload.get("trial_tier", "pro")
-    if trial_expires_at:
-        try:
-            expiry = datetime.fromisoformat(str(trial_expires_at).replace("Z", "+00:00"))
-            if expiry > datetime.now(timezone.utc):
-                payload["effective_tier"] = trial_tier
-                payload["on_trial"] = True
-                return payload
-        except Exception:
-            pass
-
     base_tier = payload.get("subscription_tier", "free")
     payload["effective_tier"] = "free" if should_demote else base_tier
-    payload["on_trial"] = False
+    payload["on_trial"] = sub_status == "trialing" and not should_demote
     return payload
 
 
@@ -575,6 +564,39 @@ async def get_client_admin(current_user: dict = Depends(get_current_user)):
     allowed = {"owner", "admin", "superadmin", "client_admin", "user_admin"}
     if current_user.get("role") not in allowed:
         raise HTTPException(status_code=403, detail="Insufficient permissions — admin or owner role required")
+    return current_user
+
+
+async def require_active_subscription(current_user: dict = Depends(get_current_user)):
+    """
+    Gate for routes that require an active paid subscription.
+
+    Used on /calibration/* writes, /forensic/calibration POST, and other
+    post-checkout-only surfaces. Per Andreas direction (2026-05-04, code
+    13041978): calibration only happens after subscription chosen + checkout.
+
+    Returns the user dict if billing is active (effective_tier != 'free').
+    Raises 402 with sanitised state enum (Contract v2: never expose Stripe
+    or supplier names; redirect customer to /subscribe).
+
+    Bypass: super_admin role always allowed (for ops/QA).
+    """
+    role = (current_user.get("role") or "").strip().lower()
+    email = (current_user.get("email") or "").strip().lower()
+    if role in {"superadmin", "super_admin"} or (MASTER_ADMIN_EMAIL and email == MASTER_ADMIN_EMAIL.lower()):
+        return current_user
+
+    effective_tier = (current_user.get("effective_tier") or "").strip().lower()
+    if effective_tier in {"", "free"}:
+        # Contract v2: sanitised state enum, no internal/Stripe language exposed.
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "state": "PAYMENT_REQUIRED",
+                "message": "An active subscription is required to access this feature.",
+                "redirect": "/subscribe",
+            },
+        )
     return current_user
 
 

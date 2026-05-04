@@ -251,7 +251,10 @@ async function persistResults(sb: any, userId: string, provider: string, classif
     priority_level: e.priority_level,
     reason: e.reason,
     suggested_action: e.suggested_action,
-    ai_model: "gemini-3-flash-preview",
+    // Phase 1.X model-name auto-validation (2026-05-05 code 13041978):
+    // Audit string was logging an unreleased model name even though the actual
+    // call upstream was gpt-4o-mini. Reflect reality so the audit is honest.
+    ai_model: "gpt-4o-mini",
     analyzed_at: new Date().toISOString(),
   }));
 

@@ -85,6 +85,19 @@ def _is_stripe_production_ready() -> bool:
     return True
 
 PLANS = {
+    # Phase 1.9 (2026-05-05 code 13041978): Lite tier added so /api/stripe/
+    # create-checkout-session accepts plan_id="lite" instead of 400-rejecting.
+    # Stripe price already exists at price_1TSnBMRoX8RKDDG5akGL7RkT for
+    # prod_URgYIlMeF24vrN ("BIQc Lite", $14/mo). Backend allocations now wired
+    # via TIER_ALLOCATIONS["lite"] = LITE_TOKENS (150K) so paying users get
+    # actual entitlement rather than fall-through to free=225K.
+    "lite": {
+        "amount": 1400,
+        "currency": "aud",
+        "name": "BIQc Lite",
+        "tier": "lite",
+        "interval": "month",
+    },
     "starter": {
         "amount": 6900,
         "currency": "aud",

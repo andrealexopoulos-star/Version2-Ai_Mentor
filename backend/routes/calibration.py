@@ -42,6 +42,7 @@ from core.business_dna_persistence import safe_upsert_business_dna
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, logger, cognitive_core, check_rate_limit,
+    require_active_subscription,
 )
 from supabase_client import safe_query_single
 from prompt_registry import get_prompt
@@ -2238,7 +2239,7 @@ async def get_calibration_status(current_user: dict = Depends(get_current_user))
 
 
 @router.post("/calibration/skip")
-async def skip_calibration(current_user: dict = Depends(get_current_user)):
+async def skip_calibration(current_user: dict = Depends(require_active_subscription)):
     """Super admin only — skip calibration entirely and mark as complete."""
     user_role = current_user.get("role", "user")
     user_email = (current_user.get("email") or "").strip().lower()
@@ -4204,9 +4205,15 @@ def _extract_team_size(answer: str) -> Optional[int]:
 
 
 @router.post("/calibration/init")
-async def init_calibration_session(current_user: dict = Depends(get_current_user)):
+async def init_calibration_session(current_user: dict = Depends(require_active_subscription)):
     """
     Initialize calibration: ensure business_profile shell exists.
+
+    GATE: requires active subscription (post-checkout).
+    Per Andreas direction (2026-05-04, code 13041978): calibration only
+    happens once a subscription has been chosen and post checkout.
+    Free users hitting this endpoint receive 402 PAYMENT_REQUIRED + redirect to /subscribe.
+
     Called when user clicks 'Begin Calibration' — BEFORE any answers.
     """
     user_id = current_user.get("id")
@@ -4815,7 +4822,7 @@ STRATEGIC_DIMENSIONS = [
 
 
 @router.get("/calibration/strategic-audit")
-async def get_strategic_audit(current_user: dict = Depends(get_current_user)):
+async def get_strategic_audit(current_user: dict = Depends(require_active_subscription)):
     """
     Dynamic Gap-Filling: Audit business_profiles against the 17-point Strategic Map.
     Returns known dimensions (auto-advance) and gaps (need questioning).
@@ -4866,7 +4873,7 @@ async def get_strategic_audit(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/calibration/brain")
-async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict = Depends(get_current_user)):
+async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict = Depends(require_active_subscription)):
     """
     Watchtower Brain — AI-driven 17-step strategic calibration.
     Replaces fixed question flow with intelligent interrogation.
@@ -5351,7 +5358,7 @@ async def get_forensic_calibration(current_user: dict = Depends(get_current_user
 
 @router.post("/reports/save")
 @router.post("/calibration/reports/save")
-async def save_calibration_report(payload: ReportSaveRequest, current_user: dict = Depends(get_current_user)):
+async def save_calibration_report(payload: ReportSaveRequest, current_user: dict = Depends(require_active_subscription)):
     user_id = current_user.get("id", "")
     try:
         sb = get_sb()
