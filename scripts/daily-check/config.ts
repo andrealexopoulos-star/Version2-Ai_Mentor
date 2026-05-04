@@ -141,3 +141,141 @@ export const TEST_URLS: TestUrl[] = [
  * this number — drift is loud, not silent.
  */
 export const EXPECTED_URL_COUNT = TEST_URLS.length;
+
+/**
+ * R2F (2026-05-04) — depth-verification thresholds.
+ *
+ * The presence-only daily check (E10 + F6 + F14) verifies that scans complete,
+ * CMO sections render, and the perimeter is intact. R2F adds DEPTH thresholds
+ * — i.e. did the data we accepted as "present" actually reflect the deep
+ * intelligence Marjo expects?
+ *
+ * Two thresholds per signal: "established" (smsglobal / canva-class /
+ * bunnings) and "smb" (jimsmowing / koalafoam / small services). The runner
+ * picks based on TestUrl.depth_class (defaulting to "smb" when unset).
+ *
+ * Numbers are sourced from the R2D / F15 spec ("organic_keywords >= 30 for
+ * established, >= 10 for SMB"; "detailed_competitors >= 5"; "ad_history_12m
+ * >= 1") and from R2B + R2C (review counts and theme extraction).
+ *
+ * Numbers are intentionally floors not targets — a real CMO Report against a
+ * real domain will produce far more than these values. We're catching
+ * collapses to zero / single-digit, not regressions of 30 → 28.
+ */
+export type DepthClass = 'established' | 'smb';
+
+export const DEPTH_THRESHOLDS = {
+  semrush: {
+    established: {
+      organic_keywords_min: 30,
+      backlinks_min: 1,
+      ad_history_months_min: 1,
+      competitors_min: 5,
+    },
+    smb: {
+      organic_keywords_min: 10,
+      backlinks_min: 0, // SMBs may legitimately have 0 backlinks tracked
+      ad_history_months_min: 0, // many SMBs never run paid ads
+      competitors_min: 5,
+    },
+  },
+  customer_reviews: {
+    // Both classes — reviews are discoverable for any business with a Google
+    // Maps presence. SMBs without a GBP listing fall to the low-signal exit.
+    total_reviews_min: 1,
+    platform_with_5plus_reviews_min: 1,
+    themes_min: 1,
+  },
+  staff_reviews: {
+    // Established businesses are expected to have staff reviews on at least
+    // one platform (Glassdoor / Indeed / Seek). SMBs may legitimately have
+    // zero — we only assert the field exists structurally for SMB.
+    established: {
+      platforms_with_rating_min: 1,
+    },
+    smb: {
+      platforms_with_rating_min: 0,
+    },
+    employer_brand_health_score_min: 0,
+    employer_brand_health_score_max: 100,
+  },
+  provenance: {
+    // E10's happy-path was 12 traces. With R2B + R2C (customer-reviews-deep
+    // + staff-reviews-deep) and R2D's deeper SEMrush queries, we expect
+    // ~20-30 trace rows per scan. Floor at 13 to catch obvious regressions
+    // while accepting the real-world range.
+    enrichment_traces_min_per_scan: 13,
+    section_source_trace_id_min: 1,
+  },
+  trinity: {
+    // After 7 days of SINGLE_PROVIDER, surface as P1 — Andreas needs to
+    // provision the second key. Below that, just record the state.
+    single_provider_warn_days: 7,
+  },
+};
+
+/**
+ * Marketing-101 generic-language regex sweep. If any of these phrases appear
+ * in the rendered CMO HTML, it means the LLM (or a fallback path) emitted
+ * a clichéd recommendation instead of a data-backed insight. R2F treats this
+ * as a depth_pass=false signal — the report rendered, but the content was
+ * advice you'd find in any "10 marketing tips" listicle.
+ *
+ * Sourced from common LLM "lazy advice" patterns flagged in CMO QA reviews.
+ * Add to this list any time a generic phrase is spotted in production output.
+ */
+export const ANTI_MARKETING_101_REGEXES: { pattern: RegExp; label: string }[] = [
+  { pattern: /improve\s+(your\s+)?social\s+media\s+presence/i, label: 'Generic "improve social media presence"' },
+  { pattern: /engage\s+(more\s+)?with\s+(your\s+)?audience/i, label: 'Generic "engage with audience"' },
+  { pattern: /create\s+(more\s+)?(quality|engaging)\s+content/i, label: 'Generic "create quality/engaging content"' },
+  { pattern: /optimi[sz]e\s+(your\s+)?website\s+for\s+(seo|search)/i, label: 'Generic "optimize website for SEO"' },
+  { pattern: /leverage\s+social\s+media/i, label: 'Generic "leverage social media"' },
+  { pattern: /build\s+(a\s+)?strong\s+brand\s+identity/i, label: 'Generic "build strong brand identity"' },
+  { pattern: /focus\s+on\s+customer\s+(experience|service)/i, label: 'Generic "focus on customer experience/service"' },
+  { pattern: /utili[sz]e\s+email\s+marketing/i, label: 'Generic "utilize email marketing"' },
+  { pattern: /run\s+(targeted\s+)?ad\s+campaigns/i, label: 'Generic "run targeted ad campaigns"' },
+  { pattern: /implement\s+(a\s+)?content\s+marketing\s+strategy/i, label: 'Generic "implement content marketing strategy"' },
+];
+
+/**
+ * Brand audit rule (per feedback_ask_biqc_brand_name.md). The conversational
+ * surface MUST appear as "Ask BIQc" in any user-facing render. Soundboard /
+ * Chat / Assistant variants are banned and indicate stale copy that hasn't
+ * been swept post-rebrand.
+ */
+export const BRAND_REQUIRED_PRESENT: RegExp = /\bAsk\s+BIQc\b/i;
+export const BRAND_BANNED_VARIANTS: { pattern: RegExp; label: string }[] = [
+  { pattern: /\bSoundboard\b/i, label: 'Old brand "Soundboard"' },
+  { pattern: /\bAsk\s+Chat\b/i, label: 'Variant "Ask Chat"' },
+  { pattern: /\bAsk\s+Assistant\b/i, label: 'Variant "Ask Assistant"' },
+];
+
+/**
+ * F15 — Authority rank rebrand. The CMO surface should refer to the SEMrush
+ * Authority Score as "Authority rank" or "Authority Score" — never "SEMrush
+ * rank" (which would leak the supplier name in addition to violating the F15
+ * brand cleanup).
+ */
+export const AUTHORITY_RANK_REQUIRED: RegExp = /\bAuthority\s+(rank|score)\b/i;
+export const SEMRUSH_RANK_BANNED: RegExp = /\bSEMrush\s+rank\b/i;
+
+/**
+ * Per-URL depth classification. "established" = a business with mature SEO
+ * + paid + reviews footprint that we expect to fill all the SEMrush /
+ * customer-review / staff-review buckets. "smb" = a small business where
+ * SEMrush will return less + staff reviews may be zero.
+ *
+ * Defaults to "smb" if the URL isn't in the table — conservative default
+ * avoids false negatives on new URLs.
+ */
+export const URL_DEPTH_CLASS: Record<string, DepthClass> = {
+  smsglobal: 'established',
+  bunnings: 'established',
+  jimsmowing: 'smb',
+  koalafoam: 'smb',
+  maddocks: 'smb',
+};
+
+export function depthClassFor(slug: string): DepthClass {
+  return URL_DEPTH_CLASS[slug] ?? 'smb';
+}

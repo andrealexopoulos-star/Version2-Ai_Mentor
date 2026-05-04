@@ -40,6 +40,7 @@ import {
   TEST_URLS,
   TestUrl,
 } from './config.js';
+import { verifyDepth, DepthMetrics, DepthCheckResult } from './verifyDepth.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,8 +55,8 @@ interface CheckResult {
 }
 
 interface PerUrlResult {
-  schema_version: '1.0.0-marjo-e10';
-  agent: 'E10';
+  schema_version: '1.1.0-marjo-r2f';
+  agent: 'E10+F6+F14+R2F';
   url: string;
   slug: string;
   label: string;
@@ -82,6 +83,13 @@ interface PerUrlResult {
   pdf_size_bytes: number | null;
   pdf_content_type: string | null;
   console_errors: string[];
+  // R2F additions — depth verification.
+  depth: DepthMetrics | null;
+  depth_checks: DepthCheckResult[];
+  depth_pass: boolean;
+  depth_failures: { check: string; detail: string; category: string }[];
+  g0d_semrush_total_failure: boolean;
+  presence_failures: { check: string; detail: string }[];
 }
 
 // ---------------------------------------------------------------------------
@@ -165,8 +173,8 @@ function denylistScan(
 // ---------------------------------------------------------------------------
 
 const result: PerUrlResult = {
-  schema_version: '1.0.0-marjo-e10',
-  agent: 'E10',
+  schema_version: '1.1.0-marjo-r2f',
+  agent: 'E10+F6+F14+R2F',
   url: targetCfg.url,
   slug: targetCfg.slug,
   label: targetCfg.label,
@@ -193,6 +201,34 @@ const result: PerUrlResult = {
   pdf_size_bytes: null,
   pdf_content_type: null,
   console_errors: [],
+  // R2F depth fields — populated by runDepthVerification().
+  depth: null,
+  depth_checks: [],
+  depth_pass: false,
+  depth_failures: [],
+  g0d_semrush_total_failure: false,
+  presence_failures: [],
+};
+
+// Captured-during-run state passed into the depth verifier. None of these
+// belong in the final JSON — they're scratchpad for the in-process verifier.
+interface CapturedRunState {
+  rendered_html: string | null;
+  enrichment_payload: Record<string, unknown> | null;
+  enrichment_traces: Array<{
+    function_name: string;
+    status_code: number;
+    source_trace_id?: string | null;
+    section_name?: string | null;
+  }>;
+  enrichment_traces_table_exists: boolean;
+}
+
+const captured: CapturedRunState = {
+  rendered_html: null,
+  enrichment_payload: null,
+  enrichment_traces: [],
+  enrichment_traces_table_exists: false,
 };
 
 function recordCheck(c: CheckResult) {
@@ -332,6 +368,9 @@ async function assertEnrichmentRow(
     const row = data[0] as EnrichmentRow;
     recordCheck({ name: 'supabase_enrichment_row_present', status: 'PASS', detail: `id=${row.id}`, duration_ms: nowMs() - t0 });
 
+    // R2F: capture the enrichment payload for the depth verifier.
+    captured.enrichment_payload = (row.enrichment ?? null) as Record<string, unknown> | null;
+
     // Required fields populated.
     const enrichment = row.enrichment ?? {};
     const businessName = String((enrichment as any).business_name ?? '');
@@ -392,7 +431,13 @@ async function assertEnrichmentTraces(sb: SupabaseClient, scanId: string | null,
   const t0 = nowMs();
   try {
     // The enrichment_traces table may not exist yet. Probe + downgrade gracefully.
-    let q = sb.from('enrichment_traces').select('function_name,status_code,duration_ms,created_at').order('created_at', { ascending: false }).limit(50);
+    // R2F: also fetch source_trace_id + section_name so the depth verifier can
+    // assert "every CMO section has at least one source_trace_id".
+    let q = sb
+      .from('enrichment_traces')
+      .select('function_name,status_code,duration_ms,created_at,source_trace_id,section_name')
+      .order('created_at', { ascending: false })
+      .limit(200);
     if (scanId) q = q.eq('scan_id', scanId);
     else if (userId) q = q.eq('user_id', userId);
     const { data, error } = await q;
@@ -401,6 +446,10 @@ async function assertEnrichmentTraces(sb: SupabaseClient, scanId: string | null,
       // it yet but the workflow shouldn't false-positive on its absence.
       // Code 42P01 = undefined_table (Postgres). PGRST106 = relation not found.
       const isMissing = /relation .*does not exist|PGRST106|42P01/i.test(error.message);
+      // The depth verifier reads enrichment_traces_table_exists to decide
+      // whether to FAIL or WARN on the trace count. If we couldn't even query,
+      // mark the table as not-existing so downstream assertions degrade.
+      captured.enrichment_traces_table_exists = false;
       recordCheck({
         name: 'supabase_enrichment_traces_query',
         status: isMissing ? 'WARN' : 'FAIL',
@@ -410,6 +459,14 @@ async function assertEnrichmentTraces(sb: SupabaseClient, scanId: string | null,
       return;
     }
     const rows = data ?? [];
+    // R2F: stash for the depth verifier — it needs the full row list.
+    captured.enrichment_traces = rows.map((r: any) => ({
+      function_name: r.function_name,
+      status_code: r.status_code,
+      source_trace_id: r.source_trace_id ?? null,
+      section_name: r.section_name ?? null,
+    }));
+    captured.enrichment_traces_table_exists = true;
     if (rows.length === 0) {
       recordCheck({
         name: 'supabase_enrichment_traces_present',
@@ -503,6 +560,135 @@ async function assertShareEvent(sb: SupabaseClient, scanId: string | null, userI
   } catch (e) {
     recordCheck({ name: 'supabase_share_events_query', status: 'WARN', detail: `exception: ${String(e)}`, duration_ms: nowMs() - t0 });
   }
+}
+
+/**
+ * R2F: read Trinity router quorum state from `router_config` (or
+ * `get_router_config()` RPC). This table/RPC may not be wired yet — the
+ * verifier downgrades to UNKNOWN/WARN when missing, so this query failing is
+ * NOT a depth_pass failure.
+ */
+async function fetchRouterConfig(sb: SupabaseClient): Promise<{ quorum_capability?: string; single_provider_since_days?: number | null } | null> {
+  // Try the RPC first (preferred shape per E9).
+  try {
+    const { data, error } = await sb.rpc('get_router_config');
+    if (!error && data) {
+      const row = Array.isArray(data) ? data[0] : data;
+      return {
+        quorum_capability: (row as any)?.quorum_capability,
+        single_provider_since_days: (row as any)?.single_provider_since_days ?? null,
+      };
+    }
+  } catch {
+    /* RPC missing — try table. */
+  }
+  // Fallback: a `router_config` table with a single row.
+  try {
+    const { data, error } = await sb.from('router_config').select('quorum_capability,single_provider_since_days').limit(1);
+    if (!error && data && data.length > 0) {
+      return {
+        quorum_capability: (data[0] as any).quorum_capability,
+        single_provider_since_days: (data[0] as any).single_provider_since_days ?? null,
+      };
+    }
+  } catch {
+    /* table missing — fine. */
+  }
+  return null;
+}
+
+/**
+ * R2F: run the depth verification suite after presence checks have populated
+ * the captured.* scratchpad. Mutates result.depth, result.depth_checks,
+ * result.depth_pass, result.depth_failures, result.g0d_semrush_total_failure.
+ *
+ * The depth verifier returns its own check list; we mirror those into the
+ * top-level result.checks so finalize()'s presence + depth gates both fire.
+ */
+async function runDepthVerification(sb: SupabaseClient): Promise<void> {
+  const t0 = nowMs();
+  // Snapshot presence-only failures before depth checks land — this is what
+  // the aggregator needs to surface "presence vs depth" separately.
+  result.presence_failures = [...result.failures];
+
+  if (!captured.rendered_html) {
+    recordCheck({
+      name: 'depth_verification_skipped',
+      status: 'FAIL',
+      detail: 'no rendered HTML captured — CMO never rendered, depth check cannot run',
+    });
+    result.depth = null;
+    result.depth_pass = false;
+    return;
+  }
+  if (!captured.enrichment_payload) {
+    recordCheck({
+      name: 'depth_verification_skipped',
+      status: 'FAIL',
+      detail: 'no enrichment payload captured — depth check cannot run on missing data',
+    });
+    result.depth = null;
+    result.depth_pass = false;
+    return;
+  }
+
+  const router_config = await fetchRouterConfig(sb);
+
+  const depthOut = verifyDepth({
+    slug: targetCfg.slug,
+    enrichment: captured.enrichment_payload,
+    html: captured.rendered_html,
+    enrichment_traces: captured.enrichment_traces,
+    enrichment_traces_table_exists: captured.enrichment_traces_table_exists,
+    router_config,
+  });
+
+  result.depth = depthOut.depth;
+  result.depth_checks = depthOut.checks;
+  result.depth_pass = depthOut.depth_pass;
+  result.g0d_semrush_total_failure = depthOut.g0d_total_failure;
+  result.depth_failures = depthOut.checks
+    .filter((c) => c.status === 'FAIL')
+    .map((c) => ({ check: c.name, detail: c.detail, category: c.category }));
+
+  // Mirror depth checks into result.checks so finalize() sees them, prefixed
+  // so they're easy to grep in the JSON.
+  for (const dc of depthOut.checks) {
+    result.checks.push({
+      name: `depth.${dc.category}.${dc.name}`,
+      status: dc.status,
+      detail: dc.detail,
+    });
+    if (dc.status === 'FAIL') {
+      result.failures.push({
+        check: `depth.${dc.category}.${dc.name}`,
+        detail: dc.detail,
+      });
+    } else if (dc.status === 'WARN') {
+      result.warnings.push({
+        check: `depth.${dc.category}.${dc.name}`,
+        detail: dc.detail,
+      });
+    }
+  }
+
+  // Surface G0d as its own top-level check — used by the aggregator + alert
+  // pipeline to fire the SEMRUSH_SUPPLIER_TOTAL_FAILURE alert separately
+  // from per-metric failures.
+  if (depthOut.g0d_total_failure) {
+    recordCheck({
+      name: 'g0d_semrush_supplier_total_failure',
+      status: 'FAIL',
+      detail: 'G0d: ALL 4 SEMrush depth assertions failed simultaneously — supplier total failure',
+    });
+  }
+
+  // Roll-up summary line for log scrubbers.
+  recordCheck({
+    name: 'depth_verification_summary',
+    status: depthOut.depth_pass ? 'PASS' : 'FAIL',
+    detail: `depth_pass=${depthOut.depth_pass} failures=${result.depth_failures.length} g0d=${depthOut.g0d_total_failure} t=${nowMs() - t0}ms`,
+  });
 }
 
 async function resolveUserAndAccount(sb: SupabaseClient): Promise<{ user_id: string | null; account_id: string | null }> {
@@ -699,6 +885,9 @@ async function run(): Promise<void> {
 
       // ----- Contract v2 + placeholder denylist scan over rendered HTML -----
       const html = await page.content();
+      // R2F: stash for the depth verifier (Marketing-101 sweep, brand audit,
+      // authority-rank label check).
+      captured.rendered_html = html;
       const supplierLeak = denylistScan(html, SUPPLIER_NAME_DENYLIST);
       const internalLeak = denylistScan(html, INTERNAL_STATE_DENYLIST);
       const placeholderLeak = denylistScan(html, PLACEHOLDER_DENYLIST);
@@ -817,6 +1006,10 @@ async function run(): Promise<void> {
     await assertEnrichmentTraces(sb, result.scan_id, result.user_id);
     await assertShareEvent(sb, result.scan_id, result.user_id);
 
+    // ----- R2F depth verification (runs AFTER presence checks have populated
+    //   the captured.* scratchpad with enrichment payload, traces, and HTML).
+    await runDepthVerification(sb);
+
     // Console error sanity (informational WARN, not FAIL — React can be noisy).
     if (result.console_errors.length > 0) {
       recordCheck({
@@ -844,10 +1037,14 @@ async function run(): Promise<void> {
 
 function finalize(): void {
   // Decide overall status. Any FAIL = FAIL. WARN-only with ≥1 WARN + ≥1 PASS = DEGRADED. All-PASS = PASS.
+  // R2F: depth_pass=false MUST also force FAIL, belt-and-braces against any
+  // future refactor that stops mirroring depth FAILs into result.checks.
+  // Per spec: "Per-URL: depth_pass = false → URL FAIL".
   const failCount = result.checks.filter((c) => c.status === 'FAIL').length;
   const warnCount = result.checks.filter((c) => c.status === 'WARN').length;
   const passCount = result.checks.filter((c) => c.status === 'PASS').length;
-  if (failCount > 0) {
+  const depthForcesFail = result.depth !== null && result.depth_pass === false;
+  if (failCount > 0 || depthForcesFail) {
     result.overall_status = 'FAIL';
   } else if (warnCount > 0 && passCount > 0) {
     result.overall_status = 'DEGRADED';

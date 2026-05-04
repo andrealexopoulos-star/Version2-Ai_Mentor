@@ -45,6 +45,13 @@ interface PerUrlSummary {
   terminal_state: string | null;
   screenshots_count: number;
   pdf_size_bytes: number | null;
+  // R2F additions — depth verification surfaced separately from presence.
+  // Older per-URL JSONs (pre-R2F) won't have these — the loader fills sane
+  // defaults so the aggregator stays backwards-compatible.
+  depth_pass: boolean;
+  depth_failures: { check: string; detail: string; category: string }[];
+  presence_failures: { check: string; detail: string }[];
+  g0d_semrush_total_failure: boolean;
 }
 
 interface MissingUrl {
@@ -76,6 +83,10 @@ function findResultJsons(): string[] {
  * Takes the parsed per-URL summaries and the canonical expected URL list,
  * returns the full aggregate object (minus runtime-only fields like
  * workflow_run_id which the CLI wraps around it).
+ *
+ * R2F: returns depth_fail_count + g0d_count alongside presence_fail_count so
+ * callers (issue body + alert webhook) can describe "5 URLs PASSed presence
+ * but 3 FAILed depth — Marjo round-2 regression".
  */
 export function buildAggregate(
   perUrlInputs: PerUrlSummary[],
@@ -91,6 +102,13 @@ export function buildAggregate(
   expected_url_count: number;
   per_url: PerUrlSummary[];
   missing_urls: MissingUrl[];
+  // R2F surface — counted separately so the alert pipeline can label the
+  // difference between "presence failure" (e.g. scan didn't complete) vs
+  // "depth failure" (scan completed but data was thin).
+  depth_fail_count: number;
+  presence_only_fail_count: number;
+  g0d_semrush_total_failure_count: number;
+  depth_pass_count: number;
 } {
   // Deduplicate by slug — defensive in case the same slug got uploaded twice.
   const seen = new Set<string>();
@@ -152,6 +170,19 @@ export function buildAggregate(
   else if (failCount > 0) severity = 'CRITICAL';
   else severity = 'WARN'; // catch-all defensive default — never PASS-implying
 
+  // R2F: count depth-specific failure modes. depth_pass=false on a URL whose
+  // overall_status==FAIL could be either a pure depth failure (presence
+  // PASSed but data was thin) or a presence failure (scan never produced
+  // valid data). Split them so the alert pipeline can label correctly.
+  const depthFailCount = perUrl.filter((u) => u.depth_pass === false).length;
+  const depthPassCount = perUrl.filter((u) => u.depth_pass === true).length;
+  // "presence-only fail" = overall_status=FAIL but depth never ran or depth
+  // did pass (i.e. the FAIL came purely from presence checks).
+  const presenceOnlyFailCount = perUrl.filter(
+    (u) => u.overall_status === 'FAIL' && u.depth_pass === true,
+  ).length;
+  const g0dCount = perUrl.filter((u) => u.g0d_semrush_total_failure === true).length;
+
   return {
     overall_status,
     severity,
@@ -163,6 +194,10 @@ export function buildAggregate(
     expected_url_count: expectedUrls.length,
     per_url: perUrl,
     missing_urls: missingUrls,
+    depth_fail_count: depthFailCount,
+    presence_only_fail_count: presenceOnlyFailCount,
+    g0d_semrush_total_failure_count: g0dCount,
+    depth_pass_count: depthPassCount,
   };
 }
 
@@ -187,6 +222,13 @@ function main(): void {
         terminal_state: raw.terminal_state ?? null,
         screenshots_count: Array.isArray(raw.screenshots) ? raw.screenshots.length : 0,
         pdf_size_bytes: raw.pdf_size_bytes ?? null,
+        // R2F: backwards-compatible defaults. A pre-R2F runner won't have these
+        // fields — we default depth_pass=true so older results don't get
+        // marked as depth-failed retroactively.
+        depth_pass: raw.depth_pass ?? true,
+        depth_failures: raw.depth_failures ?? [],
+        presence_failures: raw.presence_failures ?? raw.failures ?? [],
+        g0d_semrush_total_failure: raw.g0d_semrush_total_failure ?? false,
       });
     } catch (e) {
       console.error(`[aggregate] failed to parse ${f}: ${String(e)}`);
@@ -242,8 +284,8 @@ function main(): void {
   else severity = 'WARN';
 
   const aggregate = {
-    schema_version: '1.0.0-marjo-e10',
-    agent: 'E10+F6',
+    schema_version: '1.1.0-marjo-r2f',
+    agent: 'E10+F6+F14+R2F',
     run_at_utc: new Date().toISOString(),
     workflow_run_id: process.env.WORKFLOW_RUN_ID ?? null,
     workflow_run_url: process.env.WORKFLOW_RUN_URL ?? null,
@@ -257,6 +299,13 @@ function main(): void {
     expected_url_count: EXPECTED_URL_COUNT,
     per_url: aggregateCore.per_url,
     missing_urls: dedupedMissing,
+    // R2F surfaces — separated from presence so the issue body can label
+    // the difference between "scan didn't complete" and "scan completed but
+    // data was thin / generic / brand-mislabelled".
+    depth_pass_count: aggregateCore.depth_pass_count,
+    depth_fail_count: aggregateCore.depth_fail_count,
+    presence_only_fail_count: aggregateCore.presence_only_fail_count,
+    g0d_semrush_total_failure_count: aggregateCore.g0d_semrush_total_failure_count,
   };
 
   fs.mkdirSync(INPUT_DIR, { recursive: true });
@@ -266,7 +315,9 @@ function main(): void {
     `[aggregate] wrote ${out} — overall=${overall_status} sev=${severity} ` +
       `pass=${aggregateCore.pass_count}/${EXPECTED_URL_COUNT} ` +
       `fail=${failCount} (visible=${presentFailCount} missing=${missingCount}) ` +
-      `degraded=${aggregateCore.degraded_count}`,
+      `degraded=${aggregateCore.degraded_count} ` +
+      `depth_fail=${aggregateCore.depth_fail_count} ` +
+      `g0d=${aggregateCore.g0d_semrush_total_failure_count}`,
   );
 }
 

@@ -27,6 +27,11 @@ interface PerUrlSummary {
   terminal_state: string | null;
   screenshots_count: number;
   pdf_size_bytes: number | null;
+  // R2F additions.
+  depth_pass: boolean;
+  depth_failures: { check: string; detail: string; category: string }[];
+  presence_failures: { check: string; detail: string }[];
+  g0d_semrush_total_failure: boolean;
 }
 
 function makeSummary(slug: string, status: 'PASS' | 'FAIL' | 'DEGRADED'): PerUrlSummary {
@@ -44,6 +49,12 @@ function makeSummary(slug: string, status: 'PASS' | 'FAIL' | 'DEGRADED'): PerUrl
     terminal_state: 'DATA_AVAILABLE',
     screenshots_count: 25,
     pdf_size_bytes: 100_000,
+    // R2F defaults — pre-existing F6 tests assume PASS = depth also PASS.
+    // Tests that exercise depth-only failure paths construct their own.
+    depth_pass: status !== 'FAIL',
+    depth_failures: [],
+    presence_failures: status === 'FAIL' ? [{ check: 'sample', detail: 'sample fail' }] : [],
+    g0d_semrush_total_failure: false,
   };
 }
 

@@ -101,8 +101,8 @@ Per-URL `result.json` (uploaded as `evidence-<slug>-<runid>` artefact):
 
 ```json
 {
-  "schema_version": "1.0.0-marjo-e10",
-  "agent": "E10",
+  "schema_version": "1.1.0-marjo-r2f",
+  "agent": "E10+F6+F14+R2F",
   "url": "www.bunnings.com.au",
   "slug": "bunnings",
   "label": "bunnings",
@@ -119,7 +119,33 @@ Per-URL `result.json` (uploaded as `evidence-<slug>-<runid>` artefact):
   "pdf_path": "report.pdf",
   "pdf_size_bytes": 0,
   "pdf_content_type": "application/pdf",
-  "console_errors": []
+  "console_errors": [],
+
+  "depth": {
+    "semrush_keyword_count": 0,
+    "semrush_backlinks": 0,
+    "semrush_ad_history_months": 0,
+    "semrush_competitors": 0,
+    "customer_reviews_total": 0,
+    "customer_reviews_platforms_with_5plus": 0,
+    "customer_reviews_themes": 0,
+    "staff_reviews_total": 0,
+    "staff_reviews_platforms_with_rating": 0,
+    "employer_brand_health_score": null,
+    "enrichment_traces_count": 0,
+    "sections_missing_source_trace_id": [],
+    "marketing_101_detected": [],
+    "quorum_capability": "FULL_QUORUM|PARTIAL|SINGLE|FAILED|UNKNOWN",
+    "brand_correct": true,
+    "brand_banned_variants_seen": [],
+    "authority_rank_present": true,
+    "semrush_rank_leak_seen": false
+  },
+  "depth_checks": [{ "name": "...", "status": "PASS|FAIL|WARN", "detail": "...", "category": "semrush|customer_reviews|staff_reviews|provenance|trinity|brand" }],
+  "depth_pass": true,
+  "depth_failures": [{ "check": "...", "detail": "...", "category": "..." }],
+  "g0d_semrush_total_failure": false,
+  "presence_failures": [{ "check": "...", "detail": "..." }]
 }
 ```
 
@@ -127,23 +153,168 @@ Aggregate `aggregate.json`:
 
 ```json
 {
+  "schema_version": "1.1.0-marjo-r2f",
+  "agent": "E10+F6+F14+R2F",
   "overall_status": "PASS|FAIL|DEGRADED",
   "severity": "INFO|WARN|CRITICAL|PAGE",
   "pass_count": 0,
   "fail_count": 0,
   "degraded_count": 0,
+  "missing_count": 0,
   "total_urls": 5,
-  "per_url": [/* PerUrlSummary[] */]
+  "expected_url_count": 5,
+  "per_url": [/* PerUrlSummary[] */],
+  "missing_urls": [],
+
+  "depth_pass_count": 0,
+  "depth_fail_count": 0,
+  "presence_only_fail_count": 0,
+  "g0d_semrush_total_failure_count": 0
 }
 ```
 
+## R2F — depth verification (Marjo round 2)
+
+The presence-only daily check (E10 + F6 + F14) confirms scans complete and CMO sections render. With R2A-D's deepened data + F14/F15 fixes shipping, presence is no longer enough — Marjo's round-2 verification requires that the data we accepted as "rendered" is actually *deep*. R2F extends the runner with six categories of post-render assertions.
+
+### What each depth assertion checks
+
+#### 1. SEMrush data depth (R2D / F15)
+
+Read from `business_dna_enrichment.enrichment` JSONB:
+
+| Assertion | Established floor | SMB floor | Source path |
+|---|---|---|---|
+| `semrush_organic_keywords_depth` | `>= 30` | `>= 10` | `keyword_intelligence.organic_keywords.length` |
+| `semrush_backlinks_present` | `> 0` (FAIL) | `>= 0` (WARN if 0) | `backlink_intelligence.total_backlinks` |
+| `semrush_ad_history_present` | `>= 1 month` | `>= 0` (WARN if 0) | `advertising_intelligence.ad_history_12m.length` |
+| `semrush_detailed_competitors_depth` | `>= 5` | `>= 5` | `competitive_intelligence.detailed_competitors.length` |
+
+If **all four** assertions FAIL simultaneously, the runner sets `g0d_semrush_total_failure: true` — surfaced as a separate alert (`SEMRUSH_SUPPLIER_TOTAL_FAILURE`) so the alert pipeline can label "supplier total failure" vs "individual metric below floor".
+
+**To debug a failure:**
+- Pull the most recent `business_dna_enrichment.enrichment` row for the QA user
+- Verify the four nested objects above are non-empty
+- Check edge-function logs for `semrush-domain-intel` 200 responses with payload size >0
+- Confirm `SEMRUSH_API_KEY` is present in Supabase Edge Secrets (per ops_daily_calibration_check.md §B12)
+
+#### 2. Customer reviews depth (R2B)
+
+| Assertion | Threshold | Source path |
+|---|---|---|
+| `customer_reviews_total_present` | `> 0` (established) / WARN-only (SMB) | `customer_review_intelligence_v2.total_reviews_cross_platform` |
+| `customer_reviews_platform_with_5plus` | `>= 1 platform with >= 5 reviews` | `customer_review_intelligence_v2.per_platform[].review_count` |
+| `customer_reviews_themes_extracted` | `>= 1 theme` (LLM extraction worked) | `customer_review_intelligence_v2.themes.length` |
+| `customer_reviews_productreview_au_queried` | jimsmowing only — WARN if missing | platform list contains "ProductReview" |
+
+**To debug:** check `customer-reviews-deep` edge-function logs and `review_aggregates` table.
+
+#### 3. Staff reviews depth (R2C / F14)
+
+| Assertion | Threshold | Source path |
+|---|---|---|
+| `staff_reviews_field_present` | structural — `workplace_intelligence` exists | `enrichment.workplace_intelligence` |
+| `staff_reviews_platform_with_rating` | established: `>= 1 platform with rating`; SMB: any | `workplace_intelligence.per_platform[].rating > 0` |
+| `employer_brand_health_score_valid` | number 0-100, not null | `workplace_intelligence.employer_brand_health_score` |
+
+**SMB tolerance:** small businesses may legitimately have zero staff reviews. The structural field still has to exist (with zero values) per F14's perimeter contract.
+
+**To debug:** check `staff-reviews-deep` edge function + the F14 perimeter test (`tests/test_perimeter_complete_for_new_edge_fns.py`).
+
+#### 4. Provenance integrity (E2 + E6)
+
+| Assertion | Threshold | Source |
+|---|---|---|
+| `enrichment_traces_count_threshold` | `>= 13 rows per scan` (was 12 happy-path; ~20-30 with R2 deepening) | `public.enrichment_traces` filtered by scan_id |
+| `sections_have_source_trace_id` | `>= 1 section→trace link` | `enrichment_traces.section_name + source_trace_id` |
+| `anti_marketing_101_sweep` | zero generic phrases | regex sweep over rendered HTML |
+
+**Marketing-101 patterns** (defined in `config.ts:ANTI_MARKETING_101_REGEXES`):
+- "Improve your social media presence"
+- "Engage more with your audience"
+- "Create more quality content"
+- "Optimize your website for SEO"
+- "Leverage social media"
+- "Build a strong brand identity"
+- "Focus on customer experience/service"
+- "Utilize email marketing"
+- "Run targeted ad campaigns"
+- "Implement a content marketing strategy"
+
+Add new patterns whenever a generic phrase is spotted in production output — this is a living list.
+
+**To debug:** the failure detail names the offending phrase. Trace it back to the LLM prompt that produced it (likely an executive-summary or 90-day-plan section that fell back to defaults instead of using captured signals).
+
+#### 5. Trinity quorum health (E9 + F14)
+
+Reads `get_router_config()` RPC (or `router_config` table fallback):
+
+| State | Treatment |
+|---|---|
+| `FULL_QUORUM` | PASS |
+| `PARTIAL` | WARN (one provider degraded) |
+| `SINGLE` | WARN (P1 alert) — does NOT fail the workflow per spec |
+| `FAILED` | FAIL |
+| `UNKNOWN` (router_config missing) | WARN |
+
+**Per spec:** if `SINGLE_PROVIDER` for 7+ days, the WARN detail surfaces "P1: provision second key" so Andreas can act on it. The workflow still PASSes overall — depth_pass is unaffected by Trinity WARNs.
+
+**To debug:** check the Trinity router config in Supabase + verify both Anthropic and Gemini API keys are provisioned in Edge Secrets.
+
+#### 6. Brand consistency
+
+| Assertion | Threshold | Source |
+|---|---|---|
+| `brand_ask_biqc_present` | "Ask BIQc" present, no banned variants | regex over rendered HTML |
+| `authority_rank_naming` | "Authority rank/score" present (only when SEMrush data is in HTML); "SEMrush rank" never present | regex over rendered HTML |
+
+**Banned variants** (per `feedback_ask_biqc_brand_name.md`):
+- "Soundboard"
+- "Ask Chat"
+- "Ask Assistant"
+
+**F15 brand cleanup:** the SEMrush Authority Score MUST be labelled "Authority rank" or "Authority Score". Any reference to "SEMrush rank" in user-facing HTML is both a brand violation and a Contract v2 supplier-name leak — surfaced as `authority_rank_naming` FAIL.
+
+**To debug:** open the rendered CMO HTML and grep for the offending strings. Likely culprit is a stale CMO template or a fallback string that hasn't been swept post-rebrand.
+
+### Failure semantics
+
+| Outcome | Behaviour |
+|---|---|
+| `depth_pass = true` AND no presence failures | URL PASS |
+| `depth_pass = false` (any depth FAIL) | URL FAIL — same precedence as a presence FAIL, no false-PASS escape |
+| `g0d_semrush_total_failure = true` | URL FAIL + separate alert label `SEMRUSH_SUPPLIER_TOTAL_FAILURE` |
+| Aggregate sees `>= 1 depth_fail` | overall_status = FAIL, severity per F6 rules |
+
+Depth and presence failures are reported separately in `aggregate.json` (`depth_fail_count`, `presence_only_fail_count`) so the issue body and Slack webhook can label "scan completed but data was thin" distinctly from "scan didn't complete". This matters for triage — the on-call engineer needs to know whether to look at the scan pipeline or the supplier configuration.
+
+### Cross-check with F14's perimeter test
+
+F14 added `tests/test_perimeter_complete_for_new_edge_fns.py` to ensure `customer-reviews-deep` and `staff-reviews-deep` are both in `REQUIRED_EDGE_FUNCTIONS`. The R2F daily check naturally exercises the perimeter — if either edge function 401s during a real scan, the existing zero-401 assertion (`enrichment_traces_zero_401`) catches it as a presence failure, and the new depth assertions catch the resulting empty `workplace_intelligence` / `customer_review_intelligence_v2` payloads as depth failures. The two layers are belt-and-braces, not redundant.
+
+### Adjusting depth thresholds
+
+All thresholds live in `config.ts:DEPTH_THRESHOLDS`. Floors are intentionally conservative — a real CMO Report against a real domain produces far more than these. We're catching collapses to zero / single-digit, not regressions of 30 → 28. If a scheduled run starts FAILing on a legitimate URL, the threshold may need to be lowered for that depth class — but the default position is "investigate the data first, then loosen the floor".
+
+### Per-URL depth class
+
+The runner picks "established" vs "smb" thresholds per URL via `URL_DEPTH_CLASS` in `config.ts`:
+
+- `smsglobal`, `bunnings` → `established` (mature SEO + paid + reviews footprint)
+- `jimsmowing`, `koalafoam`, `maddocks` → `smb`
+
+When adding a new URL, also pick its depth class. Default (if unspecified) = `smb`, which is the conservative choice.
+
 ## Maintenance
 
-- **Adding a 6th URL:** edit the `matrix.include` block in `daily-cmo-check.yml` and `TEST_URLS` in `config.ts`. Both must change together.
+- **Adding a 6th URL:** edit the `matrix.include` block in `daily-cmo-check.yml` and `TEST_URLS` in `config.ts`. Both must change together. Also pick a depth class via `URL_DEPTH_CLASS`.
 - **Updating CMO sections:** edit `CMO_SECTIONS` in `run-cmo-check.ts`. Each entry produces 1 screenshot. Min 25 sections required.
 - **Tightening the supplier denylist:** edit `SUPPLIER_NAME_DENYLIST` in `config.ts`. Per Contract v2 §"External responses MUST NEVER expose".
 - **Tightening the placeholder denylist:** edit `PLACEHOLDER_DENYLIST` in `config.ts`. Add new sentinel strings as they are discovered in production HTML.
 - **Lowering the polling timeout:** `T_TERMINAL_TIMEOUT_MS` in `config.ts`. Currently 8 minutes. Long-tail scans during supplier slowdowns can take 4-6 min.
+- **Adjusting depth thresholds:** edit `DEPTH_THRESHOLDS` in `config.ts`. See "R2F — depth verification" section below for the rationale and per-class semantics.
+- **Adding a Marketing-101 phrase:** edit `ANTI_MARKETING_101_REGEXES` in `config.ts`. Each entry needs a regex + a human-readable label. Add whenever a new generic phrase shows up in production HTML.
+- **Adjusting the brand banned-variant list:** edit `BRAND_BANNED_VARIANTS` in `config.ts`. Per `feedback_ask_biqc_brand_name.md` — never propose name alternatives.
 
 ## Related standing orders
 
