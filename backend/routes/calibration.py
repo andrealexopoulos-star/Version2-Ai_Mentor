@@ -375,10 +375,19 @@ def _clean_business_name(candidate: str) -> str:
     value = (candidate or "").strip()
     if not value:
         return ""
+    # If the candidate looks like a hostname, derive a clean brand label
+    # (e.g. www.canva.com -> Canva) and reject generic host-only values.
+    if re.fullmatch(r"[a-z0-9\.-]+", value.lower()):
+        derived = domain_business_label(value)
+        return "" if derived == "Business" else derived
     parts = [p.strip() for p in re.split(r"\||—|-", value) if p.strip()]
     generic_titles = {"business advisory services", "home", "welcome"}
+    generic_tokens = {"www", "app", "portal", "login", "api", "web", "business"}
     for part in parts:
-        if part.lower() not in generic_titles and len(part) > 2:
+        normalized = re.sub(r"[^a-z0-9 ]+", "", part.lower()).strip()
+        if normalized in generic_titles or normalized in generic_tokens:
+            continue
+        if len(part) > 2:
             return part
     return value if value.lower() not in generic_titles else ""
 
