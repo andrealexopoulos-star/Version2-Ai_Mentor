@@ -20,11 +20,13 @@ logger = logging.getLogger(__name__)
 # ═══ SUPER ADMIN — IMMUTABLE, EMAIL-BASED ═══
 SUPER_ADMIN_EMAIL = MASTER_ADMIN_EMAIL
 
-# ═══ TIER DEFINITIONS — free + 3 paid + custom build + super_admin ═══
-TIERS = ['free', 'starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin']
+# ═══ TIER DEFINITIONS — free + 4 paid (lite + starter + pro + business) + custom + super_admin ═══
+# Phase 1.9 (2026-05-05 code 13041978): 'lite' added — $14/mo entry-level paid tier.
+TIERS = ['free', 'lite', 'starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin']
 
 BRAIN_METRIC_LIMITS = {
     'free': 10,
+    'lite': 25,           # Between free (10) and starter (50)
     'starter': 50,
     'pro': 75,
     'business': 100,
@@ -242,7 +244,12 @@ def resolve_tier(user: dict) -> str:
 
 
 def tier_rank(tier: str) -> int:
-    """Numeric rank for tier comparison with legacy aliases mapped safely."""
+    """Numeric rank for tier comparison with legacy aliases mapped safely.
+
+    Phase 1.9 (2026-05-05 code 13041978): 'lite' added at rank 1 same as
+    starter — both are paid entry-level so route access matches; token
+    allocation differs (lite=150K, starter=1M).
+    """
     if tier == 'super_admin':
         return 99
     if tier in ('custom_build', 'custom'):
@@ -253,7 +260,7 @@ def tier_rank(tier: str) -> int:
         return 3
     if tier in ('pro', 'professional'):
         return 2
-    if tier in ('starter', 'foundation', 'growth'):
+    if tier in ('lite', 'starter', 'foundation', 'growth'):
         return 1
     return 0
 

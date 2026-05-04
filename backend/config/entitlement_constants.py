@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Dict
 
 # Canonical internal tier keys
+LITE_TIER = "lite"
 STARTER_TIER = "starter"
 PRO_TIER = "pro"
 BUSINESS_TIER = "business"
@@ -20,11 +21,18 @@ CUSTOM_BUILD_TIER = "custom_build"
 SUPER_ADMIN_TIER = "super_admin"
 
 # Seats (approved contract values)
+LITE_SEATS = 1
 STARTER_SEATS = 1
 PRO_SEATS = 5
 BUSINESS_SEATS = 12
 
 # Monthly token allowances (approved contract values)
+# Phase 1.9 (2026-05-05 code 13041978): Lite tier wired end-to-end.
+# Lite ($14/mo, prod_URgYIlMeF24vrN, price_1TSnBMRoX8RKDDG5akGL7RkT) was live
+# in Stripe + frontend pricingTiers.js but had no backend allocation, so
+# back-door buyers fell through to free=225K despite paying $14. 150K matches
+# the customer-facing pricing copy.
+LITE_TOKENS = 150_000
 STARTER_TOKENS = 1_000_000
 PRO_TOKENS = 5_000_000
 BUSINESS_TOKENS = 20_000_000
@@ -34,6 +42,7 @@ TOPUP_TOKENS = 250_000
 TOPUP_PRICE_AUD_CENTS = 1900
 
 # Per-cycle top-up caps (approved contract values)
+LITE_TOPUP_CAP = 2
 STARTER_TOPUP_CAP = 3
 PRO_TOPUP_CAP = 5
 BUSINESS_TOPUP_CAP = 10
@@ -44,18 +53,21 @@ URGENT_WARNING_THRESHOLD = 0.95
 HARD_STOP_THRESHOLD = 1.00
 
 TIER_TOKEN_ALLOWANCES: Dict[str, int] = {
+    LITE_TIER: LITE_TOKENS,
     STARTER_TIER: STARTER_TOKENS,
     PRO_TIER: PRO_TOKENS,
     BUSINESS_TIER: BUSINESS_TOKENS,
 }
 
 TIER_TOPUP_CAPS: Dict[str, int] = {
+    LITE_TIER: LITE_TOPUP_CAP,
     STARTER_TIER: STARTER_TOPUP_CAP,
     PRO_TIER: PRO_TOPUP_CAP,
     BUSINESS_TIER: BUSINESS_TOPUP_CAP,
 }
 
 TIER_SEAT_LIMITS: Dict[str, int] = {
+    LITE_TIER: LITE_SEATS,
     STARTER_TIER: STARTER_SEATS,
     PRO_TIER: PRO_SEATS,
     BUSINESS_TIER: BUSINESS_SEATS,
