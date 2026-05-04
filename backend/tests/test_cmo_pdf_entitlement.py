@@ -105,6 +105,23 @@ def test_cmo_pdf_allows_pro_tier(monkeypatch, reports_module):
         def output(self):
             return b"%PDF-1.4\n%fake\n"
 
+        # Methods used by the new state-aware CMO PDF builder. The
+        # entitlement test only cares that the call returns a 200 — these
+        # are no-op shims so the tier check still gets exercised end-to-end.
+        def set_text_color(self, *_args, **_kwargs):
+            return None
+
+        def set_y(self, *_args, **_kwargs):
+            return None
+
+        def set_x(self, *_args, **_kwargs):
+            return None
+
+        def page_no(self):
+            return 1
+
+        l_margin = 10
+
     monkeypatch.setattr(reports_module, "_get_safe_pdf_class", lambda: _FakePDF)
 
     async def _fake_report(_user):
