@@ -36,6 +36,7 @@ from auth_supabase import get_user_by_id
 from supabase_intelligence_helpers import get_business_profile_supabase
 from regeneration_governance import request_regeneration, record_regeneration_response
 from fact_resolution import resolve_facts, build_known_facts_prompt
+from domain_labels import domain_business_label
 
 router = APIRouter()
 
@@ -2160,7 +2161,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             page_title = _extract_title(raw_html)
             meta_description = _extract_meta_content(raw_html, "description") or _extract_meta_content(raw_html, "og:description")
             og_site_name = _extract_meta_content(raw_html, "og:site_name") or _extract_meta_content(raw_html, "twitter:title")
-            business_name_hint = _clean_business_name(og_site_name) or _clean_business_name(page_title) or domain.split(".")[0].replace("-", " ").title()
+            business_name_hint = _clean_business_name(og_site_name) or _clean_business_name(page_title) or domain_business_label(domain)
             service_lines = _extract_service_lines(f"{page_text}\n{crawled_text}")
             competitor_query = f'"{business_name_hint}" competitors australia {page_title or ""}'.strip()
             company_query = f"site:{domain} company profile services about"
@@ -3053,7 +3054,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
         except Exception as e:
             logger.error(f"[enrichment/website] Scan failed: {e}")
             fallback_domain = normalize_domain(url)
-            fallback_name = fallback_domain.split(".")[0].replace("-", " ").title() if fallback_domain else "Business"
+            fallback_name = domain_business_label(fallback_domain)
             fallback_page_text = str(locals().get("page_text") or "")
             fallback_title = str(locals().get("page_title") or "")
             fallback_description = str(locals().get("meta_description") or "")
