@@ -55,6 +55,11 @@ const LandingIntelligent = React.lazy(() => import(/* webpackChunkName: "marketi
 const BIQcLegalPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/BIQcLegalPage'));
 const RetentionPolicyPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/legal/RetentionPolicy'));
 const NotFoundPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/NotFoundPage'));
+// Public, unauthenticated CMO Report share viewer — recipients of a
+// share URL of shape https://biqc.ai/r/{token} land here. Lives in the
+// "marketing" chunk so it loads alongside the public website without
+// pulling in the authenticated app shell.
+const SharedReportPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/SharedReportPage'));
 
 // Trust sub-pages (named exports need wrapper)
 const SiteTermsPage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.TermsPage })));
@@ -515,6 +520,18 @@ function AppRoutes() {
         <Route path="/support-admin" element={<ProtectedRoute adminOnly><RouteErrorBoundary><SupportConsolePage /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/super-admin/providers" element={<ProtectedRoute adminOnly><RouteErrorBoundary><SuperAdminProviders /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/observability" element={<ProtectedRoute adminOnly><RouteErrorBoundary><ObservabilityPage /></RouteErrorBoundary></ProtectedRoute>} />
+
+        {/* Public, unauthenticated CMO Report share viewer.
+            Backend POST /reports/cmo-report/share returns share_url=
+            https://biqc.ai/r/{token}; this route mounts SharedReportPage
+            which fetches the public GET /reports/cmo-report/shared/{token}
+            HTML payload and renders it inside an Ask-BIQc-branded shell.
+            No ProtectedRoute / no LaunchRoute wrapper — token holder is
+            the authorisation. Must remain BEFORE the catch-all "*" route
+            below or recipients hit NotFoundPage (R8 P0 — Marjo Critical
+            Incident). See feedback_ask_biqc_brand_name.md. */}
+        <Route path="/r/:token" element={<SharedReportPage />} />
+
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </Suspense>
