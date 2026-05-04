@@ -118,6 +118,14 @@ test('production calibration smoke', async ({ page, context, baseURL }) => {
     await page.screenshot({ path: path.join(screenshotDir, name), fullPage: true });
   };
 
+  const solveVerificationPrompt = async (): Promise<string | null> => {
+    const challengeText = await page.locator('text=/solve\\s+\\d+\\s*\\+\\s*\\d+/i').first().textContent().catch(() => null);
+    if (!challengeText) return null;
+    const match = challengeText.match(/solve\s+(\d+)\s*\+\s*(\d+)/i);
+    if (!match) return null;
+    return String(Number(match[1]) + Number(match[2]));
+  };
+
   try {
     await page.goto(`${baseURL}/login-supabase`, { waitUntil: 'domcontentloaded' });
     await shot(SHOTS[0]);
@@ -125,13 +133,18 @@ test('production calibration smoke', async ({ page, context, baseURL }) => {
 
     await page.getByRole('textbox', { name: /work email/i }).fill(email!);
     await page.getByRole('textbox', { name: /password/i }).fill(password!);
-    // Current production login requires a simple human check.
+    // Current production login requires a simple arithmetic verification prompt.
     const captcha = page.getByRole('spinbutton');
     if (await captcha.isVisible().catch(() => false)) {
-      await captcha.fill('4');
+      const answer = await solveVerificationPrompt();
+      if (answer) {
+        await captcha.fill(answer);
+      }
     }
     await page.getByRole('button', { name: /sign in|login/i }).click();
     await page.waitForLoadState('networkidle');
+    // Allow auth redirect/session hydration before account discovery.
+    await page.waitForTimeout(1500);
     await shot(SHOTS[1]);
     steps.push({ name: 'login', status: 'pass' });
 
