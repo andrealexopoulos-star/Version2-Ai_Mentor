@@ -487,7 +487,7 @@ export const useCalibrationState = () => {
       // user), use it as the deepEnrichment payload. Keeps the UX flow
       // alive even when the scan endpoint can't sustain the connection.
       try {
-        const deepRes = await apiClient.post('/enrichment/website', { url, action: 'scan' }, { timeout: 120000 });
+        const deepRes = await apiClient.post('/enrichment/website', { url, action: 'scan' }, { timeout: 180000 });
         if (deepRes?.data?.status === 'draft' && deepRes?.data?.enrichment) {
           deepEnrichment = deepRes.data.enrichment;
         }
