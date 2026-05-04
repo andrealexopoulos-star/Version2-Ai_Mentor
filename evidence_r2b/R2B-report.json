@@ -79,7 +79,12 @@
     "pytest_customer_reviews_deep.txt": "verbose pytest output — 14 passed",
     "pytest_no_regression_check.txt": "no-regression run — 64 passed (calibration edge contract + normalization + response sanitizer)"
   },
-  "commits": [],
+  "commits": [
+    {
+      "sha": "745a72f2f8c45af873d3c21e85fcb43b52f52bc9",
+      "message": "feat(p0-marjo-r2b): customer-reviews-deep edge fn + per-platform Firecrawl/Serper + LLM sentiment/themes — replaces browse-ai-reviews shallow scraper — code 13041978 required to push"
+    }
+  ],
   "ready_for_peer_review": true,
   "remaining_blockers": [],
   "follow_ups_for_other_agents": [
