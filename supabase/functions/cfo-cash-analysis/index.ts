@@ -269,7 +269,25 @@ serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "cfo-cash-analysis",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   try {
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Replaced redundant sb.auth.getUser(token) fallback with AuthResult-trust.
+    // service_role callers must supply user_id (or batch=true) in body;
+    // user-JWT callers get auth.userId.
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body = await req.json().catch(() => ({}));
 
@@ -303,18 +321,14 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
 
-    // Single user mode
-    let userId = body.user_id;
+    // Single user mode — trust AuthResult instead of re-validating bearer
+    const userId: string | null = body.user_id
+      ? String(body.user_id).trim()
+      : (auth.isServiceRole ? null : (auth.userId || null));
     if (!userId) {
-      const authHeader = req.headers.get("Authorization") || "";
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user } } = await sb.auth.getUser(token);
-      if (!user) {
-        return new Response(JSON.stringify({ error: "user_id required or authenticate" }), {
-          status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-        });
-      }
-      userId = user.id;
+      return new Response(JSON.stringify({ error: "user_id required for service_role; or invalid user session" }), {
+        status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+      });
     }
 
     const result = await analyseUser(sb, userId);

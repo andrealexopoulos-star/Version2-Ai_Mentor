@@ -162,8 +162,25 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "biqc-trinity",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   const adminSb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
+  // Phase 1.X auth-symmetry note (2026-05-05 code 13041978):
+  // Already trusts AuthResult via auth.userId — only added the GET reachability
+  // probe above. POST body parse stays as-is.
   const userId = auth.userId || "";
   let body: any;
   try { body = await req.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: corsHeaders(req) }); }

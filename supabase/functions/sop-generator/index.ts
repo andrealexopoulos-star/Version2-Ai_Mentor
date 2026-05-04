@@ -104,20 +104,35 @@ serve(async (req) => {
     });
   }
 
-  try {
-    // Authenticate user
-    const authHeader = req.headers.get("Authorization") || "";
-    const token = authHeader.replace("Bearer ", "");
-    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "sop-generator",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
 
-    const { data: { user }, error: authError } = await sb.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+  try {
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Replaced redundant sb.auth.getUser(token) with AuthResult-trust pattern.
+    // service_role callers must supply user_id in body; user-JWT path uses auth.userId.
+    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const body = await req.json().catch(() => ({}));
+    const targetUserId: string | null = auth.isServiceRole
+      ? (typeof body.user_id === "string" && body.user_id.trim() ? body.user_id.trim() : null)
+      : (auth.userId || null);
+    if (!targetUserId) {
+      return new Response(JSON.stringify({ error: "user_id required for service_role; or invalid user session" }), {
+        status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
-
-    const body = await req.json();
+    const user = { id: targetUserId };
     const genType = body.type || "sop";
     const prompt = body.prompt || "";
     const additionalContext = body.context || "";

@@ -215,24 +215,36 @@ serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "strategic-console-ai",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
-
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Replaced redundant supabase.auth.getUser(token) with AuthResult-trust.
+    // For service_role callers (cron/backend proxy) we require user_id in body;
+    // for user-JWT callers we use auth.userId. Email is best-effort from auth.user.
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+    const body = await req.json().catch(() => ({}));
+    const targetUserId: string | null = auth.isServiceRole
+      ? (typeof body.user_id === "string" && body.user_id.trim() ? body.user_id.trim() : null)
+      : (auth.userId || null);
+    if (!targetUserId) {
+      return new Response(JSON.stringify({ error: "user_id required for service_role; or invalid user session" }), {
+        status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
-
-    const body = await req.json();
+    const user = { id: targetUserId, email: auth.user?.email };
     const mode = body.mode || "brief"; // "brief" or "ask"
     const question = body.question || "";
 

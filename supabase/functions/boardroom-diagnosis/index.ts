@@ -112,26 +112,45 @@ serve(async (req) => {
     });
   }
 
-  try {
-    // 1. Authenticate user
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "boardroom-diagnosis",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
 
+  try {
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Previously this function did a redundant supabase.auth.getUser(token) AFTER
+    // verifyAuth had already validated the bearer. That broke service_role calls
+    // because getUser() rejects service-role JWTs as "user not found", returning
+    // 401 even when verifyAuth had returned ok. Now we trust the AuthResult:
+    // service_role callers must provide user_id in the body; user-JWT callers
+    // get auth.userId. Symmetry with verifyAuth — no key-mismatch bugs.
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
 
     // 2. Parse request
-    const { focus_area } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { focus_area } = body;
+
+    // Resolve target user (service_role → body.user_id; user JWT → auth.userId)
+    const targetUserId: string | null = auth.isServiceRole
+      ? (typeof body.user_id === "string" && body.user_id.trim() ? body.user_id.trim() : null)
+      : (auth.userId || null);
+    if (!targetUserId) {
+      return new Response(JSON.stringify({ error: "user_id required for service_role; or invalid user session" }), {
+        status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+    const user = { id: targetUserId };
+
     const config = FOCUS_CONFIGS[focus_area];
     if (!config) {
       return new Response(JSON.stringify({ error: `Unknown focus area: ${focus_area}` }), {

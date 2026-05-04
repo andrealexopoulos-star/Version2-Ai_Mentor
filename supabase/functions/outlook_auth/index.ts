@@ -14,13 +14,29 @@ serve(async (req: Request): Promise<Response> => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "outlook_auth",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   const supabaseService = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
   try {
-    const body = await req.json().catch(() => ({}));
+    // Phase 1.X auth-symmetry hard-fix (2026-05-05 code 13041978):
+    // Body parse only meaningful on POST/PUT; non-body methods would 400 here.
+    const body = req.method === "POST" || req.method === "PUT" ? await req.json().catch(() => ({})) : {};
     const action = body.action;
 
     if (action === "store_tokens") {

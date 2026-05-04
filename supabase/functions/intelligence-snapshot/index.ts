@@ -92,7 +92,26 @@ serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check".
+  // Reachability probe = bare GET. Functional callers always POST with body.
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "intelligence-snapshot",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   try {
+    // Phase 1.X auth-symmetry note (2026-05-05 code 13041978):
+    // This function already trusts AuthResult — the prior 400-on-GET was caused
+    // by no GET reachability handler above. service_role callers must inject
+    // user_id; user-JWT callers come straight from auth.userId/auth.user.id.
     const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
     const authUserId = auth.user?.id || auth.userId || "";
     const userId = auth.isServiceRole ? String((body as any)?.user_id || "") : authUserId;
