@@ -19,7 +19,8 @@ const FEATURE_LABELS = {
 };
 
 // Checkout-visible plans: paid tiers that can be self-served.
-const PLANS = PRICING_TIERS.filter((t) => ['starter', 'pro', 'business', 'enterprise'].includes(t.id));
+// 2026-05-04: 'lite' added at $14 entry tier per code 13041978.
+const PLANS = PRICING_TIERS.filter((t) => ['lite', 'starter', 'pro', 'business', 'enterprise'].includes(t.id));
 
 const SubscribePage = () => {
   const { user, refreshSession } = useSupabaseAuth();
@@ -32,7 +33,8 @@ const SubscribePage = () => {
   const section = searchParams.get('section') || '';
   const featureLabel = FEATURE_LABELS[from] || (from ? from.replace(/\//g, '').replace(/-/g, ' ') : '');
   const currentTier = resolveTier(user);
-  const foundationUnlocked = ['starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin'].includes(currentTier);
+  // Lite gets foundation unlocked too (paid tier).
+  const foundationUnlocked = ['lite', 'starter', 'pro', 'business', 'enterprise', 'custom_build', 'super_admin'].includes(currentTier);
   const groupedWaitlist = useMemo(() => {
     const map = new Map();
     WAITLIST_FEATURES.forEach((feature) => {
@@ -356,42 +358,44 @@ const SubscribePage = () => {
 };
 
 /* ── Feature Comparison Table ─────────────────────────────────────────────── */
+// 2026-05-04: Lite column added per code 13041978.
 const COMPARISON_DATA = [
   { category: 'Core platform', features: [
-    { name: 'Advisor (daily brief)', free: true, growth: true, pro: true },
-    { name: 'Email inbox + priority scoring', free: true, growth: true, pro: true },
-    { name: 'Calendar intelligence', free: true, growth: true, pro: true },
-    { name: 'Alert centre', free: true, growth: true, pro: true },
-    { name: 'Ask BIQc queries', free: '10 / day', growth: 'Unlimited', pro: 'Unlimited' },
-    { name: 'Market position', free: true, growth: true, pro: true },
-    { name: 'Business DNA', free: true, growth: true, pro: true },
-    { name: 'Integrations', free: '4', growth: '10', pro: 'Unlimited' },
+    { name: 'Advisor (daily brief)', lite: false, growth: true, pro: true, business: true },
+    { name: 'Email inbox + priority scoring', lite: false, growth: true, pro: true, business: true },
+    { name: 'Calendar intelligence', lite: false, growth: true, pro: true, business: true },
+    { name: 'Alert centre', lite: false, growth: true, pro: true, business: true },
+    { name: 'Ask BIQc queries', lite: '150K tokens', growth: '1M tokens', pro: '5M tokens', business: '20M tokens' },
+    { name: 'Market position', lite: false, growth: true, pro: true, business: true },
+    { name: 'Business DNA', lite: false, growth: true, pro: true, business: true },
+    { name: 'Supported integrations', lite: '1', growth: 'Unlimited', pro: 'Unlimited', business: 'Unlimited' },
   ]},
   { category: 'Growth intelligence', features: [
-    { name: 'BoardRoom AI', free: false, growth: true, pro: true },
-    { name: 'Revenue analytics', free: false, growth: true, pro: true },
-    { name: 'Operations metrics', free: false, growth: true, pro: true },
-    { name: 'Reports', free: false, growth: true, pro: true },
-    { name: 'Decision tracker', free: false, growth: true, pro: true },
-    { name: 'SOP generator', free: false, growth: true, pro: true },
-    { name: 'Marketing automation', free: false, growth: true, pro: true },
-    { name: 'Marketing intelligence', free: false, growth: true, pro: true },
-    { name: 'Exposure scan', free: false, growth: true, pro: true },
+    { name: 'Market & Business Forensic Snapshot', lite: false, growth: true, pro: true, business: true },
+    { name: 'Intelligence Spine', lite: false, growth: true, pro: true, business: true },
+    { name: 'Revenue analytics', lite: false, growth: true, pro: true, business: true },
+    { name: 'Operations metrics', lite: false, growth: true, pro: true, business: true },
+    { name: 'Reports', lite: false, growth: true, pro: true, business: true },
+    { name: 'Decision tracker', lite: false, growth: true, pro: true, business: true },
+    { name: 'SOP generator', lite: false, growth: true, pro: true, business: true },
+    { name: 'Marketing automation', lite: false, growth: true, pro: true, business: true },
+    { name: 'Marketing intelligence', lite: false, growth: true, pro: true, business: true },
+    { name: 'Exposure scan', lite: false, growth: true, pro: true, business: true },
   ]},
   { category: 'Pro intelligence', features: [
-    { name: 'WarRoom crisis AI', free: false, growth: false, pro: true },
-    { name: 'Risk matrix', free: false, growth: false, pro: true },
-    { name: 'Compliance tracking', free: false, growth: false, pro: true },
-    { name: 'Cross-domain signals', free: false, growth: false, pro: true },
-    { name: 'Watchtower', free: false, growth: false, pro: true },
-    { name: 'Document library', free: false, growth: false, pro: true },
-    { name: 'Intel centre', free: false, growth: false, pro: true },
-    { name: 'Audit log', free: false, growth: false, pro: true },
+    { name: 'Risk matrix', lite: false, growth: false, pro: true, business: true },
+    { name: 'Compliance tracking', lite: false, growth: false, pro: true, business: true },
+    { name: 'Cross-domain signals', lite: false, growth: false, pro: true, business: true },
+    { name: 'Watchtower', lite: false, growth: false, pro: true, business: true },
+    { name: 'Document library', lite: false, growth: false, pro: true, business: true },
+    { name: 'Intel centre', lite: false, growth: false, pro: true, business: true },
+    { name: 'Audit log', lite: false, growth: false, pro: true, business: true },
   ]},
   { category: 'Support', features: [
-    { name: 'Community', free: true, growth: true, pro: true },
-    { name: 'Email support', free: false, growth: true, pro: true },
-    { name: 'Priority support', free: false, growth: false, pro: true },
+    { name: 'Community', lite: true, growth: true, pro: true, business: true },
+    { name: 'Self-serve docs', lite: true, growth: true, pro: true, business: true },
+    { name: 'Email support', lite: false, growth: true, pro: true, business: true },
+    { name: 'Priority support', lite: false, growth: false, pro: true, business: true },
   ]},
 ];
 
@@ -411,16 +415,17 @@ const FeatureComparisonTable = () => (
         <thead>
           <tr style={{ background: 'var(--surface-sunken)' }}>
             <th className="text-left px-5 py-4 text-[11px] font-semibold uppercase" style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps, 0.08em)', fontFamily: 'var(--font-mono)' }}>Feature</th>
-            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Free</th>
-            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'white', background: 'var(--surface-sunken, #F5F5F5)', fontFamily: 'var(--font-ui)' }}>Growth $69</th>
-            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Pro $199</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Lite $14</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Growth $69</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'white', background: 'var(--surface-sunken, #F5F5F5)', fontFamily: 'var(--font-ui)' }}>Pro $199</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Business $349</th>
           </tr>
         </thead>
         <tbody>
           {COMPARISON_DATA.map(section => (
             <React.Fragment key={section.category}>
               <tr style={{ background: 'var(--surface-sunken)' }}>
-                <td colSpan={4} className="px-4 py-3 text-[11px] font-semibold uppercase"
+                <td colSpan={5} className="px-4 py-3 text-[11px] font-semibold uppercase"
                   style={{ color: 'var(--ink-muted)', borderBottom: '1px solid var(--border)', letterSpacing: 'var(--ls-caps, 0.08em)', fontFamily: 'var(--font-mono)' }}>
                   {section.category}
                 </td>
@@ -428,9 +433,10 @@ const FeatureComparisonTable = () => (
               {section.features.map(f => (
                 <tr key={f.name} className="hover:bg-white/[0.02]">
                   <td className="px-4 py-3 font-medium" style={{ color: 'var(--ink-secondary)', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-ui)' }}>{f.name}</td>
-                  <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.free} /></td>
+                  <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.lite} /></td>
                   <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.growth} /></td>
                   <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.pro} /></td>
+                  <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.business} /></td>
                 </tr>
               ))}
             </React.Fragment>
@@ -445,7 +451,8 @@ const FeatureComparisonTable = () => (
 const FAQ_ITEMS = [
   { q: 'What happens when my 14-day trial ends?', a: 'You\'ll be charged for the plan you selected at signup (Growth $69 by default) and your full platform access continues uninterrupted. No charges happen before day 14. You can downgrade, upgrade, or cancel at any time from Settings → Billing. If you cancel during the trial you are never charged.' },
   { q: 'Can I switch plans later?', a: 'Absolutely. Upgrade or downgrade at any time from Settings → Billing. When you upgrade, you get instant access to all features in your new tier. When you downgrade, you keep access until the end of your current billing period.' },
-  { q: 'How do integrations work across tiers?', a: 'Growth: up to 5 integrations (email, calendar, CRM, accounting). Professional: expanded connector allowance. Business: up to 15 integrations with team access. Enterprise: unlimited integrations with real-time webhook processing and advanced data enrichment.' },
+  { q: 'What happens when I hit my AI allowance?', a: 'AI usage is capped by your plan allowance. You can continue by upgrading or by requesting an approved top-up; BIQc does not silently continue paid overage usage.' },
+  { q: 'How do integrations work across tiers?', a: 'All paid plans can connect supported integrations. Capacity is controlled by token allowance, sync history, and storage/refresh behaviour rather than plan-specific connector lockouts.' },
   { q: 'Is my data secure?', a: 'Yes. All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We never use your data for AI model training. You retain full ownership and can export or delete everything at any time. We\'re SOC 2 compliant and GDPR/APPs aligned.' },
   { q: 'Do you offer discounts for annual billing?', a: 'Yes — save 20% with annual billing. Growth drops from $69/month to $55/month ($660/year). Pro drops from $199/month to $159/month ($1,908/year). All annual plans include priority onboarding.' },
   { q: 'What payment methods do you accept?', a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex) via Stripe. For Enterprise plans, we also offer invoice billing with NET 30 terms. All prices are in AUD.' },

@@ -1,9 +1,11 @@
 import { getRouteAccess } from './routeAccessConfig';
 import { checkRouteAccess } from '../lib/tierResolver';
 
+// 2026-05-04: Lite tier ($14) added per code 13041978.
 export const TIERS = {
+  lite: { id: 'lite', label: 'Lite', price: 14, color: '#0a0a0a' },
   starter: { id: 'starter', label: 'Growth', price: 69, color: '#E85D00' },
-  pro: { id: 'pro', label: 'Professional', price: 199, color: '#3B82F6' },
+  pro: { id: 'pro', label: 'Pro', price: 199, color: '#3B82F6' },
   business: { id: 'business', label: 'Business', price: 349, color: '#F59E0B' },
   enterprise: { id: 'enterprise', label: 'Enterprise', price: null, color: '#8B5CF6' },
   custom_build: { id: 'custom_build', label: 'Custom Build', price: null, color: '#10B981' },
@@ -11,6 +13,7 @@ export const TIERS = {
 };
 
 export const STRIPE_PRICES = {
+  lite_monthly: process.env.REACT_APP_STRIPE_LITE_PRICE_ID || 'price_biqc_lite_14',
   starter_monthly: process.env.REACT_APP_STRIPE_STARTER_PRICE_ID || 'price_biqc_growth_69',
   pro_monthly: process.env.REACT_APP_STRIPE_PRO_PRICE_ID || 'price_biqc_professional_199',
   business_monthly: process.env.REACT_APP_STRIPE_BUSINESS_PRICE_ID || 'price_biqc_business_349',
@@ -34,9 +37,19 @@ export function requiredTier(path) {
 }
 
 export const TIER_FEATURES = {
-  // 2026-04-19: free tier removed. Its features folded into Starter (Growth,
-  // $69) as the first paid tier; higher tiers inherit via "Everything in X"
+  // 2026-05-04: Lite added at $14 entry tier (code 13041978).
+  // 2026-04-19: free tier removed. Higher tiers inherit via "Everything in X"
   // labels. Per Andreas direction — no more free plan offered to users.
+  lite: [
+    'Ask BIQc',
+    '1 user included',
+    'Monthly AI allowance: 150,000 tokens',
+    '1 supported integration',
+    'Sync history: 14 days',
+    '30-day business memory',
+    'Unlimited PDF / CSV / Excel exports',
+    'Self-serve support',
+  ],
   starter: [
     'BIQc Overview',
     'Ask BIQc',

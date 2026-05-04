@@ -1,11 +1,32 @@
-// 2026-04-19: Free tier removed per CEO direction ("there is no free tier, remove").
-// All core protection features fold into Starter (Growth, $69) as the first paid tier.
+// 2026-05-04: Lite tier ($14) added per Andreas direction (code 13041978).
+// Pricing model: 4 paid tiers (Lite/Growth/Pro/Business) + Enterprise/Custom Build.
 // Higher tiers inherit via "Everything in X" cascade labels.
+// Seat caps + capacity match backend tier_resolver + commit d76ab6e3:
+//   Lite 1 user / 150K tokens, Growth 1 / 1M, Pro 5 / 5M, Business 12 / 20M.
 export const PRICING_TIERS = [
+  {
+    id: 'lite',
+    name: 'Lite',
+    subtitle: 'Try BIQc intelligence with one connected account',
+    price: '$14',
+    priceNum: 14,
+    period: '/month',
+    color: '#0a0a0a',
+    features: [
+      'Ask BIQc',
+      '1 user included',
+      'Monthly AI allowance: 150,000 tokens',
+      '1 supported integration',
+      'Sync history: 14 days',
+      '30-day business memory',
+      'Unlimited PDF / CSV / Excel exports',
+      'Self-serve support',
+    ],
+  },
   {
     id: 'starter',
     name: 'Growth',
-    subtitle: 'Full protection + growth operating package',
+    subtitle: 'Core BIQc intelligence for solo operators',
     price: '$69',
     priceNum: 69,
     period: '/month',
@@ -13,65 +34,50 @@ export const PRICING_TIERS = [
     popular: true,
     recommended: true,
     features: [
-      'BIQc Overview',
+      'Market & Business Forensic Snapshot',
+      'Intelligence Spine',
       'Ask BIQc',
-      'Inbox',
-      'Calendar',
-      'Market & Position',
-      'Business DNA',
-      'Actions',
-      'Alerts',
-      'Data Health',
-      'Settings',
-      'Competitive Benchmark',
-      'BIQc Foundation package',
-      'Exposure Scan',
-      'Marketing Auto',
-      'Reports',
-      'SOP Generator',
-      'Decision Tracker',
-      'Ingestion Audit',
-      'Revenue',
-      'Operations',
-      'Marketing Intelligence',
-      'Boardroom',
-      'Weekly Check-Ups',
-      'Up to 5 integrations',
+      'Priority insights and recommended actions',
+      'Supported integrations',
+      'Seats: 1 user',
+      'Monthly AI allowance: 1M tokens',
+      'Sync history: 90 days',
+      'Auto top-up when tokens run out',
+      'Email support, 24h response',
     ],
   },
   {
     id: 'pro',
-    name: 'Professional',
-    subtitle: 'Scale operating intelligence',
+    name: 'Pro',
+    subtitle: 'Core BIQc intelligence with higher capacity',
     price: '$199',
     priceNum: 199,
     period: '/month',
     color: '#3B82F6',
     features: [
-      'Everything in Starter',
-      'Higher monthly limits for core modules',
-      'Priority model routing and deeper analysis windows',
-      'Advanced reporting cadence',
-      'Expanded connector allowance',
+      'All Growth core intelligence features',
+      'Seats: up to 5 users',
+      'Monthly AI allowance: 5M tokens',
+      'Sync history: 12 months',
+      '1 specialist strategy session per quarter',
+      'Priority chat support',
     ],
   },
   {
     id: 'business',
     name: 'Business',
-    subtitle: 'Full-scale operating intelligence',
+    subtitle: 'Core BIQc intelligence for growing teams',
     price: '$349',
     priceNum: 349,
     period: '/month',
     color: '#F59E0B',
     features: [
-      'Everything in Professional',
-      'Access to frontier models from OpenAI, Anthropic, and Google',
-      '15M input + 6M output tokens/month',
-      'Advanced risk & compliance modules',
-      'Priority model routing',
-      'Up to 15 integrations',
-      'Team collaboration (up to 5 seats)',
-      'Dedicated onboarding session',
+      'All Pro core intelligence features',
+      'Seats: up to 12 users',
+      'Monthly AI allowance: 20M tokens',
+      'Sync history: 24 months',
+      'Dedicated onboarding + customer success manager',
+      'Priority+ support',
     ],
   },
   {
@@ -108,16 +114,19 @@ export const PRICING_TIERS = [
   },
 ];
 
-/** Resolve plan id to display tier with legacy aliases preserved. */
+/** Resolve plan id to display tier with legacy aliases preserved.
+ * 2026-05-04: Lite added at index [0]; downstream indices shift by +1.
+ */
 export const getTierByPlanId = (id) => {
-  if (id === 'super_admin') return PRICING_TIERS.find((tier) => tier.id === 'enterprise') || PRICING_TIERS[2];
+  if (id === 'super_admin') return PRICING_TIERS.find((tier) => tier.id === 'enterprise') || PRICING_TIERS[4];
+  if (id === 'lite') return PRICING_TIERS.find((tier) => tier.id === 'lite') || PRICING_TIERS[0];
   if (id === 'starter' || id === 'foundation' || id === 'growth') return PRICING_TIERS.find((tier) => tier.id === 'starter') || PRICING_TIERS[1];
   if (id === 'professional' || id === 'pro') return PRICING_TIERS.find((tier) => tier.id === 'pro') || PRICING_TIERS[2];
   if (id === 'business') return PRICING_TIERS.find((tier) => tier.id === 'business') || PRICING_TIERS[3];
   if (id === 'enterprise') return PRICING_TIERS.find((tier) => tier.id === 'enterprise') || PRICING_TIERS[4];
   if (id === 'custom' || id === 'custom_build') return PRICING_TIERS.find((tier) => tier.id === 'custom_build') || PRICING_TIERS[5];
-  // Unknown / legacy 'free' / null → fall back to Starter (the new floor).
-  return PRICING_TIERS.find((tier) => tier.id === id) || PRICING_TIERS.find((t) => t.id === 'starter') || PRICING_TIERS[0];
+  // Unknown / legacy/null values fall back to Lite (the new entry-level floor).
+  return PRICING_TIERS.find((tier) => tier.id === id) || PRICING_TIERS.find((t) => t.id === 'lite') || PRICING_TIERS[0];
 };
 
 export const getTierColor = (id) => getTierByPlanId(id).color;

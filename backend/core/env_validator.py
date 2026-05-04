@@ -66,11 +66,14 @@ STRIPE_PLACEHOLDER_PRICE_PREFIXES: tuple[str, ...] = (
 )
 
 # Env-var names that hold Stripe price IDs, checked for placeholders.
+# 2026-05-04: Lite price ID env keys added per code 13041978.
 STRIPE_PRICE_ID_ENV_KEYS: tuple[str, ...] = (
+    "REACT_APP_STRIPE_LITE_PRICE_ID",
     "REACT_APP_STRIPE_STARTER_PRICE_ID",
     "REACT_APP_STRIPE_PRO_PRICE_ID",
     "REACT_APP_STRIPE_BUSINESS_PRICE_ID",
     "REACT_APP_STRIPE_ENTERPRISE_PRICE_ID",
+    "STRIPE_LITE_PRICE_ID",
     "STRIPE_STARTER_PRICE_ID",
     "STRIPE_PRO_PRICE_ID",
     "STRIPE_BUSINESS_PRICE_ID",
