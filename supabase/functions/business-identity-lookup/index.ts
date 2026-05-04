@@ -119,6 +119,22 @@ serve(async (req) => {
     });
   }
 
+  // Phase 1.X health-check handler (2026-05-05 code 13041978):
+  // Andreas mandate "every edge function returns 200 on health check". Without
+  // this guard, a GET hits req.json() below and 500s with "Unexpected end of JSON
+  // input". Convention matches other functions in the codebase.
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "business-identity-lookup",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
+    );
+  }
+
   try {
     // Phase 1.7d hard-fix (RC-2 / 2026-05-05 code 13041978):
     // Previous implementation re-validated the bearer token via supabase.auth.getUser()

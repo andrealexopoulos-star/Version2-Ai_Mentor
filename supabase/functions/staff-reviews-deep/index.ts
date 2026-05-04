@@ -658,6 +658,7 @@ async function callOpenAI(
         ],
         temperature: 0.2,
         max_tokens: 2400,
+      }),
       signal: controller.signal,
     });
     clearTimeout(timer);
