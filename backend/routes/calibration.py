@@ -3048,8 +3048,12 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 recommended_keywords = [p.strip() for p in re.split(r"[;,]", str(enrichment.get("main_products_services"))) if p.strip()][:6]
             recommended_keywords = list(dict.fromkeys(recommended_keywords))[:10]
 
+            # F15 (2026-05-04): rewrote literal "SEMrush rank ..." to neutral
+            # "Authority rank ..." so the source string is sanitiser-safe even
+            # if response_sanitizer isn't reached on a particular code path
+            # (defense in depth — Contract v2 BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2).
             seo_rank_summary = (
-                f"SEMrush rank {seo_current.get('semrush_rank')}, ~{seo_current.get('organic_keywords') or 0} ranking keywords, "
+                f"Authority rank {seo_current.get('semrush_rank')}, ~{seo_current.get('organic_keywords') or 0} ranking keywords, "
                 f"~{seo_current.get('organic_traffic') or 0} monthly organic visits."
                 if seo_current.get("semrush_rank") or seo_current.get("organic_keywords") or seo_current.get("organic_traffic")
                 else "SEO ranking data not yet captured — enrichment will populate on scan."

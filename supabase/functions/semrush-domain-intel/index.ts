@@ -15,22 +15,84 @@
 //   7. domain_organic_pages [NEW] — top 20 organic landing pages
 //   8. domain_adwords_history [NEW] — 12-month paid-search history
 //
-// API units budget per scan (uncached): ~80–150 units
-//   1. domain_rank             ~20 units (whole-domain row)
-//   2. domain_organic         ~100 units (display_limit=100 × 1 unit/line)
-//   3. domain_adwords          ~20 units (display_limit=20)
-//   4. domain_organic_organic  ~10 units (display_limit=10)
-//   5. domain_adwords_adwords  ~10 units (display_limit=10)
-//   6. backlinks_overview      ~40 units (per-call flat — analytics API)
-//   7. domain_organic_pages    ~20 units (display_limit=20 × 1 unit/line)
-//   8. domain_adwords_history  ~12 units (12-month series, low-volume)
-//   ───────────────────────────────────────────
-//   Total uncached per scan:   ~232 units worst-case; ~80–150 typical
-//   when low-traffic domains return < 50 organic kw rows.
+// API UNITS BUDGET (corrected by F15 2026-05-04 — old comment claimed
+// 232 units worst-case which understated true cost by ~15×; see
+// evidence_f15/F15-units-budget-explainer.md for derivation).
+//
+// Per-call worst-case units (display_limit × per-line cost):
+//   1. domain_rank             flat 10 units                          (10)
+//   2. domain_organic          100 lines × 10 units/line              (1000)
+//   3. domain_adwords          20 lines  × 20 units/line              (400)
+//   4. domain_organic_organic  10 lines  × 40 units/line              (400)
+//   5. domain_adwords_adwords  10 lines  × 40 units/line              (400)
+//   6. backlinks_overview      flat 40 units                          (40)
+//   7. domain_organic_pages    20 lines  × 10 units/line              (200)
+//   8. domain_adwords_history  12 lines  × 100 units/line             (1200)
+//   ───────────────────────────────────────────────────────────────
+//   Total uncached per scan:   ~3650 units worst-case
+//   Typical (low-traffic domain returning few rows): ~200–600 units
+//
+// Plan capacity (from semrush.com/pricing — Apr 2026 snapshot):
+//   - Pro       (~$140/mo) →   1,000,000 units/month → ~273 worst-case scans
+//   - Guru      (~$250/mo) →   3,000,000 units/month → ~821 worst-case scans
+//   - Business  (~$500/mo) →   5,000,000 units/month → ~1369 worst-case scans
+//   With 24h cache (see below): effective scan capacity is much higher
+//   because most domains are re-scanned within the TTL window.
 //
 // Cache: backend uses 24h domain-level TTL via scan_cache.set_edge_result
 // (R2D bumped EDGE_TTL for SEMrush to SCAN_TTL=86400). Repeated scans of
-// the same domain in 24h = ZERO units.
+// the same domain in 24h = ZERO units. THIS IS THE SAVING GRACE — without
+// the 24h TTL the per-scan cost would exhaust a Pro plan in <300 scans.
+//
+// ───────────────────────────────────────────────────────────────
+// FAILURE MODES (operator runbook — Contract v2 secure no-silent-failure)
+//
+// This function returns one of two top-level shapes — NEVER a mixed
+// "ok with empty data" success-on-failure (that would violate
+// BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2):
+//
+//   SUCCESS:  { ok: true,  ...intel sections... }
+//   FAILURE:  { ok: false, error: { code, message, retryable } }
+//
+// Internal failure codes (NEVER surfaced to UI — backend sanitizer maps
+// them to external state DATA_UNAVAILABLE):
+//
+//   SEMRUSH_API_KEY_MISSING
+//     Meaning:  Edge function environment lacks SEMRUSH_API_KEY secret.
+//     Operator: Set the secret via Supabase dashboard → Edge Functions →
+//               semrush-domain-intel → Secrets. Redeploy the function.
+//
+//   SEMRUSH_SUPPLIER_TOTAL_FAILURE
+//     Meaning:  All 8 SEMrush API calls returned non-2xx (most commonly
+//               401 = invalid/expired key, 403 = plan does not include
+//               required endpoints, 429 = monthly unit budget exhausted,
+//               or per-IP rate limit blocked the request).
+//     Operator runbook (in priority order):
+//               1. semrush.com/accounts/subscription → confirm plan tier
+//                  includes the API endpoints listed above (Pro+ is
+//                  required; Guru+ for backlinks_overview).
+//               2. semrush.com/accounts/subscription → confirm monthly
+//                  units NOT exhausted (worst-case is ~3650/scan; cache
+//                  hit lifts effective capacity 10–100×).
+//               3. semrush.com/projects/api → confirm API key is active
+//                  AND that the calling IP (Supabase edge runtime egress
+//                  IPs) is on the allowlist if IP allowlisting is on.
+//               4. Re-rotate the API key if compromised; update the
+//                  Supabase secret AND redeploy.
+//     This is HARD-FAIL by design (Contract v2): we do NOT degrade to a
+//     fabricated SEO score. Frontend shows "Market intelligence
+//     temporarily unavailable" via SectionStateBanner.
+//
+//   SEMRUSH_PARTIAL_FAILURE
+//     Meaning:  Some endpoints returned 2xx, some did not. We surface
+//               whatever we got, mark the missing sections null, and the
+//               sanitizer flags them DEGRADED.
+//     Operator: Same as above; usually a single-endpoint plan limitation
+//               (e.g. backlinks_overview requires Guru tier).
+//
+// G0d (operator-side) flagged the underlying SEMrush dashboard issue
+// 2026-05-04. F15 added this runbook so future on-call has a clear path.
+// ───────────────────────────────────────────────────────────────
 //
 // Deploy: supabase functions deploy semrush-domain-intel --no-verify-jwt
 // Secrets: SEMRUSH_API_KEY

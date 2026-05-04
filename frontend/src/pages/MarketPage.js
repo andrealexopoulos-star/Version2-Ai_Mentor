@@ -937,11 +937,11 @@ const MarketPage = () => {
                   )}
                 </Panel>
 
-                {/* ─── Organic Search Performance (SEMrush-derived only) ─── */}
+                {/* ─── Organic Search Performance (Contract v2: market-data-derived only) ─── */}
                 {/* Contract v2 / Step 3d: distinct from hygiene. Shows real
-                    SEMrush rank, organic keyword count, traffic. When SEMrush
-                    data is unavailable the banner explains — no fabricated
-                    score. */}
+                    authority rank (renamed from semrush_rank by sanitizer),
+                    organic keyword count, traffic. When market data is
+                    unavailable the banner explains — no fabricated score. */}
                 <Panel data-testid="saturation-seo-performance">
                   <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="w-4 h-4" style={{ color: 'var(--info)' }} />
@@ -955,10 +955,14 @@ const MarketPage = () => {
                   )}
                   {isSectionAvailable(seoAnalysis) && (
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      {seoAnalysis.semrush_rank != null && (
+                      {/* F15 (2026-05-04): R2D renamed semrush_rank → authority_rank in
+                          sanitizer (response_sanitizer.py:_KEY_RENAMES). Defensive fallback
+                          on `?? semrush_rank` keeps cached responses rendering during
+                          transition window — safe to remove after 24h cache TTL window. */}
+                      {(seoAnalysis.authority_rank ?? seoAnalysis.semrush_rank) != null && (
                         <div>
                           <p className="text-[9px] uppercase mb-0.5" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Domain rank</p>
-                          <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)' }}>{seoAnalysis.semrush_rank.toLocaleString()}</p>
+                          <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)' }}>{(seoAnalysis.authority_rank ?? seoAnalysis.semrush_rank).toLocaleString()}</p>
                         </div>
                       )}
                       {seoAnalysis.organic_keywords != null && (
