@@ -20,6 +20,13 @@ import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
+import SectionEvidenceRenderer, {
+  SECTION_STATE,
+  StateBanner,
+  ProvenancePill,
+  getSection,
+  isPlaceholderText,
+} from '../components/SectionEvidenceRenderer';
 
 // P0 2026-04-23 (Andreas): inline error boundary so a null-deref in any
 // child section never takes the whole page down. Shows calibrating card
@@ -445,18 +452,60 @@ function CMOReportPageInner() {
 
         {/* ═══════════════════════════════════════════════════
             2. EXECUTIVE SUMMARY
+            E6 (2026-05-04): Wired through SectionEvidenceRenderer so an
+            empty / placeholder executive summary renders an
+            INSUFFICIENT_SIGNAL banner with sanitised reason instead of
+            "No executive summary available yet".
             ═══════════════════════════════════════════════════ */}
-        <div style={{
-          background: V.surface, border: `1px solid ${V.border}`, borderLeft: `3px solid ${V.lava}`,
-          borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 32,
-        }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 10, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase', color: V.lava, marginBottom: 12 }}>
-            <Layers size={14} /> Executive Summary
-          </div>
-          <p style={{ fontSize: 16, lineHeight: 1.7, color: V.inkSecondary, margin: 0 }}>
-            {data.executive_summary || 'No executive summary available yet. Connect your integrations to generate intelligence.'}
-          </p>
-        </div>
+        {(() => {
+          const execSection = getSection(data, 'executive_summary');
+          const Header = () => (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 10, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase', color: V.lava, marginBottom: 12 }}>
+              <Layers size={14} /> Executive Summary
+            </div>
+          );
+          const Wrap = ({ children: inner }) => (
+            <div style={{
+              background: V.surface, border: `1px solid ${V.border}`, borderLeft: `3px solid ${V.lava}`,
+              borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 32,
+            }}>
+              <Header />
+              {inner}
+            </div>
+          );
+          if (execSection) {
+            return (
+              <Wrap>
+                <SectionEvidenceRenderer section={execSection} onRetry={() => window.location.reload()}>
+                  {(evidence) => (
+                    <p style={{ fontSize: 16, lineHeight: 1.7, color: V.inkSecondary, margin: 0 }}>
+                      {evidence?.text || data.executive_summary}
+                    </p>
+                  )}
+                </SectionEvidenceRenderer>
+              </Wrap>
+            );
+          }
+          // Legacy fallback path
+          if (data.executive_summary && !isPlaceholderText(data.executive_summary)) {
+            return (
+              <Wrap>
+                <p style={{ fontSize: 16, lineHeight: 1.7, color: V.inkSecondary, margin: 0 }}>
+                  {data.executive_summary}
+                </p>
+              </Wrap>
+            );
+          }
+          return (
+            <Wrap>
+              <StateBanner
+                state={SECTION_STATE.INSUFFICIENT_SIGNAL}
+                reason="We don't yet have enough verified intelligence to write a complete executive summary for this business."
+                onRetry={() => window.location.reload()}
+              />
+            </Wrap>
+          );
+        })()}
 
         {/* ═══════════════════════════════════════════════════
             3. MARKET POSITION SCORE
@@ -577,14 +626,54 @@ function CMOReportPageInner() {
 
         {/* ═══════════════════════════════════════════════════
             5. SWOT ANALYSIS
+            E6 (2026-05-04): Each SWOT bucket is wired through
+            SectionEvidenceRenderer so a bucket with no evidence renders
+            an INSUFFICIENT_SIGNAL banner instead of a generic
+            Marketing-101 fallback. Per Andreas's PR #449 follow-up.
             ═══════════════════════════════════════════════════ */}
         <div style={{ marginBottom: 32 }}>
           <SectionHead icon={<Target size={18} />} iconBg={V.positiveWash} iconColor={V.positive} title="SWOT Analysis" />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-            <SwotCard type="strength"    label="Strengths"     icon={<CheckCircle2 size={16} />} items={swot.strengths.length  ? swot.strengths  : ['Insufficient evidence for strengths.']} />
-            <SwotCard type="weakness"    label="Weaknesses"    icon={<AlertTriangle size={16} />} items={swot.weaknesses.length ? swot.weaknesses : ['Insufficient evidence for weaknesses.']} />
-            <SwotCard type="opportunity" label="Opportunities" icon={<PlusCircle size={16} />}    items={swot.opportunities.length ? swot.opportunities : ['Insufficient evidence for opportunities.']} />
-            <SwotCard type="threat"      label="Threats"       icon={<AlertTriangle size={16} />} items={swot.threats.length    ? swot.threats    : ['Insufficient evidence for threats.']} />
+            {[
+              { type: 'strength',    label: 'Strengths',     icon: <CheckCircle2 size={16} />,  legacyItems: swot.strengths,     sectionId: 'swot_strengths' },
+              { type: 'weakness',    label: 'Weaknesses',    icon: <AlertTriangle size={16} />, legacyItems: swot.weaknesses,    sectionId: 'swot_weaknesses' },
+              { type: 'opportunity', label: 'Opportunities', icon: <PlusCircle size={16} />,    legacyItems: swot.opportunities, sectionId: 'swot_opportunities' },
+              { type: 'threat',      label: 'Threats',       icon: <AlertTriangle size={16} />, legacyItems: swot.threats,       sectionId: 'swot_threats' },
+            ].map(bucket => {
+              const sec = getSection(data, bucket.sectionId);
+              if (sec) {
+                return (
+                  <SectionEvidenceRenderer
+                    key={bucket.sectionId}
+                    section={sec}
+                    onRetry={() => window.location.reload()}
+                  >
+                    {(evidence) => (
+                      <SwotCard
+                        type={bucket.type}
+                        label={bucket.label}
+                        icon={bucket.icon}
+                        items={(evidence?.items || []).map(it => (typeof it === 'string' ? it : it.text)).filter(t => t && !isPlaceholderText(t))}
+                      />
+                    )}
+                  </SectionEvidenceRenderer>
+                );
+              }
+              // Legacy fallback path (when backend `sections` map is absent):
+              // only render when there's at least one evidence-backed item.
+              const cleaned = (bucket.legacyItems || []).filter(t => typeof t === 'string' && t.trim() && !isPlaceholderText(t));
+              if (cleaned.length > 0) {
+                return <SwotCard key={bucket.sectionId} type={bucket.type} label={bucket.label} icon={bucket.icon} items={cleaned} />;
+              }
+              return (
+                <StateBanner
+                  key={bucket.sectionId}
+                  state={SECTION_STATE.INSUFFICIENT_SIGNAL}
+                  reason={`Insufficient evidence to extract evidence-backed ${bucket.label.toLowerCase()} for this business.`}
+                  onRetry={() => window.location.reload()}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -685,52 +774,89 @@ function CMOReportPageInner() {
 
         {/* ═══════════════════════════════════════════════════
             7. STRATEGIC ROADMAP
+            E6 (2026-05-04): Each horizon column is wired through
+            SectionEvidenceRenderer. Items without provenance are dropped
+            by the backend filter; an empty horizon flips that column to
+            INSUFFICIENT_SIGNAL banner instead of "Insufficient evidence
+            for recommendations in this horizon" templated text.
             ═══════════════════════════════════════════════════ */}
         <div style={{ marginBottom: 32 }}>
           <SectionHead icon={<Target size={18} />} iconBg="var(--lava-wash)" iconColor={V.lava} title="Strategic Roadmap" />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
             {[
-              { title: '7-Day Quick Wins',     sub: 'Immediate',  items: roadmap.quick_wins, dotColor: V.danger },
-              { title: '30-Day Priorities',     sub: 'Short-term', items: roadmap.priorities,  dotColor: V.warning },
-              { title: '90-Day Strategic Goals', sub: 'Long-term',  items: roadmap.strategic,  dotColor: V.info },
-            ].map(col => (
-              <div key={col.title} style={{ background: V.surface, border: `1px solid ${V.border}`, borderRadius: 'var(--r-lg)', padding: 20, display: 'flex', flexDirection: 'column' }}>
-                {/* Column head */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${V.border}` }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: col.dotColor }} />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: V.inkDisplay }}>{col.title}</span>
-                  <span style={{ fontSize: 12, color: V.inkMuted, marginLeft: 'auto' }}>{col.sub}</span>
+              { title: '7-Day Quick Wins',       sub: 'Immediate',  legacyItems: roadmap.quick_wins, dotColor: V.danger,  sectionId: 'seven_day_quick_wins' },
+              { title: '30-Day Priorities',       sub: 'Short-term', legacyItems: roadmap.priorities,  dotColor: V.warning, sectionId: 'thirty_day_priorities' },
+              { title: '90-Day Strategic Goals',  sub: 'Long-term',  legacyItems: roadmap.strategic,   dotColor: V.info,    sectionId: 'ninety_day_strategic_goals' },
+            ].map(col => {
+              const ColumnShell = ({ children: inner }) => (
+                <div key={col.title} style={{ background: V.surface, border: `1px solid ${V.border}`, borderRadius: 'var(--r-lg)', padding: 20, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${V.border}` }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: col.dotColor }} />
+                    <span style={{ fontSize: 14, fontWeight: 600, color: V.inkDisplay }}>{col.title}</span>
+                    <span style={{ fontSize: 12, color: V.inkMuted, marginLeft: 'auto' }}>{col.sub}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
+                    {inner}
+                  </div>
                 </div>
-                {/* Items */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-                  {(col.items.length ? col.items : [{ text: 'Insufficient evidence for recommendations in this horizon.', priority: 'medium' }]).map((item, i) => {
-                    const text = typeof item === 'string' ? item : item.text;
-                    const priority = typeof item === 'string' ? 'medium' : (item.priority || 'medium');
-                    const evidenceTag = typeof item === 'string' ? '' : (item.evidence_tag || '');
-                    const confidence = typeof item === 'string' ? null : (typeof item.confidence === 'number' ? item.confidence : null);
-                    return (
-                      <div key={i} style={{ display: 'flex', gap: 12, padding: 12, borderRadius: 8, background: V.sunken, alignItems: 'flex-start' }}>
-                        <span style={{
-                          width: 22, height: 22, flexShrink: 0, borderRadius: '50%',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 10, fontWeight: 700, color: '#fff', background: col.dotColor,
-                        }}>{i + 1}</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-                          <span style={{ fontSize: 14, color: V.inkSecondary, lineHeight: 1.5 }}>{text}</span>
-                          {(evidenceTag || confidence !== null) && (
-                            <span style={{ fontSize: 11, color: V.inkMuted }}>
-                              {evidenceTag ? `Evidence: ${evidenceTag}` : 'Evidence: inferred from available scan signals'}
-                              {confidence !== null ? ` • Confidence: ${Math.round(confidence * 100)}%` : ''}
-                            </span>
-                          )}
-                        </div>
-                        <PriorityBadge priority={priority} />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+              );
+              const renderItems = (items) => (items || []).filter(item => {
+                const text = typeof item === 'string' ? item : item?.text;
+                return typeof text === 'string' && text.trim() && !isPlaceholderText(text);
+              }).map((item, i) => {
+                const text = typeof item === 'string' ? item : item.text;
+                const priority = typeof item === 'string' ? 'medium' : (item.priority || 'medium');
+                const evidenceTag = typeof item === 'string' ? '' : (item.evidence_tag || '');
+                const confidence = typeof item === 'string' ? null : (typeof item.confidence === 'number' ? item.confidence : null);
+                const traceIds = typeof item === 'string' ? [] : (Array.isArray(item.source_trace_ids) ? item.source_trace_ids : []);
+                return (
+                  <div key={i} style={{ display: 'flex', gap: 12, padding: 12, borderRadius: 8, background: V.sunken, alignItems: 'flex-start' }}>
+                    <span style={{
+                      width: 22, height: 22, flexShrink: 0, borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, fontWeight: 700, color: '#fff', background: col.dotColor,
+                    }}>{i + 1}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+                      <span style={{ fontSize: 14, color: V.inkSecondary, lineHeight: 1.5 }}>{text}</span>
+                      {(evidenceTag || confidence !== null || traceIds.length > 0) && (
+                        <span style={{ fontSize: 11, color: V.inkMuted, display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          {evidenceTag ? <span>Evidence: {evidenceTag}</span> : null}
+                          {confidence !== null ? <span>Confidence: {Math.round(confidence * 100)}%</span> : null}
+                          {traceIds.length > 0 ? <ProvenancePill traceIds={traceIds} /> : null}
+                        </span>
+                      )}
+                    </div>
+                    <PriorityBadge priority={priority} />
+                  </div>
+                );
+              });
+              const sec = getSection(data, col.sectionId);
+              if (sec) {
+                return (
+                  <div key={col.sectionId}>
+                    <SectionEvidenceRenderer section={sec} onRetry={() => window.location.reload()}>
+                      {(evidence) => <ColumnShell>{renderItems(evidence?.items)}</ColumnShell>}
+                    </SectionEvidenceRenderer>
+                  </div>
+                );
+              }
+              // Legacy fallback path: only render when ≥ 1 evidence-backed item.
+              const filteredLegacy = (col.legacyItems || []).filter(item => {
+                const text = typeof item === 'string' ? item : item?.text;
+                return typeof text === 'string' && text.trim() && !isPlaceholderText(text);
+              });
+              if (filteredLegacy.length > 0) {
+                return <ColumnShell key={col.sectionId}>{renderItems(filteredLegacy)}</ColumnShell>;
+              }
+              return (
+                <StateBanner
+                  key={col.sectionId}
+                  state={SECTION_STATE.INSUFFICIENT_SIGNAL}
+                  reason={`Insufficient evidence to recommend evidence-backed ${col.title.toLowerCase()} for this business.`}
+                  onRetry={() => window.location.reload()}
+                />
+              );
+            })}
           </div>
         </div>
 

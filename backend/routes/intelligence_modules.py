@@ -20,6 +20,18 @@ from core.response_sanitizer import (
     sanitize_enrichment_for_external,
     ExternalState,
 )
+from core.section_evidence import (
+    SECTION_IDS,
+    OPTIONAL_SECTION_IDS,
+    PLACEHOLDER_EXACT_DENYLIST,
+    filter_swot_items_with_provenance,
+    filter_roadmap_items_with_provenance,
+    is_placeholder_string,
+    make_section,
+    reason_for,
+    section_state_for_value,
+    validate_section_evidence,
+)
 from cmo_truth import (
     REPORT_STATE_COMPLETE,
     REPORT_STATE_FAILED,
@@ -1005,6 +1017,336 @@ def _apply_render_time_filters(report: Dict[str, Any]) -> Dict[str, Any]:
     return report
 
 
+def _build_section_evidence_for_cmo(
+    response: Dict[str, Any],
+    enrichment: Dict[str, Any],
+    *,
+    is_processing: bool,
+) -> Dict[str, Dict[str, Any]]:
+    """Build the per-section SectionEvidence dict for the CMO Report.
+
+    Returns a mapping of `section_id -> SectionEvidence`. Every required
+    section in SECTION_IDS will appear in the result. Optional sections
+    (signals, products_services, abn_business_identity) are included only
+    if at least one signal exists.
+
+    Provenance handling:
+        - SWOT items must reference at least one source_trace_id OR be
+          flagged INSUFFICIENT_SIGNAL. Items without provenance are dropped
+          via filter_swot_items_with_provenance.
+        - Roadmap items must reference at least one finding (signal_id,
+          competitor name from this scan, brand metric from this scan).
+          Items without provenance are dropped via
+          filter_roadmap_items_with_provenance.
+        - Generic SWOT/Roadmap items that match the placeholder denylist
+          (Marketing-101 phrases, "Strong"/"Weak"/"TBD"/etc.) are dropped.
+
+    Per Contract v2: every `reason` string is non-leaky (no supplier names,
+    no internal codes, no HTTP errors).
+    """
+    sections: Dict[str, Dict[str, Any]] = {}
+
+    # Available trace ids and competitor names harvested from the enrichment
+    # for provenance enforcement on SWOT + Roadmap items.
+    available_trace_ids: List[str] = []
+    raw_traces = enrichment.get("source_trace_ids") or enrichment.get("trace_ids") or []
+    if isinstance(raw_traces, list):
+        available_trace_ids.extend([str(t) for t in raw_traces if t])
+    # Pull trace ids from any nested {evidence_tag, trace_id, signal_id} entries.
+    for v in (enrichment.get("intelligence_actions") or []):
+        if isinstance(v, dict):
+            tid = v.get("id") or v.get("signal_id") or v.get("trace_id")
+            if tid:
+                available_trace_ids.append(str(tid))
+    # Dedupe.
+    available_trace_ids = list({t for t in available_trace_ids})
+
+    competitors_from_scan = response.get("competitors") or []
+    competitor_names = [c.get("name") for c in competitors_from_scan if isinstance(c, dict)]
+
+    # Brand metric labels available from the score dials (when non-zero).
+    brand_metric_names: List[str] = []
+    mp = response.get("market_position") or {}
+    if isinstance(mp, dict):
+        if mp.get("brand"): brand_metric_names.append("brand strength")
+        if mp.get("digital"): brand_metric_names.append("digital presence")
+        if mp.get("sentiment"): brand_metric_names.append("customer sentiment")
+        if mp.get("competitive"): brand_metric_names.append("competitive position")
+
+    def _processing_or(section_id: str, fn) -> Dict[str, Any]:
+        """If we're in calibration-not-yet-complete mode, return PROCESSING.
+        Otherwise call fn() to get the real SectionEvidence."""
+        if is_processing:
+            return make_section(section_id, state=ExternalState.PROCESSING.value)
+        return fn()
+
+    # ── Header / metadata sections (always DATA_AVAILABLE when known) ──
+    sections["header"] = make_section(
+        "header",
+        state=ExternalState.DATA_AVAILABLE.value,
+        evidence={
+            "title": "Chief Marketing Summary",
+            "report_id": response.get("report_id"),
+        },
+    )
+    sections["date"] = _processing_or("date", lambda: make_section(
+        "date",
+        state=ExternalState.DATA_AVAILABLE.value,
+        evidence={"report_date": response.get("report_date")},
+    ))
+    bn = response.get("company_name")
+    sections["business_name"] = make_section(
+        "business_name",
+        state=section_state_for_value(bn),
+        evidence={"company_name": bn} if bn else None,
+        reason=None if bn else reason_for("business_name", ExternalState.INSUFFICIENT_SIGNAL.value),
+    )
+    website_url = enrichment.get("website_url") or enrichment.get("domain")
+    sections["website"] = make_section(
+        "website",
+        state=section_state_for_value(website_url),
+        evidence={"url": website_url} if website_url else None,
+        reason=None if website_url else "Business website not yet captured for this scan.",
+    )
+    scan_source = response.get("scan_source")
+    sections["scan_source"] = make_section(
+        "scan_source",
+        state=section_state_for_value(scan_source),
+        evidence={"source": scan_source} if scan_source else None,
+    )
+    real_pts = _count_real_data_points(response)
+    sections["data_points_count"] = make_section(
+        "data_points_count",
+        state=ExternalState.DATA_AVAILABLE.value if real_pts > 0 else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={"count": real_pts} if real_pts > 0 else None,
+    )
+    conf = response.get("confidence") or 0
+    sections["confidence_score"] = make_section(
+        "confidence_score",
+        state=ExternalState.DATA_AVAILABLE.value if conf > 0 else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={"score": conf} if conf > 0 else None,
+    )
+
+    # ── Narrative sections ──
+    exec_summary = response.get("executive_summary")
+    cms_state = section_state_for_value(exec_summary, is_processing=is_processing)
+    if cms_state == ExternalState.DATA_AVAILABLE.value and is_placeholder_string(exec_summary):
+        cms_state = ExternalState.INSUFFICIENT_SIGNAL.value
+        exec_summary = None
+    sections["chief_marketing_summary"] = make_section(
+        "chief_marketing_summary",
+        state=cms_state,
+        evidence={"text": exec_summary} if cms_state == ExternalState.DATA_AVAILABLE.value else None,
+        source_trace_ids=available_trace_ids[:3],
+    )
+    sections["executive_summary"] = make_section(
+        "executive_summary",
+        state=cms_state,
+        evidence={"text": exec_summary} if cms_state == ExternalState.DATA_AVAILABLE.value else None,
+        source_trace_ids=available_trace_ids[:3],
+    )
+
+    # ── Score dials ──
+    overall = (mp or {}).get("overall", 0)
+    sections["market_position_score"] = make_section(
+        "market_position_score",
+        state=ExternalState.DATA_AVAILABLE.value if overall > 0 else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence=mp if overall > 0 else None,
+        source_trace_ids=available_trace_ids[:1],
+    )
+    for metric_id, metric_key in (
+        ("brand_strength", "brand"),
+        ("digital_presence", "digital"),
+        ("customer_sentiment", "sentiment"),
+        ("competitive_position", "competitive"),
+    ):
+        val = (mp or {}).get(metric_key, 0)
+        sections[metric_id] = make_section(
+            metric_id,
+            state=ExternalState.DATA_AVAILABLE.value if val > 0 else ExternalState.INSUFFICIENT_SIGNAL.value,
+            evidence={"score": val, "max": 100} if val > 0 else None,
+        )
+
+    # ── Competitive landscape ──
+    has_comps = len(competitors_from_scan) > 0
+    sections["competitive_landscape"] = make_section(
+        "competitive_landscape",
+        state=ExternalState.DATA_AVAILABLE.value if has_comps else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={"competitors": competitors_from_scan} if has_comps else None,
+        source_trace_ids=available_trace_ids[:5],
+    )
+    sections["competitors_found"] = make_section(
+        "competitors_found",
+        state=ExternalState.DATA_AVAILABLE.value if has_comps else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={"names": [n for n in competitor_names if n]} if has_comps else None,
+    )
+    rev_count = (response.get("reviews") or {}).get("count", 0)
+    rev_excerpts = response.get("review_excerpts") or []
+    rev_sources = []
+    for ex in rev_excerpts:
+        if isinstance(ex, dict) and ex.get("source"):
+            rev_sources.append(ex["source"])
+    rev_sources = sorted({s for s in rev_sources if s})
+    sections["review_sources"] = make_section(
+        "review_sources",
+        state=ExternalState.DATA_AVAILABLE.value if rev_sources else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={"sources": rev_sources, "review_count": rev_count} if rev_sources else None,
+    )
+
+    # ── SWOT (per-bucket, provenance-enforced) ──
+    swot = response.get("swot") or {}
+    for bucket_id, bucket_key in (
+        ("swot_strengths", "strengths"),
+        ("swot_weaknesses", "weaknesses"),
+        ("swot_opportunities", "opportunities"),
+        ("swot_threats", "threats"),
+    ):
+        raw_items = swot.get(bucket_key) or []
+        # Strip placeholder + Marketing-101 templated strings up-front. Then
+        # require at least one provenance pointer per item OR the section
+        # flips to INSUFFICIENT_SIGNAL.
+        kept = filter_swot_items_with_provenance(
+            raw_items,
+            available_trace_ids=available_trace_ids,
+            available_competitor_names=[c for c in competitor_names if c],
+        )
+        if kept:
+            sections[bucket_id] = make_section(
+                bucket_id,
+                state=ExternalState.DATA_AVAILABLE.value,
+                evidence={"items": kept},
+                source_trace_ids=available_trace_ids[:5],
+            )
+        else:
+            sections[bucket_id] = make_section(
+                bucket_id,
+                state=ExternalState.INSUFFICIENT_SIGNAL.value,
+            )
+
+    # ── Review intelligence ──
+    has_reviews = (rev_count > 0) or len(rev_excerpts) > 0
+    sections["review_intelligence"] = make_section(
+        "review_intelligence",
+        state=ExternalState.DATA_AVAILABLE.value if has_reviews else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={
+            "reviews": response.get("reviews"),
+            "review_themes": response.get("review_themes"),
+            "review_excerpts": rev_excerpts,
+        } if has_reviews else None,
+    )
+
+    # ── Strategic Roadmap (per-horizon, provenance-enforced) ──
+    rd = response.get("roadmap") or {}
+    horizons = (
+        ("seven_day_quick_wins", "quick_wins"),
+        ("thirty_day_priorities", "priorities"),
+        ("ninety_day_strategic_goals", "strategic"),
+    )
+    horizon_results: Dict[str, List[Dict[str, Any]]] = {}
+    for horizon_id, horizon_key in horizons:
+        raw_items = rd.get(horizon_key) or []
+        kept = filter_roadmap_items_with_provenance(
+            raw_items,
+            available_trace_ids=available_trace_ids,
+            available_competitor_names=[c for c in competitor_names if c],
+            available_brand_metric_names=brand_metric_names,
+        )
+        horizon_results[horizon_id] = kept
+        if kept:
+            sections[horizon_id] = make_section(
+                horizon_id,
+                state=ExternalState.DATA_AVAILABLE.value,
+                evidence={"items": kept},
+                source_trace_ids=available_trace_ids[:5],
+            )
+        else:
+            sections[horizon_id] = make_section(
+                horizon_id,
+                state=ExternalState.INSUFFICIENT_SIGNAL.value,
+            )
+
+    any_horizon_has_items = any(len(v) > 0 for v in horizon_results.values())
+    sections["strategic_roadmap"] = make_section(
+        "strategic_roadmap",
+        state=ExternalState.DATA_AVAILABLE.value if any_horizon_has_items else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={
+            "horizons": {k: horizon_results[k] for k, _ in horizons},
+        } if any_horizon_has_items else None,
+        source_trace_ids=available_trace_ids[:5],
+    )
+
+    # ── Footer / actions (entitlement-aware UI element states) ──
+    sections["pdf_download"] = make_section(
+        "pdf_download",
+        state=ExternalState.DATA_AVAILABLE.value,
+        evidence={"endpoint": "/api/reports/cmo-report/pdf"},
+    )
+    sections["share_report"] = make_section(
+        "share_report",
+        state=ExternalState.DATA_AVAILABLE.value,
+        evidence={"share": True},
+    )
+    persisted = bool(enrichment)
+    sections["business_dna_persistence"] = make_section(
+        "business_dna_persistence",
+        state=ExternalState.DATA_AVAILABLE.value if persisted else ExternalState.PROCESSING.value,
+        evidence={"persisted": True, "report_id": response.get("report_id")} if persisted else None,
+    )
+
+    # ── Optional sections (only emit when there's real evidence) ──
+    sigs = enrichment.get("intelligence_actions") or enrichment.get("signals") or []
+    if isinstance(sigs, list) and sigs:
+        sections["signals"] = make_section(
+            "signals",
+            state=ExternalState.DATA_AVAILABLE.value,
+            evidence={"count": len(sigs)},
+            source_trace_ids=available_trace_ids[:10],
+        )
+    else:
+        sections["signals"] = make_section("signals", state=ExternalState.INSUFFICIENT_SIGNAL.value)
+
+    products = enrichment.get("products_services") or enrichment.get("products") or []
+    if isinstance(products, list) and products:
+        clean_products = [
+            p for p in products
+            if isinstance(p, str) and not is_placeholder_string(p)
+        ]
+        if clean_products:
+            sections["products_services"] = make_section(
+                "products_services",
+                state=ExternalState.DATA_AVAILABLE.value,
+                evidence={"items": clean_products},
+            )
+        else:
+            sections["products_services"] = make_section(
+                "products_services", state=ExternalState.INSUFFICIENT_SIGNAL.value,
+            )
+    else:
+        sections["products_services"] = make_section(
+            "products_services", state=ExternalState.INSUFFICIENT_SIGNAL.value,
+        )
+
+    abn = enrichment.get("abn") or enrichment.get("business_abn")
+    if abn:
+        sections["abn_business_identity"] = make_section(
+            "abn_business_identity",
+            state=ExternalState.DATA_AVAILABLE.value,
+            evidence={"abn": str(abn)},
+        )
+    else:
+        sections["abn_business_identity"] = make_section(
+            "abn_business_identity", state=ExternalState.INSUFFICIENT_SIGNAL.value,
+        )
+
+    # Final validation pass: every section must satisfy SectionEvidence
+    # contract. Run validate_section_evidence in case a future caller
+    # introduces a regression.
+    for sid, payload in sections.items():
+        validate_section_evidence(payload, section_id=sid)
+
+    return sections
+
+
 @router.get("/intelligence/cmo-report")
 async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     """
@@ -1062,7 +1404,15 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
 
     # 3) No enrichment -> clean calibrating state (not a half-populated stub).
     if not enrichment:
-        return _cmo_empty_shell(user_id, company)
+        empty = _cmo_empty_shell(user_id, company)
+        # E6 (2026-05-04): Even in the empty/processing path, return per-section
+        # SectionEvidence so the frontend can render PROCESSING banners for
+        # every section consistently. Each section's state will be PROCESSING
+        # (calibration not yet complete).
+        empty["sections"] = _build_section_evidence_for_cmo(
+            empty, {}, is_processing=True,
+        )
+        return scrub_response_for_external(empty)
 
     # 4) Map enrichment -> CMO response shape.
     company_from_enrichment = (
@@ -1285,6 +1635,19 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
                 # response (if any) and annotate state on a sibling key.
                 response[f"{_key}_state"] = sanitized_val.get("state")
                 response[f"{_key}_message"] = sanitized_val.get("message")
+
+    # 9) E6 (2026-05-04): Per-section evidence contract.
+    # Every CMO Report section must be returned as a SectionEvidence object
+    # with explicit state + sanitised reason + provenance trace ids. Generic
+    # SWOT/Roadmap items that fail the placeholder denylist OR the provenance
+    # check are dropped, and the parent section flips to INSUFFICIENT_SIGNAL.
+    #
+    # Per Andreas's PR #449 follow-up: thin/templated reports are an
+    # AUTOMATIC FAIL. The per-section evidence contract makes it impossible
+    # for the frontend to render a generic Marketing-101 SWOT or roadmap.
+    response["sections"] = _build_section_evidence_for_cmo(
+        response, enrichment, is_processing=False,
+    )
 
     return scrub_response_for_external(response)
 
