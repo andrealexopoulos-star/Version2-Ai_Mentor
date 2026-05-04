@@ -888,6 +888,215 @@ async def llm_trinity_chat(
     return content
 
 
+async def llm_trinity_synthesis(
+    system_message: str,
+    user_message: str,
+    *,
+    messages: list = None,
+    temperature: float = 0.35,
+    max_tokens: int = 2400,
+    timeout: float = 90,
+    user_id: str = None,
+    tier: str = None,
+    json_only: bool = True,
+) -> str:
+    """CMO-section synthesis variant of the Trinity quorum.
+
+    Identical fan-out shape to `llm_trinity_chat` (3 providers in parallel,
+    flagship Opus does the synthesis leg) but tuned for the R2E synthesis
+    prompts in `core/synthesis_prompts.py`:
+
+      - lower default temperature (0.35) for evidence-backed JSON output
+      - larger max_tokens (2400) so a full SWOT or roadmap fits
+      - longer timeout (90s) — synthesis prompts are larger than
+        boardroom-style queries because they carry the STRUCTURED INPUT
+        block; flagship Opus needs a touch more wall-clock.
+      - `json_only=True` adds an explicit instruction to the synthesis-leg
+        system message, which materially improves the rate of clean JSON
+        responses (vs the chat synthesis path which expects narrative).
+
+    Falls back to OpenAI / Gemini for the synthesis leg only if the
+    flagship Opus call errors at the transport layer (network/5xx). If a
+    Trinity provider is missing entirely, the call still proceeds with
+    whatever providers are configured (matches `llm_trinity_chat` behavior).
+
+    Returns: the synthesised text (best-effort JSON when json_only=True).
+
+    NOTE: this helper is async. The caller is responsible for parsing the
+    JSON return via `core.synthesis_prompts.parse_synthesis_json`. We do
+    not parse here so the helper stays a pure transport.
+    """
+    sentinel = await _check_llm_pause_and_maybe_sentinel()
+    if sentinel is not None:
+        return sentinel["content"]
+
+    await _check_budget_or_raise(user_id, tier)
+
+    tasks = []
+    labels = []
+    models_used = []
+
+    if OPENAI_API_KEY:
+        labels.append("openai")
+        models_used.append(OPENAI_MODEL_DEEP)
+        tasks.append(_openai_chat(
+            model=OPENAI_MODEL_DEEP,
+            system_message=system_message,
+            user_message=user_message,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            api_key=OPENAI_API_KEY,
+        ))
+    if GOOGLE_API_KEY:
+        labels.append("google")
+        models_used.append(GEMINI_MODEL_PRO)
+        tasks.append(_gemini_chat(
+            model=GEMINI_MODEL_PRO,
+            system_message=system_message,
+            user_message=user_message,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            api_key=GOOGLE_API_KEY,
+        ))
+    if ANTHROPIC_API_KEY:
+        labels.append("anthropic")
+        models_used.append(ANTHROPIC_MODEL_OPUS)
+        tasks.append(_anthropic_chat(
+            model=ANTHROPIC_MODEL_OPUS,
+            system_message=system_message,
+            user_message=user_message,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            api_key=ANTHROPIC_API_KEY,
+        ))
+
+    if not tasks:
+        raise ValueError("No LLM provider keys configured for Trinity synthesis")
+
+    raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+    candidates = []
+    for label, model_name, result in zip(labels, models_used, raw_results):
+        if isinstance(result, Exception):
+            logger.warning(f"[Trinity Synthesis] {label} candidate failed: {result}")
+            continue
+        if isinstance(result, tuple):
+            text, usage = result
+            await _record_usage(
+                user_id, model_name,
+                usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0),
+                feature="trinity_synthesis_candidate",
+                tier=tier,
+                action="trinity_synthesis_candidate",
+                tier_at_event=tier,
+            )
+        else:
+            text = result
+        if text:
+            candidates.append((label, str(text).strip()))
+
+    if not candidates:
+        raise RuntimeError("Trinity synthesis failed across all providers")
+    if len(candidates) == 1:
+        return candidates[0][1]
+
+    # Synthesis-leg system message. The CMO synthesis path is JSON-only
+    # by default (the section prompts in synthesis_prompts.py all specify
+    # an OUTPUT CONTRACT JSON schema). Explicitly reinforcing JSON-only
+    # at the synthesis leg materially reduces the chat-style preamble
+    # that downstream parse_synthesis_json then has to strip.
+    synthesis_system_lines = [
+        "You are BIQc Trinity Fusion (CMO Synthesis). Merge the candidate "
+        "JSON analyses below into ONE evidence-backed JSON output that "
+        "satisfies the OUTPUT CONTRACT visible in the user message.",
+        "Pick items that cite real signals from the structured input. "
+        "Drop any item that does not cite a signal — do not patch it with "
+        "a generic phrase. If candidates conflict on a number, prefer the "
+        "value that appears in MORE candidate outputs (quorum), or the most "
+        "specific candidate. Never invent a signal that no candidate produced.",
+        "Do not mention model names, provider details, supplier names, "
+        "API keys, or internal architecture. Customer-facing language only.",
+    ]
+    if json_only:
+        synthesis_system_lines.append(
+            "RETURN VALID JSON ONLY — no prose preamble, no markdown code "
+            "fences, no chat-style commentary. The first character of your "
+            "response must be `{` and the last character must be `}`."
+        )
+    synthesis_system = " ".join(synthesis_system_lines)
+    synthesis_user = "\n\n".join([f"[{label}]\n{text[:3000]}" for label, text in candidates])
+
+    if ANTHROPIC_API_KEY:
+        try:
+            content, usage = await _anthropic_chat(
+                model=ANTHROPIC_MODEL_OPUS,
+                system_message=synthesis_system,
+                user_message=synthesis_user,
+                messages=None,
+                temperature=0.3,
+                max_tokens=max_tokens,
+                timeout=timeout,
+                api_key=ANTHROPIC_API_KEY,
+            )
+            await _record_usage(
+                user_id, ANTHROPIC_MODEL_OPUS,
+                usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0),
+                feature="trinity_synthesis_fusion",
+                tier=tier,
+                action="trinity_synthesis_fusion",
+                tier_at_event=tier,
+            )
+            return content
+        except Exception as exc:
+            logger.warning(f"[Trinity Synthesis] flagship Opus fusion failed, falling back: {exc}")
+
+    if OPENAI_API_KEY:
+        fused, usage = await _openai_chat(
+            model=OPENAI_MODEL_DEEP,
+            system_message=synthesis_system,
+            user_message=synthesis_user,
+            messages=None,
+            temperature=0.3,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            api_key=OPENAI_API_KEY,
+        )
+        await _record_usage(
+            user_id, OPENAI_MODEL_DEEP,
+            usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0),
+            feature="trinity_synthesis_fusion",
+            tier=tier,
+            action="trinity_synthesis_fusion",
+            tier_at_event=tier,
+        )
+        return fused
+
+    content, usage = await _gemini_chat(
+        model=GEMINI_MODEL_PRO,
+        system_message=synthesis_system,
+        user_message=synthesis_user,
+        messages=None,
+        temperature=0.3,
+        max_tokens=max_tokens,
+        timeout=timeout,
+        api_key=GOOGLE_API_KEY,
+    )
+    await _record_usage(
+        user_id, GEMINI_MODEL_PRO,
+        usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0),
+        feature="trinity_synthesis_fusion",
+        tier=tier,
+        action="trinity_synthesis_fusion",
+        tier_at_event=tier,
+    )
+    return content
+
+
 async def llm_chat_with_usage(
     system_message: str,
     user_message: str,
