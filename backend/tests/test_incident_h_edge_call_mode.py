@@ -37,14 +37,25 @@ def _load_symbols():
     importing the full module (which pulls in FastAPI / Supabase / etc).
     """
     tree = ast.parse(CALIBRATION_SOURCE.read_text(encoding="utf-8"))
-    wanted_funcs = {"_call_edge_function"}
+    wanted_funcs = {
+        "_call_edge_function",
+        # Marjo P0 / E1 (2026-05-04): _call_edge_function now routes its
+        # return through _surface_edge_non_200 — load the helper too.
+        "_surface_edge_non_200",
+    }
     wanted_classes = {"EdgeCallMode"}
+    wanted_assigns = {"MISSION_EDGE_FUNCTIONS_ZERO_401"}
     selected: list = []
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in wanted_funcs:
             selected.append(node)
         elif isinstance(node, ast.ClassDef) and node.name in wanted_classes:
             selected.append(node)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id in wanted_assigns:
+                    selected.append(node)
+                    break
     module = ast.Module(body=selected, type_ignores=[])
 
     class _StubClient:
@@ -61,6 +72,29 @@ def _load_symbols():
     def _get_edge_client_stub():
         return _StubClient()
 
+    class _NoopLogger:
+        def error(self, *args, **kwargs):
+            pass
+
+        def warning(self, *args, **kwargs):
+            pass
+
+        def info(self, *args, **kwargs):
+            pass
+
+        def debug(self, *args, **kwargs):
+            pass
+
+    # Real-shaped stub for _edge_result_failed used by _surface_edge_non_200.
+    def _edge_result_failed_stub(result):
+        if not isinstance(result, dict):
+            return True
+        try:
+            status_code = int(result.get("_http_status") or 200)
+        except Exception:
+            status_code = 200
+        return status_code >= 400 or result.get("ok") is False
+
     namespace: Dict[str, Any] = {
         "Any": Any,
         "Dict": Dict,
@@ -70,6 +104,8 @@ def _load_symbols():
         "httpx": types.SimpleNamespace(TimeoutException=TimeoutError),
         "_get_edge_client": _get_edge_client_stub,
         "_normalize_edge_result": lambda fn, status, data: {"ok": status == 200, **data},
+        "_edge_result_failed": _edge_result_failed_stub,
+        "logger": _NoopLogger(),
     }
     exec(compile(module, str(CALIBRATION_SOURCE), "exec"), namespace)
     return namespace

@@ -191,6 +191,101 @@ async def _crawl_site_context(seed_url: str, seed_html: str, max_pages: int = 10
 _edge_client: Optional[httpx.AsyncClient] = None
 
 
+# ─── Marjo P0 / E1 (2026-05-04) — Zero-401 explicit surfacing ─────────────────
+# Standing rule (memory: feedback_zero_401_tolerance.md, 2026-04-23):
+#   "There MUST Never be a 401. There must be a legitimate 200 at all times on
+#    every single enrichment and part of the scan process. ZERO fall-backs."
+#
+# Anti-pattern this guards against: a non-200 from one of the 8 mission edge
+# functions silently lands in business_dna_enrichment.enrichment.ai_errors and
+# the user sees a confident-looking 75/100 score derived from 35% of inputs.
+#
+# This module-level set captures the canonical 8 URL-scan calibration edge
+# functions per the Marjo Critical Incident E1 brief. The wider scan also calls
+# competitor-monitor / market-analysis-ai / market-signal-scorer / semrush-
+# domain-intel; those are tracked independently by E2 / dedicated agents.
+#
+# Surfacing behaviour:
+#   - Default (production today): every non-200 from a mission function is
+#     logged at ERROR with structured fields (function, status, code, snippet);
+#     the result still flows into the existing ai_errors collection so frontend
+#     gets the Contract v2 sanitised view and the scan does not halt.
+#   - Strict mode (STRICT_EDGE_ZERO_401=1): _cached_edge raises EdgeFunctionNonOk
+#     after logging, so the scan fails loudly. Useful for staging gates and
+#     post-deploy verification per ops_daily_calibration_check.md.
+MISSION_EDGE_FUNCTIONS_ZERO_401 = {
+    "browse-ai-reviews",
+    "calibration-psych",      # canonical hyphen slug
+    "calibration_psych",      # legacy underscore alias (canonicalised in routes/integrations.py)
+    "business-identity-lookup",
+    "calibration-business-dna",
+    "calibration-sync",
+    "deep-web-recon",
+    "warm-cognitive-engine",
+    "social-enrichment",
+}
+
+
+class EdgeFunctionNonOk(RuntimeError):
+    """Raised when STRICT_EDGE_ZERO_401=1 and a mission edge function returns
+    a non-2xx contract envelope. Caller is expected to translate this into a
+    Contract v2 sanitised external response (DATA_UNAVAILABLE) — never expose
+    the underlying status / supplier name / code to the frontend.
+    """
+
+    def __init__(self, function_name: str, status: Any, code: str, error: str):
+        self.function_name = function_name
+        self.status = status
+        self.code = code
+        self.error = error
+        super().__init__(
+            f"edge function {function_name} non-2xx: status={status} code={code}"
+        )
+
+
+def _strict_edge_zero_401_enabled() -> bool:
+    """Return True iff the operator has opted into strict zero-401 enforcement.
+
+    Default is False so this guardrail is purely additive in production until
+    Andreas issues code 13041978 to flip the env switch in Azure App Service.
+    """
+    raw = (os.environ.get("STRICT_EDGE_ZERO_401") or "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _surface_edge_non_200(function_name: str, result: Dict[str, Any]) -> None:
+    """Explicit structured logging for any non-200 from a mission edge function.
+
+    Backend-only logging (per BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2):
+    - Internal log line carries supplier name, status, code, error snippet.
+    - This MUST NEVER be passed verbatim to the frontend; the sanitizer in
+      core/response_sanitizer.py is the single boundary that converts these
+      internal records into the external state enum.
+    """
+    if function_name not in MISSION_EDGE_FUNCTIONS_ZERO_401:
+        return
+    if not isinstance(result, dict):
+        logger.error(
+            "[zero-401 P0] mission edge function %s returned non-dict payload type=%s",
+            function_name,
+            type(result).__name__,
+        )
+        return
+    if not _edge_result_failed(result):
+        return
+    status = result.get("_http_status")
+    code = result.get("code") or "EDGE_FUNCTION_FAILED"
+    error_snippet = str(result.get("error") or result.get("detail") or "")[:240]
+    logger.error(
+        "[zero-401 P0] mission edge function %s returned non-200 — "
+        "status=%s code=%s error=%r",
+        function_name,
+        status,
+        code,
+        error_snippet,
+    )
+
+
 def _get_edge_client() -> httpx.AsyncClient:
     global _edge_client
     if _edge_client is None or _edge_client.is_closed:
@@ -322,6 +417,16 @@ async def _call_edge_function(
         "Content-Type": "application/json",
     }
     client = _get_edge_client()
+
+    def _finalize(result: Dict[str, Any]) -> Dict[str, Any]:
+        # Marjo P0 / E1 (2026-05-04): every exit path of _call_edge_function
+        # routes through here so non-200s from a mission edge function are
+        # explicitly surfaced to backend logs. Per zero-401 standing rule, no
+        # mission function may silently return a failure shape; the operator
+        # must see it. See feedback_zero_401_tolerance.md.
+        _surface_edge_non_200(function_name, result)
+        return result
+
     for attempt in range(2):
         try:
             res = await client.post(endpoint, json=payload or {}, headers=headers)
@@ -331,39 +436,41 @@ async def _call_edge_function(
             # Some infra/warmup edge functions intentionally return 204 with
             # no JSON body. Treat this as a healthy success envelope.
             if res.status_code == 204:
-                return _normalize_edge_result(
-                    function_name,
-                    res.status_code,
-                    {"ok": True, "code": "NO_CONTENT", "status": "ok"},
+                return _finalize(
+                    _normalize_edge_result(
+                        function_name,
+                        res.status_code,
+                        {"ok": True, "code": "NO_CONTENT", "status": "ok"},
+                    )
                 )
             try:
                 data = res.json()
             except Exception:
                 data = {"raw": (res.text or "")[:1200]}
-            return _normalize_edge_result(function_name, res.status_code, data)
+            return _finalize(_normalize_edge_result(function_name, res.status_code, data))
         except httpx.TimeoutException:
             if attempt == 0:
                 await asyncio.sleep(2)
                 continue
-            return {
+            return _finalize({
                 "ok": False,
                 "error": f"timeout after retry calling {function_name}",
                 "code": "EDGE_FUNCTION_TIMEOUT",
                 "_http_status": 504,
-            }
+            })
         except Exception as e:
-            return {
+            return _finalize({
                 "ok": False,
                 "error": str(e)[:220],
                 "code": "EDGE_FUNCTION_UNAVAILABLE",
                 "_http_status": 502,
-            }
-    return {
+            })
+    return _finalize({
         "ok": False,
         "error": f"exhausted retries for {function_name}",
         "code": "EDGE_FUNCTION_UNAVAILABLE",
         "_http_status": 502,
-    }
+    })
 
 
 def _extract_meta_content(html: str, key: str) -> str:
@@ -2437,6 +2544,25 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 )
                 if isinstance(result, dict) and not _edge_result_failed(result):
                     asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
+                # Marjo P0 / E1 (2026-05-04): opt-in strict zero-401 enforcement.
+                # When STRICT_EDGE_ZERO_401=1 and a mission edge function returns
+                # a non-2xx contract envelope, raise so the scan halts loudly
+                # rather than landing the failure in ai_errors with a cosmetic
+                # "DATA_UNAVAILABLE" sanitised banner. Default off to preserve
+                # current production semantics until Andreas issues 13041978
+                # to flip the env switch.
+                if (
+                    _strict_edge_zero_401_enabled()
+                    and fn_name in MISSION_EDGE_FUNCTIONS_ZERO_401
+                    and isinstance(result, dict)
+                    and _edge_result_failed(result)
+                ):
+                    raise EdgeFunctionNonOk(
+                        function_name=fn_name,
+                        status=result.get("_http_status"),
+                        code=str(result.get("code") or "EDGE_FUNCTION_FAILED"),
+                        error=str(result.get("error") or result.get("detail") or "")[:240],
+                    )
                 return result
 
             (
@@ -2538,6 +2664,39 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         "error": str((edge_result or {}).get("error") or (edge_result or {}).get("detail") or "edge_function_failed"),
                         "status": (edge_result or {}).get("_http_status"),
                     })
+
+            # Marjo P0 / E1 (2026-05-04): post-gather zero-401 enforcement.
+            # When STRICT_EDGE_ZERO_401=1, any non-2xx contract envelope from a
+            # mission edge function (per MISSION_EDGE_FUNCTIONS_ZERO_401) raises
+            # so the outer scan handler returns a Contract v2 sanitised
+            # DATA_UNAVAILABLE response — never landing in ai_errors with a
+            # cosmetic confidence score (root cause of the 2026-04-23 5%-data
+            # CMO Report incident). Default off; flip in Azure App Service env
+            # only after Andreas issues code 13041978.
+            if _strict_edge_zero_401_enabled():
+                strict_blockers = [
+                    {
+                        "function": fn_name_check,
+                        "status": (res or {}).get("_http_status"),
+                        "code": str((res or {}).get("code") or "EDGE_FUNCTION_FAILED"),
+                    }
+                    for fn_name_check, res in edge_failures
+                    if fn_name_check in MISSION_EDGE_FUNCTIONS_ZERO_401
+                    and _edge_result_failed(res)
+                ]
+                if strict_blockers:
+                    logger.error(
+                        "[zero-401 P0] STRICT mode: %d mission edge function(s) "
+                        "returned non-200 — halting scan: %s",
+                        len(strict_blockers),
+                        strict_blockers,
+                    )
+                    raise EdgeFunctionNonOk(
+                        function_name=strict_blockers[0]["function"],
+                        status=strict_blockers[0]["status"],
+                        code=strict_blockers[0]["code"],
+                        error=f"{len(strict_blockers)} mission edge function(s) failed",
+                    )
 
             # Ingest identity/profile fields from dedicated edge outputs only
             # when they add real signal over baseline scrape extraction.
