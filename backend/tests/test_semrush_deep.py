@@ -500,6 +500,60 @@ class TestNoKeyOrCodeLeak:
             assert forbidden not in serialized, f"R2D leak: {forbidden!r} in sanitised payload"
 
 
+# ─── Test 8b (F15 2026-05-04): authority_rank rename surfaces externally ──
+
+
+class TestSemrushRankRenamedToAuthorityRank:
+    """F15 follow-up: R2D added `_KEY_RENAMES = {"semrush_rank": "authority_rank"}`
+    in the sanitiser. R-R2D's audit found that MarketPage.js was still
+    reading the old key. F15 updated the frontend AND added a defensive
+    fallback. This test asserts the BACKEND side: the sanitiser actually
+    performs the rename and the legacy key is gone from the external envelope.
+    """
+
+    def _build_sanitised_envelope(self):
+        """Helper: full SEMrush enrichment → sanitised envelope, with all
+        edge tools marked OK so seo_analysis lands in DATA_AVAILABLE state
+        and the rename can be observed."""
+        from backend.core.response_sanitizer import sanitize_enrichment_for_external
+
+        enrichment: dict = {}
+        _apply_semrush_merge(enrichment, _semrush_full_response())
+        # Mark every edge tool that powers any SEMrush-derived section as OK
+        # so all of them roll up to DATA_AVAILABLE (otherwise the sanitiser
+        # blanks the section to a {state, message, score, status} skeleton).
+        enrichment["sources"] = {
+            "edge_tools": {
+                "semrush_domain_intel": {"ok": True, "status": 200},
+                "deep_web_recon": {"ok": True, "status": 200},
+                "competitor_monitor": {"ok": True, "status": 200},
+                "browse_ai_reviews": {"ok": True, "status": 200},
+                "social_enrichment": {"ok": True, "status": 200},
+                "market_analysis_ai": {"ok": True, "status": 200},
+                "market_signal_scorer": {"ok": True, "status": 200},
+            }
+        }
+        return sanitize_enrichment_for_external(enrichment)
+
+    def test_authority_rank_present_after_sanitise(self):
+        envelope = self._build_sanitised_envelope()
+        seo = (envelope.get("enrichment") or {}).get("seo_analysis") or {}
+
+        # NEW canonical key must be present and carry the rank value.
+        assert seo.get("authority_rank") == 145000, (
+            f"sanitiser did not rename semrush_rank → authority_rank. seo_analysis={seo!r}"
+        )
+
+    def test_legacy_semrush_rank_key_stripped_after_sanitise(self):
+        envelope = self._build_sanitised_envelope()
+        seo = (envelope.get("enrichment") or {}).get("seo_analysis") or {}
+
+        # OLD supplier-prefixed key must NOT be present at top of seo_analysis.
+        assert "semrush_rank" not in seo, (
+            f"Legacy 'semrush_rank' key leaked through sanitiser. seo_analysis keys={list(seo.keys())!r}"
+        )
+
+
 # ─── Test 9: 24h cache TTL obeyed ─────────────────────────────────────────
 
 

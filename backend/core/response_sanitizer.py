@@ -118,7 +118,12 @@ SECTION_UNCERTAINTY_MESSAGE: Mapping[str, str] = {
 # of the contract — centralises what "leak" means.
 
 BANNED_SUPPLIER_TOKENS: Tuple[str, ...] = (
-    "SEMRUSH", "Semrush", "semrush",
+    # F15 (2026-05-04): added "SEMrush" canonical spelling (capital S+E+M,
+    # lowercase r-u-s-h). R-R2D's verification test caught it missing —
+    # the literal "SEMrush rank {value}" was leaking through calibration.py
+    # because none of {SEMRUSH, Semrush, semrush} matched the canonical
+    # marketing spelling.
+    "SEMRUSH", "SEMrush", "Semrush", "semrush",
     "OPENAI", "OpenAI", "openai", "gpt-4", "gpt-5", "gpt-4o",
     "ANTHROPIC", "Anthropic", "claude-3", "claude-4",
     "PERPLEXITY", "Perplexity", "perplexity", "sonar",
