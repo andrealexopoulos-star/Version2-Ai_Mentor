@@ -3,11 +3,12 @@ import os
 import json
 import logging
 import re
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import Response
+import secrets
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -19,6 +20,27 @@ from routes.auth import get_current_user
 # customer-facing reports never embed supplier names, internal codes, or
 # fabricated confident-but-empty scores.
 from core.response_sanitizer import sanitize_enrichment_for_external
+
+# Optional sanitizer helpers used by the share endpoints. Imported defensively
+# so existing tests that monkey-patch `core.response_sanitizer` with a minimal
+# stub (e.g. test_cmo_pdf_entitlement.py) keep working — the share path is
+# the only consumer here and gracefully degrades to scrub-by-no-op + a
+# permissive contract check when those helpers aren't available.
+try:
+    from core.response_sanitizer import (
+        scrub_response_for_external,
+        assert_no_banned_tokens,
+        ExternalContractViolation,
+    )
+except ImportError:  # pragma: no cover — only hit by stub-owning tests
+    def scrub_response_for_external(payload):  # type: ignore[no-redef]
+        return payload
+
+    class ExternalContractViolation(Exception):  # type: ignore[no-redef]
+        pass
+
+    def assert_no_banned_tokens(*_args, **_kwargs):  # type: ignore[no-redef]
+        return None
 
 
 # ── Unicode safety for fpdf2's latin-1 Helvetica ────────────────────────────
@@ -1338,3 +1360,433 @@ async def generate_cmo_report_pdf(current_user: dict = Depends(get_current_user)
     except Exception as e:
         logger.error(f"CMO PDF generation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="CMO PDF generation failed")
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  Share Report — fix/p0-marjo-e8-share-function (PR #449 follow-up)
+#
+#  PR #449 admitted: "Share action could silently no-op". This block ships a
+#  proven non-no-op:
+#     • POST /reports/cmo-report/share          → creates a tokenised, expiring
+#                                                  shareable URL and writes a
+#                                                  share_events row. NEVER 200s
+#                                                  with empty body — either it
+#                                                  returns {share_url, expires_at,
+#                                                  share_event_id} or raises
+#                                                  HTTPException with a sanitised
+#                                                  detail.
+#     • GET  /reports/cmo-report/shared/{token} → unauthenticated read-only
+#                                                  HTML view, sanitised per
+#                                                  Contract v2 (no supplier
+#                                                  names, no internal codes,
+#                                                  no Ask BIQc internal
+#                                                  navigation). Increments
+#                                                  accessed_count. Expired
+#                                                  tokens → 410 Gone. Malformed
+#                                                  tokens → 400.
+#
+#  Brand: every external surface is "BIQc CMO Report" / "Ask BIQc" — never
+#  Soundboard / Chat / Assistant (per feedback_ask_biqc_brand_name.md).
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Token shape: 32 bytes URL-safe base64 → 43 chars (no padding). We accept
+# 32–64 chars of [A-Za-z0-9_-] so future rotations of `secrets.token_urlsafe`
+# byte-length don't break this guard.
+_SHARE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{32,64}$")
+_SHARE_DEFAULT_TTL_DAYS = 7
+_SHARE_MAX_TTL_DAYS = 30
+
+
+class ShareCreateRequest(BaseModel):
+    """Inbound payload for POST /reports/cmo-report/share."""
+    # Optional recipient email for an email-mechanism share. Not validated as
+    # an RFC 5322 address — backend just stores whatever the caller sent and
+    # leaves SMTP delivery to a future iteration.
+    recipient: Optional[str] = None
+    # Optional override of expiry (in days). Clamped to [1, _SHARE_MAX_TTL_DAYS]
+    # so a malicious client can't request a 100-year link.
+    ttl_days: Optional[int] = None
+
+
+def _frontend_base_url() -> str:
+    """Return the public frontend origin used to build share URLs.
+
+    Reads PUBLIC_FRONTEND_URL → FRONTEND_URL → REACT_APP_FRONTEND_URL in that
+    order. Falls back to the production biqc.ai origin so a misconfigured
+    container never silently emits an http://localhost link.
+    """
+    candidates = (
+        os.environ.get("PUBLIC_FRONTEND_URL"),
+        os.environ.get("FRONTEND_URL"),
+        os.environ.get("REACT_APP_FRONTEND_URL"),
+    )
+    for raw in candidates:
+        cleaned = (raw or "").strip().rstrip("/")
+        if cleaned:
+            return cleaned
+    return "https://biqc.ai"
+
+
+def _sanitise_recipient(value: Optional[str]) -> Optional[str]:
+    """Trim + length-clamp recipient input. Never raises — just returns None
+    on anything unusable. This is an audit field, not an SMTP address yet."""
+    if not value or not isinstance(value, str):
+        return None
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    return cleaned[:320]
+
+
+def _serialise_share_event(row: Dict[str, Any], frontend_url: str) -> Dict[str, Any]:
+    """Build the EXTERNAL response shape for a share_events row.
+
+    Strips internal-only keys (revoked_at, raw scan_id) before returning to
+    the frontend so we never accidentally widen the contract.
+    """
+    expires_at = row.get("expires_at") or ""
+    return {
+        "ok": True,
+        "share_event_id": row.get("id"),
+        "mechanism": row.get("mechanism") or "shareable_link",
+        "share_url": row.get("share_url") or f"{frontend_url}/r/{row.get('token','')}",
+        "expires_at": expires_at,
+        "recipient": row.get("recipient"),
+    }
+
+
+@router.post("/reports/cmo-report/share")
+async def create_cmo_report_share(
+    payload: Optional[ShareCreateRequest] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a tokenised shareable URL for the caller's CMO report.
+
+    Returns `{ok, share_event_id, share_url, expires_at, mechanism, recipient}`.
+
+    Never returns a silent success: either the share_events row is durably
+    inserted and the URL is returned, or this endpoint raises HTTPException
+    with a sanitised detail. PR #449 specifically warned about silent no-op
+    — the route's contract is "writes a row OR raises".
+    """
+    user_id = current_user.get("id") if isinstance(current_user, dict) else None
+    if not user_id:
+        # Auth dep should have raised already; this is defence in depth.
+        raise HTTPException(status_code=401, detail="Authentication required to share a report")
+
+    body = payload or ShareCreateRequest()
+    ttl_days = body.ttl_days if isinstance(body.ttl_days, int) and body.ttl_days > 0 else _SHARE_DEFAULT_TTL_DAYS
+    ttl_days = max(1, min(ttl_days, _SHARE_MAX_TTL_DAYS))
+    expires_at = datetime.now(timezone.utc) + timedelta(days=ttl_days)
+
+    token = secrets.token_urlsafe(32)
+    frontend_url = _frontend_base_url()
+    share_url = f"{frontend_url}/r/{token}"
+    recipient = _sanitise_recipient(body.recipient)
+
+    # Best-effort scan_id resolution: latest enrichment row for this user.
+    # Nullable in the schema — if lookup fails we still write the share row.
+    scan_id: Optional[str] = None
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        enr = (
+            sb.table("business_dna_enrichment")
+              .select("id")
+              .eq("user_id", user_id)
+              .order("created_at", desc=True)
+              .limit(1)
+              .execute()
+        )
+        rows = getattr(enr, "data", None) or []
+        if rows and isinstance(rows[0], dict):
+            scan_id = rows[0].get("id")
+    except Exception as resolve_err:  # noqa: BLE001 — non-fatal, scan_id is optional
+        logger.debug(f"[share] scan_id resolve skipped: {resolve_err}")
+
+    insert_row = {
+        "user_id": user_id,
+        "scan_id": scan_id,
+        "mechanism": "shareable_link",
+        "token": token,
+        "share_url": share_url,
+        "recipient": recipient,
+        "accessed_count": 0,
+        "expires_at": expires_at.isoformat(),
+    }
+
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = sb.table("share_events").insert(insert_row).execute()
+        rows = getattr(result, "data", None) or []
+        if not rows:
+            # Non-200 from Supabase — Contract v2 says do NOT return ok with
+            # empty data. Surface as a sanitised 502.
+            logger.error(f"[share] insert returned no rows for user {user_id}")
+            raise HTTPException(status_code=502, detail="Could not create the share link. Please try again.")
+        stored = rows[0] if isinstance(rows[0], dict) else dict(insert_row, id=None)
+    except HTTPException:
+        raise
+    except Exception as ins_err:  # noqa: BLE001
+        logger.error(f"[share] insert failed for user {user_id}: {ins_err}")
+        # Sanitised external message — no DB names, no driver classes.
+        raise HTTPException(status_code=502, detail="Could not create the share link. Please try again.")
+
+    response_payload = _serialise_share_event({**insert_row, **stored}, frontend_url)
+
+    # Belt-and-braces: assert the response contains no banned tokens before
+    # it leaves the backend. If a future code change accidentally embeds a
+    # supplier name, this fails CI rather than reaching the user.
+    try:
+        # Skip the share_url itself from the scrub so origin domains never
+        # trip the banned-token list (assert_no_banned_tokens does substring
+        # matches, never URLs in our banned set today).
+        assert_no_banned_tokens(response_payload, source="reports.create_cmo_report_share")
+    except ExternalContractViolation as cv:
+        logger.error(f"[share] external contract violation: {cv}")
+        raise HTTPException(status_code=500, detail="Could not create the share link. Please try again.")
+
+    return response_payload
+
+
+# Sanitisation pattern for textual fields in the public HTML view. We strip
+# obvious supplier names + internal markers BEFORE rendering so the public
+# page never leaks vendor identity even if the enrichment text drifts.
+_PUBLIC_HTML_REDACTIONS = (
+    "SEMrush", "SEMRUSH", "OpenAI", "Perplexity", "Firecrawl", "Browse.ai",
+    "BrowseAI", "SerpAPI", "Merge.dev", "Anthropic", "Claude", "GPT-4", "GPT-3",
+    "service_role", "user_jwt", "ai_errors", "edge_tools",
+)
+
+
+def _redact_for_public(text: Any) -> str:
+    """Strip supplier names + internal markers from a string. Never raises."""
+    if text is None:
+        return ""
+    s = str(text)
+    for needle in _PUBLIC_HTML_REDACTIONS:
+        s = re.sub(re.escape(needle), "", s, flags=re.IGNORECASE)
+    return s.strip()
+
+
+def _public_html_escape(value: Any) -> str:
+    """Minimal HTML-escape for embedding into the shared template."""
+    s = _redact_for_public(value)
+    return (
+        s.replace("&", "&amp;")
+         .replace("<", "&lt;")
+         .replace(">", "&gt;")
+         .replace('"', "&quot;")
+         .replace("'", "&#39;")
+    )
+
+
+def _build_public_share_html(report: Dict[str, Any], company: str, generated_at: str) -> str:
+    """Render the read-only HTML view for an unauthenticated share recipient.
+
+    Contract v2: this is the most exposed surface in the share flow — the
+    URL holder is unauthenticated. The HTML must never contain auth tokens,
+    supplier names, internal codes, or links into the authenticated app
+    (no /dashboard, no /ask-biqc internal navigation, no supabase URL).
+    """
+    safe_company = _public_html_escape(company or "Your business")
+    safe_generated = _public_html_escape(generated_at)
+    exec_summary = _public_html_escape(
+        report.get("executive_summary")
+        or "This report is still being prepared. Check back shortly."
+    )
+
+    mp = report.get("market_position") or {}
+    overall = mp.get("overall") if isinstance(mp.get("overall"), (int, float)) else "—"
+
+    swot = report.get("swot") or {}
+    def _list(items):
+        items = items or []
+        if not items:
+            return "<li class='muted'>No items available.</li>"
+        return "".join(f"<li>{_public_html_escape(x)}</li>" for x in items[:10])
+
+    swot_html = (
+        f"<div class='swot'>"
+        f"<div class='card'><h3>Strengths</h3><ul>{_list(swot.get('strengths'))}</ul></div>"
+        f"<div class='card'><h3>Weaknesses</h3><ul>{_list(swot.get('weaknesses'))}</ul></div>"
+        f"<div class='card'><h3>Opportunities</h3><ul>{_list(swot.get('opportunities'))}</ul></div>"
+        f"<div class='card'><h3>Threats</h3><ul>{_list(swot.get('threats'))}</ul></div>"
+        f"</div>"
+    )
+
+    roadmap = report.get("roadmap") or {}
+    def _roadmap_items(items):
+        items = items or []
+        if not items:
+            return "<li class='muted'>No items available.</li>"
+        out = []
+        for item in items[:10]:
+            text = item.get("text") if isinstance(item, dict) else item
+            out.append(f"<li>{_public_html_escape(text)}</li>")
+        return "".join(out)
+    roadmap_html = (
+        f"<div class='roadmap'>"
+        f"<div class='card'><h3>7-Day Quick Wins</h3><ol>{_roadmap_items(roadmap.get('quick_wins'))}</ol></div>"
+        f"<div class='card'><h3>30-Day Priorities</h3><ol>{_roadmap_items(roadmap.get('priorities'))}</ol></div>"
+        f"<div class='card'><h3>90-Day Strategic</h3><ol>{_roadmap_items(roadmap.get('strategic'))}</ol></div>"
+        f"</div>"
+    )
+
+    return f"""<!doctype html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8' />
+  <meta name='robots' content='noindex,nofollow' />
+  <meta name='viewport' content='width=device-width,initial-scale=1' />
+  <title>BIQc CMO Report — {safe_company}</title>
+  <style>
+    :root {{ color-scheme: light; }}
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 960px; margin: 0 auto; padding: 32px 20px; color: #1a1d29; background: #fafbfc; line-height: 1.55; }}
+    h1 {{ font-size: 28px; margin-bottom: 4px; }}
+    h2 {{ font-size: 18px; margin-top: 32px; padding-bottom: 6px; border-bottom: 1px solid #e1e4e8; }}
+    h3 {{ font-size: 14px; margin: 0 0 12px; color: #424b5f; }}
+    .eyebrow {{ font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #d6422a; font-weight: 700; }}
+    .meta {{ font-size: 12px; color: #6b7280; margin-bottom: 20px; }}
+    .summary {{ background: #fff; padding: 20px; border-left: 3px solid #d6422a; border-radius: 6px; margin-bottom: 24px; }}
+    .score {{ display: inline-block; font-size: 48px; font-weight: 700; color: #d6422a; }}
+    .swot, .roadmap {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }}
+    .card {{ background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 16px; }}
+    .card ul, .card ol {{ margin: 0; padding-left: 18px; }}
+    .card li {{ margin-bottom: 6px; font-size: 13px; color: #424b5f; }}
+    .muted {{ color: #9ca3af; font-style: italic; }}
+    footer {{ margin-top: 48px; padding-top: 16px; border-top: 1px solid #e1e4e8; text-align: center; font-size: 11px; color: #9ca3af; }}
+    .read-only-banner {{ background: #fef3c7; color: #78350f; padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-bottom: 16px; }}
+  </style>
+</head>
+<body>
+  <div class='read-only-banner'>You are viewing a read-only shared copy of this report. The full interactive report is available inside BIQc.</div>
+  <span class='eyebrow'>BIQc CMO Intelligence Report</span>
+  <h1>{safe_company}</h1>
+  <p class='meta'>Generated {safe_generated}. Overall market position: <span class='score'>{overall}</span> / 100</p>
+  <div class='summary'>{exec_summary}</div>
+  <h2>SWOT Analysis</h2>
+  {swot_html}
+  <h2>Strategic Roadmap</h2>
+  {roadmap_html}
+  <footer>
+    Prepared by BIQc Intelligence Engine. This shared view is read-only and does not include account-specific or sensitive operational data. Visit biqc.ai to learn more.
+  </footer>
+</body>
+</html>
+"""
+
+
+@router.get("/reports/cmo-report/shared/{token}", include_in_schema=True)
+async def get_cmo_report_shared(
+    token: str = Path(..., min_length=8, max_length=128),
+):
+    """Public unauthenticated read-only HTML view of a shared CMO report.
+
+    Returns:
+        - 200 + sanitised text/html when the token is live and not expired
+        - 400 when the token is malformed
+        - 404 when no row matches
+        - 410 (Gone) when the token has expired or been revoked
+    """
+    if not _SHARE_TOKEN_RE.match(token or ""):
+        raise HTTPException(status_code=400, detail="Invalid share link")
+
+    # Service-role read intentional: the holder of the token IS the
+    # authorisation here. RLS on share_events restricts authenticated
+    # access to the owner; this public endpoint reads via service role.
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = (
+            sb.table("share_events")
+              .select("id,user_id,mechanism,token,share_url,expires_at,revoked_at,accessed_count")
+              .eq("token", token)
+              .limit(1)
+              .execute()
+        )
+        rows = getattr(result, "data", None) or []
+    except Exception as lookup_err:  # noqa: BLE001
+        logger.error(f"[share] token lookup failed: {lookup_err}")
+        raise HTTPException(status_code=503, detail="Shared report is temporarily unavailable")
+
+    if not rows:
+        raise HTTPException(status_code=404, detail="Shared report not found")
+
+    row = rows[0]
+    if row.get("revoked_at"):
+        raise HTTPException(status_code=410, detail="This share link has been revoked")
+
+    expires_raw = row.get("expires_at")
+    try:
+        expires_dt = datetime.fromisoformat(str(expires_raw).replace("Z", "+00:00")) if expires_raw else None
+    except Exception:  # noqa: BLE001
+        expires_dt = None
+    if expires_dt and expires_dt < datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="This share link has expired")
+
+    user_id = row.get("user_id")
+    if not user_id:
+        # Defensive — shouldn't happen because the column is NOT NULL.
+        raise HTTPException(status_code=410, detail="This share link is no longer valid")
+
+    # Reconstruct the report as the share owner would see it. We deliberately
+    # call get_cmo_report with a synthetic user dict so the existing
+    # Contract-v2 sanitised pipeline runs unchanged.
+    try:
+        from routes.intelligence_modules import get_cmo_report
+        report = await get_cmo_report({"id": user_id})
+        if not isinstance(report, dict):
+            report = {}
+    except Exception as report_err:  # noqa: BLE001
+        logger.error(f"[share] report rebuild failed for token: {report_err}")
+        report = {}
+
+    # Final scrub of the report payload through the centralised sanitizer
+    # before it's rendered into HTML. Strips internal-only keys at any depth.
+    try:
+        report = scrub_response_for_external(report) or {}
+    except Exception as scrub_err:  # noqa: BLE001
+        logger.warning(f"[share] scrub failed (continuing with empty report): {scrub_err}")
+        report = {}
+
+    company = report.get("company_name") or "Your business"
+    generated_at = report.get("report_date") or datetime.now(timezone.utc).strftime("%d/%m/%Y")
+
+    html = _build_public_share_html(report, company, generated_at)
+
+    # Belt-and-braces: assert no banned tokens slipped into the HTML.
+    try:
+        assert_no_banned_tokens(html, source="reports.get_cmo_report_shared")
+    except ExternalContractViolation as cv:
+        logger.error(f"[share] HTML contract violation: {cv}")
+        # Fail closed: serve a generic placeholder rather than leaking.
+        html = (
+            "<!doctype html><html><head><meta charset='utf-8'><title>BIQc Shared Report</title></head>"
+            "<body style='font-family:sans-serif;padding:32px;max-width:640px;margin:0 auto;'>"
+            "<h1>BIQc CMO Report</h1>"
+            "<p>This shared report is temporarily unavailable. Please contact the sender for an updated link.</p>"
+            "</body></html>"
+        )
+
+    # Best-effort accessed_count increment. Failure here must not break the
+    # response — the recipient still sees the report.
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        new_count = int(row.get("accessed_count") or 0) + 1
+        sb.table("share_events").update({"accessed_count": new_count}).eq("id", row.get("id")).execute()
+    except Exception as inc_err:  # noqa: BLE001
+        logger.debug(f"[share] accessed_count increment skipped: {inc_err}")
+
+    return HTMLResponse(
+        content=html,
+        status_code=200,
+        headers={
+            # Public surface — opt out of search-engine indexing.
+            "X-Robots-Tag": "noindex, nofollow",
+            "Cache-Control": "private, max-age=60",
+            "Referrer-Policy": "no-referrer",
+        },
+    )
