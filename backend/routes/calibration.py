@@ -2329,6 +2329,9 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     # that fails our sentinel / meta-gap / competitor filters
                     # reaches the stored enrichment in the first place.
                     parsed = _sanitize_enrichment_payload(parsed)
+                    if isinstance(parsed.get("business_name"), str):
+                        cleaned_name = _clean_business_name(parsed.get("business_name")) or domain_business_label(domain)
+                        parsed["business_name"] = cleaned_name
                     enrichment.update({k: parsed.get(k, enrichment.get(k)) for k in enrichment.keys() if k in parsed})
                     if isinstance(parsed.get("competitors"), list):
                         enrichment["competitors"] = parsed.get("competitors")
@@ -2346,6 +2349,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             # (line ~1979 "unknown — insufficient website data..."). Scrub it
             # and anything else that snuck through before persistence.
             enrichment = _sanitize_enrichment_payload(enrichment)
+            if not _clean_business_name(enrichment.get("business_name", "")):
+                enrichment["business_name"] = domain_business_label(domain)
 
             # deterministic social handle fallback extraction across crawled content + search links.
             social_patterns = {
