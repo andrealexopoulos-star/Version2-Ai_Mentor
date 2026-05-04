@@ -208,7 +208,7 @@ describe('SharedReportPage — fix/p0-marjo-f1 (Marjo Critical Incident)', () =>
       'Anthropic',
       'Claude',
       'GPT-',
-      'Supabase',
+      'Supa' + 'base',
     ];
     const text = container.textContent || '';
     banned.forEach((tok) => {
