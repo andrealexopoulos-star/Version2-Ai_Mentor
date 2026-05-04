@@ -14,6 +14,7 @@ suppression so they never block the response path.
 
 import json
 import logging
+import os
 import re
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
@@ -26,6 +27,16 @@ SCAN_TTL = 86_400       # 24 hours
 EDGE_TTL = 3_600        # 1 hour
 KEY_PREFIX_SCAN = "biqc:scan"
 KEY_PREFIX_EDGE = "biqc:edge"
+
+
+def _cache_disabled() -> bool:
+    """Diagnostic bypass — when BIQC_DISABLE_CACHE=1 the entire cache layer
+    is short-circuited. Reads return None (forcing a live edge call) and
+    writes/invalidations become no-ops. Use only for in-prod debugging or
+    canary-rerun scenarios where stale cache is suspected. Re-evaluated on
+    every call so the flag can be flipped without restart.
+    """
+    return os.environ.get("BIQC_DISABLE_CACHE", "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def normalize_domain(url: str) -> str:
@@ -50,6 +61,8 @@ def _edge_key(function_name: str, domain: str) -> str:
 
 async def get_domain_scan(domain: str) -> Optional[Dict[str, Any]]:
     """Return cached enrichment for *domain*, or None on miss / Redis down."""
+    if _cache_disabled():
+        return None
     redis = get_redis()
     if redis is None or not domain:
         return None
@@ -69,6 +82,8 @@ async def set_domain_scan(
     ttl: int = SCAN_TTL,
 ) -> None:
     """Cache *enrichment* for *domain*. Fire-and-forget."""
+    if _cache_disabled():
+        return
     redis = get_redis()
     if redis is None or not domain:
         return
@@ -84,6 +99,8 @@ async def set_domain_scan(
 
 async def invalidate_domain_scan(domain: str) -> None:
     """Bust the domain cache (called on regenerate)."""
+    if _cache_disabled():
+        return
     redis = get_redis()
     if redis is None or not domain:
         return
@@ -100,6 +117,8 @@ async def get_edge_result(
     function_name: str, domain: str
 ) -> Optional[Dict[str, Any]]:
     """Return cached edge-function result, or None."""
+    if _cache_disabled():
+        return None
     redis = get_redis()
     if redis is None or not domain:
         return None
@@ -120,6 +139,8 @@ async def set_edge_result(
     ttl: int = EDGE_TTL,
 ) -> None:
     """Cache an edge-function result. Fire-and-forget."""
+    if _cache_disabled():
+        return
     redis = get_redis()
     if redis is None or not domain:
         return
