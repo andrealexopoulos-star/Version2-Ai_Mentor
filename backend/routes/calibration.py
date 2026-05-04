@@ -2161,7 +2161,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             page_title = _extract_title(raw_html)
             meta_description = _extract_meta_content(raw_html, "description") or _extract_meta_content(raw_html, "og:description")
             og_site_name = _extract_meta_content(raw_html, "og:site_name") or _extract_meta_content(raw_html, "twitter:title")
-            business_name_hint = _clean_business_name(og_site_name) or _clean_business_name(page_title) or domain_business_label(domain)
+            business_name_hint = _clean_business_name(og_site_name) or domain_business_label(domain) or _clean_business_name(page_title)
             service_lines = _extract_service_lines(f"{page_text}\n{crawled_text}")
             competitor_query = f'"{business_name_hint}" competitors australia {page_title or ""}'.strip()
             company_query = f"site:{domain} company profile services about"

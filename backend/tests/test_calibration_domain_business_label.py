@@ -18,3 +18,7 @@ def test_domain_business_label_strips_common_subdomain():
 
 def test_domain_business_label_falls_back_for_empty():
     assert domain_business_label("") == "Business"
+
+
+def test_domain_business_label_ignores_bare_www():
+    assert domain_business_label("www") == "Business"
