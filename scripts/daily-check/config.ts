@@ -60,9 +60,9 @@ export const PLACEHOLDER_DENYLIST: { pattern: RegExp; label: string }[] = [
 ];
 
 /**
- * The 8 enrichment edge functions that MUST return 200 during a scan.
- * Per ops_daily_calibration_check.md §B (7 listed) + the new 8th
- * (review_aggregator) added with the post-scan share/aggregate flow.
+ * The enrichment edge functions that MUST return 200 during a scan.
+ * Per ops_daily_calibration_check.md §B (7 listed) + the post-scan
+ * share/aggregate flow + P0 Marjo R2B + R2C deep-extraction additions.
  * If `enrichment_traces` shows fewer than these all at 200, the scan is
  * incomplete and the test FAILS per zero-401 tolerance.
  */
@@ -79,6 +79,15 @@ export const REQUIRED_EDGE_FUNCTIONS: string[] = [
   // surfaces "missing trace" as a WARN — not a hard fail — to avoid
   // false-positive on a not-yet-instrumented function.
   'review-aggregator',
+  // P0 Marjo F14 (2026-05-04) — close perimeter gap for the two deep-
+  // extraction edges added by R2B + R2C. Both are in the calibration
+  // scan fanout (calibration.py:~2655) and therefore MUST be in the daily
+  // zero-401 check per feedback_zero_401_tolerance.md. Without these
+  // entries, a 401 in customer-reviews-deep or staff-reviews-deep could
+  // ship to prod undetected — the exact churn-bomb pattern Andreas hit
+  // on 2026-04-23 with the 7 calibration edge fns.
+  'customer-reviews-deep',
+  'staff-reviews-deep',
 ];
 
 /**
