@@ -493,17 +493,36 @@ def _scrub_supplier_tokens(text: str) -> str:
     return out
 
 
+_STRUCTURED_INPUT_MAX_CHARS = 12000
+
+
 def _structured_input_block(payload: Mapping[str, Any]) -> str:
     """Render a STRUCTURED INPUT block that the LLM must read first.
 
     The payload JSON is post-processed to scrub supplier names — defence
     in depth in case an upstream annotation leaks one through.
+
+    F16 (2026-05-04): when the JSON payload exceeds the 12K-char cap, an
+    explicit truncation warning is embedded in the prompt so the LLM knows
+    that some signal may not be reflected — it should not invent content
+    to fill the gap.
     """
-    json_blob = json.dumps(payload, default=str, indent=2)[:12000]
+    full_blob = json.dumps(payload, default=str, indent=2)
+    truncated = len(full_blob) > _STRUCTURED_INPUT_MAX_CHARS
+    json_blob = full_blob[:_STRUCTURED_INPUT_MAX_CHARS]
     json_blob = _scrub_supplier_tokens(json_blob)
+    truncation_note = ""
+    if truncated:
+        truncation_note = (
+            "\n> WARNING: input truncated to "
+            f"{_STRUCTURED_INPUT_MAX_CHARS} chars due to size limit. "
+            "Some signal may not be reflected — only cite from what is "
+            "shown above; do not invent content for missing keys.\n"
+        )
     return (
         "## SCAN DATA INPUTS (this is the only data you may cite)\n\n"
         f"```json\n{json_blob}\n```\n"
+        f"{truncation_note}"
     )
 
 

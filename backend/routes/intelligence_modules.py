@@ -1405,10 +1405,21 @@ def _synthesis_enabled_for_request() -> bool:
     Default ON. Set the env var to "0", "false", or "off" to disable
     without a code change. Read at request-time so changes take effect
     on the next call.
+
+    F16 (2026-05-04): observability — the chosen state is logged at
+    debug-level on every call so an A/B comparison (with-vs-without
+    synthesis) is visible in the request logs. We KEEP the default ON
+    because R2E (the synthesis path) is the world-class output path
+    Andreas wants in production; F16 fixes the gate that was preventing
+    it from firing. To compare metrics, set
+    `CMO_SYNTHESIS_ENRICHMENT_ENABLED=0` in a canary deploy and grep
+    `cmo-synthesis-gate` in logs to bucket sessions.
     """
     import os
     raw = os.environ.get("CMO_SYNTHESIS_ENRICHMENT_ENABLED", "1").strip().lower()
-    return raw not in {"0", "false", "off", "no"}
+    enabled = raw not in {"0", "false", "off", "no"}
+    logger.debug(f"[cmo-synthesis-gate] enabled={enabled} env_raw={raw!r}")
+    return enabled
 
 
 def _section_is_thin(section_payload: Any, *, min_items: int = 1) -> bool:
@@ -1417,23 +1428,118 @@ def _section_is_thin(section_payload: Any, *, min_items: int = 1) -> bool:
     Used by `_enrich_cmo_with_synthesis` to decide which sections to call
     LLM synthesis for. We never enrich a section that already has rich
     content — the goal is to fill gaps, not overwrite signal-backed text.
+
+    F16 hardening (2026-05-04): the legacy Marketing-101 template builders
+    upstream emit bare strings (e.g. "Improve social media presence",
+    "Strengthen brand", "Optimize customer journey") into the SWOT / roadmap
+    buckets. The pre-F16 thinness check counted these as content and so
+    NEVER fired R2E synthesis even though the buckets were full of fluff.
+    Two new rules close the gap:
+
+      (a) Anti-template strings are excluded from the effective_count when
+          deciding whether a list / bucket meets the min_items threshold.
+          (i.e. items matching `is_anti_template_phrase` count as thin.)
+      (b) Belt-and-braces — if EVERY item in a bucket / list is a bare
+          string (rather than a structured dict with `source_trace_ids`),
+          the bucket is treated as thin regardless of count, because the
+          world-class synthesis path always emits provenance-bearing dicts
+          while only the legacy template builders emit bare strings.
+
+    Together (a) + (b) ensure R2E synthesis fires whenever the buckets
+    contain only legacy-template content, while leaving alone any bucket
+    that already has at least one provenance-bearing item from a previous
+    synthesis pass.
     """
     if section_payload is None:
         return True
     if isinstance(section_payload, str):
-        return not section_payload.strip()
-    if isinstance(section_payload, (list, tuple)):
-        return len(section_payload) < min_items
-    if isinstance(section_payload, dict):
-        # Any-bucket-empty for SWOT/roadmap shape
-        if section_payload and all(
-            isinstance(v, (list, tuple)) and len(v) < min_items
-            for v in section_payload.values()
-        ):
+        text = section_payload.strip()
+        if not text:
             return True
+        # Defence-in-depth: a section whose entire content is an
+        # anti-template phrase should be enriched.
+        try:
+            from core.synthesis_prompts import is_anti_template_phrase
+        except Exception:
+            is_anti_template_phrase = lambda _v: False  # noqa: E731
+        return bool(is_anti_template_phrase(text))
+    if isinstance(section_payload, (list, tuple)):
+        return _list_is_thin(section_payload, min_items=min_items)
+    if isinstance(section_payload, dict):
         if not section_payload:
             return True
+        # SWOT / roadmap shape: a dict whose values are list-buckets.
+        bucket_values = list(section_payload.values())
+        if bucket_values and all(
+            isinstance(v, (list, tuple)) for v in bucket_values
+        ):
+            # Thin iff EVERY bucket is thin (after anti-template + bare-string
+            # exclusion). i.e. fire synthesis when no bucket has at least one
+            # provenance-bearing, non-template item.
+            return all(
+                _list_is_thin(v, min_items=min_items) for v in bucket_values
+            )
+        # Non-bucket dict (e.g. competitor entry, summary metadata): treat
+        # as non-thin — the section already has structured content.
+        return False
     return False
+
+
+def _list_is_thin(items: Any, *, min_items: int = 1) -> bool:
+    """True when `items` lacks `min_items` non-template, structured entries.
+
+    Used by `_section_is_thin`. An item counts toward `effective_count` iff:
+      * It is a dict with at least one of `source_trace_ids` / `trace_ids`
+        / `evidence_tag` (i.e. provenance-bearing — produced by R2E
+        synthesis or another evidence-cited path), OR
+      * It is a string that does NOT match `is_anti_template_phrase`
+        AND there is at least one other non-string, provenance-bearing item
+        in the list (i.e. the list isn't an all-bare-strings legacy payload).
+
+    The all-bare-strings shape itself is treated as thin via the
+    belt-and-braces rule — see `_section_is_thin` docstring.
+    """
+    if not isinstance(items, (list, tuple)):
+        return True
+    if len(items) == 0:
+        return True
+    try:
+        from core.synthesis_prompts import is_anti_template_phrase
+    except Exception:
+        is_anti_template_phrase = lambda _v: False  # noqa: E731
+    has_any_dict = any(isinstance(x, dict) for x in items)
+    # Belt-and-braces: all-strings shape is the legacy template builder
+    # output. Treat as thin so synthesis fires.
+    if not has_any_dict:
+        return True
+    effective_count = 0
+    for item in items:
+        if isinstance(item, dict):
+            text = str(item.get("text") or "").strip() if "text" in item else ""
+            if text and is_anti_template_phrase(text):
+                continue
+            has_provenance = bool(
+                item.get("source_trace_ids")
+                or item.get("trace_ids")
+                or item.get("evidence_tag")
+            )
+            # Provenance-bearing dict (or a structured non-text dict like a
+            # competitor entry): counts as effective content.
+            if has_provenance or not text:
+                effective_count += 1
+            else:
+                # Has text but no provenance — treat as anti-template
+                # because R2E contract requires provenance on every item.
+                continue
+        elif isinstance(item, str):
+            # Mixed list with at least one provenance dict already — count
+            # non-template strings too (they're not the legacy shape).
+            if item.strip() and not is_anti_template_phrase(item):
+                effective_count += 1
+        else:
+            # Unknown item shape — be conservative and count it.
+            effective_count += 1
+    return effective_count < min_items
 
 
 async def _enrich_cmo_with_synthesis(
