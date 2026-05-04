@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
-import { verifyAuth } from "../_shared/auth.ts";
+import { verifyAuth, type AuthResult } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -15,20 +15,21 @@ function json(req: Request, data: unknown, status = 200) {
   });
 }
 
-async function resolveTenantId(req, supabase, body) {
+// Phase 1.7 hard-fix (RC-2 / 2026-05-05 code 13041978):
+// Same architectural bug as market-signal-scorer — exact-string compare against
+// SUPABASE_SERVICE_ROLE_KEY env breaks across legacy/sb_secret_ key divergence.
+// Trust verifyAuth's already-validated AuthResult instead of re-validating.
+function resolveTenantId(body: { tenant_id?: string; user_id?: string }, auth: AuthResult): string | null {
   const explicit = `${body.tenant_id || body.user_id || ""}`.trim();
-  const authHeader = req.headers.get("Authorization") || "";
-  const token = authHeader.replace("Bearer ", "").trim();
-  if (!token) return null;
 
-  if (token === SUPABASE_SERVICE_ROLE_KEY) {
+  if (auth.isServiceRole) {
     return explicit || null;
   }
-
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data.user) return null;
-  if (explicit && explicit !== data.user.id) return TENANT_MISMATCH;
-  return data.user.id;
+  if (auth.userId) {
+    if (explicit && explicit !== auth.userId) return TENANT_MISMATCH;
+    return auth.userId;
+  }
+  return null;
 }
 
 function pct(completed, total) {
@@ -61,7 +62,7 @@ serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const body = await req.json().catch(() => ({}));
-  const tenantId = await resolveTenantId(req, supabase, body);
+  const tenantId = resolveTenantId(body, auth);
   if (tenantId === TENANT_MISMATCH) {
     return json(req, { error: "tenant_id/user_id must match authenticated user" }, 403);
   }
