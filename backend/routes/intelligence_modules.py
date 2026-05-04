@@ -20,6 +20,18 @@ from core.response_sanitizer import (
     sanitize_enrichment_for_external,
     ExternalState,
 )
+from core.section_evidence import (
+    SECTION_IDS,
+    OPTIONAL_SECTION_IDS,
+    PLACEHOLDER_EXACT_DENYLIST,
+    filter_swot_items_with_provenance,
+    filter_roadmap_items_with_provenance,
+    is_placeholder_string,
+    make_section,
+    reason_for,
+    section_state_for_value,
+    validate_section_evidence,
+)
 from cmo_truth import (
     REPORT_STATE_COMPLETE,
     REPORT_STATE_FAILED,
@@ -36,11 +48,34 @@ from cmo_truth import (
     estimate_confidence,
     is_placeholder_text,
 )
+# P0 Marjo E2 / 2026-05-04 — provider trace audit pane.
+from core.enrichment_trace import fetch_scan_provider_chain
+
+# R2E (2026-05-04): world-class CMO synthesis prompts that USE the deep
+# R2A-D + F14/F15 enrichment data. The synthesis_prompts module owns the
+# prompt construction; this route owns the orchestration (deciding when to
+# call the LLM, parsing the output, applying provenance enforcement).
+from core.synthesis_prompts import (
+    PROMPT_ANTI_TEMPLATE_TERMS,
+    build_swot_prompt,
+    build_strategic_roadmap_prompt,
+    build_chief_marketing_summary_prompt,
+    build_executive_summary_prompt,
+    build_competitive_landscape_prompt,
+    build_review_intelligence_prompt,
+    collect_available_competitor_names,
+    collect_available_brand_metric_names,
+    collect_available_trace_ids,
+    has_sufficient_synthesis_inputs,
+    parse_synthesis_json,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 from routes.auth import get_current_user
+# P0 Marjo E2 / 2026-05-04 — superadmin-only audit endpoint for raw provider traces.
+from routes.deps import get_super_admin
 
 _TRUTH_GATEWAY_CONTRACT_VERSION = "truth-gateway-v1"
 
@@ -1005,6 +1040,769 @@ def _apply_render_time_filters(report: Dict[str, Any]) -> Dict[str, Any]:
     return report
 
 
+def _build_section_evidence_for_cmo(
+    response: Dict[str, Any],
+    enrichment: Dict[str, Any],
+    *,
+    is_processing: bool,
+) -> Dict[str, Dict[str, Any]]:
+    """Build the per-section SectionEvidence dict for the CMO Report.
+
+    Returns a mapping of `section_id -> SectionEvidence`. Every required
+    section in SECTION_IDS will appear in the result. Optional sections
+    (signals, products_services, abn_business_identity) are included only
+    if at least one signal exists.
+
+    Provenance handling:
+        - SWOT items must reference at least one source_trace_id OR be
+          flagged INSUFFICIENT_SIGNAL. Items without provenance are dropped
+          via filter_swot_items_with_provenance.
+        - Roadmap items must reference at least one finding (signal_id,
+          competitor name from this scan, brand metric from this scan).
+          Items without provenance are dropped via
+          filter_roadmap_items_with_provenance.
+        - Generic SWOT/Roadmap items that match the placeholder denylist
+          (Marketing-101 phrases, "Strong"/"Weak"/"TBD"/etc.) are dropped.
+
+    Per Contract v2: every `reason` string is non-leaky (no supplier names,
+    no internal codes, no HTTP errors).
+    """
+    sections: Dict[str, Dict[str, Any]] = {}
+
+    # Available trace ids and competitor names harvested from the enrichment
+    # for provenance enforcement on SWOT + Roadmap items.
+    available_trace_ids: List[str] = []
+    raw_traces = enrichment.get("source_trace_ids") or enrichment.get("trace_ids") or []
+    if isinstance(raw_traces, list):
+        available_trace_ids.extend([str(t) for t in raw_traces if t])
+    # Pull trace ids from any nested {evidence_tag, trace_id, signal_id} entries.
+    for v in (enrichment.get("intelligence_actions") or []):
+        if isinstance(v, dict):
+            tid = v.get("id") or v.get("signal_id") or v.get("trace_id")
+            if tid:
+                available_trace_ids.append(str(tid))
+    # Dedupe.
+    available_trace_ids = list({t for t in available_trace_ids})
+
+    competitors_from_scan = response.get("competitors") or []
+    competitor_names = [c.get("name") for c in competitors_from_scan if isinstance(c, dict)]
+
+    # Brand metric labels available from the score dials (when non-zero).
+    brand_metric_names: List[str] = []
+    mp = response.get("market_position") or {}
+    if isinstance(mp, dict):
+        if mp.get("brand"): brand_metric_names.append("brand strength")
+        if mp.get("digital"): brand_metric_names.append("digital presence")
+        if mp.get("sentiment"): brand_metric_names.append("customer sentiment")
+        if mp.get("competitive"): brand_metric_names.append("competitive position")
+
+    def _processing_or(section_id: str, fn) -> Dict[str, Any]:
+        """If we're in calibration-not-yet-complete mode, return PROCESSING.
+        Otherwise call fn() to get the real SectionEvidence."""
+        if is_processing:
+            return make_section(section_id, state=ExternalState.PROCESSING.value)
+        return fn()
+
+    # ── Header / metadata sections (always DATA_AVAILABLE when known) ──
+    sections["header"] = make_section(
+        "header",
+        state=ExternalState.DATA_AVAILABLE.value,
+        evidence={
+            "title": "Chief Marketing Summary",
+            "report_id": response.get("report_id"),
+        },
+    )
+    sections["date"] = _processing_or("date", lambda: make_section(
+        "date",
+        state=ExternalState.DATA_AVAILABLE.value,
+        evidence={"report_date": response.get("report_date")},
+    ))
+    bn = response.get("company_name")
+    sections["business_name"] = make_section(
+        "business_name",
+        state=section_state_for_value(bn),
+        evidence={"company_name": bn} if bn else None,
+        reason=None if bn else reason_for("business_name", ExternalState.INSUFFICIENT_SIGNAL.value),
+    )
+    website_url = enrichment.get("website_url") or enrichment.get("domain")
+    sections["website"] = make_section(
+        "website",
+        state=section_state_for_value(website_url),
+        evidence={"url": website_url} if website_url else None,
+        reason=None if website_url else "Business website not yet captured for this scan.",
+    )
+    scan_source = response.get("scan_source")
+    # F7 P1-1 (BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2):
+    # Use evidence key "name" — NOT "source". The key "source" is in the
+    # response_sanitizer._INTERNAL_KEYS denylist (it identifies supplier
+    # provenance like "semrush"/"perplexity") and would be stripped by
+    # scrub_response_for_external, leaving evidence={} and degrading the
+    # scan_source section to effectively-empty. "name" is also clearer
+    # semantically — this is the source-name label, not a supplier provenance
+    # tag. R6 finding 13041978-flagged.
+    sections["scan_source"] = make_section(
+        "scan_source",
+        state=section_state_for_value(scan_source),
+        evidence={"name": scan_source} if scan_source else None,
+    )
+    real_pts = _count_real_data_points(response)
+    sections["data_points_count"] = make_section(
+        "data_points_count",
+        state=ExternalState.DATA_AVAILABLE.value if real_pts > 0 else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={"count": real_pts} if real_pts > 0 else None,
+    )
+    conf = response.get("confidence") or 0
+    sections["confidence_score"] = make_section(
+        "confidence_score",
+        state=ExternalState.DATA_AVAILABLE.value if conf > 0 else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={"score": conf} if conf > 0 else None,
+    )
+
+    # ── Narrative sections ──
+    exec_summary = response.get("executive_summary")
+    cms_state = section_state_for_value(exec_summary, is_processing=is_processing)
+    if cms_state == ExternalState.DATA_AVAILABLE.value and is_placeholder_string(exec_summary):
+        cms_state = ExternalState.INSUFFICIENT_SIGNAL.value
+        exec_summary = None
+    sections["chief_marketing_summary"] = make_section(
+        "chief_marketing_summary",
+        state=cms_state,
+        evidence={"text": exec_summary} if cms_state == ExternalState.DATA_AVAILABLE.value else None,
+        source_trace_ids=available_trace_ids[:3],
+    )
+    sections["executive_summary"] = make_section(
+        "executive_summary",
+        state=cms_state,
+        evidence={"text": exec_summary} if cms_state == ExternalState.DATA_AVAILABLE.value else None,
+        source_trace_ids=available_trace_ids[:3],
+    )
+
+    # ── Score dials ──
+    overall = (mp or {}).get("overall", 0)
+    sections["market_position_score"] = make_section(
+        "market_position_score",
+        state=ExternalState.DATA_AVAILABLE.value if overall > 0 else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence=mp if overall > 0 else None,
+        source_trace_ids=available_trace_ids[:1],
+    )
+    for metric_id, metric_key in (
+        ("brand_strength", "brand"),
+        ("digital_presence", "digital"),
+        ("customer_sentiment", "sentiment"),
+        ("competitive_position", "competitive"),
+    ):
+        val = (mp or {}).get(metric_key, 0)
+        sections[metric_id] = make_section(
+            metric_id,
+            state=ExternalState.DATA_AVAILABLE.value if val > 0 else ExternalState.INSUFFICIENT_SIGNAL.value,
+            evidence={"score": val, "max": 100} if val > 0 else None,
+        )
+
+    # ── Competitive landscape ──
+    has_comps = len(competitors_from_scan) > 0
+    sections["competitive_landscape"] = make_section(
+        "competitive_landscape",
+        state=ExternalState.DATA_AVAILABLE.value if has_comps else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={"competitors": competitors_from_scan} if has_comps else None,
+        source_trace_ids=available_trace_ids[:5],
+    )
+    sections["competitors_found"] = make_section(
+        "competitors_found",
+        state=ExternalState.DATA_AVAILABLE.value if has_comps else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={"names": [n for n in competitor_names if n]} if has_comps else None,
+    )
+    rev_count = (response.get("reviews") or {}).get("count", 0)
+    rev_excerpts = response.get("review_excerpts") or []
+    rev_sources = []
+    for ex in rev_excerpts:
+        if isinstance(ex, dict) and ex.get("source"):
+            rev_sources.append(ex["source"])
+    rev_sources = sorted({s for s in rev_sources if s})
+    sections["review_sources"] = make_section(
+        "review_sources",
+        state=ExternalState.DATA_AVAILABLE.value if rev_sources else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={"sources": rev_sources, "review_count": rev_count} if rev_sources else None,
+    )
+
+    # ── SWOT (per-bucket, provenance-enforced) ──
+    swot = response.get("swot") or {}
+    for bucket_id, bucket_key in (
+        ("swot_strengths", "strengths"),
+        ("swot_weaknesses", "weaknesses"),
+        ("swot_opportunities", "opportunities"),
+        ("swot_threats", "threats"),
+    ):
+        raw_items = swot.get(bucket_key) or []
+        # Strip placeholder + Marketing-101 templated strings up-front. Then
+        # require at least one provenance pointer per item OR the section
+        # flips to INSUFFICIENT_SIGNAL.
+        kept = filter_swot_items_with_provenance(
+            raw_items,
+            available_trace_ids=available_trace_ids,
+            available_competitor_names=[c for c in competitor_names if c],
+        )
+        if kept:
+            sections[bucket_id] = make_section(
+                bucket_id,
+                state=ExternalState.DATA_AVAILABLE.value,
+                evidence={"items": kept},
+                source_trace_ids=available_trace_ids[:5],
+            )
+        else:
+            sections[bucket_id] = make_section(
+                bucket_id,
+                state=ExternalState.INSUFFICIENT_SIGNAL.value,
+            )
+
+    # ── Review intelligence ──
+    has_reviews = (rev_count > 0) or len(rev_excerpts) > 0
+    sections["review_intelligence"] = make_section(
+        "review_intelligence",
+        state=ExternalState.DATA_AVAILABLE.value if has_reviews else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={
+            "reviews": response.get("reviews"),
+            "review_themes": response.get("review_themes"),
+            "review_excerpts": rev_excerpts,
+        } if has_reviews else None,
+    )
+
+    # ── Strategic Roadmap (per-horizon, provenance-enforced) ──
+    rd = response.get("roadmap") or {}
+    horizons = (
+        ("seven_day_quick_wins", "quick_wins"),
+        ("thirty_day_priorities", "priorities"),
+        ("ninety_day_strategic_goals", "strategic"),
+    )
+    horizon_results: Dict[str, List[Dict[str, Any]]] = {}
+    for horizon_id, horizon_key in horizons:
+        raw_items = rd.get(horizon_key) or []
+        kept = filter_roadmap_items_with_provenance(
+            raw_items,
+            available_trace_ids=available_trace_ids,
+            available_competitor_names=[c for c in competitor_names if c],
+            available_brand_metric_names=brand_metric_names,
+        )
+        horizon_results[horizon_id] = kept
+        if kept:
+            sections[horizon_id] = make_section(
+                horizon_id,
+                state=ExternalState.DATA_AVAILABLE.value,
+                evidence={"items": kept},
+                source_trace_ids=available_trace_ids[:5],
+            )
+        else:
+            sections[horizon_id] = make_section(
+                horizon_id,
+                state=ExternalState.INSUFFICIENT_SIGNAL.value,
+            )
+
+    any_horizon_has_items = any(len(v) > 0 for v in horizon_results.values())
+    sections["strategic_roadmap"] = make_section(
+        "strategic_roadmap",
+        state=ExternalState.DATA_AVAILABLE.value if any_horizon_has_items else ExternalState.INSUFFICIENT_SIGNAL.value,
+        evidence={
+            "horizons": {k: horizon_results[k] for k, _ in horizons},
+        } if any_horizon_has_items else None,
+        source_trace_ids=available_trace_ids[:5],
+    )
+
+    # ── Footer / actions (entitlement-aware UI element states) ──
+    sections["pdf_download"] = make_section(
+        "pdf_download",
+        state=ExternalState.DATA_AVAILABLE.value,
+        evidence={"endpoint": "/api/reports/cmo-report/pdf"},
+    )
+    sections["share_report"] = make_section(
+        "share_report",
+        state=ExternalState.DATA_AVAILABLE.value,
+        evidence={"share": True},
+    )
+    persisted = bool(enrichment)
+    sections["business_dna_persistence"] = make_section(
+        "business_dna_persistence",
+        state=ExternalState.DATA_AVAILABLE.value if persisted else ExternalState.PROCESSING.value,
+        evidence={"persisted": True, "report_id": response.get("report_id")} if persisted else None,
+    )
+
+    # ── Optional sections (only emit when there's real evidence) ──
+    sigs = enrichment.get("intelligence_actions") or enrichment.get("signals") or []
+    if isinstance(sigs, list) and sigs:
+        sections["signals"] = make_section(
+            "signals",
+            state=ExternalState.DATA_AVAILABLE.value,
+            evidence={"count": len(sigs)},
+            source_trace_ids=available_trace_ids[:10],
+        )
+    else:
+        sections["signals"] = make_section("signals", state=ExternalState.INSUFFICIENT_SIGNAL.value)
+
+    products = enrichment.get("products_services") or enrichment.get("products") or []
+    if isinstance(products, list) and products:
+        clean_products = [
+            p for p in products
+            if isinstance(p, str) and not is_placeholder_string(p)
+        ]
+        if clean_products:
+            sections["products_services"] = make_section(
+                "products_services",
+                state=ExternalState.DATA_AVAILABLE.value,
+                evidence={"items": clean_products},
+            )
+        else:
+            sections["products_services"] = make_section(
+                "products_services", state=ExternalState.INSUFFICIENT_SIGNAL.value,
+            )
+    else:
+        sections["products_services"] = make_section(
+            "products_services", state=ExternalState.INSUFFICIENT_SIGNAL.value,
+        )
+
+    abn = enrichment.get("abn") or enrichment.get("business_abn")
+    if abn:
+        sections["abn_business_identity"] = make_section(
+            "abn_business_identity",
+            state=ExternalState.DATA_AVAILABLE.value,
+            evidence={"abn": str(abn)},
+        )
+    else:
+        sections["abn_business_identity"] = make_section(
+            "abn_business_identity", state=ExternalState.INSUFFICIENT_SIGNAL.value,
+        )
+
+    # Final validation pass: every section must satisfy SectionEvidence
+    # contract. Run validate_section_evidence in case a future caller
+    # introduces a regression.
+    for sid, payload in sections.items():
+        validate_section_evidence(payload, section_id=sid)
+
+    return sections
+
+
+# ─── R2E synthesis-enrichment orchestration ─────────────────────────────
+#
+# When `enrichment` carries the deepened R2A-D + F14/F15 data but the
+# report payload sections are thin (empty SWOT / empty roadmap / no exec
+# summary), invoke the world-class synthesis prompts in
+# `core/synthesis_prompts.py` to produce evidence-cited content. Each
+# section is gated by has_sufficient_synthesis_inputs to avoid burning
+# Trinity tokens when the inputs would only produce thin output anyway.
+#
+# All synthesis output passes through the provenance + anti-template
+# filters before being merged back into the response. Sections that
+# cannot be enriched (LLM error / parse error / all items dropped) keep
+# their existing thin content unchanged — synthesis NEVER replaces
+# evidence-backed content with thinner content.
+#
+# Cost containment: the synthesis call is opt-in via env flag
+# CMO_SYNTHESIS_ENRICHMENT_ENABLED (default ON). The flag is checked
+# every request so a superadmin can disable it without a redeploy if
+# the trinity bill spikes.
+
+
+def _synthesis_enabled_for_request() -> bool:
+    """True when the optional R2E LLM synthesis enrichment may run.
+
+    Default ON. Set the env var to "0", "false", or "off" to disable
+    without a code change. Read at request-time so changes take effect
+    on the next call.
+
+    F16 (2026-05-04): observability — the chosen state is logged at
+    debug-level on every call so an A/B comparison (with-vs-without
+    synthesis) is visible in the request logs. We KEEP the default ON
+    because R2E (the synthesis path) is the world-class output path
+    Andreas wants in production; F16 fixes the gate that was preventing
+    it from firing. To compare metrics, set
+    `CMO_SYNTHESIS_ENRICHMENT_ENABLED=0` in a canary deploy and grep
+    `cmo-synthesis-gate` in logs to bucket sessions.
+    """
+    import os
+    raw = os.environ.get("CMO_SYNTHESIS_ENRICHMENT_ENABLED", "1").strip().lower()
+    enabled = raw not in {"0", "false", "off", "no"}
+    logger.debug(f"[cmo-synthesis-gate] enabled={enabled} env_raw={raw!r}")
+    return enabled
+
+
+def _section_is_thin(section_payload: Any, *, min_items: int = 1) -> bool:
+    """True when the section_payload is empty / sparse enough to enrich.
+
+    Used by `_enrich_cmo_with_synthesis` to decide which sections to call
+    LLM synthesis for. We never enrich a section that already has rich
+    content — the goal is to fill gaps, not overwrite signal-backed text.
+
+    F16 hardening (2026-05-04): the legacy Marketing-101 template builders
+    upstream emit bare strings (e.g. "Improve social media presence",
+    "Strengthen brand", "Optimize customer journey") into the SWOT / roadmap
+    buckets. The pre-F16 thinness check counted these as content and so
+    NEVER fired R2E synthesis even though the buckets were full of fluff.
+    Two new rules close the gap:
+
+      (a) Anti-template strings are excluded from the effective_count when
+          deciding whether a list / bucket meets the min_items threshold.
+          (i.e. items matching `is_anti_template_phrase` count as thin.)
+      (b) Belt-and-braces — if EVERY item in a bucket / list is a bare
+          string (rather than a structured dict with `source_trace_ids`),
+          the bucket is treated as thin regardless of count, because the
+          world-class synthesis path always emits provenance-bearing dicts
+          while only the legacy template builders emit bare strings.
+
+    Together (a) + (b) ensure R2E synthesis fires whenever the buckets
+    contain only legacy-template content, while leaving alone any bucket
+    that already has at least one provenance-bearing item from a previous
+    synthesis pass.
+    """
+    if section_payload is None:
+        return True
+    if isinstance(section_payload, str):
+        text = section_payload.strip()
+        if not text:
+            return True
+        # Defence-in-depth: a section whose entire content is an
+        # anti-template phrase should be enriched.
+        try:
+            from core.synthesis_prompts import is_anti_template_phrase
+        except Exception:
+            is_anti_template_phrase = lambda _v: False  # noqa: E731
+        return bool(is_anti_template_phrase(text))
+    if isinstance(section_payload, (list, tuple)):
+        return _list_is_thin(section_payload, min_items=min_items)
+    if isinstance(section_payload, dict):
+        if not section_payload:
+            return True
+        # SWOT / roadmap shape: a dict whose values are list-buckets.
+        bucket_values = list(section_payload.values())
+        if bucket_values and all(
+            isinstance(v, (list, tuple)) for v in bucket_values
+        ):
+            # Thin iff EVERY bucket is thin (after anti-template + bare-string
+            # exclusion). i.e. fire synthesis when no bucket has at least one
+            # provenance-bearing, non-template item.
+            return all(
+                _list_is_thin(v, min_items=min_items) for v in bucket_values
+            )
+        # Non-bucket dict (e.g. competitor entry, summary metadata): treat
+        # as non-thin — the section already has structured content.
+        return False
+    return False
+
+
+def _list_is_thin(items: Any, *, min_items: int = 1) -> bool:
+    """True when `items` lacks `min_items` non-template, structured entries.
+
+    Used by `_section_is_thin`. An item counts toward `effective_count` iff:
+      * It is a dict with at least one of `source_trace_ids` / `trace_ids`
+        / `evidence_tag` (i.e. provenance-bearing — produced by R2E
+        synthesis or another evidence-cited path), OR
+      * It is a string that does NOT match `is_anti_template_phrase`
+        AND there is at least one other non-string, provenance-bearing item
+        in the list (i.e. the list isn't an all-bare-strings legacy payload).
+
+    The all-bare-strings shape itself is treated as thin via the
+    belt-and-braces rule — see `_section_is_thin` docstring.
+    """
+    if not isinstance(items, (list, tuple)):
+        return True
+    if len(items) == 0:
+        return True
+    try:
+        from core.synthesis_prompts import is_anti_template_phrase
+    except Exception:
+        is_anti_template_phrase = lambda _v: False  # noqa: E731
+    has_any_dict = any(isinstance(x, dict) for x in items)
+    # Belt-and-braces: all-strings shape is the legacy template builder
+    # output. Treat as thin so synthesis fires.
+    if not has_any_dict:
+        return True
+    effective_count = 0
+    for item in items:
+        if isinstance(item, dict):
+            text = str(item.get("text") or "").strip() if "text" in item else ""
+            if text and is_anti_template_phrase(text):
+                continue
+            has_provenance = bool(
+                item.get("source_trace_ids")
+                or item.get("trace_ids")
+                or item.get("evidence_tag")
+            )
+            # Provenance-bearing dict (or a structured non-text dict like a
+            # competitor entry): counts as effective content.
+            if has_provenance or not text:
+                effective_count += 1
+            else:
+                # Has text but no provenance — treat as anti-template
+                # because R2E contract requires provenance on every item.
+                continue
+        elif isinstance(item, str):
+            # Mixed list with at least one provenance dict already — count
+            # non-template strings too (they're not the legacy shape).
+            if item.strip() and not is_anti_template_phrase(item):
+                effective_count += 1
+        else:
+            # Unknown item shape — be conservative and count it.
+            effective_count += 1
+    return effective_count < min_items
+
+
+async def _enrich_cmo_with_synthesis(
+    response: Dict[str, Any],
+    enrichment: Dict[str, Any],
+    *,
+    business_name: str,
+    user_id: str,
+    tier: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Optionally enrich the CMO response with R2E trinity synthesis.
+
+    Strategy:
+      1. Gate on env flag (synthesis disabled in dev / paused under cost spike).
+      2. Gate on `has_sufficient_synthesis_inputs` — never burn tokens when
+         the inputs wouldn't produce world-class output anyway.
+      3. For each thin section: build the section prompt, call trinity
+         synthesis, parse JSON, drop items via provenance filter.
+      4. Merge cited content back into `response` only if the LLM returned
+         non-empty enriched content. Never overwrite existing evidence-backed
+         content with thinner content — synthesis only fills gaps.
+
+    Errors at any step are caught and logged. The route NEVER blocks on
+    synthesis — if the LLM is paused, errored, or out-of-budget, the
+    response is returned unchanged.
+    """
+    if not _synthesis_enabled_for_request():
+        return response
+    if not has_sufficient_synthesis_inputs(enrichment):
+        return response
+
+    # Lazy import to avoid pulling httpx into the SQL-only test paths.
+    try:
+        from core.llm_router import llm_trinity_synthesis
+    except Exception as imp_exc:
+        logger.debug(f"[cmo-synthesis] llm_trinity_synthesis import skipped: {imp_exc}")
+        return response
+
+    available_trace_ids = collect_available_trace_ids(enrichment)
+    available_competitor_names = collect_available_competitor_names(enrichment)
+    available_metric_names = collect_available_brand_metric_names(enrichment)
+
+    from core.synthesis_prompts import (
+        filter_synthesis_swot_with_provenance,
+        filter_synthesis_roadmap_with_provenance,
+    )
+
+    # ─── Chief Marketing Summary + Executive Summary ──────────────────
+    if _section_is_thin(response.get("executive_summary")):
+        try:
+            cm_system, cm_user = build_chief_marketing_summary_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            cm_raw = await llm_trinity_synthesis(
+                cm_system, cm_user,
+                temperature=0.3, max_tokens=900, timeout=60,
+                user_id=user_id, tier=tier,
+            )
+            cm_parsed = parse_synthesis_json(cm_raw)
+            if isinstance(cm_parsed, dict) and isinstance(cm_parsed.get("summary"), str):
+                summary_text = cm_parsed["summary"].strip()
+                # Reject if the synthesised summary itself slipped through
+                # an anti-template phrase (the prompt forbids it but defence
+                # in depth keeps us honest).
+                from core.synthesis_prompts import is_anti_template_phrase
+                if summary_text and not is_anti_template_phrase(summary_text):
+                    response["executive_summary"] = summary_text
+                    response.setdefault("executive_summary_provenance", {})
+                    response["executive_summary_provenance"] = {
+                        "source_trace_ids": cm_parsed.get("source_trace_ids") or [],
+                        "signals_cited": cm_parsed.get("signals_cited") or [],
+                    }
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] chief_marketing_summary skipped: {exc}")
+
+    # ─── Executive Summary bullets ─────────────────────────────────────
+    # Only synthesise if there is no existing exec_summary_bullets array.
+    if _section_is_thin(response.get("exec_summary_bullets"), min_items=1):
+        try:
+            es_system, es_user = build_executive_summary_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            es_raw = await llm_trinity_synthesis(
+                es_system, es_user,
+                temperature=0.3, max_tokens=1100, timeout=60,
+                user_id=user_id, tier=tier,
+            )
+            es_parsed = parse_synthesis_json(es_raw)
+            if isinstance(es_parsed, dict) and isinstance(es_parsed.get("bullets"), list):
+                from core.synthesis_prompts import is_anti_template_phrase
+                cleaned_bullets = []
+                for b in es_parsed["bullets"]:
+                    if not isinstance(b, dict):
+                        continue
+                    text = str(b.get("text") or "").strip()
+                    if not text or is_anti_template_phrase(text):
+                        continue
+                    cleaned_bullets.append({
+                        "text": text,
+                        "source_trace_ids": b.get("source_trace_ids") or [],
+                        "dataset": b.get("dataset"),
+                        "metric_value": b.get("metric_value"),
+                    })
+                if cleaned_bullets:
+                    response["exec_summary_bullets"] = cleaned_bullets
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] executive_summary skipped: {exc}")
+
+    # ─── SWOT (4 buckets) ─────────────────────────────────────────────
+    swot = response.get("swot") or {}
+    if _section_is_thin(swot, min_items=1):
+        try:
+            sw_system, sw_user = build_swot_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            sw_raw = await llm_trinity_synthesis(
+                sw_system, sw_user,
+                temperature=0.35, max_tokens=2000, timeout=80,
+                user_id=user_id, tier=tier,
+            )
+            sw_parsed = parse_synthesis_json(sw_raw)
+            if isinstance(sw_parsed, dict):
+                enriched_swot: Dict[str, List[Dict[str, Any]]] = {}
+                for bucket in ("strengths", "weaknesses", "opportunities", "threats"):
+                    raw_items = sw_parsed.get(bucket) or []
+                    cleaned = filter_synthesis_swot_with_provenance(
+                        raw_items,
+                        available_trace_ids=available_trace_ids,
+                        available_competitor_names=available_competitor_names,
+                    )
+                    enriched_swot[bucket] = cleaned
+                # Only merge if at least one bucket has content. We never
+                # downgrade existing rich content with empty arrays.
+                non_empty_count = sum(1 for v in enriched_swot.values() if v)
+                if non_empty_count >= 2:
+                    response["swot_v2"] = enriched_swot
+                    # Backfill flat string lists for the legacy `swot` shape
+                    # the frontend already consumes — never overwrite a
+                    # bucket that already had content (gap-fill only).
+                    for bucket, items in enriched_swot.items():
+                        existing = (swot.get(bucket) or []) if isinstance(swot, dict) else []
+                        if not existing and items:
+                            swot[bucket] = [it["text"] for it in items if it.get("text")]
+                    response["swot"] = swot
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] swot skipped: {exc}")
+
+    # ─── Strategic Roadmap (3 horizons) ───────────────────────────────
+    roadmap = response.get("roadmap") or {}
+    if _section_is_thin(roadmap, min_items=1):
+        try:
+            rm_system, rm_user = build_strategic_roadmap_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            rm_raw = await llm_trinity_synthesis(
+                rm_system, rm_user,
+                temperature=0.35, max_tokens=2000, timeout=80,
+                user_id=user_id, tier=tier,
+            )
+            rm_parsed = parse_synthesis_json(rm_raw)
+            if isinstance(rm_parsed, dict):
+                enriched_roadmap: Dict[str, List[Dict[str, Any]]] = {}
+                bucket_alias = {
+                    "quick_wins": ("quick_wins", "seven_day_quick_wins", "7_day"),
+                    "priorities": ("priorities", "thirty_day_priorities", "30_day"),
+                    "strategic": ("strategic", "ninety_day_strategic_goals", "90_day"),
+                }
+                for canonical_key, alias_keys in bucket_alias.items():
+                    raw_items: List[Any] = []
+                    for ak in alias_keys:
+                        cand = rm_parsed.get(ak)
+                        if isinstance(cand, list):
+                            raw_items = cand
+                            break
+                    cleaned = filter_synthesis_roadmap_with_provenance(
+                        raw_items,
+                        available_trace_ids=available_trace_ids,
+                        available_competitor_names=available_competitor_names,
+                        available_brand_metric_names=available_metric_names,
+                    )
+                    enriched_roadmap[canonical_key] = cleaned
+                non_empty = sum(1 for v in enriched_roadmap.values() if v)
+                if non_empty >= 2:
+                    response["roadmap_v2"] = enriched_roadmap
+                    # Gap-fill the existing roadmap shape — never overwrite
+                    # a column that already had content.
+                    for col, items in enriched_roadmap.items():
+                        existing = (roadmap.get(col) or []) if isinstance(roadmap, dict) else []
+                        if not existing and items:
+                            roadmap[col] = items
+                    response["roadmap"] = roadmap
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] roadmap skipped: {exc}")
+
+    # ─── Competitive Landscape ────────────────────────────────────────
+    if _section_is_thin(response.get("competitors"), min_items=2):
+        try:
+            cl_system, cl_user = build_competitive_landscape_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            cl_raw = await llm_trinity_synthesis(
+                cl_system, cl_user,
+                temperature=0.3, max_tokens=2000, timeout=80,
+                user_id=user_id, tier=tier,
+            )
+            cl_parsed = parse_synthesis_json(cl_raw)
+            if isinstance(cl_parsed, dict) and isinstance(cl_parsed.get("competitors"), list):
+                rows = []
+                for c in cl_parsed["competitors"][:10]:
+                    if not isinstance(c, dict):
+                        continue
+                    name = (c.get("name") or "").strip()
+                    if not name:
+                        continue
+                    rows.append(c)
+                if rows:
+                    response["competitive_landscape_v2"] = {"competitors": rows}
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] competitive_landscape skipped: {exc}")
+
+    # ─── Review / Workplace Intelligence ──────────────────────────────
+    review_state_thin = (
+        not (response.get("reviews") or {}).get("count")
+        and not response.get("review_themes", {}).get("positive")
+    )
+    if review_state_thin:
+        try:
+            ri_system, ri_user = build_review_intelligence_prompt(
+                business_name=business_name,
+                enrichment=enrichment,
+                available_trace_ids=available_trace_ids,
+            )
+            ri_raw = await llm_trinity_synthesis(
+                ri_system, ri_user,
+                temperature=0.3, max_tokens=1800, timeout=70,
+                user_id=user_id, tier=tier,
+            )
+            ri_parsed = parse_synthesis_json(ri_raw)
+            if isinstance(ri_parsed, dict):
+                cs = ri_parsed.get("customer_sentiment") or {}
+                wi = ri_parsed.get("workplace_intelligence") or {}
+                if cs or wi:
+                    response["review_intelligence_v2"] = {
+                        "customer_sentiment": cs,
+                        "workplace_intelligence": wi,
+                        "source_trace_ids": ri_parsed.get("source_trace_ids") or [],
+                    }
+        except Exception as exc:
+            logger.warning(f"[cmo-synthesis] review_intelligence skipped: {exc}")
+
+    return response
+
+
 @router.get("/intelligence/cmo-report")
 async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     """
@@ -1062,7 +1860,15 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
 
     # 3) No enrichment -> clean calibrating state (not a half-populated stub).
     if not enrichment:
-        return _cmo_empty_shell(user_id, company)
+        empty = _cmo_empty_shell(user_id, company)
+        # E6 (2026-05-04): Even in the empty/processing path, return per-section
+        # SectionEvidence so the frontend can render PROCESSING banners for
+        # every section consistently. Each section's state will be PROCESSING
+        # (calibration not yet complete).
+        empty["sections"] = _build_section_evidence_for_cmo(
+            empty, {}, is_processing=True,
+        )
+        return scrub_response_for_external(empty)
 
     # 4) Map enrichment -> CMO response shape.
     company_from_enrichment = (
@@ -1141,6 +1947,28 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         "competitor_swot": enrichment.get("competitor_swot") or [],
         "seo_analysis": enrichment.get("seo_analysis") or {},
         "digital_footprint": enrichment.get("digital_footprint") or {},
+        # ─── R2D (2026-05-04): Deep SEMrush intel surfaced to CMO Report ─
+        # competitive_position consumes detailed_competitors + paid_competitors
+        # brand_strength consumes keyword_intelligence (volume + reach) + backlinks
+        # strategic_roadmap consumes top_pages + target keywords
+        # competitive_landscape consumes advertising_intelligence (ad-spend trend)
+        # market_position_score advertising-intensity dimension also feeds from
+        # advertising_intelligence.budget_posture.
+        "keyword_intelligence": enrichment.get("keyword_intelligence") or {},
+        "backlink_intelligence": (
+            enrichment.get("backlink_intelligence")
+            or enrichment.get("backlink_profile")
+            or {}
+        ),
+        "advertising_intelligence": enrichment.get("advertising_intelligence") or {},
+        # detailed_competitors is also exposed under competitor_analysis;
+        # surface a top-level alias so frontend roadmap components don't
+        # need to drill into competitor_analysis.detailed_competitors.
+        "detailed_competitors": (
+            (enrichment.get("competitor_analysis") or {}).get("detailed_competitors")
+            or []
+        ),
+        "paid_competitor_analysis": enrichment.get("paid_competitor_analysis") or {},
         # Header meta fields.
         "engine": "BIQc Intelligence Engine",
         "scan_source": enrichment.get("website_url") or "Deep calibration scan",
@@ -1176,6 +2004,26 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     #    sentinels or meta-gap bullets, strip them before returning.
     response = _apply_render_time_filters(response)
 
+    # 6b) R2E (2026-05-04): optional LLM synthesis enrichment.
+    #     When the deep R2A-D + F14/F15 enrichment data is present but the
+    #     report sections are thin, call the world-class synthesis prompts
+    #     (core/synthesis_prompts.py) to fill the gaps with evidence-cited
+    #     content. Provenance + anti-template filters are applied inside
+    #     _enrich_cmo_with_synthesis. Errors here are non-fatal — the route
+    #     never blocks on synthesis. See module docstring for the full
+    #     contract.
+    try:
+        tier_str = current_user.get("tier") if isinstance(current_user, dict) else None
+        response = await _enrich_cmo_with_synthesis(
+            response,
+            enrichment,
+            business_name=company_from_enrichment or company,
+            user_id=user_id,
+            tier=tier_str,
+        )
+    except Exception as syn_err:
+        logger.debug(f"[cmo-report] synthesis enrichment skipped (non-fatal): {syn_err}")
+
     # 7) Evidence inventory + report state (zero-fake-data gate).
     competitor_status = classify_section(
         has_evidence=len(response.get("competitors") or []) > 0,
@@ -1209,6 +2057,78 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         has_placeholder=bool(isinstance(enrichment.get("cmo_executive_brief"), str) and is_placeholder_text(enrichment.get("cmo_executive_brief"))),
     )
 
+    # ──────────────────────────────────────────────────────────────────────
+    # 2026-05-04 (P0 Marjo R2C): Workplace Intelligence section.
+    # Reads `staff_review_intelligence` (now backed by the new
+    # `staff-reviews-deep` edge function — Firecrawl across Glassdoor /
+    # Indeed / Seek + LLM theme extraction). Brands with strong staff
+    # sentiment correlate with strong customer sentiment, so we surface
+    # the workplace section as a complement to Review Intelligence
+    # (customer-facing) in the CMO Report.
+    # ──────────────────────────────────────────────────────────────────────
+    staff_intel = enrichment.get("staff_review_intelligence") if isinstance(enrichment.get("staff_review_intelligence"), dict) else {}
+    workplace_payload = {
+        "weighted_overall_rating": staff_intel.get("weighted_overall_rating"),
+        "staff_score": staff_intel.get("staff_score"),
+        "total_reviews": staff_intel.get("total_reviews_cross_platform") or 0,
+        "review_count_last_12_months": staff_intel.get("review_count_last_12_months") or 0,
+        "platforms": [
+            {
+                "platform": p.get("platform"),
+                "rating": p.get("rating"),
+                "review_count": p.get("review_count"),
+                "url": p.get("url"),
+                "themes": p.get("themes") or {"pros": [], "cons": []},
+                "rating_distribution": p.get("rating_distribution"),
+            }
+            for p in (staff_intel.get("platforms") or [])
+            if isinstance(p, dict)
+        ],
+        "cross_platform_themes": staff_intel.get("cross_platform_themes") or {"pros": [], "cons": []},
+        "trend_30d_vs_90d": staff_intel.get("trend_30d_vs_90d") or "insufficient_data",
+        "employer_brand_health_score": staff_intel.get("employer_brand_health_score"),
+        "ceo_approval": staff_intel.get("ceo_approval"),
+        "recommend_to_friend": staff_intel.get("recommend_to_friend"),
+        "top_positive_themes": (staff_intel.get("cross_platform_themes") or {}).get("pros") or [],
+        "top_negative_themes": (staff_intel.get("cross_platform_themes") or {}).get("cons") or [],
+        "action_plan": staff_intel.get("action_plan") or [],
+        "competitor_employer_benchmark": staff_intel.get("competitor_employer_benchmark"),
+        "deep_extraction_used": bool(staff_intel.get("deep_extraction_used")),
+    }
+    response["workplace_intelligence"] = workplace_payload
+
+    workplace_status = classify_section(
+        has_evidence=(
+            (isinstance(workplace_payload.get("weighted_overall_rating"), (int, float)) and workplace_payload["weighted_overall_rating"] > 0)
+            or (workplace_payload.get("total_reviews") or 0) > 0
+            or len(workplace_payload.get("platforms") or []) > 0
+        ),
+        degraded=bool(staff_intel.get("has_data")) and (workplace_payload.get("total_reviews") or 0) == 0,
+    )
+
+    # ─── R2D (2026-05-04): per-section evidence audit for new SEMrush sections.
+    # Each new section is graded SOURCE_BACKED only when the supplier returned
+    # real data; INSUFFICIENT otherwise (Contract v2 bans fabrication).
+    keyword_intel = response.get("keyword_intelligence") or {}
+    keyword_intel_status = classify_section(
+        has_evidence=bool(
+            keyword_intel.get("organic_keywords")
+            or keyword_intel.get("top_pages")
+        ),
+    )
+    backlink_intel = response.get("backlink_intelligence") or {}
+    backlink_intel_status = classify_section(
+        has_evidence=bool(
+            backlink_intel.get("total_backlinks") is not None
+            and backlink_intel.get("referring_domains") is not None
+        ),
+    )
+    adv_intel = response.get("advertising_intelligence") or {}
+    advertising_intel_status = classify_section(
+        has_evidence=bool(adv_intel.get("ad_history_12m")),
+    )
+
+
     section_inventory = {
         "Chief Marketing Summary": {"status": exec_status},
         "Executive Summary": {"status": exec_status},
@@ -1216,7 +2136,12 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         "Competitive Landscape": {"status": competitor_status},
         "SWOT": {"status": swot_status},
         "Review Intelligence": {"status": review_status},
+        "Workplace Intelligence": {"status": workplace_status},
         "Strategic Roadmap": {"status": roadmap_status},
+        # R2D additions:
+        "Keyword Intelligence": {"status": keyword_intel_status},
+        "Backlink Intelligence": {"status": backlink_intel_status},
+        "Advertising Intelligence": {"status": advertising_intel_status},
     }
     response["section_inventory"] = section_inventory
 
@@ -1245,6 +2170,31 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     response["confidence"] = confidence if confidence > 0 else evidence_confidence
     response["data_points"] = f"{real_points} evidence points"
 
+    # 7b) P0 Marjo E2 / 2026-05-04 — provider chain audit summary.
+    #     Attach a SANITISED summary of which providers ran for the scan
+    #     that produced this enrichment (counts only — no supplier names,
+    #     no error strings, no edge_function names). Drives the user-visible
+    #     "X data sources contributed" badge without leaking the engine
+    #     under BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
+    #     Raw rows live behind /intelligence/cmo-report/audit (superadmin).
+    try:
+        scan_id_for_audit = enrichment.get("scan_id") if isinstance(enrichment, dict) else None
+        if scan_id_for_audit:
+            chain = fetch_scan_provider_chain(scan_id_for_audit, sb=sb)
+            response["provider_chain_summary"] = {
+                # Counts only. No supplier names. No error text. Numeric.
+                "trace_count": chain.get("trace_count", 0),
+                "ok_count": chain.get("ok_count", 0),
+                "fail_count": chain.get("fail_count", 0),
+                "abandoned_count": chain.get("abandoned_count", 0),
+                "distinct_providers": len(chain.get("providers") or []),
+                # Internal-only — keeps the scan_id discoverable by audit
+                # endpoints that the frontend can call. Not a supplier name.
+                "scan_id": chain.get("scan_id"),
+            }
+    except Exception as audit_err:
+        logger.debug(f"[cmo-report] provider_chain_summary skipped: {audit_err}")
+
     # 8) Contract v2 / Step 3c (2026-04-23): scrub internal keys at any depth
     #    before returning. Strips ai_errors, sources.edge_tools, _http_status,
     #    correlation, raw_overview, source:"semrush" sub-tags, auth-path
@@ -1267,7 +2217,10 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     _sanitized_enrich = _sanitized_envelope["enrichment"] or {}
     for _key in ("seo_analysis", "paid_media_analysis", "swot",
                  "seo_html_hygiene", "market_position", "market_trajectory",
-                 "social_media_analysis", "website_health"):
+                 "social_media_analysis", "website_health",
+                 # R2D additions: preserve only when DATA_AVAILABLE.
+                 "keyword_intelligence", "backlink_intelligence",
+                 "advertising_intelligence", "paid_competitor_analysis"):
         sanitized_val = _sanitized_enrich.get(_key)
         # Adopt the sanitizer output when it preserves a dict with real data.
         # The new sanitizer (PR 2026-04-23) preserves populated data and
@@ -1286,7 +2239,142 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
                 response[f"{_key}_state"] = sanitized_val.get("state")
                 response[f"{_key}_message"] = sanitized_val.get("message")
 
+    # 9) E6 (2026-05-04): Per-section evidence contract.
+    # Every CMO Report section must be returned as a SectionEvidence object
+    # with explicit state + sanitised reason + provenance trace ids. Generic
+    # SWOT/Roadmap items that fail the placeholder denylist OR the provenance
+    # check are dropped, and the parent section flips to INSUFFICIENT_SIGNAL.
+    #
+    # Per Andreas's PR #449 follow-up: thin/templated reports are an
+    # AUTOMATIC FAIL. The per-section evidence contract makes it impossible
+    # for the frontend to render a generic Marketing-101 SWOT or roadmap.
+    response["sections"] = _build_section_evidence_for_cmo(
+        response, enrichment, is_processing=False,
+    )
+
     return scrub_response_for_external(response)
+
+
+# ═══════════════════════════════════════════════════════════════
+# P0 Marjo E2 / 2026-05-04 — provider-trace audit endpoints
+# ═══════════════════════════════════════════════════════════════
+#
+# Two endpoints:
+#
+#   GET /intelligence/cmo-report/audit
+#     Owner-readable. Returns the SANITISED chain summary for the latest
+#     scan tied to the user's most recent business_dna_enrichment row.
+#     Counts only — no supplier names, no error strings. Drives the
+#     in-app "diagnostics" tab a paying user can open to confirm "we
+#     called X providers for your scan, Y succeeded, Z failed".
+#
+#   GET /intelligence/cmo-report/audit/{scan_id}/raw
+#     Superadmin-only. Returns the FULL row set for the named scan,
+#     including provider slugs, edge_function names, error strings.
+#     Backstops the daily ops_daily_calibration_check + Andreas's
+#     post-incident forensic drill. Strictly behind get_super_admin
+#     to keep the engine details inside the trust boundary per
+#     BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
+
+@router.get("/intelligence/cmo-report/audit")
+async def get_cmo_report_audit_summary(current_user: dict = Depends(get_current_user)):
+    """Owner-readable per-scan audit summary — sanitised counts only."""
+    user_id = current_user["id"]
+    sb = init_supabase()
+
+    # Latest enrichment row → latest scan_id.
+    scan_id_for_audit = None
+    try:
+        enr_result = (
+            sb.table("business_dna_enrichment")
+              .select("enrichment, created_at, updated_at")
+              .eq("user_id", user_id)
+              .order("created_at", desc=True)
+              .limit(1)
+              .maybe_single()
+              .execute()
+        )
+        row = enr_result.data if enr_result and enr_result.data else None
+        if row and isinstance(row, dict):
+            enrichment = row.get("enrichment") or {}
+            if isinstance(enrichment, dict):
+                scan_id_for_audit = enrichment.get("scan_id")
+    except Exception as exc:
+        logger.debug(f"[cmo-report/audit] enrichment lookup skipped: {exc}")
+
+    if not scan_id_for_audit:
+        return scrub_response_for_external({
+            "scan_id": None,
+            "trace_count": 0,
+            "ok_count": 0,
+            "fail_count": 0,
+            "abandoned_count": 0,
+            "distinct_providers": 0,
+            "state": ExternalState.INSUFFICIENT_SIGNAL.value,
+            "state_message": "No scan diagnostics available yet.",
+        })
+
+    try:
+        chain = fetch_scan_provider_chain(scan_id_for_audit, sb=sb)
+    except Exception as exc:
+        logger.warning(f"[cmo-report/audit] fetch_scan_provider_chain failed: {exc}")
+        return scrub_response_for_external({
+            "scan_id": scan_id_for_audit,
+            "trace_count": 0,
+            "ok_count": 0,
+            "fail_count": 0,
+            "abandoned_count": 0,
+            "distinct_providers": 0,
+            "state": ExternalState.DEGRADED.value,
+            "state_message": "Scan diagnostics temporarily unavailable.",
+        })
+
+    # Sanitised payload — counts only. Supplier names DO NOT appear here.
+    return scrub_response_for_external({
+        "scan_id": chain.get("scan_id"),
+        "trace_count": chain.get("trace_count", 0),
+        "ok_count": chain.get("ok_count", 0),
+        "fail_count": chain.get("fail_count", 0),
+        "abandoned_count": chain.get("abandoned_count", 0),
+        "distinct_providers": len(chain.get("providers") or []),
+        "state": (
+            ExternalState.DATA_AVAILABLE.value
+            if chain.get("ok_count", 0) > 0 and chain.get("fail_count", 0) == 0
+            else ExternalState.DEGRADED.value
+            if chain.get("ok_count", 0) > 0
+            else ExternalState.INSUFFICIENT_SIGNAL.value
+        ),
+        "state_message": (
+            f"Scan reached {chain.get('ok_count', 0)} of "
+            f"{max(chain.get('trace_count', 0), 1)} configured intelligence sources."
+        ),
+    })
+
+
+@router.get("/intelligence/cmo-report/audit/{scan_id}/raw")
+async def get_cmo_report_audit_raw(scan_id: str, admin: dict = Depends(get_super_admin)):
+    """Superadmin-only — full per-call rows for a scan including supplier
+    slugs and error strings. Used by the daily ops calibration check and
+    forensic drill. Never reachable by a regular user."""
+    sb = init_supabase()
+    try:
+        chain = fetch_scan_provider_chain(scan_id, sb=sb)
+    except Exception as exc:
+        logger.error(f"[cmo-report/audit/raw] failed for scan_id={scan_id}: {exc}")
+        raise HTTPException(500, "audit lookup failed")
+
+    # Raw rows surface supplier names + error strings. Allowed here because
+    # this endpoint is gated on get_super_admin. NOT scrubbed.
+    return {
+        "scan_id": chain.get("scan_id"),
+        "trace_count": chain.get("trace_count", 0),
+        "ok_count": chain.get("ok_count", 0),
+        "fail_count": chain.get("fail_count", 0),
+        "abandoned_count": chain.get("abandoned_count", 0),
+        "unsanitised_count": chain.get("unsanitised_count", 0),
+        "providers": chain.get("providers") or [],
+        "rows": chain.get("rows") or [],
+    }
 
 
 # ═══════════════════════════════════════════════════════════════

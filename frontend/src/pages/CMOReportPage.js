@@ -20,6 +20,13 @@ import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
+import SectionEvidenceRenderer, {
+  SECTION_STATE,
+  StateBanner,
+  ProvenancePill,
+  getSection,
+  isPlaceholderText,
+} from '../components/SectionEvidenceRenderer';
 
 // P0 2026-04-23 (Andreas): inline error boundary so a null-deref in any
 // child section never takes the whole page down. Shows calibrating card
@@ -202,6 +209,18 @@ function CMOReportPageInner() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Share Report state — fix/p0-marjo-e8 (PR #449 follow-up).
+  // Replaces the previous handleShare which silently no-op'd when both
+  // navigator.share and navigator.clipboard were unavailable. We now ALWAYS
+  // hit the backend, ALWAYS show explicit success/error UI, and the action
+  // is provably persisted in `share_events`.
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareInFlight, setShareInFlight] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareExpiresAt, setShareExpiresAt] = useState('');
+  const [shareError, setShareError] = useState('');
+  const [shareCopied, setShareCopied] = useState(false);
+
   // SVG gauge animation
   const gaugeRef = useRef(null);
   const [gaugeVisible, setGaugeVisible] = useState(false);
@@ -319,30 +338,87 @@ function CMOReportPageInner() {
   const overall = mps.overall || 0;
   const gaugeOffset = gaugeVisible ? gaugeCirc - (gaugeCirc * overall / 100) : gaugeCirc;
 
+  // fix/p0-marjo-e8 (PR #449 follow-up): proven non-no-op share.
+  //   1. POSTs to /reports/cmo-report/share — backend writes share_events
+  //      row + returns {share_url, expires_at}.
+  //   2. On success: opens an in-page modal with the copyable URL. Never
+  //      a silent toast-only path — the URL must be visible until the
+  //      user explicitly closes the modal.
+  //   3. On failure: shows an explicit error banner inside the modal AND
+  //      a destructive toast. No silent no-op possible.
+  //   4. While the request is in-flight the button is disabled to prevent
+  //      a double-submit creating two share rows for one click.
   const handleShare = async () => {
+    if (shareInFlight) return;
+    setShareInFlight(true);
+    setShareError('');
+    setShareCopied(false);
+    setShareModalOpen(true);
     try {
-      const url = typeof window !== 'undefined' ? window.location.href : '';
-      if (navigator?.share) {
-        await navigator.share({ title: 'BIQc CMO Report', text: 'BIQc CMO Intelligence Report', url });
-        toast.success('Share sheet opened');
-        return;
+      const res = await apiClient.post('/reports/cmo-report/share', {});
+      const data = res?.data || {};
+      const url = String(data.share_url || '').trim();
+      if (!url) {
+        // Backend returned 200 with empty share_url — Contract v2 violation.
+        // Surface as error rather than silently swallowing.
+        throw new Error('Share link missing from response');
       }
-      if (navigator?.clipboard && url) {
-        await navigator.clipboard.writeText(url);
-        toast.success('Report link copied to clipboard');
-        return;
-      }
-      toast.info('Share is unavailable in this browser. Copy the URL from the address bar.');
+      setShareUrl(url);
+      setShareExpiresAt(String(data.expires_at || ''));
+      toast.success('Share link ready');
     } catch (err) {
-      const name = String(err?.name || '');
-      // User-cancelled native share should still get explicit non-error feedback.
-      if (name === 'AbortError') {
-        toast.info('Share cancelled');
-        return;
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.detail;
+      let msg;
+      if (status === 401 || status === 403) {
+        msg = 'You need to be signed in to share this report.';
+      } else if (status === 502 || status === 503) {
+        msg = 'The share service is temporarily unavailable. Please try again in a moment.';
+      } else if (typeof detail === 'string' && detail.length < 200) {
+        msg = detail;
+      } else {
+        msg = 'Could not create the share link. Please try again.';
       }
-      toast.error('Share failed. Please copy the URL from the address bar.');
+      setShareError(msg);
+      setShareUrl('');
+      toast.error(msg);
+    } finally {
+      setShareInFlight(false);
     }
   };
+
+  const handleCopyShareUrl = async () => {
+    if (!shareUrl) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        // Fallback for browsers without async clipboard support.
+        const ta = document.createElement('textarea');
+        ta.value = shareUrl;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'absolute';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand && document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setShareCopied(true);
+      toast.success('Copied!');
+      setTimeout(() => setShareCopied(false), 2500);
+    } catch (copyErr) {
+      // Never silent — surface the failure to the user.
+      toast.error('Could not copy. Please copy the URL manually.');
+    }
+  };
+
+  const handleCloseShareModal = () => {
+    setShareModalOpen(false);
+    setShareError('');
+    setShareCopied(false);
+  };
+
   const handleDownloadPDF = async () => {
     try {
       toast.info('Preparing PDF\u2026');
@@ -417,8 +493,25 @@ function CMOReportPageInner() {
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', background: V.sunken, border: `1px solid ${V.border}`, borderRadius: 'var(--r-pill)', fontSize: 10, fontWeight: 600, color: V.inkMuted, letterSpacing: 'var(--ls-caps)' }}>
                 {data.version || '\u2014'} &middot; {data.status || 'Draft'}
               </span>
-              <button onClick={handleShare} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, border: `1px solid ${V.border}`, background: 'transparent', color: V.ink, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>
-                <Share2 size={14} /> Share Report
+              <button
+                onClick={handleShare}
+                disabled={shareInFlight}
+                aria-busy={shareInFlight}
+                aria-label="Share Report"
+                data-testid="cmo-share-button"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  border: `1px solid ${V.border}`,
+                  background: 'transparent',
+                  color: V.ink,
+                  cursor: shareInFlight ? 'not-allowed' : 'pointer',
+                  opacity: shareInFlight ? 0.6 : 1,
+                  fontFamily: 'var(--font-ui)',
+                }}
+              >
+                {shareInFlight ? <Loader2 size={14} className="biqc-spin" /> : <Share2 size={14} />}
+                {shareInFlight ? 'Preparing…' : 'Share Report'}
               </button>
               <button onClick={handleDownloadPDF} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, border: 'none', background: `linear-gradient(135deg, ${V.lava}, ${V.lavaWarm})`, color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>
                 <Download size={14} /> Download PDF
@@ -445,18 +538,60 @@ function CMOReportPageInner() {
 
         {/* ═══════════════════════════════════════════════════
             2. EXECUTIVE SUMMARY
+            E6 (2026-05-04): Wired through SectionEvidenceRenderer so an
+            empty / placeholder executive summary renders an
+            INSUFFICIENT_SIGNAL banner with sanitised reason instead of
+            "No executive summary available yet".
             ═══════════════════════════════════════════════════ */}
-        <div style={{
-          background: V.surface, border: `1px solid ${V.border}`, borderLeft: `3px solid ${V.lava}`,
-          borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 32,
-        }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 10, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase', color: V.lava, marginBottom: 12 }}>
-            <Layers size={14} /> Executive Summary
-          </div>
-          <p style={{ fontSize: 16, lineHeight: 1.7, color: V.inkSecondary, margin: 0 }}>
-            {data.executive_summary || 'No executive summary available yet. Connect your integrations to generate intelligence.'}
-          </p>
-        </div>
+        {(() => {
+          const execSection = getSection(data, 'executive_summary');
+          const Header = () => (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 10, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase', color: V.lava, marginBottom: 12 }}>
+              <Layers size={14} /> Executive Summary
+            </div>
+          );
+          const Wrap = ({ children: inner }) => (
+            <div style={{
+              background: V.surface, border: `1px solid ${V.border}`, borderLeft: `3px solid ${V.lava}`,
+              borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 32,
+            }}>
+              <Header />
+              {inner}
+            </div>
+          );
+          if (execSection) {
+            return (
+              <Wrap>
+                <SectionEvidenceRenderer section={execSection} onRetry={() => window.location.reload()}>
+                  {(evidence) => (
+                    <p style={{ fontSize: 16, lineHeight: 1.7, color: V.inkSecondary, margin: 0 }}>
+                      {evidence?.text || data.executive_summary}
+                    </p>
+                  )}
+                </SectionEvidenceRenderer>
+              </Wrap>
+            );
+          }
+          // Legacy fallback path
+          if (data.executive_summary && !isPlaceholderText(data.executive_summary)) {
+            return (
+              <Wrap>
+                <p style={{ fontSize: 16, lineHeight: 1.7, color: V.inkSecondary, margin: 0 }}>
+                  {data.executive_summary}
+                </p>
+              </Wrap>
+            );
+          }
+          return (
+            <Wrap>
+              <StateBanner
+                state={SECTION_STATE.INSUFFICIENT_SIGNAL}
+                reason="We don't yet have enough verified intelligence to write a complete executive summary for this business."
+                onRetry={() => window.location.reload()}
+              />
+            </Wrap>
+          );
+        })()}
 
         {/* ═══════════════════════════════════════════════════
             3. MARKET POSITION SCORE
@@ -577,14 +712,54 @@ function CMOReportPageInner() {
 
         {/* ═══════════════════════════════════════════════════
             5. SWOT ANALYSIS
+            E6 (2026-05-04): Each SWOT bucket is wired through
+            SectionEvidenceRenderer so a bucket with no evidence renders
+            an INSUFFICIENT_SIGNAL banner instead of a generic
+            Marketing-101 fallback. Per Andreas's PR #449 follow-up.
             ═══════════════════════════════════════════════════ */}
         <div style={{ marginBottom: 32 }}>
           <SectionHead icon={<Target size={18} />} iconBg={V.positiveWash} iconColor={V.positive} title="SWOT Analysis" />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-            <SwotCard type="strength"    label="Strengths"     icon={<CheckCircle2 size={16} />} items={swot.strengths.length  ? swot.strengths  : ['Insufficient evidence for strengths.']} />
-            <SwotCard type="weakness"    label="Weaknesses"    icon={<AlertTriangle size={16} />} items={swot.weaknesses.length ? swot.weaknesses : ['Insufficient evidence for weaknesses.']} />
-            <SwotCard type="opportunity" label="Opportunities" icon={<PlusCircle size={16} />}    items={swot.opportunities.length ? swot.opportunities : ['Insufficient evidence for opportunities.']} />
-            <SwotCard type="threat"      label="Threats"       icon={<AlertTriangle size={16} />} items={swot.threats.length    ? swot.threats    : ['Insufficient evidence for threats.']} />
+            {[
+              { type: 'strength',    label: 'Strengths',     icon: <CheckCircle2 size={16} />,  legacyItems: swot.strengths,     sectionId: 'swot_strengths' },
+              { type: 'weakness',    label: 'Weaknesses',    icon: <AlertTriangle size={16} />, legacyItems: swot.weaknesses,    sectionId: 'swot_weaknesses' },
+              { type: 'opportunity', label: 'Opportunities', icon: <PlusCircle size={16} />,    legacyItems: swot.opportunities, sectionId: 'swot_opportunities' },
+              { type: 'threat',      label: 'Threats',       icon: <AlertTriangle size={16} />, legacyItems: swot.threats,       sectionId: 'swot_threats' },
+            ].map(bucket => {
+              const sec = getSection(data, bucket.sectionId);
+              if (sec) {
+                return (
+                  <SectionEvidenceRenderer
+                    key={bucket.sectionId}
+                    section={sec}
+                    onRetry={() => window.location.reload()}
+                  >
+                    {(evidence) => (
+                      <SwotCard
+                        type={bucket.type}
+                        label={bucket.label}
+                        icon={bucket.icon}
+                        items={(evidence?.items || []).map(it => (typeof it === 'string' ? it : it.text)).filter(t => t && !isPlaceholderText(t))}
+                      />
+                    )}
+                  </SectionEvidenceRenderer>
+                );
+              }
+              // Legacy fallback path (when backend `sections` map is absent):
+              // only render when there's at least one evidence-backed item.
+              const cleaned = (bucket.legacyItems || []).filter(t => typeof t === 'string' && t.trim() && !isPlaceholderText(t));
+              if (cleaned.length > 0) {
+                return <SwotCard key={bucket.sectionId} type={bucket.type} label={bucket.label} icon={bucket.icon} items={cleaned} />;
+              }
+              return (
+                <StateBanner
+                  key={bucket.sectionId}
+                  state={SECTION_STATE.INSUFFICIENT_SIGNAL}
+                  reason={`Insufficient evidence to extract evidence-backed ${bucket.label.toLowerCase()} for this business.`}
+                  onRetry={() => window.location.reload()}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -685,52 +860,89 @@ function CMOReportPageInner() {
 
         {/* ═══════════════════════════════════════════════════
             7. STRATEGIC ROADMAP
+            E6 (2026-05-04): Each horizon column is wired through
+            SectionEvidenceRenderer. Items without provenance are dropped
+            by the backend filter; an empty horizon flips that column to
+            INSUFFICIENT_SIGNAL banner instead of "Insufficient evidence
+            for recommendations in this horizon" templated text.
             ═══════════════════════════════════════════════════ */}
         <div style={{ marginBottom: 32 }}>
           <SectionHead icon={<Target size={18} />} iconBg="var(--lava-wash)" iconColor={V.lava} title="Strategic Roadmap" />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
             {[
-              { title: '7-Day Quick Wins',     sub: 'Immediate',  items: roadmap.quick_wins, dotColor: V.danger },
-              { title: '30-Day Priorities',     sub: 'Short-term', items: roadmap.priorities,  dotColor: V.warning },
-              { title: '90-Day Strategic Goals', sub: 'Long-term',  items: roadmap.strategic,  dotColor: V.info },
-            ].map(col => (
-              <div key={col.title} style={{ background: V.surface, border: `1px solid ${V.border}`, borderRadius: 'var(--r-lg)', padding: 20, display: 'flex', flexDirection: 'column' }}>
-                {/* Column head */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${V.border}` }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: col.dotColor }} />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: V.inkDisplay }}>{col.title}</span>
-                  <span style={{ fontSize: 12, color: V.inkMuted, marginLeft: 'auto' }}>{col.sub}</span>
+              { title: '7-Day Quick Wins',       sub: 'Immediate',  legacyItems: roadmap.quick_wins, dotColor: V.danger,  sectionId: 'seven_day_quick_wins' },
+              { title: '30-Day Priorities',       sub: 'Short-term', legacyItems: roadmap.priorities,  dotColor: V.warning, sectionId: 'thirty_day_priorities' },
+              { title: '90-Day Strategic Goals',  sub: 'Long-term',  legacyItems: roadmap.strategic,   dotColor: V.info,    sectionId: 'ninety_day_strategic_goals' },
+            ].map(col => {
+              const ColumnShell = ({ children: inner }) => (
+                <div key={col.title} style={{ background: V.surface, border: `1px solid ${V.border}`, borderRadius: 'var(--r-lg)', padding: 20, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${V.border}` }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: col.dotColor }} />
+                    <span style={{ fontSize: 14, fontWeight: 600, color: V.inkDisplay }}>{col.title}</span>
+                    <span style={{ fontSize: 12, color: V.inkMuted, marginLeft: 'auto' }}>{col.sub}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
+                    {inner}
+                  </div>
                 </div>
-                {/* Items */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-                  {(col.items.length ? col.items : [{ text: 'Insufficient evidence for recommendations in this horizon.', priority: 'medium' }]).map((item, i) => {
-                    const text = typeof item === 'string' ? item : item.text;
-                    const priority = typeof item === 'string' ? 'medium' : (item.priority || 'medium');
-                    const evidenceTag = typeof item === 'string' ? '' : (item.evidence_tag || '');
-                    const confidence = typeof item === 'string' ? null : (typeof item.confidence === 'number' ? item.confidence : null);
-                    return (
-                      <div key={i} style={{ display: 'flex', gap: 12, padding: 12, borderRadius: 8, background: V.sunken, alignItems: 'flex-start' }}>
-                        <span style={{
-                          width: 22, height: 22, flexShrink: 0, borderRadius: '50%',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 10, fontWeight: 700, color: '#fff', background: col.dotColor,
-                        }}>{i + 1}</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-                          <span style={{ fontSize: 14, color: V.inkSecondary, lineHeight: 1.5 }}>{text}</span>
-                          {(evidenceTag || confidence !== null) && (
-                            <span style={{ fontSize: 11, color: V.inkMuted }}>
-                              {evidenceTag ? `Evidence: ${evidenceTag}` : 'Evidence: inferred from available scan signals'}
-                              {confidence !== null ? ` • Confidence: ${Math.round(confidence * 100)}%` : ''}
-                            </span>
-                          )}
-                        </div>
-                        <PriorityBadge priority={priority} />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+              );
+              const renderItems = (items) => (items || []).filter(item => {
+                const text = typeof item === 'string' ? item : item?.text;
+                return typeof text === 'string' && text.trim() && !isPlaceholderText(text);
+              }).map((item, i) => {
+                const text = typeof item === 'string' ? item : item.text;
+                const priority = typeof item === 'string' ? 'medium' : (item.priority || 'medium');
+                const evidenceTag = typeof item === 'string' ? '' : (item.evidence_tag || '');
+                const confidence = typeof item === 'string' ? null : (typeof item.confidence === 'number' ? item.confidence : null);
+                const traceIds = typeof item === 'string' ? [] : (Array.isArray(item.source_trace_ids) ? item.source_trace_ids : []);
+                return (
+                  <div key={i} style={{ display: 'flex', gap: 12, padding: 12, borderRadius: 8, background: V.sunken, alignItems: 'flex-start' }}>
+                    <span style={{
+                      width: 22, height: 22, flexShrink: 0, borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, fontWeight: 700, color: '#fff', background: col.dotColor,
+                    }}>{i + 1}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+                      <span style={{ fontSize: 14, color: V.inkSecondary, lineHeight: 1.5 }}>{text}</span>
+                      {(evidenceTag || confidence !== null || traceIds.length > 0) && (
+                        <span style={{ fontSize: 11, color: V.inkMuted, display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          {evidenceTag ? <span>Evidence: {evidenceTag}</span> : null}
+                          {confidence !== null ? <span>Confidence: {Math.round(confidence * 100)}%</span> : null}
+                          {traceIds.length > 0 ? <ProvenancePill traceIds={traceIds} /> : null}
+                        </span>
+                      )}
+                    </div>
+                    <PriorityBadge priority={priority} />
+                  </div>
+                );
+              });
+              const sec = getSection(data, col.sectionId);
+              if (sec) {
+                return (
+                  <div key={col.sectionId}>
+                    <SectionEvidenceRenderer section={sec} onRetry={() => window.location.reload()}>
+                      {(evidence) => <ColumnShell>{renderItems(evidence?.items)}</ColumnShell>}
+                    </SectionEvidenceRenderer>
+                  </div>
+                );
+              }
+              // Legacy fallback path: only render when ≥ 1 evidence-backed item.
+              const filteredLegacy = (col.legacyItems || []).filter(item => {
+                const text = typeof item === 'string' ? item : item?.text;
+                return typeof text === 'string' && text.trim() && !isPlaceholderText(text);
+              });
+              if (filteredLegacy.length > 0) {
+                return <ColumnShell key={col.sectionId}>{renderItems(filteredLegacy)}</ColumnShell>;
+              }
+              return (
+                <StateBanner
+                  key={col.sectionId}
+                  state={SECTION_STATE.INSUFFICIENT_SIGNAL}
+                  reason={`Insufficient evidence to recommend evidence-backed ${col.title.toLowerCase()} for this business.`}
+                  onRetry={() => window.location.reload()}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -793,6 +1005,122 @@ function CMOReportPageInner() {
       </div>
 
       {/* ═══════════════════════════════════════════════════
+          SHARE REPORT MODAL — fix/p0-marjo-e8 (PR #449 follow-up)
+          Always visible after a click. Either shows the URL + Copy
+          button (success) or an explicit error banner (failure).
+          ═══════════════════════════════════════════════════ */}
+      {shareModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cmo-share-modal-title"
+          data-testid="cmo-share-modal"
+          onClick={handleCloseShareModal}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(15,17,28,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: V.surface, border: `1px solid ${V.border}`,
+              borderRadius: 'var(--r-lg)', maxWidth: 520, width: '100%',
+              padding: 24, boxShadow: '0 12px 40px rgba(15,17,28,0.25)',
+              fontFamily: 'var(--font-ui)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 id="cmo-share-modal-title" style={{
+                margin: 0, fontFamily: 'var(--font-display)',
+                fontSize: 18, color: V.inkDisplay, letterSpacing: 'var(--ls-display)',
+              }}>Share CMO Report</h3>
+              <button
+                onClick={handleCloseShareModal}
+                aria-label="Close share dialog"
+                data-testid="cmo-share-close"
+                style={{ background: 'transparent', border: 'none', color: V.inkMuted, cursor: 'pointer', fontSize: 18, lineHeight: 1 }}
+              >×</button>
+            </div>
+
+            {shareInFlight && (
+              <div data-testid="cmo-share-loading" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', color: V.inkSecondary, fontSize: 13 }}>
+                <Loader2 size={16} className="biqc-spin" />
+                Creating a secure share link…
+              </div>
+            )}
+
+            {!shareInFlight && shareError && (
+              <div
+                role="alert"
+                data-testid="cmo-share-error"
+                style={{
+                  background: 'var(--danger-wash)', color: 'var(--danger)',
+                  border: '1px solid var(--danger)',
+                  borderRadius: 8, padding: '10px 12px', fontSize: 13, marginBottom: 12,
+                }}
+              >
+                {shareError}
+                <div style={{ marginTop: 8 }}>
+                  <button
+                    onClick={handleShare}
+                    data-testid="cmo-share-retry"
+                    style={{
+                      background: 'transparent', color: 'var(--danger)',
+                      border: '1px solid var(--danger)',
+                      padding: '4px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
+                    }}
+                  >Try again</button>
+                </div>
+              </div>
+            )}
+
+            {!shareInFlight && !shareError && shareUrl && (
+              <>
+                <p style={{ margin: '0 0 8px', fontSize: 13, color: V.inkSecondary, lineHeight: 1.5 }}>
+                  Anyone with this link can view a read-only copy of this report. The link expires automatically.
+                </p>
+                <div style={{
+                  display: 'flex', alignItems: 'stretch', gap: 0,
+                  border: `1px solid ${V.border}`, borderRadius: 8, overflow: 'hidden',
+                  marginBottom: 12,
+                }}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={shareUrl}
+                    data-testid="cmo-share-url"
+                    onFocus={(e) => e.target.select()}
+                    style={{
+                      flex: 1, padding: '10px 12px', border: 'none', outline: 'none',
+                      background: V.sunken, color: V.ink, fontSize: 13, fontFamily: 'var(--font-mono)',
+                    }}
+                  />
+                  <button
+                    onClick={handleCopyShareUrl}
+                    data-testid="cmo-share-copy"
+                    style={{
+                      padding: '10px 16px', border: 'none',
+                      background: shareCopied ? 'var(--positive)' : V.lava,
+                      color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+                      transition: 'background 0.2s ease',
+                    }}
+                  >{shareCopied ? 'Copied!' : 'Copy'}</button>
+                </div>
+                {shareExpiresAt && (
+                  <div style={{ fontSize: 11, color: V.inkMuted }}>
+                    Expires {new Date(shareExpiresAt).toLocaleString()}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════
           FLOATING PDF BUTTON
           ═══════════════════════════════════════════════════ */}
       <FloatingPDFButton onClick={handleDownloadPDF} />
@@ -808,6 +1136,11 @@ function CMOReportPageInner() {
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
+        @keyframes biqc-spin-kf {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .biqc-spin { animation: biqc-spin-kf 0.9s linear infinite; }
         @media (max-width: 767px) {
           /* Stack gauge grid on mobile */
           div[style*="gridTemplateColumns: '240px 1fr'"],

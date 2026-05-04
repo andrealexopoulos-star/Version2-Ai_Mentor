@@ -3,11 +3,12 @@ import os
 import json
 import logging
 import re
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import Response
+import secrets
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -19,6 +20,27 @@ from routes.auth import get_current_user
 # customer-facing reports never embed supplier names, internal codes, or
 # fabricated confident-but-empty scores.
 from core.response_sanitizer import sanitize_enrichment_for_external
+
+# Optional sanitizer helpers used by the share endpoints. Imported defensively
+# so existing tests that monkey-patch `core.response_sanitizer` with a minimal
+# stub (e.g. test_cmo_pdf_entitlement.py) keep working — the share path is
+# the only consumer here and gracefully degrades to scrub-by-no-op + a
+# permissive contract check when those helpers aren't available.
+try:
+    from core.response_sanitizer import (
+        scrub_response_for_external,
+        assert_no_banned_tokens,
+        ExternalContractViolation,
+    )
+except ImportError:  # pragma: no cover — only hit by stub-owning tests
+    def scrub_response_for_external(payload):  # type: ignore[no-redef]
+        return payload
+
+    class ExternalContractViolation(Exception):  # type: ignore[no-redef]
+        pass
+
+    def assert_no_banned_tokens(*_args, **_kwargs):  # type: ignore[no-redef]
+        return None
 
 
 # ── Unicode safety for fpdf2's latin-1 Helvetica ────────────────────────────
@@ -627,9 +649,684 @@ async def generate_benchmark_pdf(current_user: dict = Depends(get_current_user))
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ─── CMO PDF helpers (P0 marjo-E7 2026-05-04) ─────────────────────────────
+#
+# Root cause of the prior 500: `multi_cell(0, 6, ...)` was called in a loop
+# inside `_section()` without resetting cursor X to LMARGIN between calls.
+# After the first multi_cell, cursor X lands at the right page margin
+# (~200mm); the next multi_cell with width=0 then computes available width
+# as (page_width - x - right_margin) ≈ 0 mm, which raises:
+#   `FPDFException: Not enough horizontal space to render a single character`
+# That bubbled up as a generic 500 with the message "CMO PDF generation
+# failed" so the user never got a PDF.
+#
+# Fix: every multi_cell now passes `new_x="LMARGIN", new_y="NEXT"` so the
+# cursor returns to the left margin after each call. We also tightened the
+# section render to be Contract v2 aware: each section uses state-aware
+# rendering (DATA_AVAILABLE → content, INSUFFICIENT_SIGNAL → uncertainty
+# banner, DEGRADED → partial banner + whatever data is present), and the
+# final PDF body is scanned for banned supplier tokens before return.
+
+_CMO_BANNED_TOKEN_CACHE: Optional[tuple] = None
+
+
+def _get_banned_tokens() -> tuple:
+    """Lazy-load banned tokens from the central sanitizer. Cached at module
+    scope so we don't reimport on every request."""
+    global _CMO_BANNED_TOKEN_CACHE
+    if _CMO_BANNED_TOKEN_CACHE is not None:
+        return _CMO_BANNED_TOKEN_CACHE
+    try:
+        from core.response_sanitizer import ALL_BANNED_TOKENS
+        _CMO_BANNED_TOKEN_CACHE = tuple(ALL_BANNED_TOKENS)
+    except Exception:
+        # Defensive fallback: ship the well-known supplier names + internal
+        # markers even if the import path changes. Better than letting a
+        # leak through.
+        _CMO_BANNED_TOKEN_CACHE = (
+            "SEMRUSH", "Semrush", "semrush", "OPENAI", "OpenAI", "openai",
+            "Anthropic", "ANTHROPIC", "Perplexity", "PERPLEXITY",
+            "Firecrawl", "FIRECRAWL", "Browse.ai", "browse.ai", "BROWSE_AI",
+            "Serper", "SERPER", "Merge.dev", "merge.dev", "MERGE_API",
+            "service_role", "SERVICE_ROLE", "API_KEY", "API_KEY_MISSING",
+            "ai_errors", "_http_status", "edge_tools", "edge_function",
+            "HTTP 401", "HTTP 403", "HTTP 500", "HTTP 502", "HTTP 503",
+        )
+    return _CMO_BANNED_TOKEN_CACHE
+
+
+def _scrub_text_for_external(text: str) -> str:
+    """Replace any banned supplier/internal token in `text` with a Contract
+    v2 uncertainty phrase. Never raises. Operates on substrings — case
+    sensitive matches the central tuple. Used at every text write into the
+    PDF so even if upstream forgot to sanitise, the PDF cannot leak."""
+    if not text:
+        return text
+    cleaned = str(text)
+    for token in _get_banned_tokens():
+        if token and token in cleaned:
+            cleaned = cleaned.replace(token, "[supplier-data]")
+    return cleaned
+
+
+def _aest_from_iso(iso_str: Optional[str]) -> str:
+    """Return AEST (UTC+10) date/time string from ISO timestamp. Falls back
+    to current UTC if the input is missing or unparseable. Australia uses
+    AEST/AEDT seasonally; we render fixed +10:00 to keep the PDF
+    deterministic and avoid pulling pytz."""
+    try:
+        if iso_str:
+            dt = datetime.fromisoformat(str(iso_str).replace("Z", "+00:00"))
+        else:
+            dt = datetime.now(timezone.utc)
+    except Exception:
+        dt = datetime.now(timezone.utc)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    # AEST is UTC+10 (no DST applied; AEDT would be +11 in summer).
+    from datetime import timedelta
+    aest = dt.astimezone(timezone(timedelta(hours=10)))
+    return aest.strftime("%d %b %Y, %H:%M AEST")
+
+
+def _utc_from_iso(iso_str: Optional[str]) -> str:
+    """Return UTC date/time string from ISO timestamp."""
+    try:
+        if iso_str:
+            dt = datetime.fromisoformat(str(iso_str).replace("Z", "+00:00"))
+        else:
+            dt = datetime.now(timezone.utc)
+    except Exception:
+        dt = datetime.now(timezone.utc)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).strftime("%d %b %Y, %H:%M UTC")
+
+
+def _section_state_for(report: dict, section_key: str) -> str:
+    """Pull the per-section state from `section_inventory` if present.
+    Returns one of {DATA_AVAILABLE, INSUFFICIENT_SIGNAL, DEGRADED, UNKNOWN}.
+
+    The CMO endpoint exposes `section_inventory` keyed by display-name
+    (e.g. "SWOT", "Market Position Score"). When absent, we infer from the
+    payload itself — empty list/dict = INSUFFICIENT_SIGNAL, populated =
+    DATA_AVAILABLE."""
+    inventory = report.get("section_inventory") or {}
+    if isinstance(inventory, dict):
+        entry = inventory.get(section_key)
+        if isinstance(entry, dict):
+            status = entry.get("status")
+            if isinstance(status, str) and status:
+                return status.upper()
+    return "UNKNOWN"
+
+
+# Static intro copy for each section. Customer-facing language only —
+# no supplier names, no error markers. Helps the reader understand what
+# each section represents and how to act on it.
+_SECTION_INTROS: Dict[str, str] = {
+    "Chief Marketing Summary": (
+        "A high-level synthesis of the market intelligence gathered for "
+        "this business. Use this as your one-paragraph briefing to the "
+        "leadership team."
+    ),
+    "Market Position Score": (
+        "Five-dial composite score across brand authority, digital presence, "
+        "customer sentiment, and competitive pressure. Each dial is "
+        "scored 0 to 100. Zeroed dials indicate insufficient evidence "
+        "rather than a low score."
+    ),
+    "Competitive Landscape": (
+        "Named competitors detected for this business with a relative "
+        "threat assessment and visible market share. Use to prioritise "
+        "competitive defensive plays and to brief sales."
+    ),
+    "SWOT - Strengths": (
+        "Internal capabilities and assets that this business should lean "
+        "into. Each item is grounded in evidence gathered during the scan."
+    ),
+    "SWOT - Weaknesses": (
+        "Internal gaps that competitors can exploit. Treat each item as a "
+        "candidate for the next sprint of operational improvement."
+    ),
+    "SWOT - Opportunities": (
+        "External openings that are addressable in the next two quarters. "
+        "Pair each opportunity with the matching capability or gap."
+    ),
+    "SWOT - Threats": (
+        "External pressures that could erode market position. Use these to "
+        "scope risk-mitigation work and to inform board-level conversations."
+    ),
+    "Review Intelligence": (
+        "Aggregated voice-of-customer signal: rating, volume, sentiment "
+        "split, and the recurring themes customers raise. Direct input to "
+        "product, customer success, and support roadmaps."
+    ),
+    "Strategic Roadmap - 7 Day Quick Wins": (
+        "Tactical items deliverable inside one week. Designed for the "
+        "operator who needs to move the needle today without committing "
+        "engineering or campaign budget."
+    ),
+    "Strategic Roadmap - 30 Day Priorities": (
+        "Initiatives that should land within a one-month sprint. These "
+        "typically require coordination across marketing and product."
+    ),
+    "Strategic Roadmap - 90 Day Strategic": (
+        "Larger plays that take a quarter to land. Use to anchor the next "
+        "quarterly planning cycle and resource the relevant teams."
+    ),
+    "Digital Footprint": (
+        "Composite signal of website performance, organic search reach, "
+        "and content authority. Each component is scored 0 to 100 from "
+        "the most recent scan."
+    ),
+    "SEO Analysis": (
+        "Organic search performance signals: ranking strength, keyword "
+        "coverage, and on-page hygiene. Identifies the highest-leverage "
+        "areas to invest in next."
+    ),
+    "Geographic Footprint": (
+        "Established markets where the business already has visibility, "
+        "and growth markets where the scan detected opportunity signal."
+    ),
+    "CMO Priority Actions": (
+        "Top recommended marketing actions ordered by expected impact. "
+        "Each is grounded in the evidence inventory of this scan."
+    ),
+}
+
+
+def _render_cmo_section(pdf, title: str, lines: List[str], state: str = "DATA_AVAILABLE",
+                        message: Optional[str] = None,
+                        intro: Optional[str] = None) -> None:
+    """Render a CMO section with state-aware behaviour.
+
+    DATA_AVAILABLE   → bold title + intro paragraph + bullet lines
+    INSUFFICIENT_SIGNAL → bold title + intro paragraph + amber banner copy
+                          (no fabricated content)
+    DEGRADED         → bold title + intro paragraph + partial banner +
+                       whatever lines we have
+    UNKNOWN/other    → treat as DATA_AVAILABLE if lines, else INSUFFICIENT_SIGNAL.
+
+    The intro paragraph is auto-pulled from `_SECTION_INTROS` when not
+    provided. Always rendered so the reader has context even when the
+    section is gated by INSUFFICIENT_SIGNAL.
+
+    Critical: every multi_cell call passes `new_x="LMARGIN", new_y="NEXT"`
+    so the cursor returns to the left margin and the next call has a full
+    page width of horizontal space. This is the fix for the prior 500.
+    """
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 8, title, new_x="LMARGIN", new_y="NEXT")
+
+    # Intro paragraph (always rendered when available — gives context even
+    # for INSUFFICIENT_SIGNAL sections).
+    intro_text = intro or _SECTION_INTROS.get(title)
+    if intro_text:
+        pdf.set_font("Helvetica", "I", 9)
+        pdf.set_text_color(110, 110, 110)
+        pdf.multi_cell(0, 5, intro_text, new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(0, 0, 0)
+        pdf.ln(1)
+
+    pdf.set_font("Helvetica", "", 10)
+
+    state_norm = (state or "").upper()
+    has_lines = bool(lines)
+
+    if state_norm == "INSUFFICIENT_SIGNAL" or (state_norm == "UNKNOWN" and not has_lines):
+        pdf.set_text_color(140, 90, 0)  # amber
+        banner = message or "Insufficient market signal for this section. Re-scan to refresh."
+        pdf.multi_cell(0, 6, banner, new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(0, 0, 0)
+        pdf.ln(2)
+        return
+
+    if state_norm == "DEGRADED":
+        pdf.set_text_color(140, 90, 0)
+        pdf.multi_cell(
+            0, 6,
+            message or "Partial intelligence: some upstream signals were unavailable. Showing what we have.",
+            new_x="LMARGIN", new_y="NEXT"
+        )
+        pdf.set_text_color(0, 0, 0)
+        pdf.ln(1)
+
+    # DATA_AVAILABLE / DEGRADED-with-data path
+    if not has_lines:
+        pdf.set_text_color(120, 120, 120)
+        pdf.multi_cell(0, 6, "No content recorded for this section.",
+                       new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(0, 0, 0)
+        pdf.ln(2)
+        return
+
+    for line in lines:
+        if line is None:
+            continue
+        pdf.multi_cell(0, 6, f"- {_scrub_text_for_external(str(line))}",
+                       new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+
+
+def _build_cmo_pdf(report: dict, workspace_id: str):
+    """Build the full CMO PDF from the canonical `get_cmo_report` payload.
+
+    Returns the FPDF instance, ready for `.output()`. Cover page uses
+    "Ask BIQc" branding (per feedback_ask_biqc_brand_name memory). Footer
+    appears via FPDF's auto-footer hook on every page.
+    """
+    SafePDFClass = _get_safe_pdf_class()
+
+    # Subclass once more to inject footer with report ID + Ask BIQc branding.
+    report_id = report.get("report_id") or f"CMO-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{workspace_id[:8]}"
+
+    class _CMOReportPDF(SafePDFClass):
+        def footer(self):
+            self.set_y(-15)
+            self.set_font("Helvetica", "I", 8)
+            self.set_text_color(120, 120, 120)
+            self.cell(
+                0, 6,
+                f"Generated by Ask BIQc  |  Report ID: {report_id}  |  Page {self.page_no()}",
+                align="C", new_x="LMARGIN", new_y="NEXT"
+            )
+            self.set_text_color(0, 0, 0)
+
+    pdf = _CMOReportPDF()
+    pdf.set_auto_page_break(auto=True, margin=20)
+
+    # Cover page
+    pdf.add_page()
+    pdf.ln(40)
+    pdf.set_font("Helvetica", "B", 28)
+    pdf.cell(0, 16, "Ask BIQc", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.set_font("Helvetica", "", 12)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 8, "Chief Marketing Officer Intelligence", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(20)
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Helvetica", "B", 20)
+    pdf.cell(0, 12, "CMO Report", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(12)
+
+    pdf.set_font("Helvetica", "B", 14)
+    business_name = _scrub_text_for_external(str(report.get("company_name") or "Your business"))
+    pdf.cell(0, 10, business_name, new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(8)
+
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(80, 80, 80)
+    generated_at_iso = report.get("generated_at") or datetime.now(timezone.utc).isoformat()
+    pdf.cell(0, 6, f"Scan date (UTC): {_utc_from_iso(generated_at_iso)}",
+             new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.cell(0, 6, f"Scan date (AEST): {_aest_from_iso(generated_at_iso)}",
+             new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(4)
+
+    # Confidence + report state on cover.
+    confidence = report.get("confidence")
+    confidence_display = f"{confidence}" if isinstance(confidence, (int, float)) and confidence else "Insufficient evidence"
+    pdf.cell(0, 6, f"Confidence: {confidence_display}",
+             new_x="LMARGIN", new_y="NEXT", align="C")
+    state_label = str(report.get("state") or "UNKNOWN").replace("_", " ").title()
+    pdf.cell(0, 6, f"Report state: {state_label}",
+             new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.set_text_color(0, 0, 0)
+
+    # ── Methodology + how-to-read page ──
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, "How to read this report", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.multi_cell(
+        0, 6,
+        "This Chief Marketing Officer report is generated from a deep "
+        "intelligence scan of your business. Each section combines public "
+        "web signals, organic and paid search visibility data, customer "
+        "review aggregation, and AI-assisted strategic synthesis to give "
+        "you decision-grade marketing intelligence in one place.",
+        new_x="LMARGIN", new_y="NEXT"
+    )
+    pdf.ln(2)
+    pdf.multi_cell(
+        0, 6,
+        "Each section is annotated with a state. DATA AVAILABLE means we "
+        "have evidence-backed signal to render the section in full. "
+        "INSUFFICIENT SIGNAL means the underlying scan did not surface "
+        "enough evidence to assess this section confidently — we render "
+        "an uncertainty banner rather than a fabricated score. DEGRADED "
+        "means the section is partially populated; we show what we have "
+        "and flag what we do not.",
+        new_x="LMARGIN", new_y="NEXT"
+    )
+    pdf.ln(2)
+    pdf.multi_cell(
+        0, 6,
+        "A score of 0 or a missing field never means the business is "
+        "weak in that area — it means the scan did not collect enough "
+        "evidence to make a confident judgement. Re-run the scan or "
+        "extend the data sources to fill those gaps.",
+        new_x="LMARGIN", new_y="NEXT"
+    )
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Sections in this report", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    for s in ("Chief Marketing Summary",
+              "Market Position Score",
+              "Competitive Landscape",
+              "SWOT Analysis (Strengths, Weaknesses, Opportunities, Threats)",
+              "Review Intelligence",
+              "Strategic Roadmap (7 day, 30 day, 90 day)",
+              "Appendix: Digital Footprint, SEO Analysis, Geographic Footprint, CMO Priority Actions"):
+        pdf.multi_cell(0, 6, f"- {s}", new_x="LMARGIN", new_y="NEXT")
+
+    # Content pages: each section starts on a fresh page so headers are clear.
+    pdf.add_page()
+
+    # Chief Marketing Summary
+    exec_summary = report.get("executive_summary")
+    summary_lines = [str(exec_summary).strip()] if exec_summary else []
+    exec_state = _section_state_for(report, "Chief Marketing Summary")
+    if exec_state == "UNKNOWN":
+        exec_state = _section_state_for(report, "Executive Summary")
+    _render_cmo_section(pdf, "Chief Marketing Summary", summary_lines,
+                        state=exec_state if exec_state != "UNKNOWN" else ("DATA_AVAILABLE" if summary_lines else "INSUFFICIENT_SIGNAL"))
+
+    # Market Position Score
+    mp = report.get("market_position") or {}
+    mp_lines = []
+    if isinstance(mp, dict):
+        for label, key in (("Overall", "overall"), ("Brand", "brand"),
+                           ("Digital", "digital"), ("Sentiment", "sentiment"),
+                           ("Competitive", "competitive")):
+            val = mp.get(key)
+            if val is None or val == 0:
+                continue  # skip null/zero rather than fabricate
+            mp_lines.append(f"{label}: {val}")
+    mp_state = _section_state_for(report, "Market Position Score")
+    if mp_state == "UNKNOWN":
+        mp_state = "DATA_AVAILABLE" if mp_lines else "INSUFFICIENT_SIGNAL"
+    _render_cmo_section(pdf, "Market Position Score", mp_lines, state=mp_state)
+
+    # Competitive Landscape
+    competitors = report.get("competitors") or []
+    comp_lines = []
+    for c in competitors[:8]:
+        if isinstance(c, dict):
+            name = c.get("name") or "Unnamed"
+            threat = c.get("threat_level") or "unknown"
+            share = c.get("market_share") or "N/A"
+            comp_lines.append(f"{name} - threat {threat}, share {share}")
+        elif isinstance(c, str):
+            comp_lines.append(c)
+    comp_state = _section_state_for(report, "Competitive Landscape")
+    if comp_state == "UNKNOWN":
+        comp_state = "DATA_AVAILABLE" if comp_lines else "INSUFFICIENT_SIGNAL"
+    _render_cmo_section(pdf, "Competitive Landscape", comp_lines, state=comp_state)
+
+    # SWOT — render as four sub-sections, each with its own state hint.
+    swot = report.get("swot") or {}
+    swot_state = _section_state_for(report, "SWOT")
+    pdf.add_page()
+    for quadrant_key, quadrant_label in (("strengths", "Strengths"),
+                                          ("weaknesses", "Weaknesses"),
+                                          ("opportunities", "Opportunities"),
+                                          ("threats", "Threats")):
+        items = swot.get(quadrant_key) if isinstance(swot, dict) else []
+        items = [str(x) for x in (items or []) if x]
+        sub_state = swot_state
+        if sub_state == "UNKNOWN":
+            sub_state = "DATA_AVAILABLE" if items else "INSUFFICIENT_SIGNAL"
+        _render_cmo_section(pdf, f"SWOT - {quadrant_label}", items, state=sub_state)
+
+    # Review Intelligence
+    pdf.add_page()
+    reviews = report.get("reviews") or {}
+    rv_lines = []
+    if isinstance(reviews, dict):
+        rating = reviews.get("rating")
+        count = reviews.get("count")
+        if rating:
+            rv_lines.append(f"Average rating: {rating}")
+        if count:
+            rv_lines.append(f"Review count: {count}")
+        for key, label in (("positive_pct", "Positive %"),
+                           ("neutral_pct", "Neutral %"),
+                           ("negative_pct", "Negative %")):
+            val = reviews.get(key)
+            if val:
+                rv_lines.append(f"{label}: {val}")
+    review_themes = report.get("review_themes") or {}
+    if isinstance(review_themes, dict):
+        for theme in (review_themes.get("positive") or [])[:3]:
+            rv_lines.append(f"Positive theme: {theme}")
+        for theme in (review_themes.get("negative") or [])[:3]:
+            rv_lines.append(f"Negative theme: {theme}")
+    review_state = _section_state_for(report, "Review Intelligence")
+    if review_state == "UNKNOWN":
+        review_state = "DATA_AVAILABLE" if rv_lines else "INSUFFICIENT_SIGNAL"
+    _render_cmo_section(pdf, "Review Intelligence", rv_lines, state=review_state)
+
+    # Strategic Roadmap (7/30/90 day)
+    pdf.add_page()
+    roadmap = report.get("roadmap") or {}
+    roadmap_state = _section_state_for(report, "Strategic Roadmap")
+
+    def _roadmap_lines(items):
+        out = []
+        for item in (items or []):
+            if isinstance(item, dict):
+                t = item.get("text") or ""
+                if t:
+                    out.append(str(t))
+            elif isinstance(item, str) and item.strip():
+                out.append(item)
+        return out
+
+    for col_key, col_label in (("quick_wins", "7 Day Quick Wins"),
+                               ("priorities", "30 Day Priorities"),
+                               ("strategic", "90 Day Strategic")):
+        col_items = _roadmap_lines(roadmap.get(col_key) if isinstance(roadmap, dict) else [])
+        sub_state = roadmap_state
+        if sub_state == "UNKNOWN":
+            sub_state = "DATA_AVAILABLE" if col_items else "INSUFFICIENT_SIGNAL"
+        _render_cmo_section(pdf, f"Strategic Roadmap - {col_label}", col_items, state=sub_state)
+
+    # ── Appendix sections (real fields from canonical CMO payload) ──
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, "Appendix: Detailed Signals", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+
+    # Digital Footprint
+    df = report.get("digital_footprint") or {}
+    df_lines = []
+    if isinstance(df, dict):
+        for label, key in (("Overall score", "score"),
+                           ("SEO visibility", "seo_score"),
+                           ("Social engagement", "social_score"),
+                           ("Content authority", "content_score")):
+            val = df.get(key)
+            if val:
+                df_lines.append(f"{label}: {val}/100")
+    _render_cmo_section(
+        pdf, "Digital Footprint", df_lines,
+        state="DATA_AVAILABLE" if df_lines else "INSUFFICIENT_SIGNAL"
+    )
+
+    # SEO Analysis
+    seo = report.get("seo_analysis") or {}
+    seo_lines = []
+    if isinstance(seo, dict):
+        seo_score = seo.get("score")
+        seo_status = seo.get("status")
+        if seo_score:
+            seo_lines.append(f"Overall SEO score: {seo_score}/100")
+        if seo_status and seo_status != seo_score:
+            seo_lines.append(f"Status: {seo_status}")
+        for s in (seo.get("strengths") or [])[:5]:
+            seo_lines.append(f"Strength: {s}")
+        for g in (seo.get("gaps") or [])[:5]:
+            seo_lines.append(f"Gap: {g}")
+        for a in (seo.get("priority_actions") or [])[:5]:
+            seo_lines.append(f"Priority action: {a}")
+    _render_cmo_section(
+        pdf, "SEO Analysis", seo_lines,
+        state="DATA_AVAILABLE" if seo_lines else "INSUFFICIENT_SIGNAL"
+    )
+
+    # Geographic Footprint
+    geo = report.get("geographic") or {}
+    geo_lines = []
+    if isinstance(geo, dict):
+        established = geo.get("established") or []
+        growth = geo.get("growth") or []
+        if established:
+            geo_lines.append(f"Established markets: {', '.join(str(x) for x in established)}")
+        if growth:
+            geo_lines.append(f"Growth markets: {', '.join(str(x) for x in growth)}")
+    _render_cmo_section(
+        pdf, "Geographic Footprint", geo_lines,
+        state="DATA_AVAILABLE" if geo_lines else "INSUFFICIENT_SIGNAL"
+    )
+
+    # CMO Priority Actions
+    pa_lines = []
+    for a in (report.get("cmo_priority_actions") or [])[:10]:
+        if isinstance(a, str) and a.strip():
+            pa_lines.append(a)
+        elif isinstance(a, dict):
+            t = a.get("text") or a.get("title") or ""
+            if t:
+                pa_lines.append(str(t))
+    for a in (report.get("industry_action_items") or [])[:5]:
+        if isinstance(a, str) and a.strip():
+            pa_lines.append(f"Industry: {a}")
+        elif isinstance(a, dict):
+            t = a.get("text") or a.get("title") or ""
+            if t:
+                pa_lines.append(f"Industry: {t}")
+    _render_cmo_section(
+        pdf, "CMO Priority Actions", pa_lines,
+        state="DATA_AVAILABLE" if pa_lines else "INSUFFICIENT_SIGNAL"
+    )
+
+    # ── Notes, methodology, data provenance ──
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, "Methodology and data provenance",
+             new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "", 10)
+
+    methodology_paragraphs = [
+        (
+            "Intelligence in this report is synthesised from a deep web "
+            "scan of the business website, public review aggregators, "
+            "social presence indicators, organic and paid search "
+            "visibility data, and competitor footprint detection. Each "
+            "signal is scored against industry baselines and then "
+            "composited into the dials, scores, and recommendations you "
+            "see throughout this report."
+        ),
+        (
+            "The scan runs a non-trivial number of independent intelligence "
+            "calls in parallel. We track the success or failure of each "
+            "underlying call so that when one component is unavailable, "
+            "the affected sections render an INSUFFICIENT SIGNAL banner "
+            "rather than a confidently fabricated number. This is a "
+            "deliberate product posture: better an honest gap than a "
+            "false certainty."
+        ),
+        (
+            "Confidence on the cover page is an evidence-density score, "
+            "not a satisfaction rating. A confidence of 78 means the "
+            "scan returned strong, multi-source signal across most "
+            "sections. A confidence below 50 means the scan was thin in "
+            "places and the recommendations should be treated as "
+            "directional rather than prescriptive."
+        ),
+        (
+            "Recommendations in the Strategic Roadmap are sequenced for "
+            "an operator with limited bandwidth: 7 day items can be "
+            "shipped by a single person inside a week, 30 day items "
+            "typically require a small team and a campaign plan, and 90 "
+            "day items anchor the next quarterly cycle. Use the order "
+            "as a default and adjust to your context."
+        ),
+        (
+            "If a section is rendered with an INSUFFICIENT SIGNAL banner, "
+            "the most common cause is a thin or new web presence for the "
+            "business under review. Re-running the scan after publishing "
+            "additional content, expanding the website, or growing review "
+            "volume usually raises the underlying section to DATA "
+            "AVAILABLE on the next pass."
+        ),
+        (
+            "For audit and reproducibility, this report carries a "
+            "deterministic identifier in the page footer. Quote that ID "
+            "back to support if you need the same scan output replayed "
+            "or verified."
+        ),
+    ]
+    for paragraph in methodology_paragraphs:
+        pdf.multi_cell(0, 6, paragraph, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Glossary", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    glossary = [
+        ("Brand authority",
+         "Composite signal of website presence, professionalism, and "
+         "third-party recognition. Higher means more market trust."),
+        ("Digital presence",
+         "Composite signal of organic search visibility, content "
+         "freshness, and social engagement."),
+        ("Sentiment",
+         "Aggregated polarity of recent customer reviews. A low score "
+         "with high review volume is more meaningful than a low score "
+         "with three reviews."),
+        ("Competitive pressure",
+         "Density and visibility of named competitors detected in "
+         "the same market. Higher means more crowded."),
+        ("DATA AVAILABLE",
+         "Section has evidence-backed signal and is rendered in full."),
+        ("INSUFFICIENT SIGNAL",
+         "Underlying scan did not surface enough evidence to assess "
+         "this section. Rendered with an uncertainty banner."),
+        ("DEGRADED",
+         "Section is partially populated. We render what we have and "
+         "flag the gap."),
+    ]
+    for term, defn in glossary:
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.multi_cell(0, 6, term, new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 10)
+        pdf.multi_cell(0, 6, defn, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(1)
+
+    return pdf
+
+
 @router.post("/reports/cmo-report/pdf")
 async def generate_cmo_report_pdf(current_user: dict = Depends(get_current_user)):
-    """Generate CMO report PDF for entitled plans (Pro and above)."""
+    """Generate CMO report PDF for entitled plans (Pro and above).
+
+    Single source of truth: the same payload that powers
+    `GET /api/intelligence/cmo-report` (HTML CMO page) is rendered here.
+    No re-derivation, no duplicated SQL, no separate sanitiser path.
+
+    Contract v2: PDF text content goes through the central banned-token
+    scrub before write, so even if upstream re-introduces a supplier name
+    the PDF cannot leak it.
+    """
     try:
         from supabase_client import get_supabase_client
         from routes.intelligence_modules import get_cmo_report
@@ -645,48 +1342,9 @@ async def generate_cmo_report_pdf(current_user: dict = Depends(get_current_user)
         if not isinstance(report, dict):
             raise HTTPException(status_code=500, detail='CMO report payload is unavailable')
 
-        pdf = _get_safe_pdf_class()()
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.add_page()
-        pdf.set_font("Helvetica", "B", 18)
-        pdf.cell(0, 12, "BIQc CMO Report", new_x="LMARGIN", new_y="NEXT")
-        pdf.set_font("Helvetica", "", 10)
-        pdf.cell(0, 6, f"Business: {report.get('company_name') or 'Your business'}", new_x="LMARGIN", new_y="NEXT")
-        pdf.cell(0, 6, f"Report Date: {report.get('report_date') or datetime.now(timezone.utc).strftime('%d/%m/%Y')}", new_x="LMARGIN", new_y="NEXT")
-        pdf.cell(0, 6, f"Confidence: {report.get('confidence') or '--'}", new_x="LMARGIN", new_y="NEXT")
-        pdf.cell(0, 6, f"Report State: {report.get('report_state') or report.get('state') or 'UNKNOWN'}", new_x="LMARGIN", new_y="NEXT")
-        pdf.ln(4)
+        workspace_id = current_user.get('id') or 'unknown'
+        pdf = _build_cmo_pdf(report, workspace_id)
 
-        def _section(title: str, lines: List[str]) -> None:
-            pdf.set_font("Helvetica", "B", 12)
-            pdf.cell(0, 8, title, new_x="LMARGIN", new_y="NEXT")
-            pdf.set_font("Helvetica", "", 10)
-            if not lines:
-                pdf.cell(0, 6, "Insufficient evidence for this section.", new_x="LMARGIN", new_y="NEXT")
-                pdf.ln(2)
-                return
-            for line in lines:
-                pdf.multi_cell(0, 6, f"- {line}")
-            pdf.ln(2)
-
-        _section("Chief Marketing Summary", [str(report.get("executive_summary") or "").strip()] if report.get("executive_summary") else [])
-        _section("Market Position Score", [
-            f"Overall: {(report.get('market_position') or {}).get('overall', '--')}",
-            f"Brand: {(report.get('market_position') or {}).get('brand', '--')}",
-            f"Digital: {(report.get('market_position') or {}).get('digital', '--')}",
-            f"Sentiment: {(report.get('market_position') or {}).get('sentiment', '--')}",
-        ])
-        swot = report.get("swot") or {}
-        _section("SWOT - Strengths", [str(x) for x in (swot.get("strengths") or [])])
-        _section("SWOT - Weaknesses", [str(x) for x in (swot.get("weaknesses") or [])])
-        _section("SWOT - Opportunities", [str(x) for x in (swot.get("opportunities") or [])])
-        _section("SWOT - Threats", [str(x) for x in (swot.get("threats") or [])])
-        roadmap = report.get("roadmap") or {}
-        _section("Strategic Roadmap - 7 Day", [str(x) for x in (roadmap.get("quick_wins") or [])])
-        _section("Strategic Roadmap - 30 Day", [str(x) for x in (roadmap.get("priorities") or [])])
-        _section("Strategic Roadmap - 90 Day", [str(x) for x in (roadmap.get("strategic") or [])])
-
-        workspace_id = current_user.get('id', 'unknown')
         ts = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
         filename = f"biqc_cmo_report_{workspace_id[:8]}_{ts}.pdf"
         pdf_bytes = bytes(pdf.output())
@@ -700,5 +1358,435 @@ async def generate_cmo_report_pdf(current_user: dict = Depends(get_current_user)
     except ImportError:
         raise HTTPException(status_code=500, detail="PDF generation library not available")
     except Exception as e:
-        logger.error(f"CMO PDF generation failed: {e}")
+        logger.error(f"CMO PDF generation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="CMO PDF generation failed")
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  Share Report — fix/p0-marjo-e8-share-function (PR #449 follow-up)
+#
+#  PR #449 admitted: "Share action could silently no-op". This block ships a
+#  proven non-no-op:
+#     • POST /reports/cmo-report/share          → creates a tokenised, expiring
+#                                                  shareable URL and writes a
+#                                                  share_events row. NEVER 200s
+#                                                  with empty body — either it
+#                                                  returns {share_url, expires_at,
+#                                                  share_event_id} or raises
+#                                                  HTTPException with a sanitised
+#                                                  detail.
+#     • GET  /reports/cmo-report/shared/{token} → unauthenticated read-only
+#                                                  HTML view, sanitised per
+#                                                  Contract v2 (no supplier
+#                                                  names, no internal codes,
+#                                                  no Ask BIQc internal
+#                                                  navigation). Increments
+#                                                  accessed_count. Expired
+#                                                  tokens → 410 Gone. Malformed
+#                                                  tokens → 400.
+#
+#  Brand: every external surface is "BIQc CMO Report" / "Ask BIQc" — never
+#  Soundboard / Chat / Assistant (per feedback_ask_biqc_brand_name.md).
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Token shape: 32 bytes URL-safe base64 → 43 chars (no padding). We accept
+# 32–64 chars of [A-Za-z0-9_-] so future rotations of `secrets.token_urlsafe`
+# byte-length don't break this guard.
+_SHARE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{32,64}$")
+_SHARE_DEFAULT_TTL_DAYS = 7
+_SHARE_MAX_TTL_DAYS = 30
+
+
+class ShareCreateRequest(BaseModel):
+    """Inbound payload for POST /reports/cmo-report/share."""
+    # Optional recipient email for an email-mechanism share. Not validated as
+    # an RFC 5322 address — backend just stores whatever the caller sent and
+    # leaves SMTP delivery to a future iteration.
+    recipient: Optional[str] = None
+    # Optional override of expiry (in days). Clamped to [1, _SHARE_MAX_TTL_DAYS]
+    # so a malicious client can't request a 100-year link.
+    ttl_days: Optional[int] = None
+
+
+def _frontend_base_url() -> str:
+    """Return the public frontend origin used to build share URLs.
+
+    Reads PUBLIC_FRONTEND_URL → FRONTEND_URL → REACT_APP_FRONTEND_URL in that
+    order. Falls back to the production biqc.ai origin so a misconfigured
+    container never silently emits an http://localhost link.
+    """
+    candidates = (
+        os.environ.get("PUBLIC_FRONTEND_URL"),
+        os.environ.get("FRONTEND_URL"),
+        os.environ.get("REACT_APP_FRONTEND_URL"),
+    )
+    for raw in candidates:
+        cleaned = (raw or "").strip().rstrip("/")
+        if cleaned:
+            return cleaned
+    return "https://biqc.ai"
+
+
+def _sanitise_recipient(value: Optional[str]) -> Optional[str]:
+    """Trim + length-clamp recipient input. Never raises — just returns None
+    on anything unusable. This is an audit field, not an SMTP address yet."""
+    if not value or not isinstance(value, str):
+        return None
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    return cleaned[:320]
+
+
+def _serialise_share_event(row: Dict[str, Any], frontend_url: str) -> Dict[str, Any]:
+    """Build the EXTERNAL response shape for a share_events row.
+
+    Strips internal-only keys (revoked_at, raw scan_id) before returning to
+    the frontend so we never accidentally widen the contract.
+    """
+    expires_at = row.get("expires_at") or ""
+    return {
+        "ok": True,
+        "share_event_id": row.get("id"),
+        "mechanism": row.get("mechanism") or "shareable_link",
+        "share_url": row.get("share_url") or f"{frontend_url}/r/{row.get('token','')}",
+        "expires_at": expires_at,
+        "recipient": row.get("recipient"),
+    }
+
+
+@router.post("/reports/cmo-report/share")
+async def create_cmo_report_share(
+    payload: Optional[ShareCreateRequest] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a tokenised shareable URL for the caller's CMO report.
+
+    Returns `{ok, share_event_id, share_url, expires_at, mechanism, recipient}`.
+
+    Never returns a silent success: either the share_events row is durably
+    inserted and the URL is returned, or this endpoint raises HTTPException
+    with a sanitised detail. PR #449 specifically warned about silent no-op
+    — the route's contract is "writes a row OR raises".
+    """
+    user_id = current_user.get("id") if isinstance(current_user, dict) else None
+    if not user_id:
+        # Auth dep should have raised already; this is defence in depth.
+        raise HTTPException(status_code=401, detail="Authentication required to share a report")
+
+    body = payload or ShareCreateRequest()
+    ttl_days = body.ttl_days if isinstance(body.ttl_days, int) and body.ttl_days > 0 else _SHARE_DEFAULT_TTL_DAYS
+    ttl_days = max(1, min(ttl_days, _SHARE_MAX_TTL_DAYS))
+    expires_at = datetime.now(timezone.utc) + timedelta(days=ttl_days)
+
+    token = secrets.token_urlsafe(32)
+    frontend_url = _frontend_base_url()
+    share_url = f"{frontend_url}/r/{token}"
+    recipient = _sanitise_recipient(body.recipient)
+
+    # Best-effort scan_id resolution: latest enrichment row for this user.
+    # Nullable in the schema — if lookup fails we still write the share row.
+    scan_id: Optional[str] = None
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        enr = (
+            sb.table("business_dna_enrichment")
+              .select("id")
+              .eq("user_id", user_id)
+              .order("created_at", desc=True)
+              .limit(1)
+              .execute()
+        )
+        rows = getattr(enr, "data", None) or []
+        if rows and isinstance(rows[0], dict):
+            scan_id = rows[0].get("id")
+    except Exception as resolve_err:  # noqa: BLE001 — non-fatal, scan_id is optional
+        logger.debug(f"[share] scan_id resolve skipped: {resolve_err}")
+
+    insert_row = {
+        "user_id": user_id,
+        "scan_id": scan_id,
+        "mechanism": "shareable_link",
+        "token": token,
+        "share_url": share_url,
+        "recipient": recipient,
+        "accessed_count": 0,
+        "expires_at": expires_at.isoformat(),
+    }
+
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = sb.table("share_events").insert(insert_row).execute()
+        rows = getattr(result, "data", None) or []
+        if not rows:
+            # Non-200 from Supabase — Contract v2 says do NOT return ok with
+            # empty data. Surface as a sanitised 502.
+            logger.error(f"[share] insert returned no rows for user {user_id}")
+            raise HTTPException(status_code=502, detail="Could not create the share link. Please try again.")
+        stored = rows[0] if isinstance(rows[0], dict) else dict(insert_row, id=None)
+    except HTTPException:
+        raise
+    except Exception as ins_err:  # noqa: BLE001
+        logger.error(f"[share] insert failed for user {user_id}: {ins_err}")
+        # Sanitised external message — no DB names, no driver classes.
+        raise HTTPException(status_code=502, detail="Could not create the share link. Please try again.")
+
+    response_payload = _serialise_share_event({**insert_row, **stored}, frontend_url)
+
+    # Belt-and-braces: assert the response contains no banned tokens before
+    # it leaves the backend. If a future code change accidentally embeds a
+    # supplier name, this fails CI rather than reaching the user.
+    try:
+        # Skip the share_url itself from the scrub so origin domains never
+        # trip the banned-token list (assert_no_banned_tokens does substring
+        # matches, never URLs in our banned set today).
+        assert_no_banned_tokens(response_payload, source="reports.create_cmo_report_share")
+    except ExternalContractViolation as cv:
+        logger.error(f"[share] external contract violation: {cv}")
+        raise HTTPException(status_code=500, detail="Could not create the share link. Please try again.")
+
+    return response_payload
+
+
+# Sanitisation pattern for textual fields in the public HTML view. We strip
+# obvious supplier names + internal markers BEFORE rendering so the public
+# page never leaks vendor identity even if the enrichment text drifts.
+_PUBLIC_HTML_REDACTIONS = (
+    "SEMrush", "SEMRUSH", "OpenAI", "Perplexity", "Firecrawl", "Browse.ai",
+    "BrowseAI", "SerpAPI", "Merge.dev", "Anthropic", "Claude", "GPT-4", "GPT-3",
+    "service_role", "user_jwt", "ai_errors", "edge_tools",
+)
+
+
+def _redact_for_public(text: Any) -> str:
+    """Strip supplier names + internal markers from a string. Never raises."""
+    if text is None:
+        return ""
+    s = str(text)
+    for needle in _PUBLIC_HTML_REDACTIONS:
+        s = re.sub(re.escape(needle), "", s, flags=re.IGNORECASE)
+    return s.strip()
+
+
+def _public_html_escape(value: Any) -> str:
+    """Minimal HTML-escape for embedding into the shared template."""
+    s = _redact_for_public(value)
+    return (
+        s.replace("&", "&amp;")
+         .replace("<", "&lt;")
+         .replace(">", "&gt;")
+         .replace('"', "&quot;")
+         .replace("'", "&#39;")
+    )
+
+
+def _build_public_share_html(report: Dict[str, Any], company: str, generated_at: str) -> str:
+    """Render the read-only HTML view for an unauthenticated share recipient.
+
+    Contract v2: this is the most exposed surface in the share flow — the
+    URL holder is unauthenticated. The HTML must never contain auth tokens,
+    supplier names, internal codes, or links into the authenticated app
+    (no /dashboard, no /ask-biqc internal navigation, no supabase URL).
+    """
+    safe_company = _public_html_escape(company or "Your business")
+    safe_generated = _public_html_escape(generated_at)
+    exec_summary = _public_html_escape(
+        report.get("executive_summary")
+        or "This report is still being prepared. Check back shortly."
+    )
+
+    mp = report.get("market_position") or {}
+    overall = mp.get("overall") if isinstance(mp.get("overall"), (int, float)) else "—"
+
+    swot = report.get("swot") or {}
+    def _list(items):
+        items = items or []
+        if not items:
+            return "<li class='muted'>No items available.</li>"
+        return "".join(f"<li>{_public_html_escape(x)}</li>" for x in items[:10])
+
+    swot_html = (
+        f"<div class='swot'>"
+        f"<div class='card'><h3>Strengths</h3><ul>{_list(swot.get('strengths'))}</ul></div>"
+        f"<div class='card'><h3>Weaknesses</h3><ul>{_list(swot.get('weaknesses'))}</ul></div>"
+        f"<div class='card'><h3>Opportunities</h3><ul>{_list(swot.get('opportunities'))}</ul></div>"
+        f"<div class='card'><h3>Threats</h3><ul>{_list(swot.get('threats'))}</ul></div>"
+        f"</div>"
+    )
+
+    roadmap = report.get("roadmap") or {}
+    def _roadmap_items(items):
+        items = items or []
+        if not items:
+            return "<li class='muted'>No items available.</li>"
+        out = []
+        for item in items[:10]:
+            text = item.get("text") if isinstance(item, dict) else item
+            out.append(f"<li>{_public_html_escape(text)}</li>")
+        return "".join(out)
+    roadmap_html = (
+        f"<div class='roadmap'>"
+        f"<div class='card'><h3>7-Day Quick Wins</h3><ol>{_roadmap_items(roadmap.get('quick_wins'))}</ol></div>"
+        f"<div class='card'><h3>30-Day Priorities</h3><ol>{_roadmap_items(roadmap.get('priorities'))}</ol></div>"
+        f"<div class='card'><h3>90-Day Strategic</h3><ol>{_roadmap_items(roadmap.get('strategic'))}</ol></div>"
+        f"</div>"
+    )
+
+    return f"""<!doctype html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8' />
+  <meta name='robots' content='noindex,nofollow' />
+  <meta name='viewport' content='width=device-width,initial-scale=1' />
+  <title>BIQc CMO Report — {safe_company}</title>
+  <style>
+    :root {{ color-scheme: light; }}
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 960px; margin: 0 auto; padding: 32px 20px; color: #1a1d29; background: #fafbfc; line-height: 1.55; }}
+    h1 {{ font-size: 28px; margin-bottom: 4px; }}
+    h2 {{ font-size: 18px; margin-top: 32px; padding-bottom: 6px; border-bottom: 1px solid #e1e4e8; }}
+    h3 {{ font-size: 14px; margin: 0 0 12px; color: #424b5f; }}
+    .eyebrow {{ font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #d6422a; font-weight: 700; }}
+    .meta {{ font-size: 12px; color: #6b7280; margin-bottom: 20px; }}
+    .summary {{ background: #fff; padding: 20px; border-left: 3px solid #d6422a; border-radius: 6px; margin-bottom: 24px; }}
+    .score {{ display: inline-block; font-size: 48px; font-weight: 700; color: #d6422a; }}
+    .swot, .roadmap {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }}
+    .card {{ background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 16px; }}
+    .card ul, .card ol {{ margin: 0; padding-left: 18px; }}
+    .card li {{ margin-bottom: 6px; font-size: 13px; color: #424b5f; }}
+    .muted {{ color: #9ca3af; font-style: italic; }}
+    footer {{ margin-top: 48px; padding-top: 16px; border-top: 1px solid #e1e4e8; text-align: center; font-size: 11px; color: #9ca3af; }}
+    .read-only-banner {{ background: #fef3c7; color: #78350f; padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-bottom: 16px; }}
+  </style>
+</head>
+<body>
+  <div class='read-only-banner'>You are viewing a read-only shared copy of this report. The full interactive report is available inside BIQc.</div>
+  <span class='eyebrow'>BIQc CMO Intelligence Report</span>
+  <h1>{safe_company}</h1>
+  <p class='meta'>Generated {safe_generated}. Overall market position: <span class='score'>{overall}</span> / 100</p>
+  <div class='summary'>{exec_summary}</div>
+  <h2>SWOT Analysis</h2>
+  {swot_html}
+  <h2>Strategic Roadmap</h2>
+  {roadmap_html}
+  <footer>
+    Prepared by BIQc Intelligence Engine. This shared view is read-only and does not include account-specific or sensitive operational data. Visit biqc.ai to learn more.
+  </footer>
+</body>
+</html>
+"""
+
+
+@router.get("/reports/cmo-report/shared/{token}", include_in_schema=True)
+async def get_cmo_report_shared(
+    token: str = Path(..., min_length=8, max_length=128),
+):
+    """Public unauthenticated read-only HTML view of a shared CMO report.
+
+    Returns:
+        - 200 + sanitised text/html when the token is live and not expired
+        - 400 when the token is malformed
+        - 404 when no row matches
+        - 410 (Gone) when the token has expired or been revoked
+    """
+    if not _SHARE_TOKEN_RE.match(token or ""):
+        raise HTTPException(status_code=400, detail="Invalid share link")
+
+    # Service-role read intentional: the holder of the token IS the
+    # authorisation here. RLS on share_events restricts authenticated
+    # access to the owner; this public endpoint reads via service role.
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = (
+            sb.table("share_events")
+              .select("id,user_id,mechanism,token,share_url,expires_at,revoked_at,accessed_count")
+              .eq("token", token)
+              .limit(1)
+              .execute()
+        )
+        rows = getattr(result, "data", None) or []
+    except Exception as lookup_err:  # noqa: BLE001
+        logger.error(f"[share] token lookup failed: {lookup_err}")
+        raise HTTPException(status_code=503, detail="Shared report is temporarily unavailable")
+
+    if not rows:
+        raise HTTPException(status_code=404, detail="Shared report not found")
+
+    row = rows[0]
+    if row.get("revoked_at"):
+        raise HTTPException(status_code=410, detail="This share link has been revoked")
+
+    expires_raw = row.get("expires_at")
+    try:
+        expires_dt = datetime.fromisoformat(str(expires_raw).replace("Z", "+00:00")) if expires_raw else None
+    except Exception:  # noqa: BLE001
+        expires_dt = None
+    if expires_dt and expires_dt < datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="This share link has expired")
+
+    user_id = row.get("user_id")
+    if not user_id:
+        # Defensive — shouldn't happen because the column is NOT NULL.
+        raise HTTPException(status_code=410, detail="This share link is no longer valid")
+
+    # Reconstruct the report as the share owner would see it. We deliberately
+    # call get_cmo_report with a synthetic user dict so the existing
+    # Contract-v2 sanitised pipeline runs unchanged.
+    try:
+        from routes.intelligence_modules import get_cmo_report
+        report = await get_cmo_report({"id": user_id})
+        if not isinstance(report, dict):
+            report = {}
+    except Exception as report_err:  # noqa: BLE001
+        logger.error(f"[share] report rebuild failed for token: {report_err}")
+        report = {}
+
+    # Final scrub of the report payload through the centralised sanitizer
+    # before it's rendered into HTML. Strips internal-only keys at any depth.
+    try:
+        report = scrub_response_for_external(report) or {}
+    except Exception as scrub_err:  # noqa: BLE001
+        logger.warning(f"[share] scrub failed (continuing with empty report): {scrub_err}")
+        report = {}
+
+    company = report.get("company_name") or "Your business"
+    generated_at = report.get("report_date") or datetime.now(timezone.utc).strftime("%d/%m/%Y")
+
+    html = _build_public_share_html(report, company, generated_at)
+
+    # Belt-and-braces: assert no banned tokens slipped into the HTML.
+    try:
+        assert_no_banned_tokens(html, source="reports.get_cmo_report_shared")
+    except ExternalContractViolation as cv:
+        logger.error(f"[share] HTML contract violation: {cv}")
+        # Fail closed: serve a generic placeholder rather than leaking.
+        html = (
+            "<!doctype html><html><head><meta charset='utf-8'><title>BIQc Shared Report</title></head>"
+            "<body style='font-family:sans-serif;padding:32px;max-width:640px;margin:0 auto;'>"
+            "<h1>BIQc CMO Report</h1>"
+            "<p>This shared report is temporarily unavailable. Please contact the sender for an updated link.</p>"
+            "</body></html>"
+        )
+
+    # Best-effort accessed_count increment. Failure here must not break the
+    # response — the recipient still sees the report.
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        new_count = int(row.get("accessed_count") or 0) + 1
+        sb.table("share_events").update({"accessed_count": new_count}).eq("id", row.get("id")).execute()
+    except Exception as inc_err:  # noqa: BLE001
+        logger.debug(f"[share] accessed_count increment skipped: {inc_err}")
+
+    return HTMLResponse(
+        content=html,
+        status_code=200,
+        headers={
+            # Public surface — opt out of search-engine indexing.
+            "X-Robots-Tag": "noindex, nofollow",
+            "Cache-Control": "private, max-age=60",
+            "Referrer-Policy": "no-referrer",
+        },
+    )

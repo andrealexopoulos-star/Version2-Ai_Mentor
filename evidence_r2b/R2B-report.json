@@ -1,0 +1,96 @@
+{
+  "agent": "R2B",
+  "mission": "customer-reviews-deep",
+  "branch": "fix/p0-marjo-r2b-customer-reviews-deep",
+  "worktree": "/tmp/biqc-marjo-r2b",
+  "new_edge_function": "supabase/functions/customer-reviews-deep/index.ts",
+  "platforms_supported": ["google_maps", "trustpilot", "productreview_au", "yelp", "facebook"],
+  "extraction_mechanism": {
+    "google_maps": "Serper.dev /places (Google Maps) + /search snippet pull",
+    "trustpilot": "Firecrawl /v1/scrape (markdown + html, JSON-LD ratingValue/reviewCount fallbacks)",
+    "productreview_au": "Firecrawl /v1/scrape (markdown + html, JSON-LD fallbacks)",
+    "yelp": "Firecrawl /v1/scrape (JSON-LD Review array extraction)",
+    "facebook": "Firecrawl /v1/scrape (best-effort, INSUFFICIENT_SIGNAL on failure per Contract v2)"
+  },
+  "search_provider_correction": {
+    "prompt_named": "SERPAPI_API_KEY",
+    "actual_in_codebase": "SERPER_API_KEY (Serper.dev — already wired in env, free-tier, no new account needed)",
+    "verification": "grep -rn SERPAPI in repo returned zero hits; grep -rn SERPER returned active wiring in backend/core/helpers.py and AZURE_ENV_VARS_CHECKLIST.md"
+  },
+  "sentiment_classification": "LLM Trinity quorum (OpenAI gpt-5.2 + Anthropic claude-sonnet-4-6 + Google gemini-3-pro-preview). Batched: one call per platform for ALL its reviews. Parses structured JSON [{id, sentiment, themes}]. NO keyword bag. If all 3 providers fail, sentiment=null (not silent neutral).",
+  "theme_extraction": "Single Trinity call across cross-platform corpus (capped at 60 reviews). Returns top-5 themes with verbatim example_quote and platforms[] list. Parsed into aggregated.themes_top.",
+  "aggregation_metric": "weighted_avg_rating (Σ(rating·count)/Σ(count)) + sentiment_distribution (positive/negative/neutral_pct rounded) + velocity_total (last_30d/last_90d sums) + cross-platform total_reviews",
+  "calibration_integration": "Added customer-reviews-deep to asyncio.gather fanout in backend/routes/calibration.py at line ~2454. Both browse-ai-reviews AND customer-reviews-deep run during deprecation window. Output mapped into enrichment.customer_reviews_deep (raw) + enrichment.customer_review_intelligence_v2 (CMO-friendly summary) + synthesised browse_ai_reviews-shaped payload that the legacy _build_customer_review_intelligence consumes as primary source. browse-ai-reviews to be removed after R2B + R2C land + V1-V8 verifies green.",
+  "cmo_section_wiring": [
+    "customer_sentiment (via aggregated.sentiment_distribution + weighted_avg_rating)",
+    "review_intelligence (via aggregated.themes_top with example_quote provenance)",
+    "review_sources (via per-platform url + state in customer_review_intelligence_v2.review_sources[])"
+  ],
+  "cmo_wiring_note": "Surface-level fields exposed on enrichment.customer_review_intelligence_v2: weighted_avg_rating, total_reviews_cross_platform, sentiment_distribution, velocity_total, themes, platforms_found[], review_sources[], has_data, state. The intelligence_modules.py _build_section_evidence_for_cmo touch-up is left for the agent that owns intelligence_modules.py — the data is now ready for it to read (no schema change needed there beyond reading new keys).",
+  "provider_traces_per_scan_estimate": 12,
+  "provider_traces_breakdown": {
+    "per_platform_scrape_or_lookup": "5 (one per platform: Serper for google_maps, Firecrawl for the other 4)",
+    "per_platform_sentiment_llm_when_reviews_present": "0..5 (skipped on platforms with zero reviews)",
+    "aggregate_themes_corpus": "1",
+    "aggregate_final_aggregation": "1",
+    "happy_path_total": "5 + 5 + 1 + 1 = 12",
+    "zero_data_path_total": "5 + 0 + 0 + 1 = 6",
+    "table": "provider_traces (best-effort insert; gracefully no-ops if the table doesn't exist yet — forward-compatible with R2A's enrichment_trace module landing later)"
+  },
+  "contract_v2_compliance": {
+    "external_state_enum": "Top-level response.state and per-platform .state are restricted to {DATA_AVAILABLE, DATA_UNAVAILABLE, INSUFFICIENT_SIGNAL, PROCESSING, DEGRADED}",
+    "no_silent_failure": "Failed scrapes return state=DATA_UNAVAILABLE/INSUFFICIENT_SIGNAL with rating=null, count=null, recent_reviews=[]. NEVER ok:true with empty fields and a fabricated rating.",
+    "ai_errors_isolation": "Per-platform .ai_errors and response-level ai_errors[] carry internal markers (e.g. scrape_http_404_for_facebook.com). These are INTERNAL — calibration.py's boundary sanitizer (backend/core/response_sanitizer.py) strips them before any frontend response.",
+    "auth_zero_401": "verifyAuth via _shared/auth.ts; missing/invalid Authorization returns 401 sanitised body {ok:false, state:DATA_UNAVAILABLE} — no anon bypass, no fallback.",
+    "no_pii": "author_handle is first-name-only (helper firstName() truncates to 40 chars and strips digits/punctuation). No email, phone, full name surfaces."
+  },
+  "files_changed": [
+    "supabase/functions/customer-reviews-deep/index.ts (new — 1379 lines incl. comments/blanks; 5 platform extractors + Trinity LLM quorum + per-platform trace + aggregation)",
+    "supabase/functions/customer-reviews-deep/test.ts (new — 291 lines; Deno test patches Deno.serve + fetch to assert 401 sanitised, missing-key non-crash, response shape)",
+    "backend/routes/calibration.py (modified — +135 / -3 lines; added to asyncio.gather fanout, wired output to enrichment, additive customer_review_intelligence_v2)",
+    "backend/tests/test_customer_reviews_deep.py (new — 479 lines; 14 backend tests covering schema, LLM sentiment, themes, weighted avg, Facebook failure path, no supplier names, provider trace counts)"
+  ],
+  "tests_added": [
+    "backend/tests/test_customer_reviews_deep.py::TestPerPlatformSchema::test_extract_per_platform_schema",
+    "backend/tests/test_customer_reviews_deep.py::TestPerPlatformSchema::test_all_five_target_platforms_covered",
+    "backend/tests/test_customer_reviews_deep.py::TestLLMSentimentReplacesKeywordBag::test_llm_sentiment_classification_replaces_keyword_bag",
+    "backend/tests/test_customer_reviews_deep.py::TestLLMSentimentReplacesKeywordBag::test_keyword_bag_words_alone_do_not_set_sentiment",
+    "backend/tests/test_customer_reviews_deep.py::TestLLMThemeExtraction::test_llm_theme_extraction_from_corpus",
+    "backend/tests/test_customer_reviews_deep.py::TestAggregatedWeightedAverage::test_aggregated_weighted_average",
+    "backend/tests/test_customer_reviews_deep.py::TestAggregatedWeightedAverage::test_sentiment_distribution_sums_to_100_or_zero",
+    "backend/tests/test_customer_reviews_deep.py::TestFacebookFailureMarkedInsufficient::test_facebook_failure_marked_insufficient_signal_not_silent",
+    "backend/tests/test_customer_reviews_deep.py::TestNoSupplierNamesInExternalResponse::test_no_supplier_names_in_external_response",
+    "backend/tests/test_customer_reviews_deep.py::TestNoSupplierNamesInExternalResponse::test_ai_errors_are_isolated_and_internal",
+    "backend/tests/test_customer_reviews_deep.py::TestProviderTracesPerPlatform::test_provider_traces_per_platform_pair_persisted",
+    "backend/tests/test_customer_reviews_deep.py::TestProviderTracesPerPlatform::test_trace_count_for_zero_data_path",
+    "backend/tests/test_customer_reviews_deep.py::TestFixtureSanity::test_happy_fixture_has_at_least_one_review_per_active_platform",
+    "backend/tests/test_customer_reviews_deep.py::TestFixtureSanity::test_facebook_failed_fixture_has_zero_data",
+    "supabase/functions/customer-reviews-deep/test.ts::test_unauth_returns_401_no_anon_bypass",
+    "supabase/functions/customer-reviews-deep/test.ts::test_missing_firecrawl_key_marks_platform_insufficient_no_crash",
+    "supabase/functions/customer-reviews-deep/test.ts::test_response_shape_per_contract_v2_includes_required_fields"
+  ],
+  "test_results": {
+    "backend_pytest": "14 passed in 0.03s (test_customer_reviews_deep.py)",
+    "backend_no_regression_check": "64 passed in 0.08s (test_calibration_edge_health_contract.py + test_calibration_edge_normalization.py + test_response_sanitizer.py)",
+    "deno_tests": "Authored — execution requires `deno test` runtime which is not present locally (deno not installed). Tests are self-contained with fetch+Deno.serve monkey-patching; will execute in CI / on a Deno-equipped host."
+  },
+  "evidence_artifacts": {
+    "calibration_diff.patch": "git diff of calibration.py — 195 lines",
+    "pytest_customer_reviews_deep.txt": "verbose pytest output — 14 passed",
+    "pytest_no_regression_check.txt": "no-regression run — 64 passed (calibration edge contract + normalization + response sanitizer)"
+  },
+  "commits": [
+    {
+      "sha": "745a72f2f8c45af873d3c21e85fcb43b52f52bc9",
+      "message": "feat(p0-marjo-r2b): customer-reviews-deep edge fn + per-platform Firecrawl/Serper + LLM sentiment/themes — replaces browse-ai-reviews shallow scraper — code 13041978 required to push"
+    }
+  ],
+  "ready_for_peer_review": true,
+  "remaining_blockers": [],
+  "follow_ups_for_other_agents": [
+    "R2A / E2 enrichment_trace: when the provider_traces table lands, the writeTrace() helper in this edge function will start persisting rows automatically (best-effort insert is already wired). No further code change in this edge fn required.",
+    "E6 _build_section_evidence_for_cmo: read enrichment.customer_review_intelligence_v2 — fields are ready (weighted_avg_rating, sentiment_distribution, themes, platforms_found, review_sources). The CMO sections customer_sentiment / review_intelligence / review_sources can populate from these without schema changes.",
+    "Deprecation of browse-ai-reviews: scheduled for after R2B + R2C land + V1-V8 verifies green. Edge fn entry remains in the asyncio.gather fanout and the synthetic browse_ai_reviews payload generated from customer-reviews-deep ensures the legacy _build_customer_review_intelligence still receives high-quality input during the window."
+  ],
+  "evidence_dir": "/tmp/biqc-marjo-r2b/evidence_r2b/"
+}

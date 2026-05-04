@@ -1,0 +1,68 @@
+{
+  "scan_state": "INSUFFICIENT_SIGNAL",
+  "business_name": "Generic Co",
+  "synthesis_eligible": false,
+  "available_trace_ids_count": 0,
+  "available_competitor_names_count": 0,
+  "sections": {
+    "chief_marketing_summary": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "We don't yet have enough verified marketing intelligence to write a chief-marketing summary.",
+      "source_trace_ids": []
+    },
+    "executive_summary": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "We don't yet have enough verified intelligence to write a complete executive summary for this business.",
+      "source_trace_ids": []
+    },
+    "swot_strengths": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "Insufficient evidence to extract evidence-backed strengths for this business.",
+      "source_trace_ids": []
+    },
+    "swot_weaknesses": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "Insufficient evidence to extract evidence-backed weaknesses for this business.",
+      "source_trace_ids": []
+    },
+    "swot_opportunities": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "Insufficient evidence to extract evidence-backed opportunities for this business.",
+      "source_trace_ids": []
+    },
+    "swot_threats": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "Insufficient evidence to extract evidence-backed threats for this business.",
+      "source_trace_ids": []
+    },
+    "strategic_roadmap": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "Insufficient evidence to compose an evidence-backed strategic roadmap.",
+      "source_trace_ids": []
+    },
+    "competitive_landscape": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "Competitive landscape could not be reliably determined from current public sources.",
+      "source_trace_ids": []
+    },
+    "review_intelligence": {
+      "state": "INSUFFICIENT_SIGNAL",
+      "evidence": null,
+      "reason": "We couldn't gather enough public review data for this business to produce review intelligence.",
+      "source_trace_ids": []
+    }
+  },
+  "notes": [
+    "has_sufficient_synthesis_inputs returned False \u2014 orchestrator did NOT call any LLM provider.",
+    "Every section returns INSUFFICIENT_SIGNAL with the canonical reason copy from section_evidence.REASON_INSUFFICIENT_SIGNAL.",
+    "Zero LLM cost incurred. Frontend renders the INSUFFICIENT_SIGNAL banner per section, with retry-CTA where applicable."
+  ]
+}

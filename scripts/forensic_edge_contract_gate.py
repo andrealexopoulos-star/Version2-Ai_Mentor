@@ -43,6 +43,10 @@ FUNCTION_SLUGS: List[str] = [
     "biqc-trinity",
     "boardroom-diagnosis",
     "browse-ai-reviews",
+    # P0 Marjo F14 (2026-05-04): customer-reviews-deep is the per-platform
+    # Firecrawl/Serper deep-review extractor introduced by R2B; included in
+    # the scan fanout, so it MUST be probed by the production contract gate.
+    "customer-reviews-deep",
     "business-brain-merge-ingest",
     "business-brain-metrics-cron",
     "business-identity-lookup",
@@ -73,6 +77,10 @@ FUNCTION_SLUGS: List[str] = [
     "semrush-domain-intel",
     "signal-evaluator",
     "social-enrichment",
+    # P0 Marjo F14 (2026-05-04): staff-reviews-deep is the per-platform
+    # Firecrawl deep-employer-brand extractor introduced by R2C; same
+    # rationale as customer-reviews-deep — must be on the contract gate.
+    "staff-reviews-deep",
     "sop-generator",
     "strategic-console-ai",
     "warm-cognitive-engine",

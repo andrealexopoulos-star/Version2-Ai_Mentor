@@ -1,0 +1,175 @@
+{
+  "task": "fix/p0-marjo-r2e-synthesis-prompts",
+  "branch": "fix/p0-marjo-r2e-synthesis-prompts",
+  "base_ref": "origin/main",
+  "scope_summary": "World-class CMO synthesis prompts that USE the deepened R2A-D + F14/F15 enrichment data. Each of the 6 sections now produces evidence-cited content (specific keywords, review themes, competitor names, metric numbers) rather than generic Marketing-101 templates. Provenance enforcement + anti-template denylist + Ask-BIQc brand consistency + Contract-v2 supplier-name scrubbing all integrated.",
+  "sections_reworked": [
+    {
+      "section_id": "chief_marketing_summary",
+      "before": "Generic 2-paragraph synopsis from cmo_executive_brief / forensic_memo",
+      "after": "80-150 word paragraph that cites at least 3 specific signals (brand authority rank, review counts, dominant theme, competitor outrank count, employer-brand health score) — output JSON includes signals_cited array + source_trace_ids",
+      "prompt_builder": "build_chief_marketing_summary_prompt"
+    },
+    {
+      "section_id": "executive_summary",
+      "before": "Generic 5-bullet executive summary",
+      "after": "5 fact-bullets each formatted as `{fact with real number}. (Source: {dataset name})` — every bullet tied to a specific dataset (keyword_profile / review_intelligence / workplace_intelligence / competitor_intelligence / advertising_intelligence / backlink_intelligence)",
+      "prompt_builder": "build_executive_summary_prompt"
+    },
+    {
+      "section_id": "swot",
+      "before": "Generic Marketing-101 items hardcoded in _build_swot() — UVP / SEO status string / paid signals string",
+      "after": "3-4 items per bucket, each citing at least ONE of: specific keyword + position + search_volume, specific review theme, specific competitor name (from allowed list), specific staff-review theme — items without provenance dropped by filter_synthesis_swot_with_provenance()",
+      "prompt_builder": "build_swot_prompt"
+    },
+    {
+      "section_id": "strategic_roadmap",
+      "before": "Generic playbook items hardcoded in _build_cmo_priority_actions()",
+      "after": "3-5 items per horizon (7-day quick wins, 30-day priorities, 90-day strategic). Each item cites a specific finding: keyword + rank, top-page URL, competitor name, metric name, review theme. filter_synthesis_roadmap_with_provenance() drops items without provenance",
+      "prompt_builder": "build_strategic_roadmap_prompt"
+    },
+    {
+      "section_id": "competitive_landscape",
+      "before": "Top 3 competitors with name + market_share='N/A' + threat_level",
+      "after": "Up to 10 detailed competitor rows: name, organic_keywords (int), organic_traffic (int), common_keywords_with_you (int), paid_keywords (int), threat_level, comparative_positioning (one-sentence diagnosis), where_they_outrank_you (keywords), source_trace_ids",
+      "prompt_builder": "build_competitive_landscape_prompt"
+    },
+    {
+      "section_id": "review_intelligence",
+      "before": "positive_themes/negative_themes pair as bare strings",
+      "after": "customer_sentiment.weighted_avg_rating + per_platform breakdown + top 3 themes with mentions + sentiment_pct + example_quote (verbatim from recent_reviews); workplace_intelligence.employer_brand_health_score + top_pros + top_cons with example_quotes",
+      "prompt_builder": "build_review_intelligence_prompt"
+    }
+  ],
+  "prompts_modified": {
+    "new_module": "backend/core/synthesis_prompts.py (1041 lines)",
+    "new_router_helper": "backend/core/llm_router.py — added llm_trinity_synthesis() (Trinity quorum tuned for CMO synthesis; lower temperature 0.35, larger max_tokens 2400, longer timeout 90s, json_only=True synthesis-leg system message)",
+    "cmo_endpoint_wiring": "backend/routes/intelligence_modules.py — added _enrich_cmo_with_synthesis() orchestration that gates on has_sufficient_synthesis_inputs() + per-section thinness check + env flag CMO_SYNTHESIS_ENRICHMENT_ENABLED. Synthesis output passes through provenance + anti-template filters before merge. Errors are non-fatal — never blocks the route."
+  },
+  "anti_template_terms": [
+    "Improve social media presence",
+    "Increase brand awareness",
+    "Develop a content calendar",
+    "Leverage social media",
+    "Engage with customers",
+    "Build an email list",
+    "Expand market presence",
+    "Optimize SEO",
+    "Optimise SEO",
+    "Focus on customer service",
+    "Differentiate from competitors",
+    "Improve online presence",
+    "Strengthen your brand",
+    "Build customer loyalty",
+    "Create high-quality content",
+    "Run targeted ad campaigns",
+    "Invest in digital marketing",
+    "Embrace digital transformation",
+    "Implement a CRM",
+    "Foster customer engagement",
+    "Focus on lead generation",
+    "Build a strong online community",
+    "Optimize the customer journey",
+    "Enhance user experience",
+    "Track key performance indicators"
+  ],
+  "anti_template_enforcement_layers": [
+    "Layer 1 (prompt-side): every prompt embeds the FORBIDDEN OUTPUT PATTERNS block listing all 25 phrases — the LLM is told what NOT to write.",
+    "Layer 2 (response-side, R2E): is_anti_template_phrase() in core/synthesis_prompts.py — regex sweep with 24 phrase patterns + 11 exact-match denylist — drops any item that slips through.",
+    "Layer 3 (response-side, E6 when present): section_evidence.is_placeholder_string() applies a parallel denylist at the SectionEvidence boundary."
+  ],
+  "provenance_enforcement": {
+    "swot": "filter_synthesis_swot_with_provenance() requires each item to either reference a trace_id from available_trace_ids, OR mention a competitor name from available_competitor_names, OR carry an explicit evidence_tag — items without provenance are silently dropped. Empty bucket signals caller to flip section to INSUFFICIENT_SIGNAL.",
+    "roadmap": "filter_synthesis_roadmap_with_provenance() requires each item to reference a trace_id, competitor name, brand metric name, or evidence_tag — same drop semantics."
+  },
+  "contract_v2_compliance": {
+    "supplier_name_scrubbing": "Three-layer defence: (1) _NEVER_LEAK_RULE in every system prompt instructs the LLM not to mention vendors. (2) _scrub_supplier_tokens() pre-processes the structured input JSON before showing it to the LLM, replacing supplier names (semrush/openai/anthropic/etc.) with the placeholder 'data-supplier'. (3) Existing scrub_response_for_external() runs at the response boundary in get_cmo_report (unchanged).",
+    "external_state_enum": "Sections that produce no provenance-backed items flip to INSUFFICIENT_SIGNAL via the existing classify_section / derive_report_state path. Synthesis output never overrides existing rich content with thinner content — gap-fill semantics only."
+  },
+  "ask_biqc_brand_compliance": {
+    "system_prompt_brand_line": "All 6 prompts begin with: 'You are BIQc Intelligence Engine — the analyst behind \"Ask BIQc\", the conversational AI surface inside biqc.ai.'",
+    "no_alternative_names": "Soundboard / Chat / Assistant never appear; tested in test_ask_biqc_brand_in_system_prompt"
+  },
+  "tests_added": [
+    {
+      "file": "backend/tests/test_synthesis_prompts.py",
+      "lines": 660,
+      "test_count": 22,
+      "names": [
+        "test_chief_marketing_summary_cites_3_signals",
+        "test_swot_items_have_source_trace_ids",
+        "test_swot_items_dropped_without_provenance",
+        "test_roadmap_items_cite_real_findings",
+        "test_anti_template_denylist_in_prompt",
+        "test_anti_template_terms_are_full_set",
+        "test_competitive_landscape_top_5_with_metrics",
+        "test_review_intelligence_includes_theme_quotes",
+        "test_no_marketing_101_phrases_in_output",
+        "test_marketing_101_subphrases_rejected",
+        "test_specific_evidence_text_passes_filter",
+        "test_parse_synthesis_json_handles_code_fences",
+        "test_parse_synthesis_json_handles_prose_preamble",
+        "test_parse_synthesis_json_returns_none_on_garbage",
+        "test_has_sufficient_synthesis_inputs_rich",
+        "test_has_sufficient_synthesis_inputs_thin",
+        "test_has_sufficient_synthesis_inputs_mixed",
+        "test_collect_available_trace_ids_walks_nested",
+        "test_collect_available_competitor_names",
+        "test_collect_available_brand_metric_names_includes_core_metrics",
+        "test_no_supplier_names_in_any_prompt",
+        "test_ask_biqc_brand_in_system_prompt"
+      ],
+      "pytest_result": "22 passed in 0.04s"
+    }
+  ],
+  "regression_check": {
+    "test_contract_v2_enrichment_response": "13 tests passed — Contract v2 supplier-name boundary still enforced.",
+    "test_cmo_truth_state_machine": "passed — CMO truth-state derivation unaffected.",
+    "test_cmo_pdf_entitlement": "passed — entitlement gating unaffected.",
+    "combined_run": "44 tests passed in 0.20s"
+  },
+  "sample_outputs": {
+    "data_available": {
+      "path": "/tmp/biqc-marjo-r2e/evidence_r2e/sample-cmo-output-data_available.json",
+      "business_name": "Acme Roofing",
+      "synthesis_eligible": true,
+      "trace_ids_count": 10,
+      "competitor_names_count": 3,
+      "swot_items_dropped_by_provenance_filter": 0,
+      "swot_items_per_bucket_surviving": {"strengths": 3, "weaknesses": 3, "opportunities": 3, "threats": 3},
+      "demonstrates": "Rich enrichment input → all SWOT items cite specific keywords / review themes / competitor names — zero items dropped → DATA_AVAILABLE."
+    },
+    "insufficient_signal": {
+      "path": "/tmp/biqc-marjo-r2e/evidence_r2e/sample-cmo-output-insufficient_signal.json",
+      "business_name": "Generic Co",
+      "synthesis_eligible": false,
+      "demonstrates": "has_sufficient_synthesis_inputs() returns False on thin enrichment → orchestrator NEVER calls trinity → zero LLM cost → all sections return INSUFFICIENT_SIGNAL with canonical, non-leaky reason copy."
+    },
+    "degraded": {
+      "path": "/tmp/biqc-marjo-r2e/evidence_r2e/sample-cmo-output-degraded.json",
+      "business_name": "Mid Co",
+      "synthesis_eligible": true,
+      "swot_items_dropped_by_filter": 2,
+      "demonstrates": "Mixed enrichment (reviews + competitors but no keyword profile or workplace intel). Synthesis produces some items with provenance (kept) and some generic items (dropped — including one anti-template phrase). Sections without enough surviving content flip to INSUFFICIENT; sections with rich data stay DATA_AVAILABLE → top-level state DEGRADED."
+    }
+  },
+  "files_changed": [
+    {"path": "backend/core/synthesis_prompts.py", "change": "added (1041 lines)"},
+    {"path": "backend/core/llm_router.py", "change": "added llm_trinity_synthesis() helper (~190 lines)"},
+    {"path": "backend/routes/intelligence_modules.py", "change": "added imports + _enrich_cmo_with_synthesis() orchestration + wiring at step 6b in get_cmo_report (~280 lines)"},
+    {"path": "backend/tests/test_synthesis_prompts.py", "change": "added (660 lines, 22 tests)"},
+    {"path": "evidence_r2e/_build_samples.py", "change": "added (sample output builder, no LLM round-trips, deterministic)"},
+    {"path": "evidence_r2e/sample-cmo-output-data_available.json", "change": "added (rich-input scenario)"},
+    {"path": "evidence_r2e/sample-cmo-output-insufficient_signal.json", "change": "added (thin-input scenario)"},
+    {"path": "evidence_r2e/sample-cmo-output-degraded.json", "change": "added (mixed-input scenario)"}
+  ],
+  "commits": [],
+  "authority": {
+    "branch_off_origin_main": "yes",
+    "commit": "yes",
+    "push": "NO (Andreas authorisation code 13041978 required)",
+    "touch_billing_marketing_tier_flip": "NO",
+    "spawn_sub_agents": "NO"
+  },
+  "code_required_for_merge": "13041978"
+}

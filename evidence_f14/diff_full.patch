@@ -1,0 +1,525 @@
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 599e3273..50199451 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -668,6 +668,12 @@ jobs:
+             calibration-sync
+             calibration-engine
+             competitor-monitor
++            # P0 Marjo F14 (2026-05-04): close perimeter gap for the two
++            # new deep-extraction edge fns added by R2B + R2C. Same
++            # rationale as supabase-functions-deploy.yml — both fns are in
++            # the scan fanout and silent 401 in prod = retention burn.
++            customer-reviews-deep
++            staff-reviews-deep
+           )
+ 
+           for fn in "${EDGE_FUNCTIONS[@]}"; do
+diff --git a/.github/workflows/supabase-functions-deploy.yml b/.github/workflows/supabase-functions-deploy.yml
+index ba081885..7db689a1 100644
+--- a/.github/workflows/supabase-functions-deploy.yml
++++ b/.github/workflows/supabase-functions-deploy.yml
+@@ -261,6 +261,12 @@ jobs:
+             calibration-sync
+             calibration-engine
+             competitor-monitor
++            # P0 Marjo F14 (2026-05-04): close perimeter gap for the two
++            # new deep-extraction edge fns added by R2B + R2C. They sit in
++            # the calibration scan fanout — must be smoked here so a 401 in
++            # prod fails the deploy per feedback_zero_401_tolerance.md.
++            customer-reviews-deep
++            staff-reviews-deep
+           )
+ 
+           for fn in "${FUNCTIONS[@]}"; do
+diff --git a/backend/core/response_sanitizer.py b/backend/core/response_sanitizer.py
+index 23c5cce1..014964ab 100644
+--- a/backend/core/response_sanitizer.py
++++ b/backend/core/response_sanitizer.py
+@@ -151,6 +151,13 @@ BANNED_INTERNAL_TOKENS: Tuple[str, ...] = (
+     "semrush-domain-intel",
+     "social-enrichment",
+     "competitor-monitor",
++    # P0 Marjo F14 (2026-05-04): the two new deep-extraction edge fns
++    # (R2B + R2C) — their slugs must be banned from external responses
++    # too, same as the legacy edge fn slugs above. Otherwise a leaked
++    # backend log line could surface the new internal architecture
++    # (Firecrawl per-platform pipeline) to a customer.
++    "customer-reviews-deep",
++    "staff-reviews-deep",
+     "user_jwt_rejected",
+     "service_role_exact",
+     "service_role_jwt",
+diff --git a/backend/tests/test_calibration_edge_health_contract.py b/backend/tests/test_calibration_edge_health_contract.py
+index 307a4cfb..d80ca045 100644
+--- a/backend/tests/test_calibration_edge_health_contract.py
++++ b/backend/tests/test_calibration_edge_health_contract.py
+@@ -52,6 +52,20 @@ HEALTH_CONTRACT_TARGETS = [
+         "supabase/functions/competitor-monitor/index.ts",
+         "competitor-monitor",
+     ),
++    # P0 Marjo F14 (2026-05-04) — close perimeter gap for the two new
++    # deep-extraction edge functions added by R2B + R2C. Both ARE in the
++    # calibration scan fanout (asyncio.gather in calibration.py:~2655) and
++    # therefore MUST appear in the health contract per
++    # feedback_zero_401_tolerance.md (no edge fn in scan path may silently
++    # 401 in prod) and BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
++    (
++        "supabase/functions/customer-reviews-deep/index.ts",
++        "customer-reviews-deep",
++    ),
++    (
++        "supabase/functions/staff-reviews-deep/index.ts",
++        "staff-reviews-deep",
++    ),
+ ]
+ 
+ 
+diff --git a/backend/tests/test_staff_reviews_deep.py b/backend/tests/test_staff_reviews_deep.py
+index 9542f844..a6f91cbc 100644
+--- a/backend/tests/test_staff_reviews_deep.py
++++ b/backend/tests/test_staff_reviews_deep.py
+@@ -491,6 +491,15 @@ def test_edge_function_file_exists_and_has_required_extractors() -> None:
+         "FIRECRAWL_API_KEY",
+         "SERPER_API_KEY",
+         "OPENAI_API_KEY",
++        # P0 Marjo F14 (2026-05-04): Trinity quorum wiring — staff
++        # sentiment + themes are critical for "world-class" employer-brand
++        # intelligence. Single-LLM = single point of failure.
++        "ANTHROPIC_API_KEY",
++        "GOOGLE_API_KEY",
++        "callOpenAI",
++        "callAnthropic",
++        "callGemini",
++        "trinityQuorum",
+     ]:
+         assert required in src, f"Edge function missing required symbol: {required}"
+ 
+@@ -551,3 +560,109 @@ def test_edge_function_handles_missing_firecrawl_with_external_state() -> None:
+     # And deriveStateFromIntel must exist and map to DATA_UNAVAILABLE
+     assert "deriveStateFromIntel" in src
+     assert '"DATA_UNAVAILABLE"' in src
++
++
++# ────────────────────────────────────────────────────────────────────────
++# Tests — Trinity quorum (P0 Marjo F14 2026-05-04)
++# ────────────────────────────────────────────────────────────────────────
++#
++# Verifies the wiring R-R2C flagged: ANTHROPIC_API_KEY + GOOGLE_API_KEY
++# were imported but never used (only OpenAI was actually called). F14
++# replaces the single-OpenAI llmJsonExtract path with a Promise.allSettled
++# Trinity quorum that runs all 3 providers in parallel and returns the
++# first non-empty fulfilled response — OpenAI primary by iteration order.
++
++def test_trinity_quorum_calls_all_three_providers_in_parallel() -> None:
++    """trinityQuorum must invoke OpenAI, Anthropic, and Gemini in parallel
++    via Promise.allSettled — no provider can block the others, and
++    individual provider failures cannot zero-out the whole call (resilience
++    is the entire point of the quorum vs single-LLM fragility)."""
++    src = EDGE_FUNCTION_SOURCE.read_text(encoding="utf-8")
++    assert "async function trinityQuorum" in src, \
++        "trinityQuorum function missing — Trinity wiring not applied"
++    # Promise.allSettled is the parallel-with-graceful-degradation primitive
++    assert "Promise.allSettled" in src, \
++        "trinityQuorum must use Promise.allSettled, not Promise.all (which fails fast)"
++    # All three provider call sites must appear inside the quorum
++    quorum_block = src[src.index("async function trinityQuorum"):]
++    quorum_end = quorum_block.find("\n}\n", 100)
++    quorum_section = quorum_block[: quorum_end + 2] if quorum_end > 0 else quorum_block[:3000]
++    assert "callOpenAI(" in quorum_section, "trinityQuorum must invoke callOpenAI"
++    assert "callAnthropic(" in quorum_section, "trinityQuorum must invoke callAnthropic"
++    assert "callGemini(" in quorum_section, "trinityQuorum must invoke callGemini"
++
++
++def test_trinity_quorum_returns_first_non_empty_response_in_priority_order() -> None:
++    """Iteration order must be OpenAI → Anthropic → Gemini so OpenAI
++    remains the de-facto primary when healthy. The first successful
++    fulfilled provider with non-empty text wins."""
++    src = EDGE_FUNCTION_SOURCE.read_text(encoding="utf-8")
++    # The ordered-array iteration is the exact mechanism that enforces
++    # OpenAI priority — assert its presence and the openai-first ordering.
++    assert 'provider: "openai"' in src, "Trinity ordered list missing openai entry"
++    assert 'provider: "anthropic"' in src, "Trinity ordered list missing anthropic entry"
++    assert 'provider: "gemini"' in src, "Trinity ordered list missing gemini entry"
++    # OpenAI must come first in the iteration order
++    openai_pos = src.index('provider: "openai"')
++    anthropic_pos = src.index('provider: "anthropic"')
++    gemini_pos = src.index('provider: "gemini"')
++    assert openai_pos < anthropic_pos < gemini_pos, \
++        "Trinity provider iteration order must be OpenAI → Anthropic → Gemini"
++
++
++def test_trinity_quorum_records_total_failure_when_all_three_fail() -> None:
++    """When all 3 providers fail, ai_errors must contain
++    `llm_trinity_total_failure` (zero-401 + zero-silent-failure rule —
++    callers downgrade to INSUFFICIENT_SIGNAL via deriveStateFromIntel,
++    never silently return empty themes/sentiment as if successful)."""
++    src = EDGE_FUNCTION_SOURCE.read_text(encoding="utf-8")
++    assert "llm_trinity_total_failure" in src, \
++        "trinityQuorum must record total-failure marker for Contract v2 boundary"
++
++
++def test_anthropic_and_gemini_imports_are_actually_wired_not_dead_code() -> None:
++    """R-R2C P0: ANTHROPIC_API_KEY + GOOGLE_API_KEY were dead imports in
++    the original R2C edge fn (read at lines 45-46, never referenced
++    anywhere else). F14 wires them into Trinity. This test guards against
++    regression — if either becomes dead again, the test fails."""
++    src = EDGE_FUNCTION_SOURCE.read_text(encoding="utf-8")
++    # Each key must appear in BOTH the constant declaration AND inside a
++    # provider-call function body (callAnthropic / callGemini).
++    assert "ANTHROPIC_API_KEY" in src
++    assert "GOOGLE_API_KEY" in src
++    # Find callAnthropic body — must reference ANTHROPIC_API_KEY
++    callAnthropic_idx = src.find("async function callAnthropic")
++    assert callAnthropic_idx > 0, "callAnthropic function missing"
++    callAnthropic_body = src[callAnthropic_idx : callAnthropic_idx + 2000]
++    assert "ANTHROPIC_API_KEY" in callAnthropic_body, \
++        "ANTHROPIC_API_KEY is dead — not actually used inside callAnthropic"
++    assert "api.anthropic.com" in callAnthropic_body, \
++        "callAnthropic doesn't actually hit the Anthropic API endpoint"
++    # Find callGemini body — must reference GOOGLE_API_KEY
++    callGemini_idx = src.find("async function callGemini")
++    assert callGemini_idx > 0, "callGemini function missing"
++    callGemini_body = src[callGemini_idx : callGemini_idx + 2000]
++    assert "GOOGLE_API_KEY" in callGemini_body, \
++        "GOOGLE_API_KEY is dead — not actually used inside callGemini"
++    assert "generativelanguage.googleapis.com" in callGemini_body, \
++        "callGemini doesn't actually hit the Gemini API endpoint"
++
++
++def test_llm_json_extract_uses_trinity_quorum_not_direct_openai_only() -> None:
++    """llmJsonExtract is the wrapper consumed by classifySentimentBatch +
++    extractThemesAcrossPlatforms + extractPerPlatformThemes. It MUST go
++    through trinityQuorum, not direct fetch to OpenAI — otherwise the
++    Trinity fallback is bypassed for the calls that matter (sentiment +
++    themes are precisely the LLM workloads R2C ships)."""
++    src = EDGE_FUNCTION_SOURCE.read_text(encoding="utf-8")
++    fn_start = src.find("async function llmJsonExtract")
++    assert fn_start > 0, "llmJsonExtract missing"
++    # Find function body — naive but works: from the function header
++    # through the next top-level `async function` declaration.
++    next_fn = src.find("\nasync function ", fn_start + 30)
++    fn_body = src[fn_start : next_fn if next_fn > 0 else fn_start + 3000]
++    assert "trinityQuorum(" in fn_body, \
++        "llmJsonExtract must delegate to trinityQuorum (single-OpenAI path is the dead-code regression)"
++    # And it should NOT directly fetch OpenAI here — that bypass would defeat the point
++    assert "api.openai.com" not in fn_body, \
++        "llmJsonExtract must not directly hit OpenAI — Trinity quorum is the only LLM entry point now"
+diff --git a/scripts/forensic_edge_contract_gate.py b/scripts/forensic_edge_contract_gate.py
+index dc3f16e9..549e9f7c 100644
+--- a/scripts/forensic_edge_contract_gate.py
++++ b/scripts/forensic_edge_contract_gate.py
+@@ -43,6 +43,10 @@ FUNCTION_SLUGS: List[str] = [
+     "biqc-trinity",
+     "boardroom-diagnosis",
+     "browse-ai-reviews",
++    # P0 Marjo F14 (2026-05-04): customer-reviews-deep is the per-platform
++    # Firecrawl/Serper deep-review extractor introduced by R2B; included in
++    # the scan fanout, so it MUST be probed by the production contract gate.
++    "customer-reviews-deep",
+     "business-brain-merge-ingest",
+     "business-brain-metrics-cron",
+     "business-identity-lookup",
+@@ -73,6 +77,10 @@ FUNCTION_SLUGS: List[str] = [
+     "semrush-domain-intel",
+     "signal-evaluator",
+     "social-enrichment",
++    # P0 Marjo F14 (2026-05-04): staff-reviews-deep is the per-platform
++    # Firecrawl deep-employer-brand extractor introduced by R2C; same
++    # rationale as customer-reviews-deep — must be on the contract gate.
++    "staff-reviews-deep",
+     "sop-generator",
+     "strategic-console-ai",
+     "warm-cognitive-engine",
+diff --git a/supabase/functions/staff-reviews-deep/index.ts b/supabase/functions/staff-reviews-deep/index.ts
+index ef49e07f..73a7d79e 100644
+--- a/supabase/functions/staff-reviews-deep/index.ts
++++ b/supabase/functions/staff-reviews-deep/index.ts
+@@ -46,6 +46,9 @@ const ANTHROPIC_API_KEY = (Deno.env.get("ANTHROPIC_API_KEY") || "").trim();
+ const GOOGLE_API_KEY = (Deno.env.get("GOOGLE_API_KEY") || "").trim();
+ 
+ const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") || "gpt-4o";
++const ANTHROPIC_MODEL = Deno.env.get("ANTHROPIC_MODEL") || "claude-sonnet-4-6";
++const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-3-pro-preview";
++const LLM_TIMEOUT_MS = 35000;
+ 
+ // ───────────────────────────────────────────────────────────────────────────
+ // Types
+@@ -604,21 +607,44 @@ function extractSeekMarkdown(md: string): {
+ }
+ 
+ // ───────────────────────────────────────────────────────────────────────────
+-// LLM sentiment + theme extraction (Trinity-anchored — OpenAI primary)
++// LLM sentiment + theme extraction — Trinity quorum (P0 Marjo F14)
++// ───────────────────────────────────────────────────────────────────────────
++//
++// 2026-05-04: replaced single-provider OpenAI call with the same
++// Promise.allSettled Trinity-quorum pattern R2B's customer-reviews-deep uses
++// (supabase/functions/customer-reviews-deep/index.ts:865-1015). Single LLM
++// = single point of failure; staff sentiment + themes are critical for the
++// "world-class employer brand intelligence" claim, so OpenAI degrading at
++// 4am AEST cannot zero out an entire scan.
++//
++// Behaviour:
++//   * All 3 providers (OpenAI, Anthropic, Gemini) are called in parallel
++//     via Promise.allSettled — none can stall the others.
++//   * Result iteration order is OpenAI → Anthropic → Gemini, so OpenAI
++//     remains de-facto primary (its result is consumed first when valid).
++//   * First non-empty fulfilled result wins; the others are best-effort
++//     and their errors are sanitised into ai_errors[] internally.
++//   * If all 3 fail, ai_errors gets `llm_trinity_total_failure` and the
++//     callers (classifySentimentBatch, extractThemesAcrossPlatforms,
++//     extractPerPlatformThemes) cope by returning their `null` / empty
++//     fallback shape — zero-401 + Contract v2 preserved (no leak, no
++//     silent success, the cross-platform aggregation downgrades to
++//     INSUFFICIENT_SIGNAL via deriveStateFromIntel).
++//
++// Strict no-supplier-leak: ai_errors strings remain opaque codes like
++// `llm_openai_unconfigured` / `llm_anthropic_http_429` / `llm_gemini_exception_…`.
++// They are NEVER surfaced externally (see test_no_supplier_leak_in_errors_contract_v2
++// which asserts the calibration boundary strips them before the frontend).
+ // ───────────────────────────────────────────────────────────────────────────
+ 
+-async function llmJsonExtract(
++async function callOpenAI(
+   systemPrompt: string,
+   userPrompt: string,
+-  aiErrors: string[],
+-  userId?: string,
+-  feature = "staff_reviews_deep",
+-): Promise<any | null> {
+-  if (!OPENAI_API_KEY) {
+-    aiErrors.push("ai_provider_unavailable");
+-    return null;
+-  }
++): Promise<{ ok: boolean; text: string; error?: string; tokens?: { input: number; output: number; cached: number } }> {
++  if (!OPENAI_API_KEY) return { ok: false, text: "", error: "openai_unconfigured" };
+   try {
++    const controller = new AbortController();
++    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+     const res = await fetch("https://api.openai.com/v1/chat/completions", {
+       method: "POST",
+       headers: {
+@@ -635,37 +661,196 @@ async function llmJsonExtract(
+         max_tokens: 2400,
+         response_format: { type: "json_object" },
+       }),
++      signal: controller.signal,
+     });
+-    if (!res.ok) {
+-      const txt = await res.text().catch(() => "");
+-      aiErrors.push(`ai_http_${res.status}_${txt.slice(0, 60)}`);
+-      return null;
+-    }
++    clearTimeout(timer);
++    if (!res.ok) return { ok: false, text: "", error: `openai_http_${res.status}` };
+     const data = await res.json();
+     const usage = data.usage || {};
+-    if (userId) {
+-      recordUsage({
+-        userId,
+-        model: OPENAI_MODEL,
+-        inputTokens: usage.prompt_tokens || 0,
+-        outputTokens: usage.completion_tokens || 0,
+-        cachedInputTokens: usage.prompt_tokens_details?.cached_tokens || 0,
+-        feature,
+-        action: feature,
+-      });
+-    }
+-    let raw = String(data.choices?.[0]?.message?.content || "").trim();
+-    if (raw.startsWith("```")) {
+-      raw = raw.replace(/^```[^\n]*\n?/, "").replace(/```\s*$/, "").trim();
++    return {
++      ok: true,
++      text: String(data?.choices?.[0]?.message?.content || ""),
++      tokens: {
++        input: usage.prompt_tokens || 0,
++        output: usage.completion_tokens || 0,
++        cached: usage.prompt_tokens_details?.cached_tokens || 0,
++      },
++    };
++  } catch (e) {
++    return { ok: false, text: "", error: `openai_exception_${String(e).slice(0, 60)}` };
++  }
++}
++
++async function callAnthropic(
++  systemPrompt: string,
++  userPrompt: string,
++): Promise<{ ok: boolean; text: string; error?: string; tokens?: { input: number; output: number; cached: number } }> {
++  if (!ANTHROPIC_API_KEY) return { ok: false, text: "", error: "anthropic_unconfigured" };
++  try {
++    const controller = new AbortController();
++    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
++    const res = await fetch("https://api.anthropic.com/v1/messages", {
++      method: "POST",
++      headers: {
++        "x-api-key": ANTHROPIC_API_KEY,
++        "anthropic-version": "2023-06-01",
++        "Content-Type": "application/json",
++      },
++      body: JSON.stringify({
++        model: ANTHROPIC_MODEL,
++        system: systemPrompt,
++        messages: [{ role: "user", content: userPrompt }],
++        max_tokens: 2400,
++      }),
++      signal: controller.signal,
++    });
++    clearTimeout(timer);
++    if (!res.ok) return { ok: false, text: "", error: `anthropic_http_${res.status}` };
++    const data = await res.json();
++    const usage = data?.usage || {};
++    return {
++      ok: true,
++      text: String(data?.content?.[0]?.text || ""),
++      tokens: {
++        input: usage.input_tokens || 0,
++        output: usage.output_tokens || 0,
++        cached: usage.cache_read_input_tokens || 0,
++      },
++    };
++  } catch (e) {
++    return { ok: false, text: "", error: `anthropic_exception_${String(e).slice(0, 60)}` };
++  }
++}
++
++async function callGemini(
++  systemPrompt: string,
++  userPrompt: string,
++): Promise<{ ok: boolean; text: string; error?: string; tokens?: { input: number; output: number; cached: number } }> {
++  if (!GOOGLE_API_KEY) return { ok: false, text: "", error: "gemini_unconfigured" };
++  try {
++    const controller = new AbortController();
++    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
++    const url =
++      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GOOGLE_API_KEY}`;
++    const res = await fetch(url, {
++      method: "POST",
++      headers: { "Content-Type": "application/json" },
++      body: JSON.stringify({
++        contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
++        generationConfig: { maxOutputTokens: 2400, temperature: 0.2 },
++      }),
++      signal: controller.signal,
++    });
++    clearTimeout(timer);
++    if (!res.ok) return { ok: false, text: "", error: `gemini_http_${res.status}` };
++    const data = await res.json();
++    const usage = data?.usageMetadata || {};
++    return {
++      ok: true,
++      text: String(data?.candidates?.[0]?.content?.parts?.[0]?.text || ""),
++      tokens: {
++        input: usage.promptTokenCount || 0,
++        output: usage.candidatesTokenCount || 0,
++        cached: usage.cachedContentTokenCount || 0,
++      },
++    };
++  } catch (e) {
++    return { ok: false, text: "", error: `gemini_exception_${String(e).slice(0, 60)}` };
++  }
++}
++
++// Trinity quorum: try all 3 providers in parallel, return first non-empty.
++// Iteration order is OpenAI → Anthropic → Gemini so OpenAI remains primary
++// when healthy (its result is consumed first). Returns the raw text plus
++// which provider+model produced it (for usage_ledger metering).
++async function trinityQuorum(
++  systemPrompt: string,
++  userPrompt: string,
++  aiErrors: string[],
++): Promise<{
++  text: string;
++  provider: "openai" | "anthropic" | "gemini" | null;
++  model: string | null;
++  tokens: { input: number; output: number; cached: number };
++}> {
++  const [oa, an, gm] = await Promise.allSettled([
++    callOpenAI(systemPrompt, userPrompt),
++    callAnthropic(systemPrompt, userPrompt),
++    callGemini(systemPrompt, userPrompt),
++  ]);
++  const ordered: Array<{
++    res: PromiseSettledResult<{ ok: boolean; text: string; error?: string; tokens?: { input: number; output: number; cached: number } }>;
++    provider: "openai" | "anthropic" | "gemini";
++    model: string;
++  }> = [
++    { res: oa, provider: "openai", model: OPENAI_MODEL },
++    { res: an, provider: "anthropic", model: ANTHROPIC_MODEL },
++    { res: gm, provider: "gemini", model: GEMINI_MODEL },
++  ];
++  // First pass — accept any successful non-empty text in priority order.
++  for (const item of ordered) {
++    if (item.res.status !== "fulfilled") continue;
++    const v = item.res.value;
++    if (v.ok && v.text && v.text.trim()) {
++      return {
++        text: v.text,
++        provider: item.provider,
++        model: item.model,
++        tokens: v.tokens || { input: 0, output: 0, cached: 0 },
++      };
+     }
+-    try {
+-      return JSON.parse(raw);
+-    } catch {
+-      aiErrors.push("ai_parse_error");
+-      return null;
++  }
++  // No success — record sanitised provider errors for internal diagnostics
++  // (these never reach the external response per Contract v2; the
++  // calibration boundary strips ai_errors before frontend exposure).
++  for (const item of ordered) {
++    if (item.res.status === "rejected") {
++      aiErrors.push(`llm_${item.provider}_rejected`);
++    } else if (!item.res.value.ok) {
++      aiErrors.push(`llm_${item.provider}_${item.res.value.error || "unknown"}`);
++    } else {
++      aiErrors.push(`llm_${item.provider}_empty_response`);
+     }
+-  } catch (err) {
+-    aiErrors.push(`ai_error_${String(err).slice(0, 60)}`);
++  }
++  aiErrors.push("llm_trinity_total_failure");
++  return { text: "", provider: null, model: null, tokens: { input: 0, output: 0, cached: 0 } };
++}
++
++async function llmJsonExtract(
++  systemPrompt: string,
++  userPrompt: string,
++  aiErrors: string[],
++  userId?: string,
++  feature = "staff_reviews_deep",
++): Promise<any | null> {
++  // P0 Marjo F14 (2026-05-04): Trinity quorum — all 3 providers tried in
++  // parallel; first non-empty wins (OpenAI primary by iteration order).
++  const { text, provider, model, tokens } = await trinityQuorum(systemPrompt, userPrompt, aiErrors);
++  if (!text) return null;
++
++  // Provider trace via usage_ledger — same wiring as the single-provider
++  // path used to do, but now records which provider actually answered so
++  // ops can see Trinity health (recordUsage tolerates absent provider).
++  if (userId && model) {
++    recordUsage({
++      userId,
++      model,
++      inputTokens: tokens.input,
++      outputTokens: tokens.output,
++      cachedInputTokens: tokens.cached,
++      feature,
++      action: provider ? `${feature}_${provider}` : feature,
++    });
++  }
++
++  let raw = text.trim();
++  if (raw.startsWith("```")) {
++    raw = raw.replace(/^```[^\n]*\n?/, "").replace(/```\s*$/, "").trim();
++  }
++  try {
++    return JSON.parse(raw);
++  } catch {
++    aiErrors.push("ai_parse_error");
+     return null;
+   }
+ }
