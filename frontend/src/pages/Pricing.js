@@ -13,12 +13,37 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 
 /* ────────────────────────────────────────────
    Plan card data (mirrors mockup exactly)
+   2026-05-04: Lite tier added per code 13041978.
+   Capacity caps aligned with backend tier_resolver: Lite 1/150K, Growth 1/1M, Pro 5/5M, Business 12/20M.
    ──────────────────────────────────────────── */
 const PLANS = [
   {
+    id: 'lite',
+    name: 'Lite',
+    badge: 'Try BIQc',
+    badgeBg: 'rgba(10,10,10,0.06)',
+    badgeColor: 'var(--ink-display)',
+    price: '$14',
+    period: '/mo',
+    description: 'Try BIQc intelligence with one connected account. Self-serve, no commitment, ready when you are.',
+    includesLabel: "What's included",
+    features: [
+      'Ask BIQc',
+      'Seats: 1 user',
+      'Monthly AI allowance: 150,000 tokens',
+      '1 supported integration',
+      'Sync history: 14 days',
+      '30-day business memory',
+      'Unlimited PDF / CSV / Excel exports',
+      'Self-serve support',
+    ],
+    ctaLabel: 'Start with Lite',
+    ctaStyle: 'dark',
+  },
+  {
     id: 'growth',
     name: 'Growth',
-    badge: '14-day free trial · Most Popular',
+    badge: '14-day trial · Most Popular',
     badgeBg: 'rgba(232,93,0,0.08)',
     badgeColor: 'var(--lava)',
     price: '$69',
@@ -26,26 +51,16 @@ const PLANS = [
     description: 'Everything you need to understand, grow, and protect your business. Start with a 14-day trial — cancel anytime before day 14 for $0.',
     includesLabel: "What's included",
     features: [
-      'AI Business Advisor',
-      'Market Intelligence Brief',
-      'Ask BIQc AI Chat',
-      'Business Profile & DNA',
-      'Email Inbox & Calendar',
-      'Competitive Benchmark',
-      'Data Health Monitor',
-      'Actions & Alerts',
-      'Board Room (single-model AI)',
-      'Revenue Analytics',
-      'Operations Centre',
-      'Reports Library',
-      'SOP Generator',
-      'Decision Tracker',
-      'Forensic Audit',
-      'Exposure Scan',
-      'Marketing Intelligence',
-      'Marketing Automation',
-      'Billing Management',
-      'Up to 5 integrations',
+      'Market & Business Forensic Snapshot',
+      'Intelligence Spine',
+      'Priority insights',
+      'Recommended actions',
+      'Supported integrations',
+      'Seats: 1 user',
+      'Monthly AI allowance: 1M tokens',
+      'Sync history: 90 days',
+      'Auto top-up when tokens run out',
+      'Email support, 24h response',
     ],
     ctaLabel: 'Start 14-Day Trial',
     ctaStyle: 'primary',
@@ -59,23 +74,15 @@ const PLANS = [
     badgeColor: '#FAFAFA',
     price: '$199',
     period: '/mo',
-    description: 'Everything in Growth, plus enterprise-grade intelligence tools.',
+    description: 'All core BIQc intelligence features with higher usage capacity.',
     includesLabel: 'Everything in Growth, plus',
     features: [
-      'War Room (multi-model AI: GPT + Claude + Gemini)',
-      'Risk Intelligence',
-      'Compliance Centre',
-      'Analysis Suite',
-      'Watchtower',
-      'Intel Centre',
-      'Data Centre',
-      'Intelligence Baseline',
-      'Operator Dashboard',
-      'Market Analysis',
-      'Ops Advisory',
-      'Audit Log',
-      'Document Library',
-      'Unlimited integrations',
+      'Seats: up to 5 users',
+      'Monthly AI allowance: 5M tokens',
+      'Sync history: 12 months',
+      'Business memory and storage scaling',
+      '1 specialist strategy session per quarter',
+      'Priority chat support',
     ],
     ctaLabel: 'Start 14-Day Trial',
     ctaStyle: 'dark',
@@ -88,16 +95,15 @@ const PLANS = [
     badgeColor: '#F59E0B',
     price: '$349',
     period: '/mo',
-    description: 'Everything in Pro, plus premium AI models and team access.',
+    description: 'All core BIQc intelligence features for multi-user operating teams.',
     includesLabel: 'Everything in Pro, plus',
     features: [
-      'Access to frontier models from OpenAI, Anthropic, and Google',
-      '15M input + 6M output tokens/month',
-      'Advanced risk & compliance modules',
-      'Priority model routing',
-      'Up to 15 integrations',
-      'Team collaboration (up to 5 seats)',
-      'Dedicated onboarding session',
+      'Seats: up to 12 users',
+      'Monthly AI allowance: 20M tokens',
+      'Sync history: 24 months',
+      'Business memory and storage scaling',
+      'Dedicated onboarding + customer success manager',
+      'Priority+ support',
     ],
     ctaLabel: 'Start 14-Day Trial',
     ctaStyle: 'dark',
@@ -128,85 +134,89 @@ const PLANS = [
 
 /* ────────────────────────────────────────────
    Comparison table data
+   2026-05-04: Lite column added per code 13041978.
+   Row order: [feature, lite, growth, pro, enterprise]
+   Lite is the entry-tier — gets Ask BIQc + 1 integration only;
+   most features are paid-tier (Growth+).
    ──────────────────────────────────────────── */
 const COMPARISON = [
   {
     group: 'AI & Intelligence',
     rows: [
-      ['AI Business Advisor', true, true, true],
-      ['Ask BIQc AI Chat', true, true, true],
-      ['Board Room (single-model AI)', true, true, true],
-      ['War Room (multi-model AI)', false, true, true],
-      ['Custom AI model training', false, false, true],
+      ['AI Business Advisor', false, true, true, true],
+      ['Ask BIQc AI Chat', true, true, true, true],
+      ['Market & Business Forensic Snapshot', false, true, true, true],
+      ['Intelligence Spine', false, true, true, true],
+      ['Custom AI model training', false, false, false, true],
     ],
   },
   {
     group: 'Business Intelligence',
     rows: [
-      ['Market Intelligence Brief', true, true, true],
-      ['Competitive Benchmark', true, true, true],
-      ['Business Profile & DNA', true, true, true],
-      ['Intelligence Baseline', false, true, true],
-      ['Intel Centre', false, true, true],
+      ['Market Intelligence Brief', false, true, true, true],
+      ['Competitive Benchmark', false, true, true, true],
+      ['Business Profile & DNA', false, true, true, true],
+      ['Intelligence Baseline', false, false, true, true],
+      ['Intel Centre', false, false, true, true],
     ],
   },
   {
     group: 'Revenue & Finance',
     rows: [
-      ['Revenue Analytics', true, true, true],
-      ['Billing Management', true, true, true],
-      ['Forensic Audit', true, true, true],
-      ['Exposure Scan', true, true, true],
+      ['Revenue Analytics', false, true, true, true],
+      ['Billing Management', true, true, true, true],
+      ['Forensic Audit', false, true, true, true],
+      ['Exposure Scan', false, true, true, true],
     ],
   },
   {
     group: 'Operations',
     rows: [
-      ['Actions & Alerts', true, true, true],
-      ['Email Inbox & Calendar', true, true, true],
-      ['Data Health Monitor', true, true, true],
-      ['Operations Centre', true, true, true],
-      ['SOP Generator', true, true, true],
-      ['Decision Tracker', true, true, true],
-      ['Operator Dashboard', false, true, true],
-      ['Ops Advisory', false, true, true],
+      ['Actions & Alerts', false, true, true, true],
+      ['Email Inbox & Calendar', false, true, true, true],
+      ['Data Health Monitor', false, true, true, true],
+      ['Operations Centre', false, true, true, true],
+      ['SOP Generator', false, true, true, true],
+      ['Decision Tracker', false, true, true, true],
+      ['Operator Dashboard', false, false, true, true],
+      ['Ops Advisory', false, false, true, true],
     ],
   },
   {
     group: 'Marketing',
     rows: [
-      ['Marketing Intelligence', true, true, true],
-      ['Marketing Automation', true, true, true],
-      ['Market Analysis', false, true, true],
+      ['Marketing Intelligence', false, true, true, true],
+      ['Marketing Automation', false, true, true, true],
+      ['Market Analysis', false, false, true, true],
     ],
   },
   {
     group: 'Risk & Compliance',
     rows: [
-      ['Risk Intelligence', false, true, true],
-      ['Compliance Centre', false, true, true],
-      ['Watchtower', false, true, true],
-      ['Audit Log', false, true, true],
+      ['Risk Intelligence', false, false, true, true],
+      ['Compliance Centre', false, false, true, true],
+      ['Watchtower', false, false, true, true],
+      ['Audit Log', false, false, true, true],
     ],
   },
   {
     group: 'Reporting & Data',
     rows: [
-      ['Reports Library', true, true, true],
-      ['Analysis Suite', false, true, true],
-      ['Data Centre', false, true, true],
-      ['Document Library', false, true, true],
+      ['Reports Library', false, true, true, true],
+      ['Analysis Suite', false, false, true, true],
+      ['Data Centre', false, false, true, true],
+      ['Document Library', false, false, true, true],
     ],
   },
   {
     group: 'Integrations & Support',
     rows: [
-      ['Integrations', 'Up to 5', 'Unlimited', 'Unlimited + custom'],
-      ['SSO & advanced security', false, false, true],
-      ['SLA guarantees', false, false, true],
-      ['Dedicated success manager', false, false, true],
-      ['Multi-seat team access', false, false, true],
-      ['Priority support', false, false, true],
+      ['Supported integrations', '1', 'Unlimited', 'Unlimited', 'Unlimited'],
+      ['SSO & advanced security', false, false, false, true],
+      ['SLA guarantees', false, false, false, true],
+      ['Dedicated success manager', false, false, false, true],
+      ['Multi-seat team access', false, false, false, true],
+      ['Priority support', false, false, false, true],
     ],
   },
 ];
@@ -217,11 +227,15 @@ const COMPARISON = [
 const FAQS = [
   {
     q: 'How does the 14-day trial work?',
-    a: 'When you sign up, you start a 14-day Growth trial with full access to every Growth feature. Your card is captured at signup by Stripe (BIQc never sees it) and charged automatically on day 14 — unless you cancel before then for $0. We email a reminder 3 days before the charge date.',
+    a: 'When you sign up, you start a 14-day Growth trial with full access to BIQc core intelligence features. Your card is captured at signup by Stripe (BIQc never sees it) and charged automatically on day 14 — unless you cancel before then for $0. We email a reminder 3 days before the charge date.',
   },
   {
     q: 'Can I cancel my subscription at any time?',
     a: "Yes, absolutely. There are no lock-in contracts. You can cancel or downgrade your plan at any time from your account settings in two clicks. If you cancel mid-billing-period, you keep access until the end of that period; after that, your account moves to read-only — your data stays intact, and you can reactivate any time with no learning lost.",
+  },
+  {
+    q: 'What happens if I hit my monthly AI allowance?',
+    a: 'Usage is capped at your plan allowance. To continue, you must upgrade to a higher plan or request an approved top-up before more AI calls are processed.',
   },
   {
     q: 'Where is my data stored and is it secure?',
@@ -261,7 +275,7 @@ export default function Pricing() {
 
   const ctaHref = (plan) => {
     if (plan.id === 'enterprise') return '/contact?source=pricing';
-    // 2026-04-19: no free tier. All signups start a 14-day Growth trial.
+    // 2026-04-19: all signups start a 14-day Growth trial.
     return user ? '/subscribe' : '/register-supabase';
   };
 
@@ -373,7 +387,7 @@ export default function Pricing() {
               <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {['Feature', 'Growth', 'Pro', 'Enterprise'].map((h, i) => (
+                    {['Feature', 'Lite', 'Growth', 'Pro', 'Enterprise'].map((h, i) => (
                       <th key={h}
                         className={`${i === 0 ? 'text-left' : 'text-center min-w-[100px]'} px-4 py-3 font-semibold sticky top-16 z-10`}
                         style={{ color: 'var(--ink-display)', background: 'var(--canvas)', borderBottom: '1px solid var(--border)' }}>
@@ -386,7 +400,7 @@ export default function Pricing() {
                   {COMPARISON.map((group) => (
                     <React.Fragment key={group.group}>
                       <tr>
-                        <td colSpan={4} className="px-4 pt-3.5 pb-2 text-xs font-bold uppercase tracking-wide"
+                        <td colSpan={5} className="px-4 pt-3.5 pb-2 text-xs font-bold uppercase tracking-wide"
                           style={{ color: 'var(--ink-secondary)', background: 'var(--canvas)' }}>
                           {group.group}
                         </td>

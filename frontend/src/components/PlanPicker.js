@@ -5,7 +5,7 @@ import { fontFamily } from '../design-system/tokens';
 /**
  * Phase 6.11 — plan picker for CC-mandatory signup.
  *
- * Three cards: Growth ($69), Professional ($199), Business ($349) — all AUD/mo.
+ * Three cards: Growth ($69), Pro ($199), Business ($349) — all AUD/mo.
  * Growth is default + tagged "Most Popular" per the /pricing page Trust Layer.
  *
  * Clicking a card calls onChange with the plan id ("starter" | "professional" |
@@ -16,23 +16,34 @@ const DISPLAY = 'var(--font-marketing-display, ' + fontFamily.display + ')';
 const UI = 'var(--font-marketing-ui, ' + fontFamily.body + ')';
 const MONO = 'var(--font-mono, ' + fontFamily.mono + ')';
 
+// 2026-05-04: Lite tier ($14) added per code 13041978.
+// Capacity caps aligned with backend tier_resolver: Lite 1/150K, Growth 1/1M, Pro 5/5M, Business 12/20M.
 const PLANS = [
+  {
+    id: 'lite',
+    name: 'Lite',
+    price: '$14',
+    period: 'AUD/mo',
+    tagline: 'Try BIQc with one connected account. Self-serve, no commitment.',
+    features: ['1 seat', '150K tokens/month', '14-day sync history'],
+    highlight: false,
+  },
   {
     id: 'starter',
     name: 'Growth',
     price: '$69',
     period: 'AUD/mo',
-    tagline: 'The starting brain — continuous awareness across your business.',
-    features: ['Daily brief + priority inbox', '3 integrations', 'Unlimited Ask BIQc'],
+    tagline: 'All BIQc core intelligence with solo-operator capacity.',
+    features: ['1 seat', '1M tokens/month', '90-day sync history'],
     highlight: true,
   },
   {
     id: 'professional',
-    name: 'Professional',
+    name: 'Pro',
     price: '$199',
     period: 'AUD/mo',
-    tagline: 'The operator brain — full-depth intelligence + revenue + risk.',
-    features: ['Everything in Growth', 'WarRoom + BoardRoom', '5 integrations + automations'],
+    tagline: 'All BIQc core intelligence with operator-team capacity.',
+    features: ['Up to 5 seats', '5M tokens/month', '12-month sync history'],
     highlight: false,
   },
   {
@@ -40,8 +51,8 @@ const PLANS = [
     name: 'Business',
     price: '$349',
     period: 'AUD/mo',
-    tagline: 'The leadership brain — multi-entity, advanced governance.',
-    features: ['Everything in Professional', 'Unlimited integrations', 'Priority support'],
+    tagline: 'All BIQc core intelligence with team-scale capacity.',
+    features: ['Up to 12 seats', '20M tokens/month', '24-month sync history'],
     highlight: false,
   },
 ];

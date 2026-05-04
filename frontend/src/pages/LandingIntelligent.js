@@ -363,10 +363,13 @@ const LandingIntelligent = () => {
     { icon: Users, metric: '97%', unit: 'SOP rate', title: 'Bring Simplicity into Your Business', desc: 'Standard Operating Processes that work. AI detects when steps are skipped or leads go cold, triggering intervention automatically.', color: '#10B981' },
   ];
 
+  // 2026-05-04: Lite tier ($14) added per code 13041978.
+  // Capacity caps aligned with backend: Lite 1/150K, Growth 1/1M, Pro 5/5M, Business 12/20M.
   const pricingTiers = [
-    { name: 'Growth', price: '69', tagline: 'Foundation operating package', features: ['BIQc Foundation package','Exposure Scan','Marketing Auto','Reports & SOP Generator','Revenue & Operations','Up to 5 integrations'], cta: 'Get started', highlight: false },
-    { name: 'Professional', price: '199', tagline: 'Scale operating intelligence', features: ['Everything in Growth','Higher request & automation limits','Priority model routing','Advanced reporting cadence','Expanded connector allowance','War Room & Boardroom'], cta: 'Get started', highlight: true },
-    { name: 'Business', price: '349', tagline: 'Full-scale operating intelligence', features: ['Everything in Professional','All premium AI model access','15M input + 6M output tokens/month','Risk & compliance modules','Team collaboration (5 seats)','Dedicated onboarding'], cta: 'Get started', highlight: false },
+    { name: 'Lite', price: '14', tagline: 'Try BIQc with one connected account', features: ['Ask BIQc','1 seat','150K tokens/month','1 supported integration','14-day sync history','30-day business memory','Self-serve support'], cta: 'Start with Lite', highlight: false },
+    { name: 'Growth', price: '69', tagline: 'Core BIQc intelligence for solo operators', features: ['Market & Business Forensic Snapshot','Intelligence Spine','Ask BIQc','1 seat','1M tokens/month','90-day sync history','Auto top-up when tokens run out','Email support'], cta: 'Get started', highlight: true },
+    { name: 'Pro', price: '199', tagline: 'Core BIQc intelligence with higher capacity', features: ['All Growth core intelligence features','Up to 5 seats','5M tokens/month','12-month sync history','1 specialist session per quarter','Priority chat support'], cta: 'Get started', highlight: false },
+    { name: 'Business', price: '349', tagline: 'Core BIQc intelligence for growing teams', features: ['All Pro core intelligence features','Up to 12 seats','20M tokens/month','24-month sync history','Dedicated onboarding + CSM','Priority+ support'], cta: 'Get started', highlight: false },
     { name: 'Enterprise', price: 'Custom', tagline: 'Governed enterprise control', features: ['Everything in Business','Enterprise governance controls','Dedicated reliability & support','Unlimited usage allowances','Executive rollout & enablement','Custom Build available'], cta: 'Contact sales', highlight: false },
   ];
 
@@ -405,7 +408,7 @@ const LandingIntelligent = () => {
           >
             Speak with a Local Specialist
           </button>
-          <button onClick={() => nav('/register-supabase')} className="text-xs sm:text-sm font-semibold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-display)', background: 'var(--biqc-bg)', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
+          <button onClick={() => nav('/register-supabase')} className="text-xs sm:text-sm font-semibold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-display)', background: 'var(--biqc-bg)', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-trial">Get started →</button>
           {/* Mobile hamburger */}
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg ml-0.5 transition-all" style={{ background: mobileMenuOpen ? '#0F1720' : 'transparent', border: '1px solid rgba(180,195,215,0.5)' }}>
             {mobileMenuOpen ? <X className="w-4 h-4 text-white" /> : <Menu className="w-4 h-4 text-slate-700" />}
@@ -621,7 +624,7 @@ const LandingIntelligent = () => {
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>Strategic Pricing Ladder</span>
             </div>
             <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-3 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Intelligence at every scale</h2>
-            <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-ui)' }}>All prices in AUD. Cancel anytime. 14-day free trial on The Pulse.</p>
+            <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-ui)' }}>All prices in AUD. Cancel anytime. 14-day trial on The Pulse.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {pricingTiers.map((tier, i) => (
