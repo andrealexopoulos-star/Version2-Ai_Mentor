@@ -1280,7 +1280,18 @@ def _parse_google_reviews(search_result: dict, business_name: str) -> dict:
 
 
 def _parse_glassdoor_reviews(search_result: dict, business_name: str) -> dict:
-    """Extract ratings and review snippets from employer review sites (Glassdoor, Indeed, Seek)."""
+    """DEPRECATED 2026-05-04 (P0 Marjo R2C). Snippet-based Glassdoor/Indeed/Seek
+    parser. Replaced by deep public-page Firecrawl extraction in the
+    `staff-reviews-deep` edge function (see supabase/functions/staff-reviews-deep
+    + _build_staff_review_intelligence).
+
+    Kept until V1-V8 verification is green for two consecutive scans on
+    superadmin + a fresh trial canary, then remove. Target removal: 2026-05-25.
+
+    DO NOT extend. New employer-brand signals belong in staff-reviews-deep.
+
+    Extract ratings and review snippets from employer review sites
+    (Glassdoor, Indeed, Seek)."""
     results = search_result.get("results") or []
     snippets = []
     rating = None
@@ -1592,9 +1603,27 @@ def _derive_staff_action_plan(negative_signals: List[str]) -> List[str]:
     return actions[:4]
 
 
-def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews: dict, lookback_months: int = 12) -> Dict[str, Any]:
+def _build_staff_review_intelligence(
+    glassdoor_reviews: dict,
+    browse_ai_reviews: dict,
+    lookback_months: int = 12,
+    staff_reviews_deep: Optional[dict] = None,
+) -> Dict[str, Any]:
+    """Build the canonical staff_review_intelligence dict surfaced to the
+    frontend / CMO Report.
+
+    Order of preference (2026-05-04 — P0 Marjo R2C):
+      1. NEW: `staff_reviews_deep` payload (Firecrawl + LLM theme extraction
+         across Glassdoor / Indeed / Seek + optional PayScale / Fairwork).
+      2. LEGACY: `browse_ai_reviews.staff_reviews` (Browse.AI-driven scrape).
+      3. LEGACY: `glassdoor_reviews` (snippet-based Serper/SerpAPI parse via
+         the deprecated `_parse_glassdoor_reviews`).
+
+    Backwards-compatible signature: `staff_reviews_deep` is optional.
+    """
     now_utc = datetime.now(timezone.utc)
     cutoff = now_utc - timedelta(days=lookback_months * 30)
+    deep_payload = staff_reviews_deep if isinstance(staff_reviews_deep, dict) else {}
     browse_payload = browse_ai_reviews if isinstance(browse_ai_reviews, dict) else {}
     aggregated = browse_payload.get("aggregated") if isinstance(browse_payload.get("aggregated"), dict) else {}
     staff_reviews = browse_payload.get("staff_reviews") if isinstance(browse_payload.get("staff_reviews"), list) else []
@@ -1607,68 +1636,158 @@ def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews:
     undated_count = 0
     scores: List[float] = []
 
-    for platform_blob in staff_reviews:
-        if not isinstance(platform_blob, dict):
-            continue
-        platform = str(platform_blob.get("platform") or "staff_reviews").strip().lower()
-        rating = platform_blob.get("rating")
-        if isinstance(rating, (int, float)) and 0 < float(rating) <= 5:
-            scores.append(float(rating))
-        review_items = platform_blob.get("reviews") if isinstance(platform_blob.get("reviews"), list) else []
-        platform_last_12 = 0
-        platform_undated = 0
+    # ── PRIORITY 1: deep payload (Firecrawl + LLM themes) ───────────────────
+    deep_used = False
+    deep_aggregation: Dict[str, Any] = {}
+    cross_platform_themes: Dict[str, List[str]] = {"pros": [], "cons": []}
+    employer_brand_health_score: Optional[int] = None
+    trend_30d_vs_90d: Optional[str] = None
+    ceo_approval: Optional[int] = None
+    recommend_to_friend: Optional[int] = None
+    competitor_employer_benchmark: Optional[Dict[str, Any]] = None
 
-        for rv in review_items:
-            if not isinstance(rv, dict):
+    if deep_payload and isinstance(deep_payload.get("platforms"), list) and deep_payload.get("ok") is not False:
+        deep_aggregation = deep_payload.get("aggregation") if isinstance(deep_payload.get("aggregation"), dict) else {}
+        for plat_blob in deep_payload.get("platforms") or []:
+            if not isinstance(plat_blob, dict):
                 continue
-            text = str(rv.get("text") or "").strip()
-            if not text:
+            plat_id = str(plat_blob.get("platform") or "").strip().lower()
+            if not plat_id:
                 continue
-            sentiment = str(rv.get("sentiment") or "").strip().lower()
-            parsed_date = _parse_review_date_to_utc(str(rv.get("date") or ""))
-            if parsed_date:
-                if parsed_date < cutoff:
+            plat_rating = plat_blob.get("overall_rating")
+            if isinstance(plat_rating, (int, float)) and 0 < float(plat_rating) <= 5:
+                scores.append(float(plat_rating))
+            recent = plat_blob.get("recent_reviews") if isinstance(plat_blob.get("recent_reviews"), list) else []
+            plat_last_12 = 0
+            plat_undated = 0
+            for rv in recent:
+                if not isinstance(rv, dict):
                     continue
-                platform_last_12 += 1
-                last_12_months_count += 1
-                label = f"[{platform}] {text[:220]}"
-                evidence.append(f"{label} ({parsed_date.date().isoformat()})")
+                text = str(rv.get("text") or "").strip()
+                if not text:
+                    continue
+                sentiment = str(rv.get("sentiment") or "").strip().lower()
+                parsed_date = _parse_review_date_to_utc(str(rv.get("date_iso") or rv.get("date") or ""))
+                role = str(rv.get("role") or "").strip()
+                role_prefix = f" — {role[:80]}" if role else ""
+                label = f"[{plat_id}{role_prefix}] {text[:240]}"
+                if parsed_date:
+                    if parsed_date < cutoff:
+                        continue
+                    plat_last_12 += 1
+                    last_12_months_count += 1
+                    evidence.append(f"{label} ({parsed_date.date().isoformat()})")
+                else:
+                    plat_undated += 1
+                    undated_count += 1
+                    evidence.append(f"{label} (date not verified)")
                 if sentiment == "negative":
                     negative_signals.append(label)
                 elif sentiment == "positive":
                     positive_signals.append(label)
-            else:
-                platform_undated += 1
-                undated_count += 1
-                label = f"[{platform}] {text[:220]}"
-                evidence.append(f"{label} (date not verified)")
-                if sentiment == "negative":
-                    negative_signals.append(label)
-                elif sentiment == "positive":
-                    positive_signals.append(label)
+            review_count = plat_blob.get("total_review_count")
+            normalized_count = int(review_count) if isinstance(review_count, (int, float)) else len(recent)
+            platform_entry: Dict[str, Any] = {
+                "platform": plat_id,
+                "rating": float(plat_rating) if isinstance(plat_rating, (int, float)) else None,
+                "review_count": max(0, normalized_count),
+                "last_12_months_count": plat_last_12,
+                "undated_count": plat_undated,
+                "url": str(plat_blob.get("url") or ""),
+                "rating_distribution": plat_blob.get("rating_distribution") if isinstance(plat_blob.get("rating_distribution"), dict) else None,
+                "themes": plat_blob.get("themes") if isinstance(plat_blob.get("themes"), dict) else {"pros": [], "cons": []},
+                "ceo_approval": plat_blob.get("ceo_approval") if isinstance(plat_blob.get("ceo_approval"), (int, float)) else None,
+                "recommend_to_friend": plat_blob.get("recommend_to_friend") if isinstance(plat_blob.get("recommend_to_friend"), (int, float)) else None,
+                "state": str(plat_blob.get("state") or "DATA_UNAVAILABLE"),
+            }
+            platforms.append(platform_entry)
+            if plat_id == "glassdoor":
+                if isinstance(plat_blob.get("ceo_approval"), (int, float)):
+                    ceo_approval = int(plat_blob.get("ceo_approval"))
+                if isinstance(plat_blob.get("recommend_to_friend"), (int, float)):
+                    recommend_to_friend = int(plat_blob.get("recommend_to_friend"))
+        # Aggregation values
+        if isinstance(deep_aggregation.get("cross_platform_themes"), dict):
+            xp = deep_aggregation.get("cross_platform_themes") or {}
+            cross_platform_themes = {
+                "pros": [str(x) for x in (xp.get("pros") or [])][:5],
+                "cons": [str(x) for x in (xp.get("cons") or [])][:5],
+            }
+        if isinstance(deep_aggregation.get("employer_brand_health_score"), (int, float)):
+            employer_brand_health_score = int(deep_aggregation.get("employer_brand_health_score"))
+        if isinstance(deep_aggregation.get("trend_30d_vs_90d"), str):
+            trend_30d_vs_90d = deep_aggregation.get("trend_30d_vs_90d")
+        if isinstance(deep_aggregation.get("competitor_employer_benchmark"), dict):
+            competitor_employer_benchmark = deep_aggregation.get("competitor_employer_benchmark")
+        deep_used = True
 
-        review_count = platform_blob.get("review_count")
-        normalized_count = int(review_count) if isinstance(review_count, (int, float)) else len(review_items)
-        platforms.append({
-            "platform": platform,
-            "rating": float(rating) if isinstance(rating, (int, float)) else None,
-            "review_count": max(0, normalized_count),
-            "last_12_months_count": platform_last_12,
-            "undated_count": platform_undated,
-            "url": platform_blob.get("url") or "",
-        })
+    # ── PRIORITY 2: legacy browse_ai_reviews.staff_reviews ─────────────────
+    # Only consult legacy sources when deep payload didn't produce platform
+    # records — keeps the deep extraction's structured fields authoritative
+    # and avoids double-counting reviews / themes.
+    if not deep_used:
+        for platform_blob in staff_reviews:
+            if not isinstance(platform_blob, dict):
+                continue
+            platform = str(platform_blob.get("platform") or "staff_reviews").strip().lower()
+            rating = platform_blob.get("rating")
+            if isinstance(rating, (int, float)) and 0 < float(rating) <= 5:
+                scores.append(float(rating))
+            review_items = platform_blob.get("reviews") if isinstance(platform_blob.get("reviews"), list) else []
+            platform_last_12 = 0
+            platform_undated = 0
 
-    if not positive_signals:
-        positive_signals.extend((aggregated.get("top_staff_positive") or [])[:5])
-    if not negative_signals:
-        negative_signals.extend((aggregated.get("top_staff_negative") or [])[:5])
+            for rv in review_items:
+                if not isinstance(rv, dict):
+                    continue
+                text = str(rv.get("text") or "").strip()
+                if not text:
+                    continue
+                sentiment = str(rv.get("sentiment") or "").strip().lower()
+                parsed_date = _parse_review_date_to_utc(str(rv.get("date") or ""))
+                if parsed_date:
+                    if parsed_date < cutoff:
+                        continue
+                    platform_last_12 += 1
+                    last_12_months_count += 1
+                    label = f"[{platform}] {text[:220]}"
+                    evidence.append(f"{label} ({parsed_date.date().isoformat()})")
+                    if sentiment == "negative":
+                        negative_signals.append(label)
+                    elif sentiment == "positive":
+                        positive_signals.append(label)
+                else:
+                    platform_undated += 1
+                    undated_count += 1
+                    label = f"[{platform}] {text[:220]}"
+                    evidence.append(f"{label} (date not verified)")
+                    if sentiment == "negative":
+                        negative_signals.append(label)
+                    elif sentiment == "positive":
+                        positive_signals.append(label)
 
-    if not positive_signals and isinstance(glassdoor_reviews, dict):
-        positive_signals.extend((glassdoor_reviews.get("positive") or [])[:4])
-    if not negative_signals and isinstance(glassdoor_reviews, dict):
-        negative_signals.extend((glassdoor_reviews.get("negative") or [])[:4])
-    if not evidence and isinstance(glassdoor_reviews, dict):
-        evidence.extend((glassdoor_reviews.get("snippets") or [])[:6])
+            review_count = platform_blob.get("review_count")
+            normalized_count = int(review_count) if isinstance(review_count, (int, float)) else len(review_items)
+            platforms.append({
+                "platform": platform,
+                "rating": float(rating) if isinstance(rating, (int, float)) else None,
+                "review_count": max(0, normalized_count),
+                "last_12_months_count": platform_last_12,
+                "undated_count": platform_undated,
+                "url": platform_blob.get("url") or "",
+            })
+
+        if not positive_signals:
+            positive_signals.extend((aggregated.get("top_staff_positive") or [])[:5])
+        if not negative_signals:
+            negative_signals.extend((aggregated.get("top_staff_negative") or [])[:5])
+
+        if not positive_signals and isinstance(glassdoor_reviews, dict):
+            positive_signals.extend((glassdoor_reviews.get("positive") or [])[:4])
+        if not negative_signals and isinstance(glassdoor_reviews, dict):
+            negative_signals.extend((glassdoor_reviews.get("negative") or [])[:4])
+        if not evidence and isinstance(glassdoor_reviews, dict):
+            evidence.extend((glassdoor_reviews.get("snippets") or [])[:6])
 
     dedup_sources = []
     seen_sources = set()
@@ -1680,6 +1799,8 @@ def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews:
         dedup_sources.append(src)
 
     staff_score = round(sum(scores) / len(scores), 1) if scores else None
+    if staff_score is None and isinstance(deep_aggregation.get("weighted_overall_rating"), (int, float)):
+        staff_score = round(float(deep_aggregation.get("weighted_overall_rating")), 1)
     if staff_score is None and isinstance(aggregated.get("staff_score"), (int, float)):
         staff_score = round(float(aggregated.get("staff_score")), 1)
     if staff_score is None and isinstance(glassdoor_reviews, dict) and isinstance(glassdoor_reviews.get("rating"), (int, float)):
@@ -1688,10 +1809,28 @@ def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews:
     positive_signals = list(dict.fromkeys([str(x).strip() for x in positive_signals if str(x).strip()]))[:6]
     negative_signals = list(dict.fromkeys([str(x).strip() for x in negative_signals if str(x).strip()]))[:6]
     evidence = list(dict.fromkeys([str(x).strip() for x in evidence if str(x).strip()]))[:8]
+
+    # When the deep payload supplied LLM-extracted theme strings, surface
+    # them as positive/negative signals so existing UI surfaces light up
+    # without bespoke wiring (CMO Report's Workplace Intelligence section
+    # also reads `cross_platform_themes` directly).
+    if deep_used and cross_platform_themes:
+        for theme in (cross_platform_themes.get("pros") or []):
+            if theme and theme not in positive_signals:
+                positive_signals.append(theme)
+        for theme in (cross_platform_themes.get("cons") or []):
+            if theme and theme not in negative_signals:
+                negative_signals.append(theme)
+        positive_signals = positive_signals[:8]
+        negative_signals = negative_signals[:8]
+
     action_plan = _derive_staff_action_plan(negative_signals)
 
-    has_data = bool(platforms or positive_signals or negative_signals or evidence or staff_score is not None)
-    return {
+    has_data = bool(
+        platforms or positive_signals or negative_signals or evidence
+        or staff_score is not None or employer_brand_health_score
+    )
+    result = {
         "has_data": has_data,
         "source_truth_only": True,
         "window_months": lookback_months,
@@ -1702,13 +1841,26 @@ def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews:
         "undated_review_count": undated_count,
         "scores_available": bool(staff_score is not None),
         "staff_score": staff_score,
-        "platforms": platforms[:6],
-        "sources": dedup_sources[:6],
+        "platforms": platforms[:8],
+        "sources": dedup_sources[:8],
         "positive_signals": positive_signals,
         "negative_signals": negative_signals,
         "action_plan": action_plan,
         "evidence": evidence,
+        # 2026-05-04 (P0 Marjo R2C) — new deep-extraction fields surfaced for
+        # the CMO Report Workplace Intelligence section. All optional / nullable
+        # for backward compat with consumers that only know the legacy schema.
+        "cross_platform_themes": cross_platform_themes,
+        "trend_30d_vs_90d": trend_30d_vs_90d,
+        "employer_brand_health_score": employer_brand_health_score,
+        "ceo_approval": ceo_approval,
+        "recommend_to_friend": recommend_to_friend,
+        "competitor_employer_benchmark": competitor_employer_benchmark,
+        "deep_extraction_used": deep_used,
+        "weighted_overall_rating": deep_aggregation.get("weighted_overall_rating") if isinstance(deep_aggregation.get("weighted_overall_rating"), (int, float)) else staff_score,
+        "total_reviews_cross_platform": deep_aggregation.get("total_staff_reviews_cross_platform") if isinstance(deep_aggregation.get("total_staff_reviews_cross_platform"), (int, float)) else None,
     }
+    return result
 
 
 def _score_from_signal(signal: Any) -> int:
@@ -2809,6 +2961,13 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             # sentiment + themes) can be compared against the legacy shallow
             # Google-HTML scraper. Once verified, browse-ai-reviews is removed.
             # See BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.
+            #
+            # 2026-05-04 (P0 Marjo R2C): added 8th calibration edge —
+            # `staff-reviews-deep` — replacing snippet-based Glassdoor parsing
+            # in `_parse_glassdoor_reviews` with deep public-page Firecrawl
+            # extraction across Glassdoor + Indeed + Seek (+ optional PayScale,
+            # Fairwork). Backward compat preserved by passing the new payload
+            # into _build_staff_review_intelligence below.
             (
                 warm_cognitive,
                 calibration_business_dna,
@@ -2822,6 +2981,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 browse_ai_reviews,
                 customer_reviews_deep,
                 semrush_intel,
+                staff_reviews_deep,
             ) = await asyncio.gather(
                 _cached_edge("warm-cognitive-engine", {"user_id": user_id}),
                 _cached_edge(
@@ -2869,6 +3029,11 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
                 }),
                 _cached_edge("semrush-domain-intel", {"user_id": user_id, "domain": domain, "database": "us"}),
+                _cached_edge("staff-reviews-deep", {
+                    "user_id": user_id,
+                    "business_name": enrichment.get("business_name") or business_name_hint or domain_business_label(domain),
+                    "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
+                }),
                 return_exceptions=True,
             )
             if isinstance(warm_cognitive, Exception): warm_cognitive = {"error": str(warm_cognitive)}
@@ -2883,6 +3048,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if isinstance(browse_ai_reviews, Exception): browse_ai_reviews = {"error": str(browse_ai_reviews)}
             if isinstance(customer_reviews_deep, Exception): customer_reviews_deep = {"error": str(customer_reviews_deep)}
             if isinstance(semrush_intel, Exception): semrush_intel = {"error": str(semrush_intel)}
+            if isinstance(staff_reviews_deep, Exception): staff_reviews_deep = {"error": str(staff_reviews_deep)}
             if not isinstance(warm_cognitive, dict): warm_cognitive = {"error": f"invalid_payload:{type(warm_cognitive).__name__}"}
             if not isinstance(calibration_business_dna, dict): calibration_business_dna = {"error": f"invalid_payload:{type(calibration_business_dna).__name__}"}
             if not isinstance(business_identity_lookup, dict): business_identity_lookup = {"error": f"invalid_payload:{type(business_identity_lookup).__name__}"}
@@ -2895,6 +3061,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if not isinstance(browse_ai_reviews, dict): browse_ai_reviews = {"error": f"invalid_payload:{type(browse_ai_reviews).__name__}"}
             if not isinstance(customer_reviews_deep, dict): customer_reviews_deep = {"error": f"invalid_payload:{type(customer_reviews_deep).__name__}"}
             if not isinstance(semrush_intel, dict): semrush_intel = {"error": f"invalid_payload:{type(semrush_intel).__name__}"}
+            if not isinstance(staff_reviews_deep, dict): staff_reviews_deep = {"error": f"invalid_payload:{type(staff_reviews_deep).__name__}"}
 
             ai_errors = []
             edge_failures = [
@@ -2910,6 +3077,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 ("browse-ai-reviews", browse_ai_reviews),
                 ("customer-reviews-deep", customer_reviews_deep),
                 ("semrush-domain-intel", semrush_intel),
+                ("staff-reviews-deep", staff_reviews_deep),
             ]
             for edge_fn_name, edge_result in edge_failures:
                 if _edge_result_failed(edge_result):
@@ -3224,10 +3392,18 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "has_data": bool(customer_intel.get("has_data")),
                 })
 
+            # 2026-05-04 (P0 Marjo R2C): pass new staff_reviews_deep payload
+            # alongside legacy sources. _build_staff_review_intelligence prefers
+            # deep when present and falls back to legacy snippet/Browse.AI for
+            # backward compatibility. Deep payload also persisted under
+            # `enrichment.staff_reviews_deep` for forensic / debug surfaces.
+            if isinstance(staff_reviews_deep, dict):
+                enrichment["staff_reviews_deep"] = staff_reviews_deep
             enrichment["staff_review_intelligence"] = _build_staff_review_intelligence(
                 enrichment.get("glassdoor_reviews") or {},
                 enrichment.get("browse_ai_reviews") or {},
                 lookback_months=12,
+                staff_reviews_deep=enrichment.get("staff_reviews_deep") if isinstance(enrichment.get("staff_reviews_deep"), dict) else None,
             )
 
             contact_corpus = "\n".join([

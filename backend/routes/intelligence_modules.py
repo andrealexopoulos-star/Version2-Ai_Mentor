@@ -1571,6 +1571,55 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         has_placeholder=bool(isinstance(enrichment.get("cmo_executive_brief"), str) and is_placeholder_text(enrichment.get("cmo_executive_brief"))),
     )
 
+    # ──────────────────────────────────────────────────────────────────────
+    # 2026-05-04 (P0 Marjo R2C): Workplace Intelligence section.
+    # Reads `staff_review_intelligence` (now backed by the new
+    # `staff-reviews-deep` edge function — Firecrawl across Glassdoor /
+    # Indeed / Seek + LLM theme extraction). Brands with strong staff
+    # sentiment correlate with strong customer sentiment, so we surface
+    # the workplace section as a complement to Review Intelligence
+    # (customer-facing) in the CMO Report.
+    # ──────────────────────────────────────────────────────────────────────
+    staff_intel = enrichment.get("staff_review_intelligence") if isinstance(enrichment.get("staff_review_intelligence"), dict) else {}
+    workplace_payload = {
+        "weighted_overall_rating": staff_intel.get("weighted_overall_rating"),
+        "staff_score": staff_intel.get("staff_score"),
+        "total_reviews": staff_intel.get("total_reviews_cross_platform") or 0,
+        "review_count_last_12_months": staff_intel.get("review_count_last_12_months") or 0,
+        "platforms": [
+            {
+                "platform": p.get("platform"),
+                "rating": p.get("rating"),
+                "review_count": p.get("review_count"),
+                "url": p.get("url"),
+                "themes": p.get("themes") or {"pros": [], "cons": []},
+                "rating_distribution": p.get("rating_distribution"),
+            }
+            for p in (staff_intel.get("platforms") or [])
+            if isinstance(p, dict)
+        ],
+        "cross_platform_themes": staff_intel.get("cross_platform_themes") or {"pros": [], "cons": []},
+        "trend_30d_vs_90d": staff_intel.get("trend_30d_vs_90d") or "insufficient_data",
+        "employer_brand_health_score": staff_intel.get("employer_brand_health_score"),
+        "ceo_approval": staff_intel.get("ceo_approval"),
+        "recommend_to_friend": staff_intel.get("recommend_to_friend"),
+        "top_positive_themes": (staff_intel.get("cross_platform_themes") or {}).get("pros") or [],
+        "top_negative_themes": (staff_intel.get("cross_platform_themes") or {}).get("cons") or [],
+        "action_plan": staff_intel.get("action_plan") or [],
+        "competitor_employer_benchmark": staff_intel.get("competitor_employer_benchmark"),
+        "deep_extraction_used": bool(staff_intel.get("deep_extraction_used")),
+    }
+    response["workplace_intelligence"] = workplace_payload
+
+    workplace_status = classify_section(
+        has_evidence=(
+            (isinstance(workplace_payload.get("weighted_overall_rating"), (int, float)) and workplace_payload["weighted_overall_rating"] > 0)
+            or (workplace_payload.get("total_reviews") or 0) > 0
+            or len(workplace_payload.get("platforms") or []) > 0
+        ),
+        degraded=bool(staff_intel.get("has_data")) and (workplace_payload.get("total_reviews") or 0) == 0,
+    )
+
     section_inventory = {
         "Chief Marketing Summary": {"status": exec_status},
         "Executive Summary": {"status": exec_status},
@@ -1578,6 +1627,7 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
         "Competitive Landscape": {"status": competitor_status},
         "SWOT": {"status": swot_status},
         "Review Intelligence": {"status": review_status},
+        "Workplace Intelligence": {"status": workplace_status},
         "Strategic Roadmap": {"status": roadmap_status},
     }
     response["section_inventory"] = section_inventory
