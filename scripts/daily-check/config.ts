@@ -127,3 +127,17 @@ export const TEST_URLS: TestUrl[] = [
   { url: 'www.bunnings.com.au', slug: 'bunnings', label: 'bunnings', low_signal_acceptable: false },
   { url: 'www.maddocks.com.au', slug: 'maddocks', label: 'maddocks', low_signal_acceptable: true },
 ];
+
+/**
+ * Number of URLs the daily check is expected to cover. The aggregator uses
+ * this to detect "matrix slot crashed before writing result.json" — exactly
+ * the bug class the Marjo incident itself was about (a silent surviving
+ * subset producing a false PASS).
+ *
+ * Source-of-truth = TEST_URLS.length. The matrix in
+ * .github/workflows/daily-cmo-check.yml MUST have the same count; if you add
+ * or remove a URL, change BOTH places (and the SETUP.md "Adding a 6th URL"
+ * note). The aggregator will FAIL if the per-URL JSONs received don't equal
+ * this number — drift is loud, not silent.
+ */
+export const EXPECTED_URL_COUNT = TEST_URLS.length;

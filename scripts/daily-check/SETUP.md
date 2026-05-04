@@ -152,10 +152,32 @@ Aggregate `aggregate.json`:
 - `feedback_zero_401_tolerance.md` — every enrichment edge fn MUST 200
 - `BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2.md` — supplier names must never reach the user
 
+## Known Limitations
+
+These are documented gaps in the current setup that are accepted for now (per F6 P0 patch series — peer reviewer R10-FU-2 acknowledgement).
+
+### Superadmin tier-bypass (false PASS risk on tier-restricted surfaces)
+
+**If the operator chooses a superadmin account for `BIQC_QA_EMAIL`** (e.g. `andre@thestrategysquad.com.au`), the daily checks will produce a **FALSE PASS on tier-restricted surfaces**. Superadmin bypasses tier gates in the routing layer (`routeAccessConfig.js`) and the backend tier resolver (`tier_resolver.py`), so a CMO Report rendered for a superadmin proves nothing about whether a real trial-tier user can complete the same flow.
+
+This is acceptable as a **bridge** while the QA user is being provisioned, but it MUST NOT be the steady-state. A FAIL surfaced under a superadmin login still proves a P0 (because superadmin gets the same content even when bypassing gates), but a PASS does not prove the trial path works.
+
+**Recommended P1 follow-up:** Seed a dedicated `qa-synthetic@biqc.ai` trial-tier user (instructions in §1 above) and use that account for accurate tier-coverage. Once seeded, rotate `BIQC_QA_EMAIL` + `BIQC_QA_PASSWORD` to the synthetic user and remove the superadmin from the workflow secrets.
+
+### F6 P0 patches (reference)
+
+The current workflow has been hardened against three classes of silent-failure (peer reviewer R10 findings, F6 patch series — code 13041978):
+
+1. **Escalation prior-run query** — was reading the row it had just inserted. Now fetches the 2 most recent rows and filters out the current `workflow_run_id` (with belt-and-braces fallbacks for legacy rows missing the ID).
+2. **Webhook delivery silent drop** — was logging `console.error` and exiting 0 on any failure. Now retries 3 times with exponential backoff (1s/3s/9s), emits `::error::` GH annotations on every miss, exits 3 on final failure, and writes `alert-delivery.json` so the GH issue body documents whether the alert webhook itself failed.
+3. **Aggregator false PASS on missing JSON** — was counting only physically-present per-URL JSONs, so a matrix-slot crash before `finalize()` would yield `overall=PASS` if surviving slots all PASSed. Now compares against `EXPECTED_URL_COUNT = TEST_URLS.length` and FAILs with `missing_urls` listed if any slot didn't write a `result.json`.
+
+Regression tests live in `scripts/daily-check/__tests__/`.
+
 ## Open follow-ups
 
 - [ ] **Andreas**: provision the 7 GH Secrets above.
-- [ ] **Andreas**: seed `qa-synthetic@biqc.ai` user (code 13041978 required).
+- [ ] **Andreas**: seed `qa-synthetic@biqc.ai` user (code 13041978 required) — see Known Limitations above.
 - [ ] **Andreas**: confirm `enrichment_traces` table will be wired (currently WARN-tolerant).
 - [ ] **Andreas**: confirm `share_events` table will be wired (currently WARN-tolerant).
 - [ ] **Engineering**: provision a scoped `daily_check_runner` Postgres role + JWT to replace global service_role usage.
