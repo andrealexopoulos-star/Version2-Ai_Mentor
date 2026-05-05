@@ -102,11 +102,25 @@ const AuthCallbackSupabase = () => {
         const isSuperadmin =
           role === 'superadmin' || role === 'super_admin' || u.is_master_account === true;
         if (!isSuperadmin) {
+          // 2026-05-05 (13041978): hard-gate now checks stripe_customer_id ONLY.
+          //
+          // The previous double-check (stripe_customer_id AND subscription_status
+          // in {'active','trialing'}) was over-strict — any user with stale
+          // subscription_status during a transient billing-sync delay was
+          // bounced to /complete-signup → /subscribe, even if they had a valid
+          // Stripe customer + an active sub on Stripe's side.
+          //
+          // Andreas reported 2026-05-05: "when i try to log in instead of start
+          // free trial it is still taking me to /subscribe". Root cause was
+          // this over-strict gate. The 2026-04-23 contract said "stripe_customer_id
+          // is the hard truth field" — that field alone is sufficient.
+          //
+          // For users with stripe_customer_id but expired/canceled sub, the
+          // in-app billing UI surfaces the right state (read-only mode banner +
+          // BillingPage prompt). We don't need to bounce them at the auth boundary.
           const hasStripeCustomer =
             typeof u.stripe_customer_id === 'string' && u.stripe_customer_id.length > 0;
-          const status = String(u.subscription_status || '').toLowerCase();
-          const hasTrialOrPaid = status === 'active' || status === 'trialing';
-          if (!hasStripeCustomer || !hasTrialOrPaid) {
+          if (!hasStripeCustomer) {
             clearNextPath();
             navigate(buildCompleteSignupTarget(pendingNextPath), { replace: true });
             return;
