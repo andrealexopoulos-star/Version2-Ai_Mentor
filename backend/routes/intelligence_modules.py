@@ -886,17 +886,27 @@ def _shape_competitors_from_enrichment(enr: Dict[str, Any]) -> List[Dict[str, An
 def _shape_roadmap_from_enrichment(enr: Dict[str, Any]) -> Dict[str, List[Any]]:
     """Split cmo_priority_actions + industry_action_items into the 7/30/90-day
     columns the frontend roadmap renders. No fabrication — empty when we have
-    nothing."""
+    nothing.
+
+    2026-05-05 (13041978): when items come from enrichment as plain strings
+    (calibration synthesis writes them this way), attach an evidence_tag so
+    they survive `filter_roadmap_items_with_provenance` downstream. Without
+    the tag, the provenance filter drops every item and the user sees a
+    full-INSUFFICIENT_SIGNAL roadmap despite real cmo_priority_actions data
+    in the BDE row. The tag identifies the source of truth — the calibration
+    synthesis pass that runs over the full enrichment payload (SEMrush +
+    Perplexity + Trinity LLM consensus) — which IS the provenance.
+    """
     priority = enr.get("cmo_priority_actions") if isinstance(enr.get("cmo_priority_actions"), list) else []
     industry = enr.get("industry_action_items") if isinstance(enr.get("industry_action_items"), list) else []
 
-    def _wrap(items: List[Any], pri: str) -> List[Dict[str, Any]]:
+    def _wrap(items: List[Any], pri: str, default_tag: str) -> List[Dict[str, Any]]:
         out = []
         for it in items:
             text = it if isinstance(it, str) else (it.get("text") if isinstance(it, dict) else None)
             if not text:
                 continue
-            entry: Dict[str, Any] = {"text": str(text), "priority": pri}
+            entry: Dict[str, Any] = {"text": str(text), "priority": pri, "evidence_tag": default_tag}
             if isinstance(it, dict):
                 if it.get("evidence_tag"):
                     entry["evidence_tag"] = str(it.get("evidence_tag"))
@@ -910,9 +920,9 @@ def _shape_roadmap_from_enrichment(enr: Dict[str, Any]) -> Dict[str, List[Any]]:
     # 7-day quick wins: top-of-list priority actions (first 3, tagged critical).
     # 30-day priorities: remaining priority actions (tagged high).
     # 90-day strategic: all industry action items (tagged medium).
-    quick_wins = _wrap(priority[:3], "critical")
-    priorities = _wrap(priority[3:8], "high")
-    strategic = _wrap(industry[:5], "medium")
+    quick_wins = _wrap(priority[:3], "critical", "calibration_synthesis")
+    priorities = _wrap(priority[3:8], "high", "calibration_synthesis")
+    strategic = _wrap(industry[:5], "medium", "industry_action_items")
     return {"quick_wins": quick_wins, "priorities": priorities, "strategic": strategic}
 
 
@@ -2274,6 +2284,20 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     # already-shaped CMO response and expose state as a sibling key so the
     # frontend can render uncertainty badges without losing structure.
     _sanitized_enrich = _sanitized_envelope["enrichment"] or {}
+    # 2026-05-05 (13041978) — keys with a CMO-specific frontend contract that
+    # MUST NOT be overwritten by the raw sanitizer output. The CMO route has
+    # already shaped these into the exact keys the React page destructures
+    # (CMOReportPage.js lines 273-284 + the rest of the section renderers):
+    #   market_position : {overall, brand, digital, sentiment, competitive}  ← 4 ProgressBar dials
+    #   swot            : {strengths, weaknesses, opportunities, threats}    ← 4 list panels
+    #   market_trajectory: stable|improving|degrading                        ← string, not envelope
+    # Replacing those with the sanitizer's `{state, value, message}` envelope
+    # makes CMOReportPage.pick() see the envelope (no `overall` / `strengths`
+    # key), fall through to `{0,0,0,0}` / empty arrays, and the user sees the
+    # exact symptom Andreas reported on 2026-05-05: every Market Position dial
+    # 0/100, every SWOT bucket "Insufficient evidence", despite a fully populated
+    # business_dna_enrichment row in the DB.
+    _CMO_SHAPED_KEYS = frozenset(("swot", "market_position", "market_trajectory"))
     for _key in ("seo_analysis", "paid_media_analysis", "swot",
                  "seo_html_hygiene", "market_position", "market_trajectory",
                  "social_media_analysis", "website_health",
@@ -2290,8 +2314,15 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
                 k not in {"state", "message", "score", "status"}
                 for k in sanitized_val.keys()
             )
-            if has_real_data:
+            if has_real_data and _key not in _CMO_SHAPED_KEYS:
                 response[_key] = sanitized_val
+            elif _key in _CMO_SHAPED_KEYS:
+                # Keep the CMO-shaped response intact, but expose the
+                # sanitizer's state on a sibling key so the frontend can
+                # render uncertainty badges (e.g., a banner above the dials)
+                # without crashing on the missing `overall` key.
+                response[f"{_key}_state"] = sanitized_val.get("state")
+                response[f"{_key}_message"] = sanitized_val.get("message")
             else:
                 # Sanitizer returned empty skeleton. Keep the CMO-shaped
                 # response (if any) and annotate state on a sibling key.
