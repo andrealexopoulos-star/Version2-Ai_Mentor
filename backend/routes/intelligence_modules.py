@@ -869,6 +869,12 @@ def _shape_competitors_from_enrichment(enr: Dict[str, Any]) -> List[Dict[str, An
     strengths, digital_visibility, threat_level, is_you."""
     from routes.calibration import _is_noisy_competitor  # reuse filter
 
+    # 2026-05-05 13041978 ROOT-CAUSE FIX: never write "N/A" — it hits the
+    # PLACEHOLDER_EXACT_DENYLIST in core/section_evidence.py which raises
+    # PlaceholderViolation, which (caught by the route wrapper) replaces the
+    # entire CMO Report with the DEGRADED fallback. Use None for missing
+    # fields; the frontend renders null cells as empty (CMOReportPage.js
+    # competitive table at line 649-653) which is honest "no data" rendering.
     rows: List[Dict[str, Any]] = []
     comp_swot = enr.get("competitor_swot") if isinstance(enr.get("competitor_swot"), list) else []
     for snap in comp_swot[:5]:
@@ -880,9 +886,9 @@ def _shape_competitors_from_enrichment(enr: Dict[str, Any]) -> List[Dict[str, An
         strengths_list = snap.get("strengths") if isinstance(snap.get("strengths"), list) else []
         rows.append({
             "name": name,
-            "market_share": snap.get("market_share") or "N/A",
-            "strengths": (strengths_list[0] if strengths_list else "N/A"),
-            "digital_visibility": snap.get("digital_visibility") or "N/A",
+            "market_share": snap.get("market_share") or None,
+            "strengths": (strengths_list[0] if strengths_list else None),
+            "digital_visibility": snap.get("digital_visibility") or None,
             "threat_level": (snap.get("threat_level") or "low").lower(),
             "is_you": False,
         })
@@ -895,9 +901,9 @@ def _shape_competitors_from_enrichment(enr: Dict[str, Any]) -> List[Dict[str, An
             continue
         rows.append({
             "name": name,
-            "market_share": "N/A",
-            "strengths": "N/A",
-            "digital_visibility": "N/A",
+            "market_share": None,
+            "strengths": None,
+            "digital_visibility": None,
             "threat_level": "medium",
             "is_you": False,
         })
