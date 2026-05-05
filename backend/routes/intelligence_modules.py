@@ -1834,6 +1834,62 @@ async def _enrich_cmo_with_synthesis(
     return response
 
 
+def _build_cmo_degraded_fallback(user_id: str, sb: Any, exc: Exception) -> Dict[str, Any]:
+    """Defense-in-depth (2026-05-05 13041978 hard-fail follow-up):
+    when the CMO Report builder throws an unhandled exception, return a
+    structured 200 response with at minimum the company name + DEGRADED state
+    so the frontend renders a "report temporarily unavailable" banner instead
+    of the user seeing every field show its frontend-fallback placeholder
+    ("Your business", "Connected integrations", "0/100" dials, etc).
+    Per BIQc Platform Contract v2: never expose supplier names or internal
+    error strings; only the sanitised state + a generic message.
+    """
+    company = "Your Business"
+    try:
+        profile_result = sb.table("business_profiles") \
+            .select("business_name, company_name") \
+            .eq("user_id", user_id) \
+            .order("created_at", desc=True) \
+            .limit(1) \
+            .execute()
+        profile = (profile_result.data or [{}])[0] if profile_result.data else {}
+        company = profile.get("business_name") or profile.get("company_name") or company
+    except Exception:
+        pass
+
+    now = datetime.now(timezone.utc)
+    return {
+        "company_name": company,
+        "report_date": now.strftime("%d/%m/%Y"),
+        "generated_at": now.isoformat(),
+        "executive_summary": None,
+        "market_position": {"overall": 0, "brand": 0, "digital": 0, "sentiment": 0, "competitive": 0},
+        "competitors": [],
+        "competitor_landscape_narrative": None,
+        "position_dots": [],
+        "swot": {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []},
+        "reviews": {"rating": 0, "count": 0, "positive_pct": 0, "neutral_pct": 0, "negative_pct": 0},
+        "review_themes": {"positive": [], "negative": []},
+        "review_excerpts": [],
+        "roadmap": {"quick_wins": [], "priorities": [], "strategic": []},
+        "geographic": {"established": [], "growth": []},
+        "confidence": 0,
+        "report_id": f"CMO-{now.strftime('%Y%m%d')}-{(user_id or 'anon')[:8]}",
+        "engine": "BIQc Intelligence Engine",
+        "scan_source": "Deep calibration scan",
+        "data_points": "0 evidence points",
+        "state": ExternalState.DEGRADED.value,
+        "state_message": "Report temporarily unavailable. Please refresh in a moment.",
+        "report_state": "PARTIAL_DEGRADED",
+        "cmo_priority_actions": [],
+        "industry_action_items": [],
+        "competitor_swot": [],
+        "seo_analysis": {},
+        "digital_footprint": {},
+        "sections": {},
+    }
+
+
 @router.get("/intelligence/cmo-report")
 async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     """
@@ -1841,13 +1897,28 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     as the primary data source. Falls back to a clean "calibrating" state if
     no enrichment row exists for the user.
 
-    Previously this endpoint read from `intelligence_actions` +
-    `build_intelligence_summary` RPC — both of which return empty for new
-    users, producing half-populated stubs. Rewired 2026-04-22 (Sprint A #3+#4)
-    to read the deep-scan enrichment bundle that calibration actually writes.
+    2026-05-05 hard-fail follow-up (13041978): the entire body is now wrapped
+    in a defense-in-depth try/except. If ANY unhandled exception is raised
+    between BDE fetch and the final scrub, we log the full traceback (so we
+    can find the root cause from server logs) and return a structured DEGRADED
+    response with the user's company_name. This prevents the frontend's
+    "all fields fall back to placeholders" UX (Your business / Connected
+    integrations / 0/100 dials) when the backend errors silently.
     """
     user_id = current_user["id"]
     sb = init_supabase()
+    try:
+        return await _get_cmo_report_impl(current_user, user_id, sb)
+    except Exception as exc:
+        logger.exception(
+            "[cmo-report] HARD-FAIL: unhandled exception for user_id=%s class=%s message=%s "
+            "— returning DEGRADED defense-in-depth response per 13041978",
+            user_id, type(exc).__name__, str(exc)[:300],
+        )
+        return _build_cmo_degraded_fallback(user_id, sb, exc)
+
+
+async def _get_cmo_report_impl(current_user: dict, user_id: str, sb: Any):
 
     # 1) Company name for the header. Best-effort only.
     company = "Your Business"
