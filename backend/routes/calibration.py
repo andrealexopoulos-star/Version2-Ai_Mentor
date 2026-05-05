@@ -920,6 +920,43 @@ _COMPETITOR_NOISE_PATTERN = re.compile(
 )
 _COMPETITOR_YEAR_SUFFIX = re.compile(r"20\d{2}\s*$")
 
+# 2026-05-05 (13041978) — domains that consistently surface in competitor
+# search results but are NEVER actual SMB competitors. Per Andreas's
+# hard-fail spot check on SMSGlobal scan: youtube/reddit/google were
+# rendering as competitors. Filtered at domain-token level so
+# "youtube.com" / "youtube" / "www.youtube.com" all match.
+_NON_COMPETITOR_DOMAINS = frozenset({
+    "youtube.com", "youtube", "vimeo.com", "vimeo", "tiktok.com", "tiktok",
+    "reddit.com", "reddit", "quora.com", "quora", "medium.com", "medium",
+    "wikipedia.org", "wikipedia", "stackoverflow.com",
+    "google.com", "google", "bing.com", "bing", "duckduckgo.com",
+    "yahoo.com", "yahoo", "ads.google.com",
+    "facebook.com", "facebook", "instagram.com", "instagram",
+    "twitter.com", "twitter", "x.com", "linkedin.com", "linkedin",
+    "pinterest.com", "pinterest", "snapchat.com",
+    "apple.com", "play.google.com", "github.com", "gitlab.com",
+    "yellowpages.com.au", "truelocal.com.au", "hotfrog.com.au",
+    "yelp.com", "yelp", "trustpilot.com", "trustpilot",
+})
+
+
+def _is_known_non_competitor_domain(name: Any) -> bool:
+    """True if `name` is a domain/platform that's never a real competitor."""
+    if not isinstance(name, str):
+        return False
+    cand = name.strip().lower()
+    if not cand:
+        return False
+    cand = re.sub(r"^https?://", "", cand)
+    cand = re.sub(r"^www\.", "", cand)
+    cand = cand.split("/")[0]
+    if cand in _NON_COMPETITOR_DOMAINS:
+        return True
+    bare = cand.split(".")[0]
+    if bare in _NON_COMPETITOR_DOMAINS:
+        return True
+    return False
+
 
 def _is_sentinel_value(text: Any) -> bool:
     """True when `text` is one of the known calibration sentinels."""
@@ -1018,6 +1055,11 @@ def _is_noisy_competitor(name: Any) -> bool:
     if _COMPETITOR_YEAR_SUFFIX.search(stripped):
         return True
     if _COMPETITOR_NOISE_PATTERN.search(stripped):
+        return True
+    # 13041978 2026-05-05: reject known non-competitor domains/platforms
+    # (youtube.com, reddit.com, google.com, etc.) which surface as
+    # cited-source noise rather than actual competitors.
+    if _is_known_non_competitor_domain(stripped):
         return True
     return False
 
