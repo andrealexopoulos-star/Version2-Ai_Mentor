@@ -2158,14 +2158,34 @@ async def _get_cmo_report_impl(current_user: dict, user_id: str, sb: Any):
     #     _enrich_cmo_with_synthesis. Errors here are non-fatal — the route
     #     never blocks on synthesis. See module docstring for the full
     #     contract.
+    # 2026-05-05 (13041978) — HARD CAP synthesis at 20 seconds. Without this
+    # cap, _enrich_cmo_with_synthesis can run up to 6 sequential LLM calls with
+    # 60-80s timeouts each (430s worst case). Azure App Service default request
+    # timeout is 230s — when synthesis exceeds it, Azure returns 504 → frontend
+    # apiClient.get() throws → setReport(null) → CMOReportPage renders every
+    # field as its placeholder fallback ("Your business", "Connected
+    # integrations", "0/100" dials, INSUFFICIENT_SIGNAL banners). Wrapping in
+    # asyncio.wait_for guarantees we never block the user-facing response on
+    # synthesis. The unenriched response is always good enough — synthesis only
+    # fills gaps, never adds primary data.
+    import asyncio as _asyncio
     try:
         tier_str = current_user.get("tier") if isinstance(current_user, dict) else None
-        response = await _enrich_cmo_with_synthesis(
-            response,
-            enrichment,
-            business_name=company_from_enrichment or company,
-            user_id=user_id,
-            tier=tier_str,
+        response = await _asyncio.wait_for(
+            _enrich_cmo_with_synthesis(
+                response,
+                enrichment,
+                business_name=company_from_enrichment or company,
+                user_id=user_id,
+                tier=tier_str,
+            ),
+            timeout=20.0,
+        )
+    except _asyncio.TimeoutError:
+        logger.warning(
+            "[cmo-report] synthesis enrichment exceeded 20s budget for user_id=%s — "
+            "returning unenriched response per 13041978 (Azure timeout guard)",
+            user_id,
         )
     except Exception as syn_err:
         logger.debug(f"[cmo-report] synthesis enrichment skipped (non-fatal): {syn_err}")
