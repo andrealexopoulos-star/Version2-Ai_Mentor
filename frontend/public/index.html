@@ -2,6 +2,43 @@
 <html lang="en-AU" data-theme="light">
   <head>
     <meta charset="utf-8" />
+    <!--
+      2026-05-05 (13041978) — STALE SERVICE-WORKER CACHE-BUST.
+      Runs FIRST, before any other script. If a previously-installed BIQc
+      service worker is still registered in this browser (from a deploy
+      generation that pre-dates the current self-destruct SW), it can serve
+      cached HTML pointing to OLD bundle hashes — meaning users see old
+      broken UI even after a fresh deploy. Andreas reported 2026-05-05:
+      after merging PR #466 to fix the login redirect bug, real users
+      were still bouncing to /subscribe until they manually cleared site
+      data. This guard makes the cleanup automatic. Once per session: if
+      ANY service worker is registered, unregister all SWs, delete all
+      caches, and force a hard reload. Auth tokens in localStorage are
+      NOT touched — users stay logged in.
+    -->
+    <script>
+      (function () {
+        try {
+          if (!('serviceWorker' in navigator)) return;
+          if (sessionStorage.getItem('biqc_cache_bust_v1_ran') === '1') return;
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            if (!regs || regs.length === 0) return;
+            try { sessionStorage.setItem('biqc_cache_bust_v1_ran', '1'); } catch (e) {}
+            Promise.all(regs.map(function (r) { return r.unregister(); }))
+              .then(function () {
+                if ('caches' in window) {
+                  return caches.keys().then(function (names) {
+                    return Promise.all(names.map(function (n) { return caches.delete(n); }));
+                  });
+                }
+              })
+              .then(function () { window.location.reload(); })
+              .catch(function () { /* swallow — best-effort */ });
+          }).catch(function () { /* swallow — best-effort */ });
+        } catch (e) { /* swallow — never block app boot */ }
+      })();
+    </script>
+
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
