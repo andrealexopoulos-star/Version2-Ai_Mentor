@@ -4630,6 +4630,12 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
                     stream_contract = {"stream_mode": provider_stream_mode}
                     yield _sse_event("stream_contract", stream_contract)
 
+                    # 2026-05-05 (13041978) Track A.1: pass user_id/tier/feature/request_id
+                    # so streamers can record usage post-stream via llm_router._record_usage.
+                    # Without these, stream chat under-bills 2-7× per OPS Manual entry 01.
+                    _stream_user_id = current_user.get("id")
+                    _stream_tier = tier_for_contract
+                    _stream_request_id = trace_id
                     if provider_stream_mode == "live_openai":
                         stream_contract = {"stream_mode": "live_openai"}
                         yield _sse_event("stream_contract", stream_contract)
@@ -4639,6 +4645,10 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
                             clean_message=clean_message,
                             messages_history=messages_history,
                             model=primary_model,
+                            user_id=_stream_user_id,
+                            tier=_stream_tier,
+                            feature=feature,
+                            request_id=_stream_request_id,
                         ):
                             yield _sse_event("delta", {"text": token, "preview": True})
                     elif has_google:
@@ -4650,6 +4660,10 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
                             clean_message=clean_message,
                             messages_history=messages_history,
                             model="gemini-2.0-flash",
+                            user_id=_stream_user_id,
+                            tier=_stream_tier,
+                            feature=feature,
+                            request_id=_stream_request_id,
                         ):
                             yield _sse_event("delta", {"text": token, "preview": True})
                     elif has_anthropic:
@@ -4661,6 +4675,10 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
                             clean_message=clean_message,
                             messages_history=messages_history,
                             model="claude-sonnet-4-6",
+                            user_id=_stream_user_id,
+                            tier=_stream_tier,
+                            feature=feature,
+                            request_id=_stream_request_id,
                         ):
                             yield _sse_event("delta", {"text": token, "preview": True})
                 except Exception as stream_err:
