@@ -348,9 +348,21 @@ def _edge_result_failed(result: Any) -> bool:
     # DEGRADED}). Tagging these as EDGE_FUNCTION_FAILED was producing false-
     # positive trace rows (e.g. customer-reviews-deep) and blocking the CMO
     # report from rendering valid partial data. Provider/key/processing
-    # errors must still be reported via explicit error / error_code fields.
+    # errors must still be reported via explicit error / error_code fields —
+    # this short-circuit ONLY applies when no explicit error indicator is
+    # present (per ChatGPT Codex review on PR #464: a degraded state WITH a
+    # provider error is still a real failure that strict-failure logic must
+    # see, otherwise zero-401 / zero-silent-failure rules are bypassed).
     state_value = str(result.get("state") or "").strip().upper()
-    if state_value in {"INSUFFICIENT_SIGNAL", "DEGRADED", "PROCESSING"}:
+    has_explicit_error = bool(
+        result.get("error")
+        or result.get("error_code")
+        or str(result.get("status") or "").strip().lower() == "error"
+    )
+    if (
+        state_value in {"INSUFFICIENT_SIGNAL", "DEGRADED", "PROCESSING"}
+        and not has_explicit_error
+    ):
         return False
     if result.get("ok") is False:
         return True

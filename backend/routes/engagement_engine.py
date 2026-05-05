@@ -65,10 +65,16 @@ async def serper_search(query: str, search_type: str = "search", num: int = 10) 
 
 async def serper_maps(query: str) -> Dict:
     """Maps-flavoured search — delegates to the unified Perplexity-backed
-    serper_search. Maps consumers in this module already fall back gracefully
-    when places[] is empty.
+    serper_search. Returns BOTH organic[] and places[] keys so downstream
+    consumers in this module (lines 244, 284) that read places[] don't
+    silently treat the response as missing — they get an empty places list
+    explicitly (same end-state as the prior Serper-credits-exhausted path,
+    but with the key present so dict.get() returns [] not None ambiguity).
+    Per ChatGPT Codex review on PR #464.
     """
-    return await serper_search(query, search_type="maps", num=5)
+    res = await serper_search(query, search_type="maps", num=5)
+    res.setdefault("places", [])
+    return res
 
 
 # ═══════════════════════════════════════════════════════════════
