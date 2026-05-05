@@ -824,9 +824,30 @@ def _derive_market_position_from_enrichment(enr: Dict[str, Any]) -> Dict[str, in
     brand = _coerce_score(website.get("score"))
     digital_presence = _coerce_score(digital.get("score") or seo.get("score"))
     sentiment = _coerce_score(reviews_intel.get("sentiment_score"))
-    # Crude competitive score: fewer competitor leaders identified means
-    # less pressure visible. Never fabricated — zero when we have nothing.
+    # Competitive score (2026-05-05 13041978): broaden the source of competitor
+    # density beyond the legacy `competitor_leaders` / `competitors` keys.
+    # When the AI synthesiser stores competitors as a narrative string in
+    # `competitor_analysis` (which is the more recent shape) the legacy keys
+    # are empty, dragging the dial to 0/100 even on rich scans. We now also
+    # inspect competitor_swot[], competitor_analysis.detailed_competitors[]
+    # and competitor_analysis.organic_competitors[] for named entities.
     comp_leaders = enr.get("competitor_leaders") or enr.get("competitors") or []
+    if not (isinstance(comp_leaders, list) and comp_leaders):
+        ca = enr.get("competitor_analysis")
+        if isinstance(ca, dict):
+            comp_leaders = (
+                ca.get("detailed_competitors")
+                or ca.get("organic_competitors")
+                or ca.get("competitors")
+                or []
+            )
+    if not (isinstance(comp_leaders, list) and comp_leaders):
+        comp_swot = enr.get("competitor_swot")
+        if isinstance(comp_swot, list):
+            comp_leaders = [
+                s for s in comp_swot
+                if isinstance(s, dict) and (s.get("name") or s.get("competitor"))
+            ]
     competitive = 0
     if isinstance(comp_leaders, list) and comp_leaders:
         # Proxy: density of named competitors (1..5) -> 20..100
@@ -1813,6 +1834,62 @@ async def _enrich_cmo_with_synthesis(
     return response
 
 
+def _build_cmo_degraded_fallback(user_id: str, sb: Any, exc: Exception) -> Dict[str, Any]:
+    """Defense-in-depth (2026-05-05 13041978 hard-fail follow-up):
+    when the CMO Report builder throws an unhandled exception, return a
+    structured 200 response with at minimum the company name + DEGRADED state
+    so the frontend renders a "report temporarily unavailable" banner instead
+    of the user seeing every field show its frontend-fallback placeholder
+    ("Your business", "Connected integrations", "0/100" dials, etc).
+    Per BIQc Platform Contract v2: never expose supplier names or internal
+    error strings; only the sanitised state + a generic message.
+    """
+    company = "Your Business"
+    try:
+        profile_result = sb.table("business_profiles") \
+            .select("business_name, company_name") \
+            .eq("user_id", user_id) \
+            .order("created_at", desc=True) \
+            .limit(1) \
+            .execute()
+        profile = (profile_result.data or [{}])[0] if profile_result.data else {}
+        company = profile.get("business_name") or profile.get("company_name") or company
+    except Exception:
+        pass
+
+    now = datetime.now(timezone.utc)
+    return {
+        "company_name": company,
+        "report_date": now.strftime("%d/%m/%Y"),
+        "generated_at": now.isoformat(),
+        "executive_summary": None,
+        "market_position": {"overall": 0, "brand": 0, "digital": 0, "sentiment": 0, "competitive": 0},
+        "competitors": [],
+        "competitor_landscape_narrative": None,
+        "position_dots": [],
+        "swot": {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []},
+        "reviews": {"rating": 0, "count": 0, "positive_pct": 0, "neutral_pct": 0, "negative_pct": 0},
+        "review_themes": {"positive": [], "negative": []},
+        "review_excerpts": [],
+        "roadmap": {"quick_wins": [], "priorities": [], "strategic": []},
+        "geographic": {"established": [], "growth": []},
+        "confidence": 0,
+        "report_id": f"CMO-{now.strftime('%Y%m%d')}-{(user_id or 'anon')[:8]}",
+        "engine": "BIQc Intelligence Engine",
+        "scan_source": "Deep calibration scan",
+        "data_points": "0 evidence points",
+        "state": ExternalState.DEGRADED.value,
+        "state_message": "Report temporarily unavailable. Please refresh in a moment.",
+        "report_state": "PARTIAL_DEGRADED",
+        "cmo_priority_actions": [],
+        "industry_action_items": [],
+        "competitor_swot": [],
+        "seo_analysis": {},
+        "digital_footprint": {},
+        "sections": {},
+    }
+
+
 @router.get("/intelligence/cmo-report")
 async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     """
@@ -1820,13 +1897,28 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     as the primary data source. Falls back to a clean "calibrating" state if
     no enrichment row exists for the user.
 
-    Previously this endpoint read from `intelligence_actions` +
-    `build_intelligence_summary` RPC — both of which return empty for new
-    users, producing half-populated stubs. Rewired 2026-04-22 (Sprint A #3+#4)
-    to read the deep-scan enrichment bundle that calibration actually writes.
+    2026-05-05 hard-fail follow-up (13041978): the entire body is now wrapped
+    in a defense-in-depth try/except. If ANY unhandled exception is raised
+    between BDE fetch and the final scrub, we log the full traceback (so we
+    can find the root cause from server logs) and return a structured DEGRADED
+    response with the user's company_name. This prevents the frontend's
+    "all fields fall back to placeholders" UX (Your business / Connected
+    integrations / 0/100 dials) when the backend errors silently.
     """
     user_id = current_user["id"]
     sb = init_supabase()
+    try:
+        return await _get_cmo_report_impl(current_user, user_id, sb)
+    except Exception as exc:
+        logger.exception(
+            "[cmo-report] HARD-FAIL: unhandled exception for user_id=%s class=%s message=%s "
+            "— returning DEGRADED defense-in-depth response per 13041978",
+            user_id, type(exc).__name__, str(exc)[:300],
+        )
+        return _build_cmo_degraded_fallback(user_id, sb, exc)
+
+
+async def _get_cmo_report_impl(current_user: dict, user_id: str, sb: Any):
 
     # 1) Company name for the header. Best-effort only.
     company = "Your Business"
@@ -2066,14 +2158,34 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
     #     _enrich_cmo_with_synthesis. Errors here are non-fatal — the route
     #     never blocks on synthesis. See module docstring for the full
     #     contract.
+    # 2026-05-05 (13041978) — HARD CAP synthesis at 20 seconds. Without this
+    # cap, _enrich_cmo_with_synthesis can run up to 6 sequential LLM calls with
+    # 60-80s timeouts each (430s worst case). Azure App Service default request
+    # timeout is 230s — when synthesis exceeds it, Azure returns 504 → frontend
+    # apiClient.get() throws → setReport(null) → CMOReportPage renders every
+    # field as its placeholder fallback ("Your business", "Connected
+    # integrations", "0/100" dials, INSUFFICIENT_SIGNAL banners). Wrapping in
+    # asyncio.wait_for guarantees we never block the user-facing response on
+    # synthesis. The unenriched response is always good enough — synthesis only
+    # fills gaps, never adds primary data.
+    import asyncio as _asyncio
     try:
         tier_str = current_user.get("tier") if isinstance(current_user, dict) else None
-        response = await _enrich_cmo_with_synthesis(
-            response,
-            enrichment,
-            business_name=company_from_enrichment or company,
-            user_id=user_id,
-            tier=tier_str,
+        response = await _asyncio.wait_for(
+            _enrich_cmo_with_synthesis(
+                response,
+                enrichment,
+                business_name=company_from_enrichment or company,
+                user_id=user_id,
+                tier=tier_str,
+            ),
+            timeout=20.0,
+        )
+    except _asyncio.TimeoutError:
+        logger.warning(
+            "[cmo-report] synthesis enrichment exceeded 20s budget for user_id=%s — "
+            "returning unenriched response per 13041978 (Azure timeout guard)",
+            user_id,
         )
     except Exception as syn_err:
         logger.debug(f"[cmo-report] synthesis enrichment skipped (non-fatal): {syn_err}")

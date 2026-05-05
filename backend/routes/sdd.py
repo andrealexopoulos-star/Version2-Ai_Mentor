@@ -28,16 +28,22 @@ DIRECTORY_DOMAINS = ['yelp.com', 'yellowpages', 'truelocal', 'hotfrog', 'faceboo
 
 
 async def _serper(query: str, num: int = 10) -> Dict:
-    import os
-    key = os.environ.get("SERPER_API_KEY", "")
-    if not key:
-        return {"organic": []}
+    """Compat wrapper — delegates to core.helpers.serper_search (Perplexity-backed
+    after Serper retirement 2026-05-05 13041978). Returns {"organic": [...]} shape
+    so existing callers in this module keep working unchanged.
+    """
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
-            res = await client.post("https://google.serper.dev/search",
-                json={"q": query, "num": num, "gl": "au", "hl": "en"},
-                headers={"X-API-KEY": key, "Content-Type": "application/json"})
-            return res.json() if res.status_code == 200 else {"organic": []}
+        from core.helpers import serper_search as _delegated
+        res = await _delegated(query, gl="au", hl="en", num=num)
+        items = res.get("results") or []
+        return {
+            "organic": [
+                {"title": r.get("title", ""), "link": r.get("link", ""),
+                 "snippet": r.get("snippet", ""), "position": r.get("position", i)}
+                for i, r in enumerate(items, start=1)
+            ],
+            "error": res.get("error"),
+        }
     except Exception:
         return {"organic": []}
 

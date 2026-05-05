@@ -41,24 +41,40 @@ class EngagementScanRequest(BaseModel):
 # ═══════════════════════════════════════════════════════════════
 
 async def serper_search(query: str, search_type: str = "search", num: int = 10) -> Dict:
-    """Execute a real search via Serper API."""
-    if not SERPER_KEY:
-        return {"organic": [], "error": "No SERPER_API_KEY"}
+    """Compat wrapper — delegates to core.helpers.serper_search (Perplexity-backed
+    after Serper retirement 2026-05-05 13041978). search_type is accepted for
+    back-compat; web-results are returned for both 'search' and 'maps' modes.
+    Returns the legacy {"organic": [...]} shape so this module's downstream
+    consumers (classify_structure, competitor scans, awards search) keep working
+    unchanged.
+    """
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
-            endpoint = f"https://google.serper.dev/{search_type}"
-            res = await client.post(endpoint, json={"q": query, "num": num, "gl": "au", "hl": "en"},
-                                    headers={"X-API-KEY": SERPER_KEY, "Content-Type": "application/json"})
-            if res.status_code == 200:
-                return res.json()
+        from core.helpers import serper_search as _delegated
+        res = await _delegated(query, gl="au", hl="en", num=num)
+        items = res.get("results") or []
+        organic = [
+            {"title": r.get("title", ""), "link": r.get("link", ""),
+             "snippet": r.get("snippet", ""), "position": r.get("position", i)}
+            for i, r in enumerate(items, start=1)
+        ]
+        return {"organic": organic, "error": res.get("error")}
     except Exception as e:
-        logger.warning(f"Serper search failed: {e}")
-    return {"organic": []}
+        logger.warning(f"web search delegate failed: {e}")
+        return {"organic": []}
 
 
 async def serper_maps(query: str) -> Dict:
-    """Search Google Maps via Serper."""
-    return await serper_search(query, search_type="maps", num=5)
+    """Maps-flavoured search — delegates to the unified Perplexity-backed
+    serper_search. Returns BOTH organic[] and places[] keys so downstream
+    consumers in this module (lines 244, 284) that read places[] don't
+    silently treat the response as missing — they get an empty places list
+    explicitly (same end-state as the prior Serper-credits-exhausted path,
+    but with the key present so dict.get() returns [] not None ambiguity).
+    Per ChatGPT Codex review on PR #464.
+    """
+    res = await serper_search(query, search_type="maps", num=5)
+    res.setdefault("places", [])
+    return res
 
 
 # ═══════════════════════════════════════════════════════════════
