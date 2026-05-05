@@ -51,14 +51,22 @@ class DSEERequest(BaseModel):
 # ═══════════════════════════════════════════════════════════════
 
 async def _serper(query: str, search_type: str = "search", num: int = 10) -> Dict:
-    if not SERPER_KEY:
-        return {"organic": []}
+    """Compat wrapper — delegates to core.helpers.serper_search (Perplexity-backed
+    after Serper retirement 2026-05-05 13041978). search_type is accepted for
+    back-compat; web-results are returned for both 'search' and 'maps' modes.
+    Maps-specific consumers will see organic[] only (no places[]) — acceptable
+    because these consumers already fall back to organic when places is empty.
+    """
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
-            res = await client.post(f"https://google.serper.dev/{search_type}",
-                json={"q": query, "num": num, "gl": "au", "hl": "en"},
-                headers={"X-API-KEY": SERPER_KEY, "Content-Type": "application/json"})
-            return res.json() if res.status_code == 200 else {"organic": []}
+        from core.helpers import serper_search as _delegated
+        res = await _delegated(query, gl="au", hl="en", num=num)
+        items = res.get("results") or []
+        organic = [
+            {"title": r.get("title", ""), "link": r.get("link", ""),
+             "snippet": r.get("snippet", ""), "position": r.get("position", i)}
+            for i, r in enumerate(items, start=1)
+        ]
+        return {"organic": organic, "error": res.get("error")}
     except Exception:
         return {"organic": []}
 

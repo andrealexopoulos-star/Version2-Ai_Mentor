@@ -341,6 +341,17 @@ def _edge_result_failed(result: Any) -> bool:
         status_code = 200
     if status_code >= 400:
         return True
+    # Per BIQc Platform Contract v2 (2026-05-05 13041978): a 200 response
+    # carrying a recognised "domain outcome" state is NOT an infrastructure
+    # failure — it is a valid degraded / no-data outcome (Contract v2 enum
+    # {DATA_AVAILABLE, DATA_UNAVAILABLE, INSUFFICIENT_SIGNAL, PROCESSING,
+    # DEGRADED}). Tagging these as EDGE_FUNCTION_FAILED was producing false-
+    # positive trace rows (e.g. customer-reviews-deep) and blocking the CMO
+    # report from rendering valid partial data. Provider/key/processing
+    # errors must still be reported via explicit error / error_code fields.
+    state_value = str(result.get("state") or "").strip().upper()
+    if state_value in {"INSUFFICIENT_SIGNAL", "DEGRADED", "PROCESSING"}:
+        return False
     if result.get("ok") is False:
         return True
     status_value = str(result.get("status") or "").strip().lower()
@@ -371,7 +382,25 @@ def _normalize_edge_result(function_name: str, http_status: int, data: Any) -> D
     meaningful_keys = [k for k in payload.keys() if k not in {"_http_status", "ok", "code", "status", "detail", "error", "error_code"}]
     ambiguous_success = payload.get("ok") is None and not status_value and not payload.get("data") and not meaningful_keys
 
-    if failed_http or failed_flag or has_error or raw_payload_only or ambiguous_success:
+    # Per BIQc Platform Contract v2 (2026-05-05 13041978): a 200 response with
+    # state in {INSUFFICIENT_SIGNAL, DEGRADED, PROCESSING} is a recognised
+    # domain outcome — preserve it instead of stamping EDGE_FUNCTION_FAILED.
+    state_value = str(payload.get("state") or "").strip().upper()
+    contract_v2_domain_outcome = (
+        not failed_http
+        and not has_error
+        and not raw_payload_only
+        and state_value in {"INSUFFICIENT_SIGNAL", "DEGRADED", "PROCESSING"}
+    )
+
+    if contract_v2_domain_outcome:
+        # Surface the contract-v2 outcome cleanly. ok=False is preserved so
+        # callers can distinguish "no data" from "data available", but the
+        # code reflects the true state, not a fake failure.
+        payload.setdefault("ok", False)
+        if not payload.get("code"):
+            payload["code"] = state_value
+    elif failed_http or failed_flag or has_error or raw_payload_only or ambiguous_success:
         payload["ok"] = False
         if not payload.get("code"):
             if raw_payload_only:
@@ -2779,6 +2808,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "If unknown, return empty string. competitors must be array of names.\n\n"
                 f"DATA:\n{combined_text[:18000]}"
             )
+            ai_errors_collected: List[Dict[str, Any]] = []
             try:
                 ai_json = await get_ai_response(
                     synthesis_prompt,
@@ -2788,8 +2818,24 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     metadata={"force_trinity": True, "context": "onboarding_deep_scan"},
                 )
             except Exception as ai_error:
-                logger.warning(f"[enrichment/website] AI synthesis unavailable, falling back to deterministic scan: {ai_error}")
+                # Per BIQc Platform Contract v2 + zero-401 / 13041978:
+                # never silently swallow Trinity synthesis failures. We still
+                # persist the deterministic enrichment so the scan completes,
+                # BUT we record the error in ai_errors[] so downstream
+                # truth_state derivation correctly marks DEGRADED and the
+                # internal log + per-scan trace surface the real cause.
+                err_msg = str(ai_error)[:500]
+                logger.warning(
+                    "[enrichment/website] Trinity synthesis failed for user_id=%s class=%s: %s",
+                    user_id, type(ai_error).__name__, err_msg,
+                )
                 ai_json = {}
+                ai_errors_collected.append({
+                    "stage": "trinity_synthesis",
+                    "error_class": type(ai_error).__name__,
+                    "message": err_msg,
+                    "at": datetime.now(timezone.utc).isoformat(),
+                })
 
             enrichment = {
                 "title": page_title,
@@ -2834,6 +2880,11 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "indeed_reviews": indeed_review_search.get("results") or [],
                     "crawled_pages": crawled_pages,
                 },
+                # 13041978 2026-05-05: surface Trinity / synthesis errors so the
+                # downstream truth_state derivation marks DEGRADED + so the daily
+                # ops calibration check can see real failure causes. Stripped
+                # from external responses by Contract v2 sanitizer (internal-only).
+                "ai_errors": ai_errors_collected,
             }
 
             try:

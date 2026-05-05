@@ -421,11 +421,15 @@ def _quorum_capability_from_keys() -> str:
     available = sum(1 for k in (OPENAI_API_KEY, GOOGLE_API_KEY, ANTHROPIC_API_KEY) if k)
     return _classify_quorum_state(available)
 
-OPENAI_MODEL_NORMAL = os.environ.get("OPENAI_MODEL_NORMAL", "gpt-5.3")
-OPENAI_MODEL_DEEP = os.environ.get("OPENAI_MODEL_DEEP", "gpt-5.4")
-GEMINI_MODEL_PRO = os.environ.get("GEMINI_MODEL_PRO", "gemini-3-pro-preview")
-ANTHROPIC_MODEL_OPUS = os.environ.get("ANTHROPIC_MODEL_OPUS", "claude-opus-4-6")
-ANTHROPIC_MODEL_SONNET = os.environ.get("ANTHROPIC_MODEL_SONNET", "claude-sonnet-4-6")
+# Defense-in-depth defaults (2026-05-05 13041978) — production-stable model IDs
+# used only when the matching env var is unset on the host. Azure prod sets these
+# explicitly per BIQc deployment runbook; the defaults below ensure that a missing
+# env var degrades to a working model instead of an "unreleased model" 400 error.
+OPENAI_MODEL_NORMAL = os.environ.get("OPENAI_MODEL_NORMAL", "gpt-4o")
+OPENAI_MODEL_DEEP = os.environ.get("OPENAI_MODEL_DEEP", "gpt-4o")
+GEMINI_MODEL_PRO = os.environ.get("GEMINI_MODEL_PRO", "gemini-1.5-pro")
+ANTHROPIC_MODEL_OPUS = os.environ.get("ANTHROPIC_MODEL_OPUS", "claude-3-5-sonnet-20241022")
+ANTHROPIC_MODEL_SONNET = os.environ.get("ANTHROPIC_MODEL_SONNET", "claude-3-5-sonnet-20241022")
 
 ROUTE_TABLE = {
     "soundboard_strategy": {"provider": "openai", "model": OPENAI_MODEL_DEEP, "timeout": 60, "max_tokens": 1700, "temperature": 0.6},

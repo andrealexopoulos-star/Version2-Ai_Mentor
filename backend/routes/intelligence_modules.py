@@ -824,9 +824,30 @@ def _derive_market_position_from_enrichment(enr: Dict[str, Any]) -> Dict[str, in
     brand = _coerce_score(website.get("score"))
     digital_presence = _coerce_score(digital.get("score") or seo.get("score"))
     sentiment = _coerce_score(reviews_intel.get("sentiment_score"))
-    # Crude competitive score: fewer competitor leaders identified means
-    # less pressure visible. Never fabricated — zero when we have nothing.
+    # Competitive score (2026-05-05 13041978): broaden the source of competitor
+    # density beyond the legacy `competitor_leaders` / `competitors` keys.
+    # When the AI synthesiser stores competitors as a narrative string in
+    # `competitor_analysis` (which is the more recent shape) the legacy keys
+    # are empty, dragging the dial to 0/100 even on rich scans. We now also
+    # inspect competitor_swot[], competitor_analysis.detailed_competitors[]
+    # and competitor_analysis.organic_competitors[] for named entities.
     comp_leaders = enr.get("competitor_leaders") or enr.get("competitors") or []
+    if not (isinstance(comp_leaders, list) and comp_leaders):
+        ca = enr.get("competitor_analysis")
+        if isinstance(ca, dict):
+            comp_leaders = (
+                ca.get("detailed_competitors")
+                or ca.get("organic_competitors")
+                or ca.get("competitors")
+                or []
+            )
+    if not (isinstance(comp_leaders, list) and comp_leaders):
+        comp_swot = enr.get("competitor_swot")
+        if isinstance(comp_swot, list):
+            comp_leaders = [
+                s for s in comp_swot
+                if isinstance(s, dict) and (s.get("name") or s.get("competitor"))
+            ]
     competitive = 0
     if isinstance(comp_leaders, list) and comp_leaders:
         # Proxy: density of named competitors (1..5) -> 20..100

@@ -27,7 +27,9 @@ except ImportError:
     DocxDocument = None
     openpyxl = None
 
-SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
+SERPER_API_KEY = os.environ.get("SERPER_API_KEY")  # retained: still referenced by health/quota probes
+PERPLEXITY_API_KEY = os.environ.get("PERPLEXITY_API_KEY")
+PERPLEXITY_SEARCH_MODEL = os.environ.get("PERPLEXITY_SEARCH_MODEL", "sonar")
 JWT_SECRET = os.environ.get("JWT_SECRET_KEY", "")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
@@ -76,13 +78,17 @@ def compute_missing_profile_fields(profile_patch: Dict[str, Any]) -> List[str]:
 # ==================== SEARCH ====================
 
 async def serper_search(query: str, gl: str = "au", hl: str = "en", num: int = 5) -> Dict[str, Any]:
-    """Return {results: [...], error: str|None}. Uses Serper.dev Google Web Search.
+    """Return {results: [{title, link, snippet, position}], error: str|None}.
 
-    P0 Marjo E2 / 2026-05-04: writes a per-call row to public.enrichment_traces
-    when called inside an active scan (scan_id ContextVar set in
-    routes.calibration.website_enrichment). Telemetry is fire-and-forget —
-    a tracer failure never affects the search result. Cites
-    BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 + zero-401.
+    Function name preserved for back-compat with all callers. Implementation
+    delegates to Perplexity sonar (Serper retired 2026-05-05 13041978 — Serper
+    credits exhausted, switching primary search provider to Perplexity which
+    is already proven across 5 production edge functions).
+
+    Per BIQc_PLATFORM_CONTRACT_SECURE_NO_SILENT_FAILURE_v2 + zero-401: any
+    upstream non-200 surfaces as an explicit error in the return value AND
+    in the per-scan enrichment_traces row. We never silently return empty
+    results on provider failure.
     """
     # Resolve active scan context. None outside the scan path → no trace.
     try:
@@ -96,45 +102,72 @@ async def serper_search(query: str, gl: str = "au", hl: str = "en", num: int = 5
         _user_id = None
 
     request_summary = {
-        "provider_url": "google.serper.dev/search",
+        "provider_url": "api.perplexity.ai/chat/completions",
         "query_chars": len(query or ""),
         "gl": gl, "hl": hl, "num": num,
+        "model": PERPLEXITY_SEARCH_MODEL,
     }
     import time as _t
     _t0 = _t.perf_counter()
 
-    if not SERPER_API_KEY:
-        result = {"results": [], "error": "SERPER_API_KEY not configured"}
+    if not PERPLEXITY_API_KEY:
         if _scan_id:
             await arecord_provider_trace(
-                scan_id=_scan_id, provider="serper", user_id=_user_id,
+                scan_id=_scan_id, provider="perplexity", user_id=_user_id,
                 http_status=503,
                 latency_ms=int((_t.perf_counter() - _t0) * 1000),
                 request_summary=request_summary,
                 response_summary={"ok": False, "code": "PROVIDER_KEY_MISSING"},
-                error="PROVIDER_KEY_MISSING : SERPER_API_KEY not configured",
+                error="PROVIDER_KEY_MISSING : PERPLEXITY_API_KEY not configured",
                 sanitiser_applied=True,
             )
-        return result
-    url = "https://google.serper.dev/search"
-    payload = {"q": query, "gl": gl, "hl": hl, "num": num}
-    headers = {"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"}
+        return {"results": [], "error": "PERPLEXITY_API_KEY not configured"}
+
+    region_hint = ""
+    if (gl or "").lower() in ("au", "aus", "australia"):
+        region_hint = " Bias to Australian (.au) results when relevant."
+
+    user_prompt = (
+        f"Return ONLY a valid JSON array (no prose, no markdown fences) of the top {num} "
+        f"most-relevant web search results for the query below. Each item MUST be an object "
+        f"with EXACTLY these keys: title (string), url (string), snippet (string up to 240 chars).{region_hint}\n\n"
+        f"QUERY: {query}"
+    )
+
+    payload = {
+        "model": PERPLEXITY_SEARCH_MODEL,
+        "messages": [
+            {"role": "system", "content": "You are a web search API. Return ONLY a JSON array as specified. No prose, no preamble, no code fences."},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.0,
+        "max_tokens": 1200,
+    }
+    headers = {
+        "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
     http_status = None
-    error_text = None
+    body: Dict[str, Any] = {}
     try:
-        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-            resp = await client.post(url, json=payload, headers=headers)
+        async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
+            resp = await client.post(
+                "https://api.perplexity.ai/chat/completions",
+                json=payload,
+                headers=headers,
+            )
             http_status = resp.status_code
-            data = {}
             try:
-                data = resp.json()
+                body = resp.json()
             except Exception:
-                data = {}
+                body = {}
             if resp.status_code != 200:
-                error_text = data.get("message") or data.get("error") or f"Serper HTTP {resp.status_code}"
+                err_obj = body.get("error") if isinstance(body.get("error"), dict) else None
+                error_text = (err_obj or {}).get("message") or body.get("message") or f"Perplexity HTTP {resp.status_code}"
                 if _scan_id:
                     await arecord_provider_trace(
-                        scan_id=_scan_id, provider="serper", user_id=_user_id,
+                        scan_id=_scan_id, provider="perplexity", user_id=_user_id,
                         http_status=http_status,
                         latency_ms=int((_t.perf_counter() - _t0) * 1000),
                         request_summary=request_summary,
@@ -142,11 +175,11 @@ async def serper_search(query: str, gl: str = "au", hl: str = "en", num: int = 5
                         error=f"PROVIDER_HTTP_{http_status} : {str(error_text)[:200]}",
                         sanitiser_applied=True,
                     )
-                return {"results": [], "error": error_text}
+                return {"results": [], "error": str(error_text)[:240]}
     except Exception as exc:
         if _scan_id:
             await arecord_provider_trace(
-                scan_id=_scan_id, provider="serper", user_id=_user_id,
+                scan_id=_scan_id, provider="perplexity", user_id=_user_id,
                 http_status=502,
                 latency_ms=int((_t.perf_counter() - _t0) * 1000),
                 request_summary=request_summary,
@@ -155,26 +188,60 @@ async def serper_search(query: str, gl: str = "au", hl: str = "en", num: int = 5
                 sanitiser_applied=True,
             )
         return {"results": [], "error": str(exc)[:200]}
-    organic = data.get("organic") or []
-    results = []
-    for i, r in enumerate(organic[:num], start=1):
-        results.append({
-            "title": r.get("title"),
-            "link": r.get("link"),
-            "snippet": r.get("snippet"),
-            "position": r.get("position") or i,
-        })
+
+    content_text = ""
+    try:
+        content_text = (body.get("choices") or [{}])[0].get("message", {}).get("content", "") or ""
+    except Exception:
+        content_text = ""
+    content_text = content_text.strip()
+    if content_text.startswith("```"):
+        content_text = re.sub(r"^```(?:json)?\s*", "", content_text)
+        content_text = re.sub(r"\s*```$", "", content_text)
+
+    citations = body.get("citations") if isinstance(body.get("citations"), list) else []
+
+    parsed_results: List[Dict[str, Any]] = []
+    try:
+        import json as _json
+        data = _json.loads(content_text) if content_text else []
+        if isinstance(data, list):
+            for i, item in enumerate(data[:num], start=1):
+                if not isinstance(item, dict):
+                    continue
+                link = item.get("url") or item.get("link") or ""
+                if not link:
+                    continue
+                parsed_results.append({
+                    "title": str(item.get("title") or "")[:300],
+                    "link": str(link)[:500],
+                    "snippet": str(item.get("snippet") or item.get("description") or "")[:300],
+                    "position": item.get("position") or i,
+                })
+    except Exception:
+        # Structured-output parse failed — fall back to citations as bare links.
+        # We still get useful provenance, just without titles/snippets.
+        for i, url in enumerate(citations[:num], start=1):
+            if not url:
+                continue
+            parsed_results.append({
+                "title": "",
+                "link": str(url)[:500],
+                "snippet": "",
+                "position": i,
+            })
+
     if _scan_id:
         await arecord_provider_trace(
-            scan_id=_scan_id, provider="serper", user_id=_user_id,
+            scan_id=_scan_id, provider="perplexity", user_id=_user_id,
             http_status=200,
             latency_ms=int((_t.perf_counter() - _t0) * 1000),
             request_summary=request_summary,
-            response_summary={"ok": True, "results_count": len(results)},
-            evidence_payload={"organic_count": len(organic), "results_count": len(results)},
+            response_summary={"ok": True, "results_count": len(parsed_results)},
+            evidence_payload={"results_count": len(parsed_results), "citations_count": len(citations)},
             sanitiser_applied=True,
         )
-    return {"results": results, "error": None}
+    return {"results": parsed_results, "error": None}
 
 
 async def scrape_url_text(url: str) -> str:
