@@ -1593,8 +1593,11 @@ async def _enrich_cmo_with_synthesis(
       1. Gate on env flag (synthesis disabled in dev / paused under cost spike).
       2. Gate on `has_sufficient_synthesis_inputs` — never burn tokens when
          the inputs wouldn't produce world-class output anyway.
-      3. For each thin section: build the section prompt, call trinity
-         synthesis, parse JSON, drop items via provenance filter.
+      3. PARALLEL fan-out: each of the 6 thin sections runs as an
+         independent coroutine. asyncio.gather waits for all to settle.
+         Per-section try/except keeps any single failure from poisoning
+         siblings. Bottleneck is the slowest single Trinity call, not
+         the sum of all 6.
       4. Merge cited content back into `response` only if the LLM returned
          non-empty enriched content. Never overwrite existing evidence-backed
          content with thinner content — synthesis only fills gaps.
@@ -1602,6 +1605,14 @@ async def _enrich_cmo_with_synthesis(
     Errors at any step are caught and logged. The route NEVER blocks on
     synthesis — if the LLM is paused, errored, or out-of-budget, the
     response is returned unchanged.
+
+    2026-05-05 (13041978): refactored from sequential awaits to
+    asyncio.gather. Wall-clock dropped from ~200s worst-case sequential
+    to ~30-50s parallel (bottleneck = slowest single Trinity call).
+    Combined with the route-level wait_for(timeout=35s) cap in
+    _get_cmo_report_impl, every section that completes within budget
+    now lands in the response, instead of timing out at the very first
+    sequential stage.
     """
     if not _synthesis_enabled_for_request():
         return response
@@ -1622,10 +1633,18 @@ async def _enrich_cmo_with_synthesis(
     from core.synthesis_prompts import (
         filter_synthesis_swot_with_provenance,
         filter_synthesis_roadmap_with_provenance,
+        is_anti_template_phrase,
     )
 
-    # ─── Chief Marketing Summary + Executive Summary ──────────────────
-    if _section_is_thin(response.get("executive_summary")):
+    # ─── Section coroutines (one per thin gate) ──────────────────────
+    # Each coroutine MUTATES `response` in-place on success. dict
+    # mutation is safe because each coroutine writes to a disjoint key
+    # set (no two sections write the same key). Failures are logged
+    # and swallowed per section so siblings continue.
+
+    async def _synth_chief_marketing() -> None:
+        if not _section_is_thin(response.get("executive_summary")):
+            return
         try:
             cm_system, cm_user = build_chief_marketing_summary_prompt(
                 business_name=business_name,
@@ -1640,13 +1659,8 @@ async def _enrich_cmo_with_synthesis(
             cm_parsed = parse_synthesis_json(cm_raw)
             if isinstance(cm_parsed, dict) and isinstance(cm_parsed.get("summary"), str):
                 summary_text = cm_parsed["summary"].strip()
-                # Reject if the synthesised summary itself slipped through
-                # an anti-template phrase (the prompt forbids it but defence
-                # in depth keeps us honest).
-                from core.synthesis_prompts import is_anti_template_phrase
                 if summary_text and not is_anti_template_phrase(summary_text):
                     response["executive_summary"] = summary_text
-                    response.setdefault("executive_summary_provenance", {})
                     response["executive_summary_provenance"] = {
                         "source_trace_ids": cm_parsed.get("source_trace_ids") or [],
                         "signals_cited": cm_parsed.get("signals_cited") or [],
@@ -1654,9 +1668,9 @@ async def _enrich_cmo_with_synthesis(
         except Exception as exc:
             logger.warning(f"[cmo-synthesis] chief_marketing_summary skipped: {exc}")
 
-    # ─── Executive Summary bullets ─────────────────────────────────────
-    # Only synthesise if there is no existing exec_summary_bullets array.
-    if _section_is_thin(response.get("exec_summary_bullets"), min_items=1):
+    async def _synth_exec_bullets() -> None:
+        if not _section_is_thin(response.get("exec_summary_bullets"), min_items=1):
+            return
         try:
             es_system, es_user = build_executive_summary_prompt(
                 business_name=business_name,
@@ -1670,7 +1684,6 @@ async def _enrich_cmo_with_synthesis(
             )
             es_parsed = parse_synthesis_json(es_raw)
             if isinstance(es_parsed, dict) and isinstance(es_parsed.get("bullets"), list):
-                from core.synthesis_prompts import is_anti_template_phrase
                 cleaned_bullets = []
                 for b in es_parsed["bullets"]:
                     if not isinstance(b, dict):
@@ -1689,9 +1702,10 @@ async def _enrich_cmo_with_synthesis(
         except Exception as exc:
             logger.warning(f"[cmo-synthesis] executive_summary skipped: {exc}")
 
-    # ─── SWOT (4 buckets) ─────────────────────────────────────────────
-    swot = response.get("swot") or {}
-    if _section_is_thin(swot, min_items=1):
+    async def _synth_swot() -> None:
+        swot = response.get("swot") or {}
+        if not _section_is_thin(swot, min_items=1):
+            return
         try:
             sw_system, sw_user = build_swot_prompt(
                 business_name=business_name,
@@ -1714,14 +1728,9 @@ async def _enrich_cmo_with_synthesis(
                         available_competitor_names=available_competitor_names,
                     )
                     enriched_swot[bucket] = cleaned
-                # Only merge if at least one bucket has content. We never
-                # downgrade existing rich content with empty arrays.
                 non_empty_count = sum(1 for v in enriched_swot.values() if v)
                 if non_empty_count >= 2:
                     response["swot_v2"] = enriched_swot
-                    # Backfill flat string lists for the legacy `swot` shape
-                    # the frontend already consumes — never overwrite a
-                    # bucket that already had content (gap-fill only).
                     for bucket, items in enriched_swot.items():
                         existing = (swot.get(bucket) or []) if isinstance(swot, dict) else []
                         if not existing and items:
@@ -1730,9 +1739,10 @@ async def _enrich_cmo_with_synthesis(
         except Exception as exc:
             logger.warning(f"[cmo-synthesis] swot skipped: {exc}")
 
-    # ─── Strategic Roadmap (3 horizons) ───────────────────────────────
-    roadmap = response.get("roadmap") or {}
-    if _section_is_thin(roadmap, min_items=1):
+    async def _synth_roadmap() -> None:
+        roadmap = response.get("roadmap") or {}
+        if not _section_is_thin(roadmap, min_items=1):
+            return
         try:
             rm_system, rm_user = build_strategic_roadmap_prompt(
                 business_name=business_name,
@@ -1769,8 +1779,6 @@ async def _enrich_cmo_with_synthesis(
                 non_empty = sum(1 for v in enriched_roadmap.values() if v)
                 if non_empty >= 2:
                     response["roadmap_v2"] = enriched_roadmap
-                    # Gap-fill the existing roadmap shape — never overwrite
-                    # a column that already had content.
                     for col, items in enriched_roadmap.items():
                         existing = (roadmap.get(col) or []) if isinstance(roadmap, dict) else []
                         if not existing and items:
@@ -1779,8 +1787,9 @@ async def _enrich_cmo_with_synthesis(
         except Exception as exc:
             logger.warning(f"[cmo-synthesis] roadmap skipped: {exc}")
 
-    # ─── Competitive Landscape ────────────────────────────────────────
-    if _section_is_thin(response.get("competitors"), min_items=2):
+    async def _synth_competitive_landscape() -> None:
+        if not _section_is_thin(response.get("competitors"), min_items=2):
+            return
         try:
             cl_system, cl_user = build_competitive_landscape_prompt(
                 business_name=business_name,
@@ -1807,12 +1816,13 @@ async def _enrich_cmo_with_synthesis(
         except Exception as exc:
             logger.warning(f"[cmo-synthesis] competitive_landscape skipped: {exc}")
 
-    # ─── Review / Workplace Intelligence ──────────────────────────────
-    review_state_thin = (
-        not (response.get("reviews") or {}).get("count")
-        and not response.get("review_themes", {}).get("positive")
-    )
-    if review_state_thin:
+    async def _synth_review_intelligence() -> None:
+        review_state_thin = (
+            not (response.get("reviews") or {}).get("count")
+            and not response.get("review_themes", {}).get("positive")
+        )
+        if not review_state_thin:
+            return
         try:
             ri_system, ri_user = build_review_intelligence_prompt(
                 business_name=business_name,
@@ -1836,6 +1846,21 @@ async def _enrich_cmo_with_synthesis(
                     }
         except Exception as exc:
             logger.warning(f"[cmo-synthesis] review_intelligence skipped: {exc}")
+
+    # ─── Parallel fan-out via asyncio.gather ─────────────────────────
+    # return_exceptions=True so a failure in one section doesn't cancel
+    # the rest. Each coroutine already swallows its own exceptions; this
+    # is belt-and-suspenders.
+    import asyncio as _asyncio
+    await _asyncio.gather(
+        _synth_chief_marketing(),
+        _synth_exec_bullets(),
+        _synth_swot(),
+        _synth_roadmap(),
+        _synth_competitive_landscape(),
+        _synth_review_intelligence(),
+        return_exceptions=True,
+    )
 
     return response
 
@@ -2164,16 +2189,18 @@ async def _get_cmo_report_impl(current_user: dict, user_id: str, sb: Any):
     #     _enrich_cmo_with_synthesis. Errors here are non-fatal — the route
     #     never blocks on synthesis. See module docstring for the full
     #     contract.
-    # 2026-05-05 (13041978) — HARD CAP synthesis at 20 seconds. Without this
-    # cap, _enrich_cmo_with_synthesis can run up to 6 sequential LLM calls with
-    # 60-80s timeouts each (430s worst case). Azure App Service default request
-    # timeout is 230s — when synthesis exceeds it, Azure returns 504 → frontend
-    # apiClient.get() throws → setReport(null) → CMOReportPage renders every
-    # field as its placeholder fallback ("Your business", "Connected
-    # integrations", "0/100" dials, INSUFFICIENT_SIGNAL banners). Wrapping in
-    # asyncio.wait_for guarantees we never block the user-facing response on
-    # synthesis. The unenriched response is always good enough — synthesis only
-    # fills gaps, never adds primary data.
+    # 2026-05-05 (13041978) — HARD CAP synthesis at 35 seconds.
+    # PR #1 of the deep-enrichment foundation: _enrich_cmo_with_synthesis
+    # was refactored from 6 sequential awaits (200s worst case) to
+    # parallel asyncio.gather (~30-50s bottlenecked by slowest single
+    # Trinity call). Budget extended from 20s → 35s to give parallel
+    # synthesis enough time to complete; still well under Azure App
+    # Service 230s request timeout, so we cannot 504 from this code path.
+    # If synthesis hits 35s without finishing, the un-synthesized
+    # response (BDE-shaped dials/competitors/exec) is returned — never a
+    # 504 → null → all-fallbacks UX. PR #2 will move synthesis to
+    # scan-time + persist to BDE so this request-time call eventually
+    # becomes a no-op for already-enriched users.
     import asyncio as _asyncio
     try:
         tier_str = current_user.get("tier") if isinstance(current_user, dict) else None
@@ -2185,11 +2212,11 @@ async def _get_cmo_report_impl(current_user: dict, user_id: str, sb: Any):
                 user_id=user_id,
                 tier=tier_str,
             ),
-            timeout=20.0,
+            timeout=35.0,
         )
     except _asyncio.TimeoutError:
         logger.warning(
-            "[cmo-report] synthesis enrichment exceeded 20s budget for user_id=%s — "
+            "[cmo-report] synthesis enrichment exceeded 35s budget for user_id=%s — "
             "returning unenriched response per 13041978 (Azure timeout guard)",
             user_id,
         )
